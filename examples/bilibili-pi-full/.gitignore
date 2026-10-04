@@ -1,0 +1,20 @@
+# 本机运行记录与临时产物
+pi-sessions/
+pi-events-*.jsonl
+pi-stderr-*.log
+pi-mcp-trace.jsonl
+pi-run.json
+preview-server.json
+lock-recovery-log.json
+*.log
+.*.json
+.normify-*.lock/
+
+# 独立 Git 仓库以 frozen-project.bundle 保存，避免嵌套 gitlink
+project/
+.verify-worktree/
+
+# 中途审阅提示，正式需求和运行说明保留
+*review*.md
+review-request.md
+continue.md

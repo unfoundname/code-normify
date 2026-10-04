@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "bili.contract.core",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "本层阅读顺序：标识与标量 → 分页契约 → 错误契约 → 幂等契约 → 事件契约 → 鉴权上下文契约。箭头语义：call 同步调用、event 异步事件、dataflow 数据/投影流、reference 契约引用。",
+    "en": "Read in order: Identifiers and Scalars → Paging Contract → Error Contract → Idempotency Contract → Event Contract → Authorization Context. Arrow kinds: call, event, dataflow, reference."
+  },
+  "order": [
+    "bili.contract.core.ids",
+    "bili.contract.core.paging",
+    "bili.contract.core.errors",
+    "bili.contract.core.idempotency",
+    "bili.contract.core.events",
+    "bili.contract.core.authz"
+  ]
+}

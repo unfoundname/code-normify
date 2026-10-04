@@ -4,6 +4,8 @@ import { sha256Text } from './store.js';
 import { renderTemplate } from './template.js';
 import { diag } from './diag.js';
 import type { Diagnostic } from './types.js';
+import { graphDigest } from './manifest.js';
+import { boundPath } from '../workspace.js';
 export interface RenderOptions {
     out?: string;
     lang?: string;
@@ -23,6 +25,7 @@ interface TreeJson {
         name?: unknown;
         compiled_at?: unknown;
         stats?: Record<string, unknown>;
+        source_digest?: unknown;
     };
 }
 /** 读取 tree.json → 注入查看器模板 → 输出单文件 HTML。 */
@@ -60,6 +63,19 @@ export async function renderProject(projectDir: string, opts: RenderOptions): Pr
         };
     }
     const project = (tree.project ?? {});
+    const sourceDigest = await graphDigest(projectDir);
+    if (project.source_digest !== sourceDigest) return {
+        ok: false, htmlPath: null, bytes: 0, sha256: null, summary: null,
+        errors: [diag('error', 'render/stale-tree', '架构源数据已改变或编译产物缺少源摘要，请先重新编译', {}, { expected: sourceDigest, compiled: project.source_digest }, ['运行 normify_build'])], warnings,
+    };
+    let frozen: { source_digest?: string; artifacts?: Record<string, { sha256?: string }> };
+    try { frozen = JSON.parse(await readFile(join(projectDir, 'receipt.json'), 'utf8')); }
+    catch (error) { return { ok: false, htmlPath: null, bytes: 0, sha256: null, summary: null,
+        errors: [diag('error', 'render/receipt-unavailable', '编译回执缺失或损坏', {}, { reason: String(error) }, ['运行 normify_build'])], warnings }; }
+    if (frozen.source_digest !== sourceDigest || frozen.artifacts?.['tree.json']?.sha256 !== sha256Text(treeText)) return {
+        ok: false, htmlPath: null, bytes: 0, sha256: null, summary: null,
+        errors: [diag('error', 'render/unfrozen-tree', 'tree.json 与编译回执不一致', {}, {}, ['运行 normify_build'])], warnings,
+    };
     const stats = (project.stats ?? {});
     const name = String(project.name ?? 'project');
     const summary = {
@@ -71,7 +87,7 @@ export async function renderProject(projectDir: string, opts: RenderOptions): Pr
         theme: opts.theme ?? '',
     };
     const html = renderTemplate(treeText, { name, stats, compiledAt: summary.compiledAt, treeSha12: summary.treeSha12 });
-    const out = join(projectDir, opts.out && opts.out.trim() !== '' ? opts.out : 'normify.html');
+    const out = await boundPath(projectDir, opts.out ?? 'normify.html');
     try {
         await writeFile(out, html, 'utf8');
     }

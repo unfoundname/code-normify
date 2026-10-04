@@ -1,0 +1,28 @@
+# Normify 架构规则（policy.yml）：normify_validate 强制执行；规则类型与示例见 normify_policy_get。
+schema_version: 1
+updated_at: 2026-10-03T22:48:24.121Z
+rules:
+  - id: core-no-deprecated-target
+    type: forbid-dependency
+    from:
+      - "**"
+    to:
+      - "**"
+    toState: deprecated
+    severity: warning
+  - id: data-depth
+    type: max-depth
+    severity: error
+    maxDepth: 4
+    scope:
+      - data.**
+  - id: data-storage-boundary
+    type: forbid-dependency
+    from:
+      - data.**
+    to:
+      - bili.**
+    severity: error
+    message:
+      zh: 数据实体不得依赖架构模块（两棵树保持独立）
+      en: Data entities must not depend on architecture modules (the two trees stay independent)

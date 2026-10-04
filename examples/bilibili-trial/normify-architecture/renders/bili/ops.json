@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "bili.ops",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "治理闭环：审核决定 → 举报/申诉/处罚 → 版权投诉与许可核验 → 推荐位与标签 → 客服工单 → 审计与风控；所有决定经领域命令生效且全程留痕。",
+    "en": "Governance loop: review decisions, reports/appeals/punishments, copyright and license checks, curation, support, audit and risk."
+  },
+  "order": [
+    "bili.ops.review",
+    "bili.ops.report",
+    "bili.ops.rights",
+    "bili.ops.curation",
+    "bili.ops.support",
+    "bili.ops.audit"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "id": "data.sourcing",
+  "updated_at": "2026-10-03T20:15:11.767Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "点击结构查看字段、必填项、枚举与完整 JSON Schema。",
+    "en": "Open a type to inspect fields, required values, enums and full JSON Schema."
+  },
+  "order": [
+    "data.sourcing.t-bbde185b",
+    "data.sourcing.t-cbc2f9ce",
+    "data.sourcing.t-dd7114c5",
+    "data.sourcing.t-9e91db42",
+    "data.sourcing.t-559d721f",
+    "data.sourcing.t-1e773ff6",
+    "data.sourcing.t-aae1a40c",
+    "data.sourcing.t-6a8b7834",
+    "data.sourcing.t-ac28cee3",
+    "data.sourcing.t-409a702f",
+    "data.sourcing.t-8a2a96b1",
+    "data.sourcing.t-16e72a73"
+  ]
+}

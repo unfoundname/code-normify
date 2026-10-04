@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "id": "data.creator",
+  "updated_at": "2026-10-03T20:15:11.767Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "点击结构查看字段、必填项、枚举与完整 JSON Schema。",
+    "en": "Open a type to inspect fields, required values, enums and full JSON Schema."
+  },
+  "order": [
+    "data.creator.t-5f3fb947",
+    "data.creator.t-4b3c331c",
+    "data.creator.t-dfe57b7a",
+    "data.creator.t-622c683b",
+    "data.creator.t-dafcb7df",
+    "data.creator.t-129cf011",
+    "data.creator.t-d4cb6418",
+    "data.creator.t-ea919212",
+    "data.creator.t-f8b19ca9",
+    "data.creator.t-5f4b6d27",
+    "data.creator.t-9de87d25",
+    "data.creator.t-4236caf6",
+    "data.creator.t-d4a9f908",
+    "data.creator.t-3bc01585",
+    "data.creator.t-074643af"
+  ]
+}

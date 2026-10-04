@@ -4,12 +4,14 @@ import { readdir, readFile, writeFile, rename, rm, mkdir } from 'node:fs/promise
 import { existsSync, readdirSync } from 'node:fs';
 import { join, dirname, resolve, relative, sep } from 'node:path';
 import { createHash } from 'node:crypto';
-import { spawnSync } from 'node:child_process';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { deriveParent, isValidId, moduleFilePath, slugify } from './ids.js';
 import { parseModuleText, serializeModule } from './frontmatter.js';
 import { deleteLayoutFile } from './layout.js';
 import { installDefaultPolicy } from './policy.js';
 import { diag } from './diag.js';
+import { boundPath } from '../workspace.js';
 export const PROJECT_PREFIX = 'normify-';
 export class NormifyError extends Error {
     code: string;
@@ -48,15 +50,8 @@ export async function resolveProject(rootDir: string, args: { project?: string; 
         return { dir: p, slug: base.slice(PROJECT_PREFIX.length) };
     }
     if (args.project !== undefined && args.project.trim() !== '') {
-        // 兼容误传：project 含路径特征（斜杠/盘符）时按目录处理
         if (/[\/\\:]/.test(args.project)) {
-            const p = resolve(root, args.project);
-            const base = p.split(sep).pop() ?? '';
-            if (!base.startsWith(PROJECT_PREFIX)) {
-                throw new NormifyError('project/dir-name', '结构数据目录名必须以 ' + PROJECT_PREFIX + ' 开头，如 normify-demo-repo（实际: ' + base + '）');
-            }
-            await ensureModules(p);
-            return { dir: p, slug: base.slice(PROJECT_PREFIX.length) };
+            throw new NormifyError('project/slug-invalid', 'project 只接受项目 slug；明确目录请使用 dir');
         }
         const slug = slugify(args.project);
         const p = resolve(root, PROJECT_PREFIX + slug);
@@ -154,10 +149,10 @@ function stripApisForContainer(file: ModuleFile): { module: Module; dropped: str
 function apiDropWarning(id: string, rel: string, dropped: string[]): Diagnostic {
     return diag('warning', 'structure/api-dropped-on-promote', '模块晋升为容器（' + id + '）：容器不允许声明 API，已从容器上摘除 ' + dropped.join('、'), { module: id }, { file: rel, dropped_apis: dropped }, ['把这些 API 写到合适的叶子子模块的 apis 字段上']);
 }
-export async function writeModuleFile(projectDir: string, module: Module, body: string): Promise<{ file: string; promoted: string[]; warnings: Diagnostic[] }> {
+export async function writeModuleFile(projectDir: string, module: Module, body: string, context?: { files: ModuleFile[] }): Promise<{ file: string; promoted: string[]; warnings: Diagnostic[] }> {
     const promoted: string[] = [];
     const warnings: Diagnostic[] = [];
-    const loaded = await loadAllModules(projectDir);
+    const loaded = context ?? await loadAllModules(projectDir);
     const all = loaded.files.map(f => f.module);
     const container = isContainer(module, all);
     const target = moduleFilePath(projectDir, module.id, container);
@@ -286,31 +281,32 @@ export async function promoteModule(projectDir: string, id: string): Promise<{ f
     return { file: rel, warnings };
 }
 /** 仓库当前 HEAD（40 位 SHA）。 */
-export function gitHead(repoRoot: string): { sha: string | null; error: string | null } {
-    const result = spawnSync('git', ['-C', repoRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' });
-    if (result.error !== undefined)
-        return { sha: null, error: 'git 不可用：' + result.error.message };
-    if (result.status !== 0)
-        return { sha: null, error: 'git rev-parse 失败：' + String(result.stderr ?? '').slice(0, 200) };
-    const sha = String(result.stdout).trim();
+const executeFile = promisify(execFile);
+async function runGit(repoRoot: string, args: string[]): Promise<{ stdout: string; error: string | null }> {
+    try {
+        const result = await executeFile('git', ['-C', repoRoot, ...args], { encoding: 'utf8', windowsHide: true, maxBuffer: 32 * 1024 * 1024, timeout: 15000 });
+        return { stdout: result.stdout, error: null };
+    } catch (error) { return { stdout: '', error: error instanceof Error ? error.message : String(error) }; }
+}
+export async function gitHead(repoRoot: string): Promise<{ sha: string | null; error: string | null }> {
+    const result = await runGit(repoRoot, ['rev-parse', 'HEAD']);
+    if (result.error !== null) return { sha: null, error: result.error };
+    const sha = result.stdout.trim();
     if (!/^[a-f0-9]{40}$/.test(sha))
         return { sha: null, error: 'git HEAD 不是 40 位 SHA：' + sha };
     return { sha, error: null };
 }
 /** git 变更文件清单（增量再生成的输入）。 */
-export function gitChangedFiles(repoRoot: string, diffSpec: string): { files: string[] | null; error: string | null } {
+export async function gitChangedFiles(repoRoot: string, diffSpec: string): Promise<{ files: string[] | null; error: string | null }> {
     const spec = diffSpec.trim() === '' ? 'HEAD' : diffSpec.trim();
-    const result = spawnSync('git', ['-C', repoRoot, 'diff', '--name-only', spec], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
-    if (result.error !== undefined) {
-        return { files: null, error: 'git 不可用：' + result.error.message };
-    }
-    if (result.status !== 0) {
-        return { files: null, error: 'git diff 失败（exit ' + result.status + '）：' + String(result.stderr ?? '').slice(0, 300) };
-    }
-    const changed = String(result.stdout).split(/\r?\n/).map(s => s.trim()).filter(s => s.length > 0);
+    if (spec.startsWith('-') || /[\x00-\x1f]/.test(spec)) return { files: null, error: 'diff 必须为 Git 版本引用，不能是命令选项' };
+    const result = await runGit(repoRoot, ['diff', '--name-only', spec]);
+    if (result.error !== null) return { files: null, error: result.error };
+    const changed = result.stdout.split(/\r?\n/).map(s => s.trim()).filter(s => s.length > 0);
     // 新增但未 add 的文件（AI 开发中最常见的“新文件”形态）也纳入同步建议
-    const untracked = spawnSync('git', ['-C', repoRoot, 'ls-files', '--others', '--exclude-standard'], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
-    if (untracked.error === undefined && untracked.status === 0) {
+    const untracked = await runGit(repoRoot, ['ls-files', '--others', '--exclude-standard']);
+    if (untracked.error !== null) return { files: null, error: untracked.error };
+    {
         for (const f of String(untracked.stdout).split(/\r?\n/).map(s => s.trim())) {
             if (f.length > 0 && !changed.includes(f))
                 changed.push(f);
@@ -325,12 +321,14 @@ export async function fingerprintOf(repoRoot: string, sources: SourceRef[]): Pro
     const hash = createHash('sha256');
     for (const p of paths) {
         try {
-            const buf = await readFile(join(repoRoot, p));
+            const safePath = await boundPath(repoRoot, p);
+            const buf = await readFile(safePath);
             hash.update(p);
             hash.update('\0');
             hash.update(buf);
         }
-        catch {
+        catch (error) {
+            if ((error as { name?: string }).name === 'WorkspaceError') throw error;
             missing.push(p);
         }
     }

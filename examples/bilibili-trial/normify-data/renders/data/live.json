@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "id": "data.live",
+  "updated_at": "2026-10-03T20:15:11.767Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "点击结构查看字段、必填项、枚举与完整 JSON Schema。",
+    "en": "Open a type to inspect fields, required values, enums and full JSON Schema."
+  },
+  "order": [
+    "data.live.t-508a777c",
+    "data.live.t-f65042f6",
+    "data.live.t-db5d9dc4",
+    "data.live.t-f6278ddb",
+    "data.live.t-cf75a572",
+    "data.live.t-a4cdaab8",
+    "data.live.t-3cf7ae60",
+    "data.live.t-0d496b87",
+    "data.live.t-029f797f",
+    "data.live.t-88cb5e2a",
+    "data.live.t-f7be457c",
+    "data.live.t-ff673dd4",
+    "data.live.t-c7c5b277",
+    "data.live.t-dd64b759",
+    "data.live.t-35192572",
+    "data.live.t-322ed8c5"
+  ]
+}

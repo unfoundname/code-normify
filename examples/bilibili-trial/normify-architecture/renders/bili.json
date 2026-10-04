@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "id": "bili",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "groups",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "根层四个支柱：客户端 bili.client、共享契约 bili.contract、业务域（身份→内容→互动→交易→治理）、数据契约 bili.data 与基础设施 bili.infra。先冻结契约再并行业务域。",
+    "en": "Four pillars: clients, shared contracts, business domains (identity to content, interaction, commerce, governance), data and infrastructure. Freeze contracts before parallelizing domains."
+  },
+  "order": [
+    "bili.client",
+    "bili.contract",
+    "bili.identity",
+    "bili.publish",
+    "bili.media",
+    "bili.playback",
+    "bili.danmaku",
+    "bili.community",
+    "bili.social",
+    "bili.discovery",
+    "bili.live",
+    "bili.commerce",
+    "bili.premium",
+    "bili.creator",
+    "bili.ops",
+    "bili.sourcing",
+    "bili.ecosystem",
+    "bili.infra",
+    "bili.data"
+  ],
+  "groups": [
+    {
+      "id": "g-client",
+      "title": {
+        "zh": "客户端与前端",
+        "en": "Clients"
+      },
+      "children": [
+        "bili.client"
+      ]
+    },
+    {
+      "id": "g-contract",
+      "title": {
+        "zh": "共享契约",
+        "en": "Contracts"
+      },
+      "children": [
+        "bili.contract"
+      ]
+    },
+    {
+      "id": "g-domain",
+      "title": {
+        "zh": "业务域",
+        "en": "Business domains"
+      },
+      "children": [
+        "bili.identity",
+        "bili.publish",
+        "bili.media",
+        "bili.playback",
+        "bili.danmaku",
+        "bili.community",
+        "bili.social",
+        "bili.discovery",
+        "bili.live",
+        "bili.commerce",
+        "bili.premium",
+        "bili.creator",
+        "bili.ops",
+        "bili.sourcing",
+        "bili.ecosystem"
+      ]
+    },
+    {
+      "id": "g-platform",
+      "title": {
+        "zh": "数据契约与基础设施",
+        "en": "Data and infra"
+      },
+      "children": [
+        "bili.data",
+        "bili.infra"
+      ]
+    }
+  ]
+}

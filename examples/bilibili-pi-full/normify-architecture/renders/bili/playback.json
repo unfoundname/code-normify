@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "bili.playback",
+  "updated_at": "2026-10-03T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "reading": {
+    "zh": "本层是「播放」的 7 个功能单元，按设计顺序阅读；箭头指出向依赖（调用/事件/数据流/引用）。",
+    "en": "This level shows the 7 functional units of \"Playback\", in design order; arrows are outbound dependencies (call/event/dataflow/reference)."
+  },
+  "order": [
+    "bili.playback.detail",
+    "bili.playback.grant",
+    "bili.playback.stream",
+    "bili.playback.progress",
+    "bili.playback.history",
+    "bili.playback.watchlater",
+    "bili.playback.sequence"
+  ]
+}

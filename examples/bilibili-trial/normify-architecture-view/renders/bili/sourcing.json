@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "bili.sourcing",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "内容获取顺序：来源登记（含许可模式）→ 许可与证据 → 下载任务（限速/断点）→ 去重指纹 → 溯源归属 → 导入复用媒体与投稿主链；未核验许可不得进入任一后续环节。",
+    "en": "Sourcing order: source registry, license and evidence, fetch jobs, dedupe, attribution, ingest reusing media and publish chains. Unverified licenses never proceed."
+  },
+  "order": [
+    "bili.sourcing.source",
+    "bili.sourcing.license",
+    "bili.sourcing.fetch",
+    "bili.sourcing.dedupe",
+    "bili.sourcing.attribute",
+    "bili.sourcing.ingest"
+  ]
+}

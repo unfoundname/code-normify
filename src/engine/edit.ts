@@ -1,4 +1,4 @@
-import { readdir, readFile, writeFile, rm, mkdir } from 'node:fs/promises';
+import { readdir, readFile, writeFile, rm, mkdir, lstat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, relative, dirname } from 'node:path';
 import { DEP_KINDS } from './types.js';
@@ -7,6 +7,7 @@ import { deriveParent, isValidId, moduleFilePath, splitId } from './ids.js';
 import { loadAllModules, writeModuleFile, fingerprintOf, gitHead } from './store.js';
 import { evaluatePolicy, loadPolicyFile } from './policy.js';
 import { l1Validate } from './frontmatter.js';
+import { rewriteModuleTypeReferences } from './contracts.js';
 import { deleteLayoutFile, layoutRelPath, loadLayoutFile, writeLayoutFile } from './layout.js';
 import type { Diagnostic, LayoutData, Module, ModuleState, ModuleFile } from './types.js';
 import type { Dirent } from 'node:fs';
@@ -83,8 +84,9 @@ async function walkRel(base: string, rel: string, out: string[]): Promise<void> 
     try {
         entries = await readdir(join(base, rel), { withFileTypes: true });
     }
-    catch {
-        return;
+    catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
+        throw error;
     }
     for (const e of entries) {
         const child = rel === '' ? e.name : rel + '/' + e.name;
@@ -95,28 +97,42 @@ async function walkRel(base: string, rel: string, out: string[]): Promise<void> 
     }
 }
 /** 内部：modules/ 与 renders/ 的全量快照。 */
-interface ProjectSnapshot {
+export interface ProjectSnapshot {
     files: Map<string, Buffer>;
+    roots: string[];
 }
 /** 快照 modules/ 与 renders/（用于失败回滚；数据集很小，直接全量）。 */
-async function snapshotProject(projectDir: string): Promise<ProjectSnapshot> {
+export async function snapshotProject(projectDir: string, roots = ['modules', 'renders']): Promise<ProjectSnapshot> {
     const files = new Map<string, Buffer>();
-    for (const dir of ['modules', 'renders']) {
+    for (const dir of roots) {
+        try {
+            if ((await lstat(join(projectDir, dir))).isFile()) {
+                files.set(dir, await readFile(join(projectDir, dir)));
+                continue;
+            }
+        } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+            continue;
+        }
         const rels: string[] = [];
         await walkRel(join(projectDir, dir), '', rels);
         for (const rel of rels) {
-            try {
-                files.set(dir + '/' + rel, await readFile(join(projectDir, dir, rel)));
-            }
-            catch {
-                /* 忽略读取失败 */
-            }
+            files.set(dir + '/' + rel, await readFile(join(projectDir, dir, rel)));
         }
     }
-    return { files };
+    return { files, roots };
 }
-async function restoreProject(projectDir: string, snap: ProjectSnapshot): Promise<void> {
-    for (const dir of ['modules', 'renders']) {
+export async function restoreProject(projectDir: string, snap: ProjectSnapshot): Promise<void> {
+    for (const dir of snap.roots) {
+        try {
+            if ((await lstat(join(projectDir, dir))).isFile()) {
+                if (!snap.files.has(dir)) await rm(join(projectDir, dir));
+                continue;
+            }
+        } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+            continue;
+        }
         const rels: string[] = [];
         await walkRel(join(projectDir, dir), '', rels);
         for (const rel of rels) {
@@ -127,6 +143,8 @@ async function restoreProject(projectDir: string, snap: ProjectSnapshot): Promis
     }
     for (const [key, buf] of snap.files) {
         const path = join(projectDir, key);
+        try { if ((await readFile(path)).equals(buf)) continue; }
+        catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
         await mkdir(dirname(path), { recursive: true });
         await writeFile(path, buf);
     }
@@ -239,8 +257,6 @@ export async function batchWrite(projectDir: string, items: BatchItem[], mode: '
     for (const item of items) {
         if (mode === 'upsert') {
             const fm = { ...(item.frontmatter ?? {}) };
-            if (fm.parent === 'null' || fm.parent === null)
-                fm.parent = null;
             if (typeof fm.updated_at !== 'string')
                 fm.updated_at = new Date().toISOString();
             const r = l1Validate(fm, 'batch:' + String(fm.id ?? '?'));
@@ -388,7 +404,7 @@ export async function moveModuleTree(projectDir: string, id: string, opts: MoveO
     const moved = new Map<string, Module>();
     const rewired: DepRewire[] = [];
     for (const f of files) {
-        const m = cloneModule(f.module);
+        const m = rewriteModuleTypeReferences(cloneModule(f.module), mapping);
         if (mapping.has(m.id)) {
             m.id = mapping.get(m.id)!;
             m.parent = deriveParent(m.id);
@@ -415,6 +431,10 @@ export async function moveModuleTree(projectDir: string, id: string, opts: MoveO
         dirty.add(to);
     for (const r of rewired)
         dirty.add(r.module);
+    for (const f of files) {
+        const newId = mapping.get(f.module.id) ?? f.module.id;
+        if (JSON.stringify(rewriteModuleTypeReferences(f.module, mapping)) !== JSON.stringify(f.module)) dirty.add(newId);
+    }
     const oldParentId = deriveParent(id);
     const newParentId = deriveParent(newId);
     if (oldParentId !== null)
@@ -657,7 +677,7 @@ export async function refreshModules(projectDir: string, opts: RefreshOptions): 
     if (targets.length === 0) {
         return { ok: false, dryRun: opts.dryRun === true, errors: [diag('error', 'refresh/no-target', '必须提供 ids 或 all:true', {}, {}, [])], warnings, changed: [], detail: {}, refreshed, missing };
     }
-    const head = gitHead(opts.repoRoot);
+    const head = await gitHead(opts.repoRoot);
     if (head.sha === null) {
         // 0.5.4：repoRoot 不是 git 仓库时不再硬失败 —— 指纹照常重算，revision 保持原值并记 warning
         warnings.push(diag('warning', 'refresh/git-unavailable', '无法获取 git HEAD（' + (head.error ?? '未知原因') + '）：本次只重算 fingerprint/updated_at，revision 保持模块原值', { repoRoot: opts.repoRoot }, {}, ['在 repoRoot 下 git init && git commit 后重跑 refresh 即可写入真实 revision']));

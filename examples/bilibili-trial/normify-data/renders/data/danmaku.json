@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "id": "data.danmaku",
+  "updated_at": "2026-10-03T20:15:11.767Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "点击结构查看字段、必填项、枚举与完整 JSON Schema。",
+    "en": "Open a type to inspect fields, required values, enums and full JSON Schema."
+  },
+  "order": [
+    "data.danmaku.t-d6450e61",
+    "data.danmaku.t-831ff732",
+    "data.danmaku.t-37b3291f",
+    "data.danmaku.t-971e9550",
+    "data.danmaku.t-6829461a",
+    "data.danmaku.t-99089495",
+    "data.danmaku.t-fd78aa0a",
+    "data.danmaku.t-a482809e",
+    "data.danmaku.t-ad6985b0"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "bili.client.admin",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "本层阅读顺序：后台装配与权限 → 审核工作台 → 版权投诉工作台 → 客服工作台 → 审计与风控台。箭头语义：call 同步调用、event 异步事件、dataflow 数据/投影流、reference 契约引用。",
+    "en": "Read in order: Admin Shell → Moderation Console → Copyright Console → Support Console → Audit Console. Arrow kinds: call, event, dataflow, reference."
+  },
+  "order": [
+    "bili.client.admin.shell",
+    "bili.client.admin.review",
+    "bili.client.admin.rights",
+    "bili.client.admin.support",
+    "bili.client.admin.audit"
+  ]
+}

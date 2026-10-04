@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "data.social",
+  "updated_at": "2026-10-03T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 3,
+  "reading": {
+    "zh": "「关注与动态数据」的 8 个实体表；箭头为外键（标签含字段与目标列），每个实体只有一个业务写入所有者。",
+    "en": "The 8 entity tables of \"Following and dynamic data\"; arrows are foreign keys labelled with field and target column, and each entity has exactly one business write owner."
+  },
+  "order": [
+    "data.social.follow-relation",
+    "data.social.follow-group",
+    "data.social.follow-group-member",
+    "data.social.dynamic-post",
+    "data.social.dynamic-media",
+    "data.social.topic",
+    "data.social.season-subscription",
+    "data.social.mute-rule"
+  ]
+}

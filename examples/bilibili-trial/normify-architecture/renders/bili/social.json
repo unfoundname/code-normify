@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "bili.social",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "本层阅读顺序：关注与粉丝 → 动态与话题 → 私信与通知。箭头语义：call 同步调用、event 异步事件、dataflow 数据/投影流、reference 契约引用。",
+    "en": "Read in order: Follows and Followers → Dynamics and Topics → Messages and Notifications. Arrow kinds: call, event, dataflow, reference."
+  },
+  "order": [
+    "bili.social.follow",
+    "bili.social.feed",
+    "bili.social.message"
+  ]
+}

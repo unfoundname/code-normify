@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "id": "data.ecosystem",
+  "updated_at": "2026-10-03T20:15:11.767Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "点击结构查看字段、必填项、枚举与完整 JSON Schema。",
+    "en": "Open a type to inspect fields, required values, enums and full JSON Schema."
+  },
+  "order": [
+    "data.ecosystem.t-ba894a98",
+    "data.ecosystem.t-c99498ca",
+    "data.ecosystem.t-3d49f1f0",
+    "data.ecosystem.t-f9096cb0",
+    "data.ecosystem.t-72bfe879",
+    "data.ecosystem.t-69759a58",
+    "data.ecosystem.t-69cf16a2",
+    "data.ecosystem.t-87945cb0",
+    "data.ecosystem.t-8f69a2ea",
+    "data.ecosystem.t-a44dad31",
+    "data.ecosystem.t-aa3f03d6",
+    "data.ecosystem.t-6702ed86",
+    "data.ecosystem.t-3fa08d6f"
+  ]
+}

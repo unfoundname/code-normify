@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "bili.client.web",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "本层阅读顺序：应用装配与路由 → 共享前端能力 → 领域功能目录。箭头语义：call 同步调用、event 异步事件、dataflow 数据/投影流、reference 契约引用。",
+    "en": "Read in order: App Shell and Routing → Shared Web Capabilities → Feature Modules. Arrow kinds: call, event, dataflow, reference."
+  },
+  "order": [
+    "bili.client.web.shell",
+    "bili.client.web.shared",
+    "bili.client.web.features"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "id": "data.discovery",
+  "updated_at": "2026-10-03T20:15:11.767Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "点击结构查看字段、必填项、枚举与完整 JSON Schema。",
+    "en": "Open a type to inspect fields, required values, enums and full JSON Schema."
+  },
+  "order": [
+    "data.discovery.t-c9a9b29b",
+    "data.discovery.t-d63595e9",
+    "data.discovery.t-fa607513",
+    "data.discovery.t-981482ef",
+    "data.discovery.t-72e24928",
+    "data.discovery.t-9ac99e2a",
+    "data.discovery.t-fd8cbd6a",
+    "data.discovery.t-ec658138",
+    "data.discovery.t-ca886d53",
+    "data.discovery.t-29f86269",
+    "data.discovery.t-f7f00f1d",
+    "data.discovery.t-970e632b",
+    "data.discovery.t-46fa6adc"
+  ]
+}

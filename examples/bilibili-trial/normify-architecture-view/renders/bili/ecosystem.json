@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "bili.ecosystem",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "本层阅读顺序：专栏 → 音频 → 漫画 → 游戏与赛事 → 会员购（外部集成边界） → 装扮（外部集成边界）。箭头语义：call 同步调用、event 异步事件、dataflow 数据/投影流、reference 契约引用。",
+    "en": "Read in order: Articles → Audio → Manga → Games and Esports → Mall (External Boundary) → Dress-up (External Boundary). Arrow kinds: call, event, dataflow, reference."
+  },
+  "order": [
+    "bili.ecosystem.article",
+    "bili.ecosystem.audio",
+    "bili.ecosystem.manga",
+    "bili.ecosystem.esports",
+    "bili.ecosystem.mall",
+    "bili.ecosystem.dressup"
+  ]
+}

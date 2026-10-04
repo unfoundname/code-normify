@@ -7,12 +7,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createHash } from 'node:crypto'
 
-const PLUGIN = new URL('../lib/index.js', import.meta.url).href // 跨平台：直接用 URL 解析；不要手工去掉前导斜杠再拼 file URL（POSIX 下会变成相对路径）
-const plug = await import(PLUGIN)
-const tools = new Map()
-plug.apply({ tools: { register: (d) => tools.set(d.name, d) }, skills: { register: () => () => {} },
-  logger: { info: () => {}, warn: () => {} }, effect: () => {}, on: () => {} },
-  { rootDir: '.', requireBilingual: true, devCompanionReminder: false, devCompanionReminderAfter: 8 })
+import { createNormifyTools } from '../lib/index.js'
+const tools = new Map(createNormifyTools({ rootDir: '.', requireBilingual: true }).map(tool => [tool.name, tool]))
 const call = (n, a) => tools.get(n).execute(a ?? {})
 const hex = (s) => createHash('sha256').update(s).digest('hex')
 const A = (path, zh, en) => ({ protocol: 'rpc', path, description: { zh, en } })
@@ -39,7 +35,9 @@ const nested = upsertDef.parameters?.properties?.frontmatter?.required
 ok('①c frontmatter.required 保留 9 项', Array.isArray(nested) && nested.length === 9, JSON.stringify(nested))
 for (const need of ['uid', 'id', 'parent', 'name', 'description', 'source', 'revision', 'updated_at', 'fingerprint'])
   ok('①d frontmatter.required 含 ' + need, (nested ?? []).includes(need))
-ok('①e 空参调用被 args/missing 拦截', (await call('normify_module_upsert', {})).error?.code === 'args/missing')
+const missingArgs = await call('normify_module_upsert', {})
+ok('①e 空参调用被 args/missing 拦截', missingArgs.ok === false && missingArgs.errors.length === 1 && missingArgs.errors[0].code === 'args/missing')
+ok('①f 诊断输出统一为对象数组', missingArgs.errors[0].severity === 'error' && typeof missingArgs.errors[0].message === 'string' && Array.isArray(missingArgs.warnings) && !('error' in missingArgs))
 
 console.log('\n== 建树（3 个叶子 + 2 层容器）==')
 for (const m of [
@@ -60,7 +58,7 @@ ok('基线 L2 = 0 error', (await call('normify_validate', { dir: DATA })).ok ===
 
 console.log('\n== ② move：渲染数据内容必须重写 ==')
 const mv1 = await call('normify_module_move', { dir: DATA, id: 'demo.core', new_id: 'demo.platform' })
-ok('②a move 成功', mv1.ok === true, JSON.stringify(mv1.errors ?? mv1.error ?? ''))
+ok('②a move 成功', mv1.ok === true, JSON.stringify(mv1.errors))
 const lay = JSON.parse(readFileSync(join(work, 'normify-demo/renders/demo/platform.json'), 'utf8'))
 ok('②b 迁移后 id 已重写', lay.id === 'demo.platform', lay.id)
 ok('②c order 已重写', JSON.stringify(lay.order) === JSON.stringify(['demo.platform.alpha', 'demo.platform.beta']), JSON.stringify(lay.order))
@@ -73,9 +71,9 @@ ok('②g move 后 L2 = 0 error', v1.ok === true, JSON.stringify(v1.errors ?? [])
 
 console.log('\n== ③ 晋升为容器：apis 必须下放，且要回报 ==')
 const mv2 = await call('normify_module_move', { dir: DATA, id: 'demo.platform', new_parent: 'demo.util' })
-ok('③a 挂到带 API 的叶子上', mv2.ok === true, JSON.stringify(mv2.errors ?? mv2.error ?? ''))
-const detail = JSON.stringify(mv2.warnings ?? [])
-ok('③b 回报 api-dropped-on-promote', detail.includes('api-dropped-on-promote'), detail.slice(0, 160))
+ok('③a 挂到带 API 的叶子上', mv2.ok === true, JSON.stringify(mv2.errors))
+const detail = JSON.stringify(mv2.warnings)
+ok('③b 回报 api-dropped-on-promote', mv2.warnings.some(d => d.code === 'structure/api-dropped-on-promote' && d.subject.module === 'demo.util'), detail.slice(0, 160))
 const v2 = await call('normify_validate', { dir: DATA })
 ok('③c 晋升后 L2 = 0 error（容器不再带 apis）', v2.ok === true, JSON.stringify((v2.errors ?? []).slice(0, 3)))
 const utilFile = readFileSync(join(work, 'normify-demo/modules/demo/util/index.md'), 'utf8')

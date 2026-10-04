@@ -7,6 +7,8 @@
 import { fieldReference } from './frontmatter.js';
 import { policyReference } from './policy.js';
 import { DEP_KINDS } from './types.js';
+import type { Diagnostic } from './types.js';
+import { diag } from './diag.js';
 
 export const HELP_TOPICS = ['fields', 'deps', 'renders', 'flow', 'tools', 'policy', 'errors', 'all'] as const;
 export type HelpTopic = (typeof HELP_TOPICS)[number];
@@ -77,7 +79,7 @@ const ERRORS_REFERENCE = [
     '  evidence/fingerprint-drift       结构数据过期：改完代码跑 normify_module_refresh 或 normify_change_close',
 ].join('\n');
 
-export function topicReference(topic: HelpTopic, catalog: ToolCatalogEntry[] = []): { title: string; text: string } {
+export function topicReference(topic: HelpTopic, catalog: readonly ToolCatalogEntry[] = []): { title: string; text: string } {
     switch (topic) {
         case 'fields':
             return { title: '模块字段速查', text: fieldReference() };
@@ -104,7 +106,7 @@ export function topicReference(topic: HelpTopic, catalog: ToolCatalogEntry[] = [
                             + (props.length > 0 ? '\n      必填: ' + (req.length > 0 ? req.join(', ') : '（无）') + ' | 可选: ' + (opt.length > 0 ? opt.join(', ') : '（无）') : '');
                     }).join('\n'),
                     '',
-                    '想看某个工具的完整参数树（类型/描述/必填）：normify_help { topic: "tool:<工具名>" }，例如 "tool:normify_module_batch"。',
+                    '想看某个工具的完整参数树（类型/描述/必填）：normify_help { topic: "tool:<工具名>" }，例如 "tool:normify_module_get"。',
                 ].join('\n'),
             };
         case 'all':
@@ -144,6 +146,38 @@ export function toolReference(entry: ToolCatalogEntry | undefined): { title: str
         const prop = props[k] ?? {};
         lines.push('  ' + (required.has(k) ? '* ' : '  ') + k + ': ' + (prop.type ?? 'any') + (prop.description !== undefined ? ' — ' + prop.description : ''));
     }
-    lines.push('', '提示：参数树由插件注册表实时生成，与运行时校验同源。');
+    lines.push('', '提示：参数树由当前公开工具目录实时生成，与运行时校验同源。');
     return { title: entry.name + ' 参数树', text: lines.join('\n') };
+}
+
+export interface HelpResult {
+    ok: boolean;
+    errors: Diagnostic[];
+    warnings: Diagnostic[];
+    topic?: string;
+    title?: string;
+    reference?: string;
+    topics?: string[];
+}
+
+/** 帮助与宿主实际发布的目录同源；不自行保存另一份工具列表。 */
+export function resolveHelp(topic: string | undefined, catalog: readonly ToolCatalogEntry[]): HelpResult {
+    const raw = (topic ?? '').trim();
+    const lower = raw.toLowerCase();
+    const topics = [...HELP_TOPICS, 'tool:<name>'];
+    if (lower.startsWith('tool:')) {
+        const name = raw.slice(raw.indexOf(':') + 1).trim();
+        const tool = catalog.find(entry => entry.name.toLowerCase() === name.toLowerCase());
+        if (tool === undefined) {
+            return { ok: false, errors: [diag('error', 'args/unknown-tool', '未知工具：' + name + '（先用 topic:"tools" 看全部 ' + catalog.length + ' 个工具名）')], warnings: [] };
+        }
+        const reference = toolReference(tool);
+        return { ok: true, errors: [], warnings: [], topic: 'tool:' + tool.name, title: reference.title, reference: reference.text, topics };
+    }
+    const selected = (lower === '' ? 'fields' : lower) as HelpTopic;
+    if (!HELP_TOPICS.includes(selected)) {
+        return { ok: false, errors: [diag('error', 'args/invalid-topic', '未知主题：' + raw + '（可用：' + HELP_TOPICS.join(' | ') + ' | tool:<工具名>）')], warnings: [] };
+    }
+    const reference = topicReference(selected, catalog);
+    return { ok: true, errors: [], warnings: [], topic: selected, title: reference.title, reference: reference.text, topics };
 }

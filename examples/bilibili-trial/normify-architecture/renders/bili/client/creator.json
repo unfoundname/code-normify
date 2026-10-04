@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "bili.client.creator",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "本层阅读顺序：创作中心装配 → 投稿管理页 → 数据分析页 → 弹幕评论管理页 → 活动任务与推广页 → 收益提现页。箭头语义：call 同步调用、event 异步事件、dataflow 数据/投影流、reference 契约引用。",
+    "en": "Read in order: Studio Shell → Work Management UI → Analytics UI → Interaction Moderation UI → Campaign UI → Revenue UI. Arrow kinds: call, event, dataflow, reference."
+  },
+  "order": [
+    "bili.client.creator.shell",
+    "bili.client.creator.works",
+    "bili.client.creator.analytics",
+    "bili.client.creator.interact",
+    "bili.client.creator.growth",
+    "bili.client.creator.revenue"
+  ]
+}

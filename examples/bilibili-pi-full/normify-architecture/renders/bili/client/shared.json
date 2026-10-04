@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "bili.client.shared",
+  "updated_at": "2026-10-03T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 3,
+  "reading": {
+    "zh": "本层是「共享前端基础设施」的 5 个功能单元，按设计顺序阅读；箭头指出向依赖（调用/事件/数据流/引用）。",
+    "en": "This level shows the 5 functional units of \"Shared front-end infrastructure\", in design order; arrows are outbound dependencies (call/event/dataflow/reference)."
+  },
+  "order": [
+    "bili.client.shared.design",
+    "bili.client.shared.http",
+    "bili.client.shared.i18n",
+    "bili.client.shared.player",
+    "bili.client.shared.uploader"
+  ]
+}

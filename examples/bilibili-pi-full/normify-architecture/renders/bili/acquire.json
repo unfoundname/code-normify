@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "bili.acquire",
+  "updated_at": "2026-10-03T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 3,
+  "reading": {
+    "zh": "本层是「内容获取」的 6 个功能单元，按设计顺序阅读；箭头指出向依赖（调用/事件/数据流/引用）。",
+    "en": "This level shows the 6 functional units of \"Content acquisition\", in design order; arrows are outbound dependencies (call/event/dataflow/reference)."
+  },
+  "order": [
+    "bili.acquire.source",
+    "bili.acquire.license",
+    "bili.acquire.job",
+    "bili.acquire.dedupe",
+    "bili.acquire.provenance",
+    "bili.acquire.import"
+  ]
+}

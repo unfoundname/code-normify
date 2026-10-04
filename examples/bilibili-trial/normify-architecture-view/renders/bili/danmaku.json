@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "bili.danmaku",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "本层阅读顺序：弹幕发送与风控 → 弹幕池与分时段读取 → 屏蔽偏好与 UP 主管理。箭头语义：call 同步调用、event 异步事件、dataflow 数据/投影流、reference 契约引用。",
+    "en": "Read in order: Danmaku Posting → Danmaku Pool and Segments → Block Rules and Up-Owner Control. Arrow kinds: call, event, dataflow, reference."
+  },
+  "order": [
+    "bili.danmaku.post",
+    "bili.danmaku.stream",
+    "bili.danmaku.prefs"
+  ]
+}

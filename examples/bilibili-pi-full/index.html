@@ -1,0 +1,89 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>bilibili 类视频网站 · 设计交付入口（评审修正版）</title>
+<style>:root{color-scheme:dark}body{margin:0;background:#0d1117;color:#e6edf3;font:15px/1.6 -apple-system,Segoe UI,Roboto,"Noto Sans SC",sans-serif}
+header{padding:28px 32px;background:linear-gradient(120deg,#12263f,#1f3b63)}h1{margin:0 0 6px;font-size:24px}
+h2{margin:32px 0 10px;font-size:19px;border-left:4px solid #4c8bf5;padding-left:10px}main{padding:0 32px 60px;max-width:1400px}a{color:#79b8ff}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin:18px 0}.card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px}
+.card h3{margin:0 0 6px;font-size:16px}.card p{margin:4px 0;color:#9aa7b4;font-size:13px}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}th,td{border:1px solid #30363d;padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#1c2430}code{background:#1c2430;padding:1px 4px;border-radius:4px}.ok{color:#3fb950}.warn{color:#d29922}.muted{color:#8b949e}</style></head><body>
+<header><h1>bilibili 类视频网站 · 全量目标架构 / 数据结构 / 分支分工（评审修正版）</h1>
+<p class="muted">由 pi 通过 Normify 0.7.0 MCP 实际生成并校验；严格区分「设计/fixture 检查（隔离工作树，已执行）」与「业务验收（未执行）」。</p></header><main>
+<div class="cards">
+<div class="card"><h3>架构图 architecture</h3><p>214 模块 / 186 叶子 / 390 类型 / 278 API</p><p class="ok">0 error / 199 warning</p><p><a href="architecture.html">打开可下钻架构图</a> · <a href="architecture.json">architecture.json</a></p></div>
+<div class="card"><h3>数据结构图 data</h3><p>149 实体（RDS 143 / OSS 0 / 搜索投影 7）/ 186 关系</p><p class="ok">0 error / 151 warning</p><p><a href="data.html">打开数据结构图</a> · <a href="data.json">data.json</a></p></div>
+<div class="card"><h3>分支分工 delivery</h3><p>19 个交付组 / 595 个独占文件 / needs DAG</p><p class="ok">0 error</p><p><a href="delivery.html">打开分支分工图</a> · <a href="branch-plan.json">branch-plan.json</a></p></div></div>
+<h2>本轮评审修正自检（只读复核脚本）</h2><p>17/17 项通过，明细见 <code>project/.review-checks.json</code>。</p>
+<table><thead><tr><th></th><th>检查项</th><th>证据</th></tr></thead><tbody><tr><td>✅</td><td>无 mysql 协议（RDS 方言待定）</td><td><small>&quot;&quot;</small></td></tr>
+<tr><td>✅</td><td>Timestamp 强制 UTC Z 模式</td><td><small>&quot;^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,6})?Z$&quot;</small></td></tr>
+<tr><td>✅</td><td>PlaybackGrant 区分资源类型</td><td><small>&quot;&quot;</small></td></tr>
+<tr><td>✅</td><td>GrantRequest 覆盖 lesson/room/audio</td><td><small>&quot;&quot;</small></td></tr>
+<tr><td>✅</td><td>streams 接口需要授权输入</td><td><small>&quot;{\&quot;module\&quot;:\&quot;bili.playback.stream\&quot;,\&quot;name\&quot;:\&quot;StreamRequest\&quot;}&quot;</small></td></tr>
+<tr><td>✅</td><td>VideoPublishedEvent 使用统一封套</td><td><small>&quot;[\&quot;envelope\&quot;,\&quot;bvid\&quot;,\&quot;uploaderId\&quot;,\&quot;partitionId\&quot;,\&quot;tagIds\&quot;,\&quot;publishedAt\&quot;]&quot;</small></td></tr>
+<tr><td>✅</td><td>VideoPart.assetId 为字符串 ID</td><td><small>&quot;{\&quot;$ref\&quot;:\&quot;urn:normify:bili.contract.common:Id\&quot;,\&quot;description\&quot;:\&quot;媒体资源 ID / Media asset id\&quot;}&quot;</small></td></tr>
+<tr><td>✅</td><td>DanmakuItem.mode 与请求枚举一致</td><td><small>&quot;{\&quot;type\&quot;:\&quot;string\&quot;,\&quot;enum\&quot;:[\&quot;SCROLL\&quot;,\&quot;TOP\&quot;,\&quot;BOTTOM\&quot;,\&quot;REVERSE\&quot;],\&quot;des</small></td></tr>
+<tr><td>✅</td><td>infra.search 不反向依赖业务</td><td><small>&quot;bili.contract.common&quot;</small></td></tr>
+<tr><td>✅</td><td>infra.search 文档契约为统一 SearchDocument</td><td><small>&quot;&quot;</small></td></tr>
+<tr><td>✅</td><td>许可证据登记使用显式请求类型</td><td><small>&quot;LicenseEvidenceSubmitRequest&quot;</small></td></tr>
+<tr><td>✅</td><td>私信 ws 帧包含 messageId/text</td><td><small>&quot;{\&quot;module\&quot;:\&quot;bili.message.dm\&quot;,\&quot;name\&quot;:\&quot;DirectMessageFrame\&quot;}&quot;</small></td></tr>
+<tr><td>✅</td><td>礼物请求含醒目留言文本</td><td><small>&quot;roomId,giftId,giftCount,messageText,idempotencyKey,requestContext&quot;</small></td></tr>
+<tr><td>✅</td><td>课程含章节/课时契约</td><td><small>&quot;CourseView,LessonProgress,CourseChapterView,LessonView,LessonProgressRequest&quot;</small></td></tr>
+<tr><td>✅</td><td>RequestContext 被真实写接口消费</td><td><small>&quot;106 types&quot;</small></td></tr>
+<tr><td>✅</td><td>显式锚点数量有限且可审计</td><td><small>&quot;bili.upload.draft-&gt;bili.catalog.video | bili.playback.grant-&gt;bili.catalog.video | bili.playback.grant-&gt;bili.pgc.license | bili.playback.grant-&gt</small></td></tr>
+<tr><td>✅</td><td>写入口注入幂等键与上下文</td><td><small>&quot;186 fields&quot;</small></td></tr></tbody></table>
+<h2>三张图与产物</h2><ul>
+<li><a href="architecture.html">架构图</a> · <a href="data.html">数据结构图</a> · <a href="delivery.html">分支分工图</a></li>
+<li><a href="report.md">report.md</a> · <a href="tool-evidence.md">tool-evidence.md</a> · <a href="summary.json">summary.json</a> · <a href="verification.json">verification.json</a> · <a href="branch-packets.json">branch-packets.json</a> · <a href="worker-plan.json">worker-plan.json</a> · <a href="branch-plan-candidate.json">branch-plan-candidate.json</a></li>
+<li><a href="project/plan/frozen/">冻结输入 plan/frozen/</a> · <a href="project/plan/units/">每组交接 plan/units/</a> · <a href="project/contracts/samples/">契约样例</a> · <a href="project/contracts/negative/negative-cases.json">负例</a> · <a href="project/contracts/types/">冻结 TS 契约</a> · <a href="project/plan/requirements.json">需求清单</a> · <a href="project/plan/waves.json">波次</a></li>
+<li>截图：<a href="screenshots/index.png">入口</a> / <a href="screenshots/architecture.png">架构</a> / <a href="screenshots/data.png">数据</a> / <a href="screenshots/delivery.png">分工</a>（页面错误 0）</li></ul>
+<h2>可并行阶段</h2><ul><li><b>W0</b>（并行 1 组）：<code>u-contract-baseline</code></li>
+<li><b>W1</b>（并行 1 组）：<code>u-platform-core</code></li>
+<li><b>W2</b>（并行 2 组）：<code>u-identity</code>、<code>u-media</code></li>
+<li><b>W3</b>（并行 3 组）：<code>u-commerce</code>、<code>u-content-pipeline</code>、<code>u-message</code></li>
+<li><b>W4</b>（并行 9 组）：<code>u-acquire</code>、<code>u-channel</code>、<code>u-community</code>、<code>u-creator</code>、<code>u-danmaku</code>、<code>u-discover</code>、<code>u-live</code>、<code>u-playback</code>、<code>u-social</code></li>
+<li><b>W5</b>（并行 3 组）：<code>u-integration</code>、<code>u-ops</code>、<code>u-pgc</code></li></ul>
+<h2>交付组</h2><table><thead><tr><th>组</th><th>Lead</th><th>叶子</th><th>独占文件</th><th>需求</th><th>needs 前置</th><th>外部依赖</th><th>设计检查</th></tr></thead><tbody><tr><td><code>u-contract-baseline</code><br><small>共享契约与前端基础设施冻结</small></td><td>W-CONTRACT</td><td>10</td><td>30</td><td>R00-contract-freeze<br>R18-frontend<br>R20-data-ownership</td><td>—</td><td>contract×2</td><td>exit 0</td></tr>
+<tr><td><code>u-platform-core</code><br><small>平台底座：接入/RDS/outbox/适配器/部署/迁移</small></td><td>W-INFRA</td><td>23</td><td>207</td><td>R16-infra<br>R20-data-ownership</td><td><code>u-contract-baseline</code></td><td>baseline×2 contract×2</td><td>exit 0</td></tr>
+<tr><td><code>u-identity</code><br><small>身份账号与个人空间（含设置页）</small></td><td>W-IDENTITY</td><td>9</td><td>24</td><td>R01-identity<br>R18-frontend</td><td><code>u-contract-baseline</code><br><code>u-platform-core</code></td><td>after×4 baseline×2</td><td>exit 0</td></tr>
+<tr><td><code>u-content-pipeline</code><br><small>投稿编辑与内容目录（含唯一发布命令、投稿台）</small></td><td>W-CONTENT</td><td>12</td><td>30</td><td>R02-upload<br>R19-publish-chain<br>R20-data-ownership</td><td><code>u-contract-baseline</code><br><code>u-platform-core</code><br><code>u-identity</code></td><td>after×5 baseline×3 contract×3</td><td>exit 0</td></tr>
+<tr><td><code>u-media</code><br><small>媒体管道：上传/探测/转码/封面/字幕/任务</small></td><td>W-MEDIA</td><td>11</td><td>26</td><td>R03-media<br>R19-publish-chain</td><td><code>u-contract-baseline</code><br><code>u-platform-core</code></td><td>baseline×3 after×2</td><td>exit 0</td></tr>
+<tr><td><code>u-playback</code><br><small>播放授权与播放页（含个人中心）</small></td><td>W-PLAYBACK</td><td>9</td><td>20</td><td>R04-playback<br>R19-publish-chain<br>R18-frontend</td><td><code>u-contract-baseline</code><br><code>u-platform-core</code><br><code>u-content-pipeline</code><br><code>u-media</code><br><code>u-identity</code></td><td>after×10 contract×8 baseline×2</td><td>exit 0</td></tr>
+<tr><td><code>u-danmaku</code><br><small>弹幕全链路（分段/发送/样式/屏蔽/举报/管理/实时）</small></td><td>W-DANMAKU</td><td>7</td><td>14</td><td>R05-danmaku</td><td><code>u-contract-baseline</code><br><code>u-platform-core</code><br><code>u-content-pipeline</code></td><td>after×3 baseline×1 contract×3</td><td>exit 0</td></tr>
+<tr><td><code>u-community</code><br><small>社区互动（评论/管理/点赞/投币/收藏/分享）</small></td><td>W-COMMUNITY</td><td>6</td><td>12</td><td>R06-community<br>R20-data-ownership</td><td><code>u-contract-baseline</code><br><code>u-platform-core</code><br><code>u-content-pipeline</code><br><code>u-identity</code></td><td>after×6 contract×3 baseline×2</td><td>exit 0</td></tr>
+<tr><td><code>u-social</code><br><small>关注动态与个人空间页</small></td><td>W-SOCIAL</td><td>9</td><td>18</td><td>R07-social<br>R18-frontend</td><td><code>u-contract-baseline</code><br><code>u-platform-core</code><br><code>u-identity</code><br><code>u-content-pipeline</code></td><td>after×6 baseline×2 contract×4</td><td>exit 0</td></tr>
+<tr><td><code>u-message</code><br><small>消息中心（私信/通知/系统/偏好/推送/未读）</small></td><td>W-MESSAGE</td><td>7</td><td>14</td><td>R08-message<br>R18-frontend</td><td><code>u-contract-baseline</code><br><code>u-platform-core</code><br><code>u-identity</code></td><td>after×7 baseline×1 contract×1</td><td>exit 0</td></tr>
+<tr><td><code>u-discover</code><br><small>搜索发现与首页/搜索页</small></td><td>W-DISCOVER</td><td>10</td><td>20</td><td>R09-discover<br>R18-frontend</td><td><code>u-contract-baseline</code><br><code>u-platform-core</code><br><code>u-content-pipeline</code></td><td>after×7 baseline×3 contract×3</td><td>exit 0</td></tr>
+<tr><td><code>u-live</code><br><small>直播域（准入/房间/推流/弹幕/礼物/预约/回放）与直播页</small></td><td>W-LIVE</td><td>8</td><td>22</td><td>R10-live<br>R18-frontend</td><td><code>u-contract-baseline</code><br><code>u-platform-core</code><br><code>u-identity</code><br><code>u-media</code><br><code>u-commerce</code></td><td>contract×7 after×10 baseline×2</td><td>exit 0</td></tr>
+<tr><td><code>u-commerce</code><br><small>会员交易与账本（含会员中心页）</small></td><td>W-COMMERCE</td><td>9</td><td>22</td><td>R11-commerce<br>R20-data-ownership</td><td><code>u-contract-baseline</code><br><code>u-platform-core</code><br><code>u-identity</code></td><td>after×5 baseline×2 contract×1</td><td>exit 0</td></tr>
+<tr><td><code>u-pgc</code><br><small>版权内容与课堂（含番剧课程页）</small></td><td>W-PGC</td><td>8</td><td>20</td><td>R12-pgc<br>R18-frontend</td><td><code>u-contract-baseline</code><br><code>u-platform-core</code><br><code>u-content-pipeline</code><br><code>u-media</code><br><code>u-commerce</code><br><code>u-playback</code></td><td>contract×3 after×8 baseline×1</td><td>exit 0</td></tr>
+<tr><td><code>u-creator</code><br><small>创作中心后端与前端（管理/分析/互动/粉丝/活动/收益）</small></td><td>W-CREATOR</td><td>11</td><td>24</td><td>R13-creator<br>R18-frontend</td><td><code>u-contract-baseline</code><br><code>u-platform-core</code><br><code>u-content-pipeline</code><br><code>u-identity</code></td><td>after×8 contract×9 baseline×2</td><td>exit 0</td></tr>
+<tr><td><code>u-ops</code><br><small>运营后台后端与前端（审核/举报/申诉/处罚/版权/配置/客服/审计）</small></td><td>W-OPS</td><td>13</td><td>28</td><td>R14-ops<br>R20-data-ownership</td><td><code>u-contract-baseline</code><br><code>u-platform-core</code><br><code>u-content-pipeline</code><br><code>u-identity</code><br><code>u-community</code><br><code>u-danmaku</code></td><td>contract×2 after×8 baseline×3</td><td>exit 0</td></tr>
+<tr><td><code>u-acquire</code><br><small>内容获取与导入（许可/下载/去重/溯源/导入）</small></td><td>W-ACQUIRE</td><td>6</td><td>12</td><td>R15-acquire<br>R19-publish-chain</td><td><code>u-contract-baseline</code><br><code>u-platform-core</code><br><code>u-content-pipeline</code><br><code>u-media</code></td><td>after×8 baseline×1 contract×1</td><td>exit 0</td></tr>
+<tr><td><code>u-channel</code><br><small>生态频道与频道页（专栏/音频/漫画/赛事/会员购/装扮）</small></td><td>W-CHANNEL</td><td>7</td><td>16</td><td>R17-channel<br>R18-frontend</td><td><code>u-contract-baseline</code><br><code>u-platform-core</code><br><code>u-content-pipeline</code><br><code>u-commerce</code><br><code>u-media</code></td><td>after×9 baseline×2 contract×5</td><td>exit 0</td></tr>
+<tr><td><code>u-integration</code><br><small>系统装配与 React 应用壳（路由/Provider/Worker/数据源/可观测/本地栈）</small></td><td>W-ASSEMBLY</td><td>11</td><td>36</td><td>R16-infra<br>R18-frontend<br>R19-publish-chain</td><td><code>u-contract-baseline</code><br><code>u-platform-core</code><br><code>u-identity</code><br><code>u-content-pipeline</code><br><code>u-media</code><br><code>u-playback</code><br><code>u-commerce</code><br><code>u-discover</code><br><code>u-message</code></td><td>after×11</td><td>exit 0</td></tr></tbody></table>
+<h2>18 项产品范围 → 模块域</h2><table><thead><tr><th>模块域</th><th>叶子</th><th>类型</th><th>API</th><th>产品范围</th></tr></thead><tbody><tr><td><code>bili.acquire</code></td><td>6</td><td>10</td><td>8</td><td>⑮ 内容获取：许可来源/许可证据/下载/去重/溯源归属/导入主链</td></tr>
+<tr><td><code>bili.assembly</code></td><td>7</td><td>7</td><td>7</td><td>⑯⑱ 系统装配：API 应用/路由注册表/Worker 进程/数据源与 schema/可观测/本地栈</td></tr>
+<tr><td><code>bili.catalog</code></td><td>5</td><td>17</td><td>10</td><td>②⑲ 内容目录与唯一发布命令、发布状态机与发布事件</td></tr>
+<tr><td><code>bili.channel</code></td><td>6</td><td>10</td><td>8</td><td>⑰ 生态频道：专栏/音频/漫画/游戏赛事/会员购/装扮</td></tr>
+<tr><td><code>bili.client</code></td><td>32</td><td>33</td><td>32</td><td>⑱ React Web 与创作/运营前端：领域功能目录 + 共享组件/路由/装配独占</td></tr>
+<tr><td><code>bili.commerce</code></td><td>8</td><td>21</td><td>15</td><td>⑪ 会员交易：大会员权益/充值/B币电池/充电/订单/支付回调/退款/对账/账本</td></tr>
+<tr><td><code>bili.community</code></td><td>6</td><td>16</td><td>12</td><td>⑥ 社区：评论/置顶精选/点赞/投币账本/收藏/分享/互动统计</td></tr>
+<tr><td><code>bili.contract</code></td><td>4</td><td>27</td><td>4</td><td>冻结契约：ID/时间/金额/分页/错误/幂等/事件封套/状态机/账本/播放授权/检索文档</td></tr>
+<tr><td><code>bili.creator</code></td><td>6</td><td>14</td><td>9</td><td>⑬ 创作中心：投稿管理/数据分析/弹幕评论管理/粉丝分析/活动任务/收益提现</td></tr>
+<tr><td><code>bili.danmaku</code></td><td>7</td><td>14</td><td>8</td><td>⑤ 弹幕：分段/发送/样式/屏蔽偏好/举报/UP 主管理/实时</td></tr>
+<tr><td><code>bili.discover</code></td><td>8</td><td>17</td><td>10</td><td>⑨ 搜索发现：首页/分区/榜单/建议/多类型检索/推荐/行为反馈/索引投影</td></tr>
+<tr><td><code>bili.identity</code></td><td>8</td><td>31</td><td>19</td><td>① 身份/账号安全/实名/权限/等级/资料/空间/隐私黑名单</td></tr>
+<tr><td><code>bili.infra</code></td><td>23</td><td>26</td><td>29</td><td>⑯ 基础设施：Web 接入/RDS/OSS/outbox 任务/缓存搜索 CDN MQ 接入/部署备份监控容量；迁移脚本</td></tr>
+<tr><td><code>bili.live</code></td><td>7</td><td>21</td><td>12</td><td>⑩ 直播：准入/房间推流/实时弹幕/礼物舰队/预约/连麦/回放转投稿</td></tr>
+<tr><td><code>bili.media</code></td><td>11</td><td>22</td><td>20</td><td>③ 媒体：分片断点上传/OSS 原件/探测/转码/封面/预览/音轨/字幕/任务重试</td></tr>
+<tr><td><code>bili.message</code></td><td>6</td><td>13</td><td>9</td><td>⑧ 消息：私信/互动通知/系统提醒/偏好未读/推送通道</td></tr>
+<tr><td><code>bili.ops</code></td><td>9</td><td>26</td><td>17</td><td>⑭ 运营后台：审核/举报/申诉/处罚/版权投诉/推荐位/活动标签/客服/操作审计</td></tr>
+<tr><td><code>bili.pgc</code></td><td>7</td><td>18</td><td>13</td><td>⑫ 版权与课堂：番剧影视/系列季剧集/排期/追番/评分/试看/地域期限/课程进度</td></tr>
+<tr><td><code>bili.playback</code></td><td>7</td><td>15</td><td>10</td><td>④ 播放：详情/清晰度字幕倍速/连播/历史/进度/稍后再看/统一播放授权</td></tr>
+<tr><td><code>bili.social</code></td><td>7</td><td>16</td><td>13</td><td>⑦ 关注动态：关注分组/粉丝/图文视频转发动态/话题/合集订阅/动态流</td></tr>
+<tr><td><code>bili.upload</code></td><td>6</td><td>16</td><td>13</td><td>② 投稿：草稿/多分P/合集/分区标签/联合投稿/预约/编辑下架</td></tr></tbody></table>
+<h2>执行证据分层</h2><ul>
+<li>静态校验：架构 0 / 数据 0 / 交付 0 error；BranchPlan digest <code>f459426c73686b5ea9f7165a7053de69f7eef13bda8cd52e2ffc3c26ac750e44</code>，与当前图一致 = true</li>
+<li>隔离工作树 <code>.verify-worktree</code> @ <code>7b0ea7f5a569</code>：全量检查 exit 0，逐单元 exit 0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0，tsc exit 0</li>
+<li>fixture：186 样例 / 390 类型实例通过；19 负例被拒绝</li>
+<li class="warn">业务验收：57 条定义已登记、<b>未执行</b>（无任何业务通过结论）</li></ul>
+<h2>边界</h2><p class="warn">本页只是设计契约与规划基线：没有可运行网站、服务、迁移、部署或业务测试通过证据；工具不创建分支/Worker/权限，也不消费 base_commit/after。</p></main></body></html>

@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "bili.media",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "本层阅读顺序：媒体资产登记 → 探测、转码与档位 → 封面与字幕。箭头语义：call 同步调用、event 异步事件、dataflow 数据/投影流、reference 契约引用。",
+    "en": "Read in order: Media Asset Registry → Probe, Transcode and Renditions → Artwork and Subtitles. Arrow kinds: call, event, dataflow, reference."
+  },
+  "order": [
+    "bili.media.asset",
+    "bili.media.processing",
+    "bili.media.artwork"
+  ]
+}

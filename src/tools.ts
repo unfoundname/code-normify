@@ -1,7 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve as resolvePath } from 'node:path';
+import { Ajv2020 } from 'ajv/dist/2020.js';
+import type { ErrorObject } from 'ajv';
 import { DEP_KINDS, PROTOCOLS } from './engine/types.js';
 import { l1Validate } from './engine/frontmatter.js';
 import { apiKey, isValidId, slugify, splitId } from './engine/ids.js';
@@ -14,11 +16,10 @@ import { closeChange } from './engine/companion.js';
 import { validateProject } from './engine/validate.js';
 import { buildProject } from './engine/compile.js';
 import { renderProject } from './engine/render.js';
-import { fmtDiag } from './engine/diag.js';
-import { HELP_TOPICS, toolReference, topicReference } from './engine/reference.js';
+import { diag } from './engine/diag.js';
+import { HELP_TOPICS, resolveHelp } from './engine/reference.js';
 
-import type { Context } from '@deepseek-ai/cordis';
-import type { HelpTopic, ToolCatalogEntry } from './engine/reference.js';
+import type { ToolCatalogEntry } from './engine/reference.js';
 import type { ChangeModules, ChangeStatus, Diagnostic, LayoutData, LayoutEdgeHint, LayoutGroup, LocalizedText, Module, ModuleFile, ModuleState, PolicyData, PolicyRule, SourceRef } from './engine/types.js';
 
 export interface ToolEnv {
@@ -27,8 +28,8 @@ export interface ToolEnv {
 }
 
 /** JSON Schema 节点（作者态：属性级内联 required: true；编译后对象级为 required: string[]）。 */
-interface SchemaNode {
-    type?: string;
+export interface SchemaNode {
+    type?: string | string[];
     description?: string;
     required?: boolean | string[];
     properties?: Record<string, SchemaNode>;
@@ -41,39 +42,36 @@ interface SchemaNode {
 type SchemaValue = SchemaNode | SchemaValue[];
 
 /** params() 编译出的对象级 JSON Schema。 */
-type ObjectSchema = SchemaNode & { required?: string[] };
+export type ObjectSchema = SchemaNode & { type: 'object'; required?: string[] };
 
 /** 工具行为标记：read=只读；write=写入；destroy=破坏性；idempotent=幂等。 */
-type ToolBehavior = 'read' | 'write' | 'destroy' | 'idempotent';
+export type ToolBehavior = 'read' | 'write' | 'destroy' | 'idempotent';
 
 /** register() 的工具定义。 */
 interface ToolDef {
     description: string;
     behavior: ToolBehavior;
-    parameters?: ObjectSchema;
+    parameters: ObjectSchema;
 }
 
-/** dsh-tools 服务的注册面（可选外部服务）。 */
-interface ToolService {
-    register?: (def: ToolRegistration) => void;
+/** 工具结果始终为 JSON 对象，业务诊断保留在对应工具的字段中。 */
+export interface NormifyToolResult {
+    ok: boolean;
+    errors: Diagnostic[];
+    warnings: Diagnostic[];
+    [key: string]: unknown;
 }
 
-/** 交给 tools.register 的注册对象。 */
-interface ToolRegistration {
+/** 可直接交给 Electron 主进程、MCP 或其他宿主的统一工具目录。 */
+export interface NormifyTool {
     name: string;
     description: string;
     behavior: ToolBehavior;
-    parameters?: ObjectSchema;
-    readOnly: boolean;
-    idempotent: boolean;
-    destructive: boolean;
-    output: {
-        schema: Record<string, unknown>;
-        render: (args: Record<string, unknown>, value: unknown) => { type: string; text: string | undefined }[];
-    };
-    execute: (args: Record<string, unknown>) => Promise<unknown>;
-    isConcurrencySafe?: () => boolean;
+    parameters: ObjectSchema;
+    execute: (args?: Record<string, unknown>) => Promise<NormifyToolResult>;
 }
+
+export type NormifyToolRegistration = (tool: NormifyTool) => void;
 
 /** 结构数据项目定位（slug 或目录绝对路径）。 */
 interface ProjectArgs {
@@ -353,8 +351,7 @@ function boolOpt(description: string): SchemaNode { return { type: 'boolean', de
 /**
  * 把作者态 schema（属性内联 `required: true`，方便手写）编译为标准 JSON Schema：
  * 属性级 required 提升为对象级 `required: string[]`，对象补 `additionalProperties: false`。
- * dsh 0.1.5+ 会把工具 parameters 原样交给模型/provider，必须是规范 JSON Schema
- *（`required: true` 不是合法关键字）。
+ * 工具 parameters 是提供给宿主和模型的标准 JSON Schema。
  */
 function toJsonSchema(node: unknown): SchemaValue {
     if (Array.isArray(node))
@@ -442,8 +439,32 @@ function apiParam(): SchemaNode {
                 method: { type: 'string', description: '仅 http：大写 METHOD', required: false },
                 path: { type: 'string', description: 'URL 路径或 topic/队列/表名', required: true },
                 description: l10nParam('API 功能简介'),
+                input: typeRefParam('输入的数据类型引用'),
+                output: typeRefParam('输出的数据类型引用'),
             },
             required: ['protocol', 'path', 'description'],
+        },
+    };
+}
+function typeRefParam(description: string): SchemaNode {
+    return {
+        type: 'object', description, required: false,
+        properties: {
+            module: str('声明该类型的模块 id'),
+            name: str('数据类型名称'),
+        },
+    };
+}
+function dataTypesParam(): SchemaNode {
+    return {
+        type: 'array', description: '本模块声明的数据类型（仅叶子模块）；schema 使用 JSON Schema 2020-12', required: false,
+        items: {
+            type: 'object',
+            properties: {
+                name: str('类型名（合法 TypeScript identifier，同模块唯一）'),
+                description: l10nParam('数据类型的职责'),
+                schema: freeObjectParam('完整 JSON Schema 2020-12；跨模块 $ref 为 urn:normify:<module-id>:<type-name>', true),
+            },
         },
     };
 }
@@ -459,7 +480,7 @@ function depParam(): SchemaNode {
                 to: { type: 'string', description: '目标模块 id', required: true },
                 from_api: { type: 'string', description: '可选：本模块某 API 键（仅叶子）', required: false },
                 to_api: { type: 'string', description: '可选：目标模块自身某 API 键', required: false },
-                label: l10nParam('箭头标签'),
+                label: l10nOptParam('箭头标签'),
             },
             required: ['kind', 'to'],
         },
@@ -534,7 +555,7 @@ function moduleParams(): SchemaNode {
         properties: {
         uid: str('8 位小写 hex 随机串（不变标识，全项目唯一）'),
         id: str('路径式 id：小写段点分隔，含树名段 ≤ 12 段，如 demo.order.checkout.payment'),
-        parent: str('父模块 id（= id 去掉最后一段）；根模块传 JSON null 或字符串 "null"'),
+        parent: { type: ['string', 'null'], description: '父模块 id（= id 去掉最后一段）；根模块传 JSON null', required: true },
         name: l10nParam('模块名（≤60 字符）'),
         description: l10nParam('功能介绍（≤500 字符，刻意精炼）'),
         source: sourceParam(),
@@ -545,6 +566,7 @@ function moduleParams(): SchemaNode {
         state: strOpt('生命周期状态：active | planned | deprecated（默认 active；计划态先建树、后实现）'),
         replacement: strOpt('仅 state=deprecated：替代模块 id'),
         tags: strArrayOpt('自由标签（≤12 个，用于检索/分组）'),
+        types: dataTypesParam(),
         apis: apiParam(),
         deps: depParam(),
         },
@@ -553,82 +575,114 @@ function moduleParams(): SchemaNode {
 /** 项目定位参数（属性映射，供 `params({ ...projectParams() })` 展开）。 */
 function projectParams(_required = false): { project: SchemaNode; dir: SchemaNode } {
     return {
-        project: strOpt('项目 slug（结构数据目录 = normify-<slug>）；也可以直接传结构数据目录绝对路径'),
+        project: strOpt('项目 slug（结构数据目录 = normify-<slug>）；路径请使用 dir 参数'),
         dir: strOpt('结构数据目录绝对路径（与 project 二选一）'),
     };
 }
-function toErrorPayload(error: unknown): { ok: false; error: { code: string; message: string } } {
+function toErrorPayload(error: unknown): NormifyToolResult {
     if (error instanceof NormifyError) {
-        return { ok: false, error: { code: error.code, message: error.message } };
+        return { ok: false, errors: [diag('error', error.code, error.message)], warnings: [] };
     }
     if (error instanceof Error) {
-        return { ok: false, error: { code: 'internal', message: error.message } };
+        return { ok: false, errors: [diag('error', 'internal', error.message)], warnings: [] };
     }
-    return { ok: false, error: { code: 'internal', message: String(error) } };
+    return { ok: false, errors: [diag('error', 'internal', String(error))], warnings: [] };
 }
-function diagnosticsOut(errors: Diagnostic[], warnings: Diagnostic[]): { ok: boolean; errors: string[]; warnings: string[]; summary: string } {
+function diagnosticsOut(errors: Diagnostic[], warnings: Diagnostic[]): NormifyToolResult {
     return {
         ok: errors.length === 0,
-        errors: errors.map(fmtDiag),
-        warnings: warnings.map(fmtDiag),
+        errors: errors,
+        warnings: warnings,
         summary: errors.length + ' error / ' + warnings.length + ' warning',
     };
 }
-export function registerTools(ctx: Context, env: ToolEnv): void {
-    const toolCatalog: ToolCatalogEntry[] = [];
-    const register = <A>(key: string, def: ToolDef, execute: (args: A) => Promise<unknown>): void => {
-        toolCatalog.push({ name: key, description: def.description, behavior: def.behavior, parameters: def.parameters });
-        const tools = (ctx as unknown as { tools?: ToolService }).tools;
-        if (tools === undefined || tools.register === undefined)
-            return;
-        const behavior = def.behavior;
-        const wrapped = async (rawArgs: unknown): Promise<unknown> => {
+const argumentValidator = new Ajv2020({ allErrors: true, strict: true, strictTuples: false, allowUnionTypes: true });
+const toolQueues = new Map<string, Promise<void>>();
+
+/** 同一目录的完整工具操作顺序执行，读取也等待此前写入结束。 */
+async function enqueueTool<T>(rootDir: string, operation: () => Promise<T>): Promise<T> {
+    const absolute = resolvePath(rootDir);
+    const key = process.platform === 'win32' ? absolute.toLowerCase() : absolute;
+    const previous = toolQueues.get(key) ?? Promise.resolve();
+    let release!: () => void;
+    const pending = new Promise<void>(resolve => { release = resolve; });
+    toolQueues.set(key, pending);
+    await previous;
+    try {
+        return await operation();
+    }
+    finally {
+        release();
+        if (toolQueues.get(key) === pending)
+            toolQueues.delete(key);
+    }
+}
+
+function argumentDiagnostic(error: ErrorObject): Diagnostic {
+    const segments = error.instancePath.split('/').filter(Boolean);
+    const location = segments.map(segment => /^\d+$/.test(segment) ? '第 ' + (Number(segment) + 1) + ' 条' : segment).join(' ');
+    const message = error.keyword === 'type' && error.params.type === 'string'
+        ? '参数 ' + location + ' 必须为纯字符串'
+        : '参数 ' + (location || '(根对象)') + ' ' + (error.message ?? error.keyword);
+    return diag('error', 'args/invalid', message, { parameter: error.instancePath || '/' }, { keyword: error.keyword, ...error.params }, ['按工具 parameters 中的 JSON Schema 调整参数']);
+}
+
+interface ToolExecutionPayload {
+    ok: boolean;
+    error?: { code: string; message: string };
+    errors?: Diagnostic[];
+    warnings?: Diagnostic[];
+    [key: string]: unknown;
+}
+
+/** 原业务处理器的简短失败转换为公开的完整诊断契约。 */
+function normalizeToolResult(result: { ok: boolean }): NormifyToolResult {
+    const { error, errors = [], warnings = [], ...payload } = result as ToolExecutionPayload;
+    return { ...payload, ok: result.ok, errors: error === undefined ? errors : [...errors, diag('error', error.code, error.message)], warnings };
+}
+
+/** 新能力复用同一参数校验、错误契约与进程内串行调度边界。 */
+export function defineNormifyTool<A>(
+    env: ToolEnv,
+    definition: ToolDef & { name: string },
+    execute: (args: A) => Promise<{ ok: boolean }>,
+): NormifyTool {
+    const validate = argumentValidator.compile(definition.parameters);
+    return {
+        ...definition,
+        execute: async (args = {}) => {
             try {
-                const args = (rawArgs ?? {}) as Record<string, unknown>;
-                const required = def.parameters?.required ?? [];
-                // `parent` 允许显式 null（根模块）；其余必填参数不允许 null/空串。
-                const missing = required.filter(r => {
-                    const value = args[r];
-                    if (value === undefined || value === '')
-                        return true;
-                    if (value === null)
-                        return r !== 'parent';
-                    return false;
-                });
-                if (missing.length > 0) {
-                    return { ok: false, error: { code: 'args/missing', message: '缺少必填参数: ' + missing.join(', ') } };
+                const missing = args !== null && typeof args === 'object' && !Array.isArray(args)
+                    ? (definition.parameters.required ?? []).filter(key => args[key] === undefined)
+                    : [];
+                if (missing.length > 0)
+                    return { ok: false, errors: [diag('error', 'args/missing', '缺少必填参数: ' + missing.join(', '))], warnings: [] };
+                if (!validate(args)) {
+                    const errors = (validate.errors ?? []).map(argumentDiagnostic);
+                    return { ok: false, errors, warnings: [] };
                 }
-                return await execute(args as A);
+                return await enqueueTool(env.rootDir, async () => normalizeToolResult(await execute(args as A)));
             }
             catch (error) {
                 return toErrorPayload(error);
             }
-        };
-        tools.register({
-            ...def,
-            name: key,
-            behavior,
-            // 旧版行为标记保留（文档/兼容），新版 dsh 0.1.5+ 不再读取这三个字段。
-            readOnly: behavior === 'read',
-            idempotent: behavior === 'read' || behavior === 'idempotent' || behavior === 'destroy',
-            destructive: behavior === 'destroy',
-            output: {
-                schema: {},
-                render: (_args, value) => [
-                    { type: 'text', text: typeof value === 'string' ? value : JSON.stringify(value, null, 2) },
-                ],
-            },
-            execute: wrapped,
-            // 只读工具可被 dsh 0.1.5+ 的并发调度器并行调用；写工具保持独占。
-            ...(behavior === 'read' ? { isConcurrencySafe: () => true } : {}),
-        });
+        },
+    };
+}
+
+export function createNormifyTools(env: ToolEnv, getHelpCatalog?: () => readonly ToolCatalogEntry[]): NormifyTool[] {
+    const tools: NormifyTool[] = [];
+    const toolCatalog: ToolCatalogEntry[] = [];
+    const register = <A>(key: string, def: ToolDef, execute: (args: A) => Promise<{ ok: boolean }>): void => {
+        toolCatalog.push({ name: key, description: def.description, behavior: def.behavior, parameters: def.parameters });
+        tools.push(defineNormifyTool(env, { name: key, ...def }, execute));
     };
     const resolve = (args: ProjectArgs, create = false): Promise<ProjectRef> => resolveProject(env.rootDir, { project: args.project, dir: args.dir }, { create });
     register('normify_tree_list', {
         description: '列出全部结构数据项目（normify-* 目录，含每棵树的根与仓库）。',
         behavior: 'read',
         parameters: params({
-            root: strOpt('搜索根目录（默认插件配置的 rootDir，可传工作区绝对路径）'),
+            root: strOpt('搜索根目录（默认工具环境的 rootDir，可传工作区绝对路径）'),
         }),
     }, async (args: TreeListArgs) => {
         const rootDir = typeof args.root === 'string' && args.root.trim() !== '' ? args.root : env.rootDir;
@@ -738,7 +792,7 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
                 };
                 const r = l1Validate(fm, 'project.init/root');
                 if (r.module === null) {
-                    return { ok: false, errors: r.errors.map(fmtDiag), summary: r.errors.length + ' error（未写入）', hint: 'root 需要 {id, name:{zh,en}, description:{zh,en}}；根模块 parent 固定为 null。' };
+                    return { ok: false, errors: r.errors, summary: r.errors.length + ' error（未写入）', hint: 'root 需要 {id, name:{zh,en}, description:{zh,en}}；根模块 parent 固定为 null。' };
                 }
                 await writeModuleFile(proj.dir, r.module, '');
                 rootId = r.module.id;
@@ -774,14 +828,11 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
         }, ['frontmatter']),
     }, async (args: ModuleUpsertArgs) => {
         const proj = await resolve(args, true);
-        // dsh 0.1.5+ 会 deepFreeze 工具实参，禁止原地修改：先浅拷贝再规范化 parent。
+        // 宿主可冻结工具实参，避免原地修改输入对象。
         const fm = { ...args.frontmatter };
-        // parent 允许传字符串 "null" 或 JSON null（根模块）。
-        if (fm.parent === 'null' || fm.parent === null)
-            fm.parent = null;
         const { module, errors, warnings } = l1Validate(fm, 'module.upsert');
         if (module === null) {
-            return { ok: false, errors: errors.map(fmtDiag), warnings: warnings.map(fmtDiag), summary: errors.length + ' error（未写入）' };
+            return { ok: false, errors: errors, warnings: warnings, summary: errors.length + ' error（未写入）' };
         }
         const existing: ModuleFile | undefined = (await loadAllModules(proj.dir)).files.find(f => f.module.id === module.id);
         if (typeof args.expect_updated_at === 'string' && existing !== undefined && existing.module.updated_at !== args.expect_updated_at) {
@@ -794,7 +845,7 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
                 dry_run: true,
                 file: previewModuleFile(proj.dir, module, all),
                 promoted: [],
-                l1: { errors: errors.map(fmtDiag), warnings: warnings.map(fmtDiag) },
+                l1: { errors: errors, warnings: warnings },
                 hint: 'dry_run 通过（未写入）；去掉 dry_run 正式写入。',
             };
         }
@@ -803,8 +854,8 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
             ok: true,
             file: result.file,
             promoted: result.promoted,
-            ...(result.warnings.length > 0 ? { warnings: result.warnings.map(fmtDiag) } : {}),
-            l1: { errors: errors.map(fmtDiag), warnings: warnings.map(fmtDiag) },
+            ...(result.warnings.length > 0 ? { warnings: result.warnings } : {}),
+            l1: { errors: errors, warnings: warnings },
             hint: '写入完成。请继续创作其它模块；全部完成后运行 normify_validate 做全项目校验（L2），再 normify_build。',
         };
     });
@@ -856,7 +907,7 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
         return {
             ok: true,
             file: result.file,
-            ...(result.warnings.length > 0 ? { warnings: result.warnings.map(fmtDiag) } : {}),
+            ...(result.warnings.length > 0 ? { warnings: result.warnings } : {}),
             hint: '晋升完成。现在可以为它创建子模块（子模块 parent 指向该 id）。',
         };
     });
@@ -883,9 +934,9 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
         const proj = await resolve(args);
         const b = await buildProject(proj.dir, { repoRoot: args.repoRoot, requireBilingual: env.requireBilingual });
         if (!b.ok) {
-            return { ok: false, errors: b.errors.map(fmtDiag), warnings: b.warnings.map(fmtDiag), summary: b.errors.length + ' error（未产出任何产物）' };
+            return { ok: false, errors: b.errors, warnings: b.warnings, summary: b.errors.length + ' error（未产出任何产物）' };
         }
-        return { ok: true, receipt: b.receipt, warnings: b.warnings.map(fmtDiag), hint: '编译成功。可运行 normify_render 生成交互式 HTML。' };
+        return { ok: true, receipt: b.receipt, warnings: b.warnings, hint: '编译成功。可运行 normify_render 生成交互式 HTML。' };
     });
     register('normify_sync', {
         description: '增量再生成计划器 v2（只读）：git diff → 脏子树 / 新增文件建议 / 失效模块 / API 增删与破坏性变更 / planned 进度，供 AI 按清单局部重建。',
@@ -899,7 +950,7 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
         const proj = await resolve(args);
         const repoRoot = String(args.repoRoot);
         const diff = args.diff;
-        const changed = gitChangedFiles(repoRoot, diff ?? '');
+        const changed = await gitChangedFiles(repoRoot, diff ?? '');
         if (changed.files === null) {
             return { ok: false, error: { code: 'sync/git-failed', message: changed.error ?? 'git 不可用' } };
         }
@@ -925,7 +976,7 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
         const layoutsToReview = [...new Set([...affected.map(f => f.module.id), ...toReview])].filter(id => layoutIds.has(id)).sort();
         // v2：新增文件 → 建议新模块；失效 source → 待删/待修；API 增删 → 破坏性变更；planned 进度
         const CODE_EXT = /\.(ts|tsx|js|mjs|cjs|mts|cts|py|java|kt|go|rs|cs|c|cpp|h|hpp|rb|php|swift|scala|lua|vue|svelte|md|yml|yaml|json)$/i;
-        const IGNORE_DIR = /^(lib|dist|build|out|node_modules|vendor|coverage|\.git|_tmp|\.dsh-module-fallback)\//;
+        const IGNORE_DIR = /^(lib|dist|build|out|node_modules|vendor|coverage|\.git|_tmp)\//;
         const kindRank = (p: string): number => p.startsWith('src/') ? 0 : /^(scripts|tests)\//.test(p) ? 1 : p.startsWith('skills/') ? 2 : p.startsWith('docs/') ? 4 : /\.md$/i.test(p) ? 5 : 3;
         const newFiles = changed.files
             .filter(cf => CODE_EXT.test(cf) && !IGNORE_DIR.test(cf) && !files.some(f => f.module.source.some(s => s.path === cf || cf.startsWith(s.path + '/') || s.path.startsWith(cf + '/'))))
@@ -1059,7 +1110,7 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
         const proj = await resolve(args);
         const b = await buildProject(proj.dir, { requireBilingual: env.requireBilingual });
         if (!b.ok) {
-            return { ok: false, errors: b.errors.map(fmtDiag), summary: 'outline 未更新（存在 error）' };
+            return { ok: false, errors: b.errors, summary: 'outline 未更新（存在 error）' };
         }
         return { ok: true, hint: 'outline.md 已重建（随 build 一并更新）。' };
     });
@@ -1082,7 +1133,7 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
             return { ok: false, error: { code: 'layout/not-container', message: '叶子模块没有可渲染的子层：' + id } };
         const { layout, error }: { layout: LayoutData | null; error: Diagnostic | null } = await loadLayoutFile(proj.dir, id);
         if (error !== null)
-            return { ok: false, errors: [fmtDiag(error)] };
+            return { ok: false, errors: [error] };
         if (layout === null) {
             return { ok: true, has_layout: false, id, file: layoutRelPath(id), children, hint: '该层还没有渲染数据；写模块的同一轮里用 normify_layout_upsert 建立（order / groups / mode / reading）。' };
         }
@@ -1167,10 +1218,10 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
             data.edge_hints = args.edge_hints.map(h => ({ ...h }));
         const r = l1ValidateLayout(data, id, children, siblingEdges, 'tool:layout_upsert');
         if (r.layout === null) {
-            return { ok: false, errors: r.errors.map(fmtDiag), warnings: r.warnings.map(fmtDiag), summary: r.errors.length + ' error（未写入）' };
+            return { ok: false, errors: r.errors, warnings: r.warnings, summary: r.errors.length + ' error（未写入）' };
         }
         const file = await writeLayoutFile(proj.dir, r.layout);
-        return { ok: true, file, children, warnings: r.warnings.map(fmtDiag), hint: '渲染数据已写入。继续创作其它层；全部完成后 normify_validate + normify_build（布局会编入 tree.json）。' };
+        return { ok: true, file, children, warnings: r.warnings, hint: '渲染数据已写入。继续创作其它层；全部完成后 normify_validate + normify_build（布局会编入 tree.json）。' };
     });
     register('normify_render', {
         description: '把 tree.json 渲染成单文件交互式 HTML（逐层下钻/悬停介绍/深链接/双语切换/多树/API 聚合）。需先 normify_build。',
@@ -1183,7 +1234,7 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
         const proj = await resolve(args);
         const r = await renderProject(proj.dir, { out: args.out });
         if (!r.ok)
-            return { ok: false, errors: r.errors.map(fmtDiag) };
+            return { ok: false, errors: r.errors };
         return {
             ok: true,
             html: r.htmlPath,
@@ -1384,7 +1435,7 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
             targets,
             impact,
             policy: policy === null ? { exists: false, rule_count: 0 } : { exists: true, rule_count: policy.rules.length, rules: policy.rules.map(r => ({ id: r.id, type: r.type, severity: r.severity ?? 'error' })) },
-            violations: violations.map(fmtDiag),
+            violations: violations,
             suggestions,
             open_changes: openChanges,
             checklist,
@@ -1409,14 +1460,14 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
             ...(typeof args.expect_updated_at === 'string' ? { expect_updated_at: args.expect_updated_at } : {}),
         }, { dryRun: args.dry_run === true });
         if (!r.ok) {
-            return { ok: false, dry_run: r.dryRun, errors: r.errors.map(fmtDiag), warnings: r.warnings.map(fmtDiag), summary: r.errors.length + ' error（未写入）' };
+            return { ok: false, dry_run: r.dryRun, errors: r.errors, warnings: r.warnings, summary: r.errors.length + ' error（未写入）' };
         }
         return {
             ok: true,
             dry_run: r.dryRun,
             file: typeof r.detail.file === 'string' ? r.detail.file : (r.file ?? null),
             changed: r.changed,
-            warnings: r.warnings.map(fmtDiag),
+            warnings: r.warnings,
             hint: r.dryRun ? 'dry_run 通过（未写入）；去掉 dry_run 正式写入。' : '已更新。如代码同时变化，记得 normify_module_refresh 刷新指纹。',
         };
     });
@@ -1439,8 +1490,8 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
             return {
                 ok: false,
                 dry_run: r.dryRun,
-                errors: r.errors.map(fmtDiag),
-                warnings: r.warnings.map(fmtDiag),
+                errors: r.errors,
+                warnings: r.warnings,
                 summary: r.errors.length + ' error（整批未写入）',
                 // 0.5.3：把"被 L1 丢弃的模块"直接摆到调用方眼前，避免 1 个根因被读成 N 个互不相关的错误
                 ...(dropped.length > 0
@@ -1456,7 +1507,7 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
             dry_run: r.dryRun,
             files: r.files,
             count: r.files.length,
-            warnings: r.warnings.map(fmtDiag),
+            warnings: r.warnings,
             hint: r.dryRun ? 'dry_run 通过（未写入）。' : '整批已写入。继续建树或进入实现阶段（planned → normify_module_refresh activate）。',
         };
     });
@@ -1481,7 +1532,7 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
             dryRun: args.dry_run === true,
         });
         if (!r.ok)
-            return { ok: false, dry_run: r.dryRun, errors: r.errors.map(fmtDiag), warnings: r.warnings.map(fmtDiag) };
+            return { ok: false, dry_run: r.dryRun, errors: r.errors, warnings: r.warnings };
         return {
             ok: true,
             dry_run: r.dryRun,
@@ -1489,7 +1540,7 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
             rewired_deps: r.rewired,
             layouts: r.detail.layouts ?? [],
             changed: r.changed,
-            warnings: r.warnings.map(fmtDiag),
+            warnings: r.warnings,
             hint: r.dryRun ? 'dry_run 计划如上（未落盘）；确认后去掉 dry_run 执行。移动后建议 normify_validate 复核。' : '移动完成；渲染数据已随迁，建议 normify_validate + normify_build。',
         };
     });
@@ -1518,14 +1569,14 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
             dryRun: args.dry_run === true,
         });
         if (!r.ok)
-            return { ok: false, dry_run: r.dryRun, errors: r.errors.map(fmtDiag), warnings: r.warnings.map(fmtDiag), missing: r.missing };
+            return { ok: false, dry_run: r.dryRun, errors: r.errors, warnings: r.warnings, missing: r.missing };
         return {
             ok: true,
             dry_run: r.dryRun,
             refreshed: r.refreshed,
             missing: r.missing,
             changed: r.changed,
-            warnings: r.warnings.map(fmtDiag),
+            warnings: r.warnings,
             hint: r.dryRun ? 'dry_run 结果如上（未写入）。' : '指纹/修订已刷新。建议接着 normify_validate（0 error 门禁）。',
         };
     });
@@ -1584,7 +1635,7 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
         };
         const r = l1ValidateChange(data, id, 'tool:change_open');
         if (r.change === null)
-            return { ok: false, errors: r.errors.map(fmtDiag), warnings: r.warnings.map(fmtDiag) };
+            return { ok: false, errors: r.errors, warnings: r.warnings };
         const file = await writeChangeFile(proj.dir, r.change);
         return { ok: true, id, file, status: r.change.status, hint: '变更已开启。按 normify_brief 的计划实现；收尾用 normify_change_close（0 error 强制）。' };
     });
@@ -1600,7 +1651,7 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
         const proj = await resolve(args);
         const { change, error } = await loadChangeFile(proj.dir, String(args.id));
         if (error !== null)
-            return { ok: false, errors: [fmtDiag(error)] };
+            return { ok: false, errors: [error] };
         if (change === null)
             return { ok: false, error: { code: 'change/not-found', message: '变更不存在：' + String(args.id) } };
         if (change.status === 'verified')
@@ -1614,7 +1665,7 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
             merged.closed_at = new Date().toISOString();
         const r = l1ValidateChange(merged, change.id, 'tool:change_update');
         if (r.change === null)
-            return { ok: false, errors: r.errors.map(fmtDiag), warnings: r.warnings.map(fmtDiag) };
+            return { ok: false, errors: r.errors, warnings: r.warnings };
         const file = await writeChangeFile(proj.dir, r.change);
         return { ok: true, id: r.change.id, file, status: r.change.status, hint: '变更已更新。' };
     });
@@ -1631,7 +1682,7 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
         if (typeof args.id === 'string' && args.id.trim() !== '') {
             const { change, error } = await loadChangeFile(proj.dir, args.id.trim());
             if (error !== null)
-                return { ok: false, errors: [fmtDiag(error)] };
+                return { ok: false, errors: [error] };
             if (change === null)
                 return { ok: false, error: { code: 'change/not-found', message: '变更不存在：' + args.id } };
             return { ok: true, change, file: 'changes/' + change.id + '.json' };
@@ -1682,8 +1733,8 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
             ok: r.ok,
             phase: r.phase,
             ...(r.change !== undefined ? { id: r.change.id, status: r.change.status } : {}),
-            errors: r.errors.map(fmtDiag),
-            warnings: r.warnings.map(fmtDiag),
+            errors: r.errors,
+            warnings: r.warnings,
             ...(r.refresh !== undefined && r.refresh !== null ? { refresh: r.refresh } : {}),
             ...(r.build !== undefined && r.build !== null ? { build: r.build } : {}),
             ...(r.render !== undefined && r.render !== null ? { render: r.render } : {}),
@@ -1703,7 +1754,7 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
         const proj = await resolve(args);
         const r = await loadPolicyFile(proj.dir);
         if (r.errors.length > 0)
-            return { ok: false, errors: r.errors.map(fmtDiag) };
+            return { ok: false, errors: r.errors };
         const out: PolicyGetOutput = {
             ok: true,
             file: 'policy.yml',
@@ -1729,7 +1780,7 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
         const data = { schema_version: POLICY_SCHEMA_VERSION, updated_at: new Date().toISOString(), rules: args.rules };
         const r = l1ValidatePolicy(data, 'tool:policy_upsert');
         if (r.policy === null)
-            return { ok: false, errors: r.errors.map(fmtDiag), warnings: r.warnings.map(fmtDiag), summary: r.errors.length + ' error（未写入）' };
+            return { ok: false, errors: r.errors, warnings: r.warnings, summary: r.errors.length + ' error（未写入）' };
         if (args.dry_run === true)
             return { ok: true, dry_run: true, rule_count: r.policy.rules.length, policy: r.policy };
         const file = await writePolicyFile(proj.dir, r.policy);
@@ -1750,8 +1801,8 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
         const r = await checkProposal(proj.dir, { modules, deps });
         return {
             ok: r.ok,
-            errors: r.errors.map(fmtDiag),
-            warnings: r.warnings.map(fmtDiag),
+            errors: r.errors,
+            warnings: r.warnings,
             summary: r.errors.length + ' error / ' + r.warnings.length + ' warning',
             hint: r.ok ? '预检通过，可以动手实现；完成后用 normify_module_refresh / normify_change_close 收尾。' : '预检未通过：按 supportedFixes 调整设计后再试。',
         };
@@ -1762,30 +1813,12 @@ export function registerTools(ctx: Context, env: ToolEnv): void {
         parameters: params({
             topic: strOpt('主题：' + HELP_TOPICS.join(' | ') + ' | tool:<工具名>（默认 fields）'),
         }),
-    }, async (args: HelpArgs) => {
-        const raw = typeof args.topic === 'string' ? args.topic.trim() : '';
-        const lower = raw.toLowerCase();
-        // 0.5.4：支持 tool:<工具名> —— 打印该工具的完整参数树（必填/可选/类型/描述）
-        if (lower.startsWith('tool:')) {
-            const name = raw.slice(raw.indexOf(':') + 1).trim();
-            const hit = toolCatalog.find(t => t.name.toLowerCase() === name.toLowerCase());
-            if (hit === undefined) {
-                return { ok: false, error: { code: 'args/unknown-tool', message: '未知工具：' + name + '（先用 topic:"tools" 看全部 ' + toolCatalog.length + ' 个工具名）' } };
-            }
-            const ref = toolReference(hit);
-            return { ok: true, topic: 'tool:' + hit.name, title: ref.title, reference: ref.text, topics: [...HELP_TOPICS, 'tool:<name>'] };
-        }
-        const topic = (lower === '' ? 'fields' : lower) as HelpTopic;
-        if (!HELP_TOPICS.includes(topic)) {
-            return {
-                ok: false,
-                error: {
-                    code: 'args/invalid-topic',
-                    message: '未知主题：' + raw + '（可用：' + HELP_TOPICS.join(' | ') + ' | tool:<工具名>）',
-                },
-            };
-        }
-        const ref = topicReference(topic, toolCatalog);
-        return { ok: true, topic, title: ref.title, reference: ref.text, topics: [...HELP_TOPICS, 'tool:<name>'] };
-    });
+    }, async (args: HelpArgs) => resolveHelp(args.topic, getHelpCatalog === undefined ? toolCatalog : getHelpCatalog()));
+    return tools;
+}
+
+/** 类型化登记入口；宿主决定如何发布目录。 */
+export function registerTools(register: NormifyToolRegistration, env: ToolEnv): void {
+    for (const tool of createNormifyTools(env))
+        register(tool);
 }

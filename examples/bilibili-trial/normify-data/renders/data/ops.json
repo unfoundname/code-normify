@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "data.ops",
+  "updated_at": "2026-10-03T20:15:11.767Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "点击结构查看字段、必填项、枚举与完整 JSON Schema。",
+    "en": "Open a type to inspect fields, required values, enums and full JSON Schema."
+  },
+  "order": [
+    "data.ops.t-9410370f",
+    "data.ops.t-b56a1acc",
+    "data.ops.t-35628a47",
+    "data.ops.t-5b50103d",
+    "data.ops.t-b65a862b",
+    "data.ops.t-5b5650be",
+    "data.ops.t-c843077f",
+    "data.ops.t-34d8f5eb",
+    "data.ops.t-836ae58a",
+    "data.ops.t-dd0a3035",
+    "data.ops.t-81f495f8",
+    "data.ops.t-8f898fb0",
+    "data.ops.t-dfd1a616",
+    "data.ops.t-0c67e3a0",
+    "data.ops.t-153e0ff8",
+    "data.ops.t-4da5014e",
+    "data.ops.t-0b7d5190",
+    "data.ops.t-20f66ec1"
+  ]
+}

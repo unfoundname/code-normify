@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "id": "bili.client.web.features",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "groups",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "本层阅读顺序：身份与空间前端 → 投稿工作台前端 → 播放页前端 → 弹幕前端 → 社区互动前端 → 社交与消息前端 → 发现与搜索前端 → 直播前端 → 会员交易前端 → 番剧与课堂前端 → 生态频道前端。箭头语义：call 同步调用、event 异步事件、dataflow 数据/投影流、reference 契约引用。",
+    "en": "Read in order: Identity Feature → Publish Feature → Playback Feature → Danmaku Feature → Community Feature → Social Feature → Discovery Feature → Live Feature → Commerce Feature → Premium Feature → Ecosystem Feature. Arrow kinds: call, event, dataflow, reference."
+  },
+  "order": [
+    "bili.client.web.features.identity",
+    "bili.client.web.features.publish",
+    "bili.client.web.features.playback",
+    "bili.client.web.features.danmaku",
+    "bili.client.web.features.community",
+    "bili.client.web.features.social",
+    "bili.client.web.features.discovery",
+    "bili.client.web.features.live",
+    "bili.client.web.features.commerce",
+    "bili.client.web.features.premium",
+    "bili.client.web.features.ecosystem"
+  ],
+  "groups": [
+    {
+      "id": "f-content",
+      "title": {
+        "zh": "内容与观看",
+        "en": "Content and viewing"
+      },
+      "children": [
+        "bili.client.web.features.identity",
+        "bili.client.web.features.publish",
+        "bili.client.web.features.playback",
+        "bili.client.web.features.danmaku",
+        "bili.client.web.features.discovery"
+      ]
+    },
+    {
+      "id": "f-social",
+      "title": {
+        "zh": "互动与社区",
+        "en": "Interaction and social"
+      },
+      "children": [
+        "bili.client.web.features.community",
+        "bili.client.web.features.social",
+        "bili.client.web.features.live"
+      ]
+    },
+    {
+      "id": "f-biz",
+      "title": {
+        "zh": "交易与内容生态",
+        "en": "Commerce and ecosystem"
+      },
+      "children": [
+        "bili.client.web.features.commerce",
+        "bili.client.web.features.premium",
+        "bili.client.web.features.ecosystem"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4830 @@
+{
+  "schema_version": 2,
+  "apis": {
+    "file:plan/requirements.json": {
+      "module": "delivery.requirements",
+      "protocol": "file",
+      "path": "plan/requirements.json",
+      "description": {
+        "zh": "需求清单与治理策略文件\n",
+        "en": "Requirements and governance policy file\n"
+      }
+    },
+    "file:plan/units/u-acquire.json": {
+      "module": "delivery.u-acquire",
+      "protocol": "file",
+      "path": "plan/units/u-acquire.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/units/u-channel.json": {
+      "module": "delivery.u-channel",
+      "protocol": "file",
+      "path": "plan/units/u-channel.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/units/u-commerce.json": {
+      "module": "delivery.u-commerce",
+      "protocol": "file",
+      "path": "plan/units/u-commerce.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/units/u-community.json": {
+      "module": "delivery.u-community",
+      "protocol": "file",
+      "path": "plan/units/u-community.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/units/u-content-pipeline.json": {
+      "module": "delivery.u-content-pipeline",
+      "protocol": "file",
+      "path": "plan/units/u-content-pipeline.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/units/u-contract-baseline.json": {
+      "module": "delivery.u-contract-baseline",
+      "protocol": "file",
+      "path": "plan/units/u-contract-baseline.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/units/u-creator.json": {
+      "module": "delivery.u-creator",
+      "protocol": "file",
+      "path": "plan/units/u-creator.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/units/u-danmaku.json": {
+      "module": "delivery.u-danmaku",
+      "protocol": "file",
+      "path": "plan/units/u-danmaku.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/units/u-discover.json": {
+      "module": "delivery.u-discover",
+      "protocol": "file",
+      "path": "plan/units/u-discover.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/units/u-identity.json": {
+      "module": "delivery.u-identity",
+      "protocol": "file",
+      "path": "plan/units/u-identity.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/units/u-integration.json": {
+      "module": "delivery.u-integration",
+      "protocol": "file",
+      "path": "plan/units/u-integration.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/units/u-live.json": {
+      "module": "delivery.u-live",
+      "protocol": "file",
+      "path": "plan/units/u-live.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/units/u-media.json": {
+      "module": "delivery.u-media",
+      "protocol": "file",
+      "path": "plan/units/u-media.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/units/u-message.json": {
+      "module": "delivery.u-message",
+      "protocol": "file",
+      "path": "plan/units/u-message.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/units/u-ops.json": {
+      "module": "delivery.u-ops",
+      "protocol": "file",
+      "path": "plan/units/u-ops.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/units/u-pgc.json": {
+      "module": "delivery.u-pgc",
+      "protocol": "file",
+      "path": "plan/units/u-pgc.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/units/u-platform-core.json": {
+      "module": "delivery.u-platform-core",
+      "protocol": "file",
+      "path": "plan/units/u-platform-core.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/units/u-playback.json": {
+      "module": "delivery.u-playback",
+      "protocol": "file",
+      "path": "plan/units/u-playback.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/units/u-social.json": {
+      "module": "delivery.u-social",
+      "protocol": "file",
+      "path": "plan/units/u-social.json",
+      "description": {
+        "zh": "该组冻结交接文件（由 branch_packet 与正式计划生成）\n",
+        "en": "Frozen handoff file generated from branch_packet and the saved plan\n"
+      }
+    },
+    "file:plan/waves.json": {
+      "module": "delivery.waves",
+      "protocol": "file",
+      "path": "plan/waves.json",
+      "description": {
+        "zh": "波次计划文件\n",
+        "en": "Wave plan file\n"
+      }
+    },
+    "rpc:delivery.unit.u-acquire.dispatch": {
+      "module": "delivery.u-acquire",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-acquire.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    },
+    "rpc:delivery.unit.u-channel.dispatch": {
+      "module": "delivery.u-channel",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-channel.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    },
+    "rpc:delivery.unit.u-commerce.dispatch": {
+      "module": "delivery.u-commerce",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-commerce.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    },
+    "rpc:delivery.unit.u-community.dispatch": {
+      "module": "delivery.u-community",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-community.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    },
+    "rpc:delivery.unit.u-content-pipeline.dispatch": {
+      "module": "delivery.u-content-pipeline",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-content-pipeline.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    },
+    "rpc:delivery.unit.u-contract-baseline.dispatch": {
+      "module": "delivery.u-contract-baseline",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-contract-baseline.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    },
+    "rpc:delivery.unit.u-creator.dispatch": {
+      "module": "delivery.u-creator",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-creator.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    },
+    "rpc:delivery.unit.u-danmaku.dispatch": {
+      "module": "delivery.u-danmaku",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-danmaku.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    },
+    "rpc:delivery.unit.u-discover.dispatch": {
+      "module": "delivery.u-discover",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-discover.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    },
+    "rpc:delivery.unit.u-identity.dispatch": {
+      "module": "delivery.u-identity",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-identity.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    },
+    "rpc:delivery.unit.u-integration.dispatch": {
+      "module": "delivery.u-integration",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-integration.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    },
+    "rpc:delivery.unit.u-live.dispatch": {
+      "module": "delivery.u-live",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-live.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    },
+    "rpc:delivery.unit.u-media.dispatch": {
+      "module": "delivery.u-media",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-media.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    },
+    "rpc:delivery.unit.u-message.dispatch": {
+      "module": "delivery.u-message",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-message.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    },
+    "rpc:delivery.unit.u-ops.dispatch": {
+      "module": "delivery.u-ops",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-ops.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    },
+    "rpc:delivery.unit.u-pgc.dispatch": {
+      "module": "delivery.u-pgc",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-pgc.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    },
+    "rpc:delivery.unit.u-platform-core.dispatch": {
+      "module": "delivery.u-platform-core",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-platform-core.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    },
+    "rpc:delivery.unit.u-playback.dispatch": {
+      "module": "delivery.u-playback",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-playback.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    },
+    "rpc:delivery.unit.u-social.dispatch": {
+      "module": "delivery.u-social",
+      "protocol": "rpc",
+      "path": "delivery.unit.u-social.dispatch",
+      "description": {
+        "zh": "宿主派发该组的分支/工作树（由 PromptManager 负责，本工具不创建）\n",
+        "en": "Host dispatch of the branch or worktree for this group (PromptManager owns it)\n"
+      }
+    }
+  },
+  "types": {
+    "urn:normify:delivery.requirements:DeliveryPolicy": {
+      "module": "delivery.requirements",
+      "name": "DeliveryPolicy",
+      "description": {
+        "zh": "交付治理策略",
+        "en": "Delivery governance policy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "对全部分支生效的约束",
+        "properties": {
+          "contractFreezeFirst": {
+            "type": "boolean",
+            "description": "契约必须先冻结"
+          },
+          "externalDependencyModes": {
+            "type": "array",
+            "description": "允许的外部依赖策略",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "forbiddenModes": {
+            "type": "array",
+            "description": "禁止的策略",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "exclusiveWritePaths": {
+            "type": "boolean",
+            "description": "写入文件必须独占"
+          },
+          "independentAcceptance": {
+            "type": "boolean",
+            "description": "每个单元必须有独立验收场景"
+          },
+          "businessAcceptanceExecuted": {
+            "type": "boolean",
+            "description": "业务验收是否已执行"
+          }
+        },
+        "required": [
+          "contractFreezeFirst",
+          "externalDependencyModes",
+          "forbiddenModes",
+          "exclusiveWritePaths",
+          "independentAcceptance",
+          "businessAcceptanceExecuted"
+        ]
+      }
+    },
+    "urn:normify:delivery.requirements:DeliveryRequirement": {
+      "module": "delivery.requirements",
+      "name": "DeliveryRequirement",
+      "description": {
+        "zh": "正式需求",
+        "en": "Formal requirement"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "来自 requirements.md 的正式需求条目，必须被至少一个交付单元负责",
+        "properties": {
+          "requirementId": {
+            "type": "string",
+            "description": "需求编号",
+            "pattern": "^R[0-9]{2}-[a-z-]+$"
+          },
+          "summary": {
+            "type": "string",
+            "description": "需求摘要"
+          },
+          "ownerUnits": {
+            "type": "array",
+            "description": "负责单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "requirementId",
+          "summary",
+          "ownerUnits"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-acquire:UnitBusinessCase": {
+      "module": "delivery.u-acquire",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-acquire:UnitContract": {
+      "module": "delivery.u-acquire",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-acquire:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-acquire:UnitExternalDependency": {
+      "module": "delivery.u-acquire",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-channel:UnitBusinessCase": {
+      "module": "delivery.u-channel",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-channel:UnitContract": {
+      "module": "delivery.u-channel",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-channel:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-channel:UnitExternalDependency": {
+      "module": "delivery.u-channel",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-commerce:UnitBusinessCase": {
+      "module": "delivery.u-commerce",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-commerce:UnitContract": {
+      "module": "delivery.u-commerce",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-commerce:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-commerce:UnitExternalDependency": {
+      "module": "delivery.u-commerce",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-community:UnitBusinessCase": {
+      "module": "delivery.u-community",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-community:UnitContract": {
+      "module": "delivery.u-community",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-community:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-community:UnitExternalDependency": {
+      "module": "delivery.u-community",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-content-pipeline:UnitBusinessCase": {
+      "module": "delivery.u-content-pipeline",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-content-pipeline:UnitContract": {
+      "module": "delivery.u-content-pipeline",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-content-pipeline:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-content-pipeline:UnitExternalDependency": {
+      "module": "delivery.u-content-pipeline",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-contract-baseline:UnitBusinessCase": {
+      "module": "delivery.u-contract-baseline",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-contract-baseline:UnitContract": {
+      "module": "delivery.u-contract-baseline",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-contract-baseline:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-contract-baseline:UnitExternalDependency": {
+      "module": "delivery.u-contract-baseline",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-creator:UnitBusinessCase": {
+      "module": "delivery.u-creator",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-creator:UnitContract": {
+      "module": "delivery.u-creator",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-creator:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-creator:UnitExternalDependency": {
+      "module": "delivery.u-creator",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-danmaku:UnitBusinessCase": {
+      "module": "delivery.u-danmaku",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-danmaku:UnitContract": {
+      "module": "delivery.u-danmaku",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-danmaku:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-danmaku:UnitExternalDependency": {
+      "module": "delivery.u-danmaku",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-discover:UnitBusinessCase": {
+      "module": "delivery.u-discover",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-discover:UnitContract": {
+      "module": "delivery.u-discover",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-discover:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-discover:UnitExternalDependency": {
+      "module": "delivery.u-discover",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-identity:UnitBusinessCase": {
+      "module": "delivery.u-identity",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-identity:UnitContract": {
+      "module": "delivery.u-identity",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-identity:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-identity:UnitExternalDependency": {
+      "module": "delivery.u-identity",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-integration:UnitBusinessCase": {
+      "module": "delivery.u-integration",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-integration:UnitContract": {
+      "module": "delivery.u-integration",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-integration:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-integration:UnitExternalDependency": {
+      "module": "delivery.u-integration",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-live:UnitBusinessCase": {
+      "module": "delivery.u-live",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-live:UnitContract": {
+      "module": "delivery.u-live",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-live:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-live:UnitExternalDependency": {
+      "module": "delivery.u-live",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-media:UnitBusinessCase": {
+      "module": "delivery.u-media",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-media:UnitContract": {
+      "module": "delivery.u-media",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-media:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-media:UnitExternalDependency": {
+      "module": "delivery.u-media",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-message:UnitBusinessCase": {
+      "module": "delivery.u-message",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-message:UnitContract": {
+      "module": "delivery.u-message",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-message:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-message:UnitExternalDependency": {
+      "module": "delivery.u-message",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-ops:UnitBusinessCase": {
+      "module": "delivery.u-ops",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-ops:UnitContract": {
+      "module": "delivery.u-ops",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-ops:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-ops:UnitExternalDependency": {
+      "module": "delivery.u-ops",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-pgc:UnitBusinessCase": {
+      "module": "delivery.u-pgc",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-pgc:UnitContract": {
+      "module": "delivery.u-pgc",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-pgc:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-pgc:UnitExternalDependency": {
+      "module": "delivery.u-pgc",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-platform-core:UnitBusinessCase": {
+      "module": "delivery.u-platform-core",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-platform-core:UnitContract": {
+      "module": "delivery.u-platform-core",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-platform-core:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-platform-core:UnitExternalDependency": {
+      "module": "delivery.u-platform-core",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-playback:UnitBusinessCase": {
+      "module": "delivery.u-playback",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-playback:UnitContract": {
+      "module": "delivery.u-playback",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-playback:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-playback:UnitExternalDependency": {
+      "module": "delivery.u-playback",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-social:UnitBusinessCase": {
+      "module": "delivery.u-social",
+      "name": "UnitBusinessCase",
+      "description": {
+        "zh": "业务验收定义（未执行）",
+        "en": "Business acceptance definition (not executed)"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "明确成功/失败、权限、幂等或状态边界预期，并关联本组待实现的测试入口；executed=false 表示尚未运行",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "场景 id"
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "覆盖需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "description": "可判定的预期（成功/失败/权限/幂等/状态边界）"
+          },
+          "testEntry": {
+            "type": "string",
+            "description": "待实现的测试入口路径"
+          },
+          "executed": {
+            "type": "boolean",
+            "description": "是否已实际执行"
+          },
+          "commandIds": {
+            "type": "array",
+            "description": "计划中引用的命令 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "caseId",
+          "requirementIds",
+          "expectation",
+          "testEntry",
+          "executed",
+          "commandIds"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-social:UnitContract": {
+      "module": "delivery.u-social",
+      "name": "UnitContract",
+      "description": {
+        "zh": "交付单元契约",
+        "en": "Delivery unit contract"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "该组的范围、写入所有权、真实前置与理由、外部依赖策略与验收定义（冻结自 BranchPlan 与架构图）",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "单元 id"
+          },
+          "leadWorker": {
+            "type": "string",
+            "description": "负责 Worker"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "主要工作区"
+          },
+          "scopeModules": {
+            "type": "array",
+            "description": "负责的叶子模块",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "writePaths": {
+            "type": "array",
+            "description": "独占目标文件",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "requirementIds": {
+            "type": "array",
+            "description": "负责的正式需求",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "真实前置单元",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "needsRationale": {
+            "type": "array",
+            "description": "每个前置为什么是真实前置",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "externalDependencies": {
+            "type": "array",
+            "description": "外部依赖策略明细",
+            "items": {
+              "$ref": "urn:normify:delivery.u-social:UnitExternalDependency"
+            }
+          },
+          "callsAreNotOrdering": {
+            "type": "boolean",
+            "description": "调用箭头不作为实施先后"
+          },
+          "contractPhase": {
+            "type": "string",
+            "description": "契约冻结阶段",
+            "enum": [
+              "freeze-first",
+              "after-needs"
+            ]
+          },
+          "graphDigest": {
+            "type": "string",
+            "description": "冻结时的架构图摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "planDigest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "designCheckCommand": {
+            "type": "string",
+            "description": "当前可执行的设计/fixture 检查命令"
+          },
+          "businessTestEntrypoints": {
+            "type": "array",
+            "description": "待实现的业务测试入口",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          }
+        },
+        "required": [
+          "unitId",
+          "leadWorker",
+          "workspace",
+          "scopeModules",
+          "writePaths",
+          "requirementIds",
+          "needs",
+          "needsRationale",
+          "callsAreNotOrdering",
+          "contractPhase",
+          "graphDigest",
+          "planDigest",
+          "designCheckCommand",
+          "businessTestEntrypoints"
+        ]
+      }
+    },
+    "urn:normify:delivery.u-social:UnitExternalDependency": {
+      "module": "delivery.u-social",
+      "name": "UnitExternalDependency",
+      "description": {
+        "zh": "外部依赖策略",
+        "en": "External dependency strategy"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "跨组依赖的独立验证策略：baseline 固定提交内已有源码 / contract 冻结契约 fixture / after 等待前置单元（含理由）",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "依赖模块 id"
+          },
+          "mode": {
+            "type": "string",
+            "description": "策略",
+            "enum": [
+              "baseline",
+              "contract",
+              "after"
+            ]
+          },
+          "fixturePaths": {
+            "type": "array",
+            "description": "契约 fixture 路径",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "description": "为何该策略足够或为何必须等待真实实现"
+          }
+        },
+        "required": [
+          "module",
+          "mode",
+          "fixturePaths",
+          "rationale"
+        ]
+      }
+    },
+    "urn:normify:delivery.waves:Wave": {
+      "module": "delivery.waves",
+      "name": "Wave",
+      "description": {
+        "zh": "波次",
+        "en": "Wave"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "同一波次内的单元可以并行开发（无相互 needs）；字段名与 plan/waves.json 实例一致",
+        "properties": {
+          "wave": {
+            "type": "string",
+            "description": "波次编号",
+            "pattern": "^W[0-9]+$"
+          },
+          "depth": {
+            "type": "integer",
+            "description": "依赖深度"
+          },
+          "units": {
+            "type": "array",
+            "description": "单元 id",
+            "items": {
+              "type": "string",
+              "description": "条目 / Item"
+            }
+          },
+          "parallel": {
+            "type": "integer",
+            "description": "可并行单元数"
+          }
+        },
+        "required": [
+          "wave",
+          "depth",
+          "units",
+          "parallel"
+        ]
+      }
+    },
+    "urn:normify:delivery.waves:WavePlan": {
+      "module": "delivery.waves",
+      "name": "WavePlan",
+      "description": {
+        "zh": "波次计划",
+        "en": "Wave plan"
+      },
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "全部波次与来源计划摘要；字段名与 plan/waves.json 实例严格一致（snake_case）",
+        "properties": {
+          "generated_at": {
+            "type": "string",
+            "description": "生成时间"
+          },
+          "rule": {
+            "type": "string",
+            "description": "分层规则"
+          },
+          "note": {
+            "type": "string",
+            "description": "说明"
+          },
+          "source_plan_id": {
+            "type": "string",
+            "description": "来源计划 id"
+          },
+          "source_plan_digest": {
+            "type": "string",
+            "description": "来源计划 CAS 摘要",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "base_commit": {
+            "type": "string",
+            "description": "固定 Git 基线",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "waves": {
+            "type": "array",
+            "description": "波次列表",
+            "items": {
+              "$ref": "urn:normify:delivery.waves:Wave"
+            }
+          }
+        },
+        "required": [
+          "generated_at",
+          "rule",
+          "note",
+          "waves"
+        ]
+      }
+    }
+  }
+}

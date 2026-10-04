@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "bili.catalog",
+  "updated_at": "2026-10-03T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 3,
+  "reading": {
+    "zh": "本层是「内容目录与发布」的 5 个功能单元，按设计顺序阅读；箭头指出向依赖（调用/事件/数据流/引用）。",
+    "en": "This level shows the 5 functional units of \"Content catalog and publishing\", in design order; arrows are outbound dependencies (call/event/dataflow/reference)."
+  },
+  "order": [
+    "bili.catalog.video",
+    "bili.catalog.state",
+    "bili.catalog.event",
+    "bili.catalog.taxonomy",
+    "bili.catalog.query"
+  ]
+}

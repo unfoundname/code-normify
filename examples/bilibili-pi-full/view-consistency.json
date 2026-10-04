@@ -1,0 +1,54 @@
+{
+  "generated_at": "2026-10-03T23:49:07.481Z",
+  "note": "HTML 内嵌摘要 / receipt / tree / 当前图 digest 必须一致（graph_put 后必须再 build+render）",
+  "views": {
+    "architecture": {
+      "view": "architecture",
+      "attempts": 1,
+      "build_ok": true,
+      "render_ok": true,
+      "graph_digest": "72bc6aa01bbcb87e80f593008effa18d2ff11e39bc38d416f41c3b16d51ed7dc",
+      "receipt_source_digest": "72bc6aa01bbcb87e80f593008effa18d2ff11e39bc38d416f41c3b16d51ed7dc",
+      "tree_source_digest": "72bc6aa01bbcb87e80f593008effa18d2ff11e39bc38d416f41c3b16d51ed7dc",
+      "html_digests": [
+        "72bc6aa01bbcb87e80f593008effa18d2ff11e39bc38d416f41c3b16d51ed7dc"
+      ],
+      "html_matches_graph": true,
+      "receipt_matches_graph": true,
+      "tree_matches_graph": true,
+      "consistent": true
+    },
+    "data": {
+      "view": "data",
+      "attempts": 1,
+      "build_ok": true,
+      "render_ok": true,
+      "graph_digest": "e19b52a258122306c3bf697e71095cf66bb4a30d60eca32d7046d66e09923d6c",
+      "receipt_source_digest": "e19b52a258122306c3bf697e71095cf66bb4a30d60eca32d7046d66e09923d6c",
+      "tree_source_digest": "e19b52a258122306c3bf697e71095cf66bb4a30d60eca32d7046d66e09923d6c",
+      "html_digests": [
+        "e19b52a258122306c3bf697e71095cf66bb4a30d60eca32d7046d66e09923d6c"
+      ],
+      "html_matches_graph": true,
+      "receipt_matches_graph": true,
+      "tree_matches_graph": true,
+      "consistent": true
+    },
+    "delivery": {
+      "view": "delivery",
+      "attempts": 1,
+      "build_ok": true,
+      "render_ok": true,
+      "graph_digest": "d05d1559e4fd161f607371f6d1acb183ba59b21aff17964f0b5c6235c614a356",
+      "receipt_source_digest": "d05d1559e4fd161f607371f6d1acb183ba59b21aff17964f0b5c6235c614a356",
+      "tree_source_digest": "d05d1559e4fd161f607371f6d1acb183ba59b21aff17964f0b5c6235c614a356",
+      "html_digests": [
+        "d05d1559e4fd161f607371f6d1acb183ba59b21aff17964f0b5c6235c614a356"
+      ],
+      "html_matches_graph": true,
+      "receipt_matches_graph": true,
+      "tree_matches_graph": true,
+      "consistent": true
+    }
+  }
+}

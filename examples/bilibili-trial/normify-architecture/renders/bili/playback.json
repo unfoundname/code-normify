@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "bili.playback",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "播放入口唯一：grant 签发 → detail 聚合 → progress 记录；任何播放地址都必须来自 PlaybackGrant。",
+    "en": "Single playback entry: grant issuance, detail aggregation, progress reporting; urls only from PlaybackGrant."
+  },
+  "order": [
+    "bili.playback.grant",
+    "bili.playback.detail",
+    "bili.playback.progress"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "id": "data.commerce",
+  "updated_at": "2026-10-03T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 3,
+  "reading": {
+    "zh": "「会员与交易数据」的 13 个实体表；箭头为外键（标签含字段与目标列），每个实体只有一个业务写入所有者。",
+    "en": "The 13 entity tables of \"Membership and commerce data\"; arrows are foreign keys labelled with field and target column, and each entity has exactly one business write owner."
+  },
+  "order": [
+    "data.commerce.ledger-account",
+    "data.commerce.ledger-entry",
+    "data.commerce.ledger-posting",
+    "data.commerce.vip-membership",
+    "data.commerce.entitlement",
+    "data.commerce.order",
+    "data.commerce.order-item",
+    "data.commerce.payment-intent",
+    "data.commerce.refund-request",
+    "data.commerce.reconcile-report",
+    "data.commerce.wallet-balance",
+    "data.commerce.charge-plan",
+    "data.commerce.charge-subscription"
+  ]
+}

@@ -1,469 +1,273 @@
-<p align="center">
-  <strong>English</strong> · <a href="./README.md">简体中文</a>
-</p>
+# Code Normify · Architecture tools for PromptManager
 
-<p align="center">
-  <img src="https://img.shields.io/badge/version-0.5.4-0891b2?style=flat-square" alt="Version">
-  <img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="License">
-  <img src="https://img.shields.io/badge/DSH-Plugin-7C3AED?style=flat-square" alt="DSH Plugin">
-  <img src="https://img.shields.io/badge/DSH-0.1.5--rc.2-7C3AED?style=flat-square" alt="DSH">
-  <img src="https://img.shields.io/badge/node-%E2%89%A518-339933?style=flat-square" alt="Node">
-  <img src="https://img.shields.io/badge/tools-31-0ea5e9?style=flat-square" alt="31 tools">
-</p>
+English · [简体中文](./README.md)
 
-<h1 align="center">Normify · Normalized Architecture Map Builder</h1>
+`@promptmanager/code-normify` 0.7.0 is a local architecture and branch planning tool for PromptManager. Design module trees, named data types and API inputs/outputs before implementation; validate and render the design, then organize development groups around independently verifiable delivery units and produce fixed contracts for implementation Workers. It provides **43 tools**, a Node.js ESM library and a managed stdio MCP server. Requires **Node.js 20+**.
 
-<p align="center"><b>Describe an entire project as a fractal module tree that both humans and AI can read: the AI analyses and authors, a deterministic engine validates, compiles and renders — open any module and you get a finer sub-graph.</b></p>
+Normify owns architecture data, diagnostics, compilation, rendering and static branch plans. PromptManager owns real group identity, role permissions, execution group branches and workspaces, managed process leases, Worker scheduling, review, integration and task state. This repository provides integration examples; it does not modify PromptManager or register new host IPC channels.
 
----
+## Design before implementation
 
-## 0. TL;DR
+1. Call `normify_schema_get` for the current contract and `normify_graph_get` for the complete graph and its `digest`.
+2. Design the module tree, named types and API `input` / `output` contracts. Use `state: "planned"`, `fingerprint: "pending"` and intended `source.path` values for future code. Preserve unrelated modules and allocated `uid` values.
+3. Resolve every error from `normify_graph_validate({ graph })`, then submit the complete graph with `normify_graph_put({ graph, expect_digest })`. A successful submission generates compiled artifacts and HTML.
+4. Call `normify_branch_plan_suggest` to suggest groups from explicit scope, together constraints and file overlap. Edit that same `BranchPlan` to declare requirement coverage, independent verification, resource isolation and external dependency strategies. Validate it with `normify_branch_plan_validate`, then save with `normify_branch_plan_put({ plan, expect_digest })`.
+5. Read a frozen group packet with `normify_branch_packet({ unit_id })`, or export a PromptManager group plan with `normify_branch_plan_export({ lead_ref })`. The host checks the plan, configuration and permissions through its existing authorization and scheduling flow before creating groups. A group can contain multiple Workers, with one writer responsible for each file. `normify_work_packet({ ids })` remains available for module contracts.
+6. Record implementation with `normify_change_open` and execute the delivery unit's declared verification commands and scenarios. After implementation, run `normify_module_refresh({ ids, activate: true })`, `normify_validate` and `normify_change_close({ id, render: true })`; inspect diagnostics, test evidence and the recorded code revision.
 
-Normify is a **DeepSeek Harness (DSH) plugin** and, at the same time, **a development workflow written for AI agents**:
+Use brief, synchronization, module CRUD and policy tools for incremental maintenance. Normify never writes source code; authorized implementation Workers do. Submit architecture changes through the tools.
 
-- **For the AI**: a `normify-gen` skill plus **30 `normify_*` tools** — the model turns a repository into a module-tree
-  structure database, then keeps it alive through development (design-first planned trees → implement → close the change).
-- **For the engine**: zero-tolerance validation (L1 write-time / L2 project-wide / L3 frozen artifacts),
-  deterministic compilation (`tree.json` and three sibling artifacts with SHA-256 frozen receipts) and
-  render datasets (`renders/`) that decide *how each level is drawn*.
-- **For humans**: a **single-file interactive architecture map** (`normify.html`) — drill-down levels, hover
-  descriptions, one-click zh/en switch, deep links, multi-tree, **API-anchored arrows**, cross-level aggregation,
-  zoom and search. Zero external dependencies: open it by double-clicking.
+## Unified JSON contract
 
-> It is not a "render a picture and you're done" tool: the structure data and the code are **contracts for each other**.
-> `normify_sync` detects drift after every change, and `normify_change_close` (zero-error enforced) closes the loop,
-> so the map never drifts away from the code.
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/yan-mc/dsh-normify/main/docs/screenshots/engine.png" alt="Engine level with API-anchored arrows" width="100%">
-  <br><sub><b>Engine level</b>: 14 modules, API-anchored arrows (each arrow lands on a concrete API row), labelled subsystem dependencies, dashed cross-level aggregation</sub>
-</p>
-
-## 1. What problem does it solve?
-
-| Pain | How Normify answers it |
-| --- | --- |
-| Diagrams rot the moment they are drawn | The structure data is **validatable source data**: `normify_sync` reports fingerprint drift, `normify_change_close` enforces zero errors |
-| Diagrams are too coarse to show contracts | Granularity goes down to a **single functional unit**; APIs live on leaves and arrows can anchor to a concrete API (`from_api` / `to_api`) |
-| AI cannot see the whole picture while editing | `normify_brief` returns target contracts, impact surface (who depends on me), policy constraints and an acceptance checklist |
-| Design-after-code always drifts | **Planned-first**: create the tree in `state: planned`, flip to `active` with `normify_module_refresh(activate)` once the code lands |
-| Conventions rely on discipline | `policy.yml` rules (dependency direction / forbid / acyclic / depth / cross-tree / naming) are enforced by `validate` |
-| Full regeneration is too heavy for big repos | Incremental regeneration: only the affected subtree is rebuilt, `layouts_to_review` names the levels to re-check |
-
-## 2. Features
-
-### 2.1 Data model — fractal and redundancy-free
-
-- **One element**: the whole database is made of identical **modules** (each module = one Markdown file).
-- **Only `parent` is stored**: one-way reference; `children` is derived, so parent and children can never disagree.
-- **APIs only on leaves**, stored once: aggregation, statistics and indexes are compile-time derivations.
-- **Two kinds of edges**: containment (tree edges, navigation skeleton) + dependency (arrows, cross-subtree and cross-tree, coloured by `kind`).
-- **Path-style ids + immutable uid**: the AI navigates level by level like a binary search; `uid` survives renames and moves,
-  so diffs stay stable.
-- **Unlimited depth** (since 0.5.0): split as fine as you need; depth is no longer a reason to merge modules.
-
-### 2.2 Three validation layers, fail-closed
-
-| Layer | When | What |
-| --- | --- | --- |
-| **L1** | every write | required fields, id grammar, uid, parent consistency, bilingual lengths, source/apis/deps shapes, state/replacement |
-| **L2** | `normify_validate` | uniqueness, file↔id mapping, leaf/non-leaf rules, globally unique API keys, dependency targets, cycles, render-data cross checks, policy, change log, optional repository evidence (source existence + fingerprint match) |
-| **L3** | `normify_build` | nothing is emitted when any error exists; emitted artifacts are SHA-256 frozen into `receipt.json` |
-
-Every diagnostic carries `severity / code / message / subject / evidence / supportedFixes` so the **AI can fix it itself**.
-
-### 2.3 Renderer — single file, drill-down, API-direct
-
-- One HTML file (inline CSS/JS, **no external deps**, no telemetry); easy to archive or send to a colleague.
-- Drill-down levels + breadcrumbs + search (module/API) + outline view + API browser.
-- **API-direct arrows**: leaf boxes show API detail rows and arrows anchor to a concrete API row;
-  multiple edges sharing one API row are fanned apart automatically.
-- Cross-level dependencies aggregate into dashed `×N` edges (hidden by default; toggle with the toolbar or `?agg=1`).
-- Deep links: `#module=<id>`, `#api=<rpc:key>`, `#view=outline`, `?lang=zh|en`, `?agg=1`; zoom, hover highlight, light/dark theme.
-- **Geometry self-check**: the repo ships `check-geometry.mjs`, which asserts per level that lines stay inside the
-  viewBox, do not hug, cross or overlap boxes.
-
-### 2.4 Companion development — design first
-
-```
-change_open → brief → check → module_batch(state=planned) → 【write the code】
-   → module_refresh(activate) → change_close (zero-error enforced) → verified + revision.after
-```
-
-- **Planned state**: a module may exist before its source does (`fingerprint: pending`); `validate` allows it.
-- **No fake activation**: activating or closing before the source lands is refused.
-- **Closing is a loop, not a flag**: refresh fingerprints → validate (zero-error) → build (optionally render) → mark
-  `verified`; any failing step leaves the change untouched.
-- **The map follows the code**: `normify_sync` uses `git diff` plus untracked files to find affected modules and drift.
-
-### 2.5 Policy first (`policy.yml`)
-
-| Rule | Purpose |
-| --- | --- |
-| `dependency-direction` | layer order defines the allowed dependency direction (e.g. plugin → tools → engine) |
-| `forbid-dependency` | forbid given from → to dependencies (filterable by kind / state) |
-| `acyclic` | the dependency graph must be acyclic (optionally including cross-tree edges) |
-| `max-depth` | id segment limit — **optional**; omit it and depth is unlimited (default since 0.5.0) |
-| `cross-tree` | cross-tree strategy: `forbid` / `allow` / `require-to-api` |
-| `naming` | regex over id segments inside a scope |
-
-Once installed, `normify_validate` / `normify_build` / `normify_check` all enforce it: **fix the design, don't bypass the rule**.
-
-## 3. Release highlights
-
-### v0.5.4 — the four tool-side defects found by the second A/B run (current)
-
-Round 2 switched the project (a **spreadsheet formula engine + CLI**; same spec discipline, 88 hidden black-box
-checks plus **differential fuzzing**). Final scores: B 88/88, A 87/88 (the single gap being one §5.2 ordering rule).
-This release fixes the four *tool-side* issues that run exposed:
-
-- **`mode:"patch"` silent no-op is now rejected**: `items:[{patch:{id, tags:[...]}}]` (one nesting level short) used to
-  return `ok:true, count:1` while changing **nothing** — the worst kind of false success. It now fails with
-  `args/invalid-patch`, echoing the received keys and the correct shape `{patch:{id, patch:{...}}}`. A single-module
-  `normify_module_patch` with an empty patch now fails with `args/empty-patch` too (passing only `expect_updated_at`
-  no longer slips through).
-- **`normify_module_refresh` no longer hard-requires git**: with a non-git `repoRoot` it used to fail with
-  `refresh/git-failed` (the agent had to `git init` just to activate modules). It now degrades gracefully: fingerprints
-  are recomputed, state is still activated, `revision` keeps its previous value, and a `refresh/git-unavailable`
-  warning explains how to fix it.
-- **Clearer `change_open` acceptance errors**: putting a `{zh,en}` object into `acceptance` used to produce one vague
-  error; it now says which entry is wrong ("entry #N is not a non-empty string … acceptance only accepts plain
-  strings") and suggests putting localized text in `title`/`intent`.
-- **`normify_help` gained `topic:"tool:<name>"`**: the `tools` topic now lists required/optional params per tool, and
-  the new topic prints a full parameter tree (type / description / required), generated live from the registry and
-  therefore in sync with runtime validation.
-
-### v0.5.3 — the four friction points found by a real companion-development A/B
-
-These come from an actual A/B run: two AIs implemented the same backend spec, one with the plugin driving the
-companion flow, one writing plain code. Both scored **42/42** on a hidden black-box suite. The plugin side shipped an
-extra 41-module / 110-API / 10-layer architecture dataset — and hit the four rough edges below:
-
-- **`normify_help` now takes a `topic`**: it used to ignore its arguments entirely and always return the same field
-  cheat-sheet, so the agent read the plugin source just to get exact parameter names (~4 minutes lost). Topics:
-  `fields` (default) / `deps` (arrows + API-direct) / `renders` / `flow` / `tools` / `policy` / `errors` / `all`.
-  An unknown topic now **fails loudly** and lists the valid ones instead of being silently ignored.
-- **Project bootstrap**: new 31st tool `normify_project_init` creates `normify-<slug>/` plus the default policy,
-  optionally with a planned root module in one call (idempotent). `normify_change_open` now also **creates the project
-  directory on demand** (it used to fail with `project/no-modules`), and `normify_brief` on a missing module returns an
-  actionable hint instead of a bare error.
-- **Causal batch diagnostics**: one `label-too-long` used to cascade into three `dep/target-missing` errors (L1-failed
-  modules are removed from the batch working set). Follow-on errors are now reported as `dep/target-dropped` /
-  `structure/parent-dropped` naming the **root-cause diagnostic**, and the failed response carries `root_causes` + a `hint`.
-- **API-direct guidance**: arrows whose endpoints both declare APIs but that have no `from_api` / `to_api` now produce an
-  aggregated `dep/unanchored` warning (count + first three examples). This was the wasted capability in the experiment:
-  110 declared APIs, 54 arrows, zero anchored — unanchored arrows can only land on the box edge, never on an API row.
-  Guidance, not relaxation: a wrong anchor key is still an error.
-
-### v0.5.2 — three real data-corrupting defects fixed
-
-- **`normify_module_upsert` keeps its required list**: `parameters.required` is `["frontmatter"]` again, and the 9
-  mandatory frontmatter fields (uid / id / parent / name / description / source / revision / updated_at / fingerprint)
-  are back in the schema. A nested schema was compiled twice, which silently dropped the whole required list, so the
-  contract the model saw no longer matched what the runtime enforced.
-- **`normify_module_move` rewrites migrated render data**: `id` / `order` / `groups.children` / `edge_hints` are all
-  remapped to the new ids, plus the **old parent** (drops references to moved-out children) and the **new parent**
-  (appends the new id to `order`) are maintained. Before the fix a move left the project failing L2 with
-  `layout/id-mismatch` + `layout/order-child` (8–9 errors measured; 0 after 0.5.2).
-- **Promotion hands APIs off**: when a leaf becomes a container (explicit `normify_module_promote`, auto-promotion when
-  writing a child, or moving a subtree under a leaf) the stale `apis` are stripped from the container and reported as a
-  `structure/api-dropped-on-promote` warning listing the dropped keys — previously the project hard-failed with `api/non-leaf`.
-- **All API rows by default**: layout field `max_api_rows` defaults to **0 = expand all**; pass 1..48 to truncate.
-- Each defect is locked in by `tests/regression-0.5.2.mjs` (34 assertions, all green).
-
-### v0.5.1 — renderer: no more overlapping lines (12 → 0)
-
-- **Fixed collinear line overlap**: from **12 overlaps across 28 levels → 0**. Four root causes:
-  1. the primary router accepted the first candidate that merely did not cross *other* boxes — it never checked
-     whether it lay on top of an already-drawn line → now only candidates with `violations === 0` are accepted;
-  2. API-anchored ports were not fanned (several edges share one API row) → ±5.5px in-row fan-out;
-  3. API ports on top/bottom sides were placed inside the box → they now fall back to even distribution along the edge;
-  4. `segClear` skipped the source/target boxes entirely → new "enters its own box" check (inset 2px).
-- Node/group spacing 170 → 220 so dense levels have more free channels.
-
-### v0.5.0 — no module-count ceiling
-
-- **Removed the hard `MAX_DEPTH = 12` limit**: drill down to single functional units; if a project really wants a depth
-  limit, declare it in `policy.yml` (`maxDepth` widened to 1..64, scoped).
-- Skill guidance: unlimited depth, batch limit 40 → 200, "keep 3–5 APIs per leaf".
-<details>
-<summary>Earlier versions (v0.4.x / v0.3 / v0.2 / v0.1)</summary>
-
-- **v0.4.1**: renderer v3 (free-channel routing, dynamic viewBox, API-direct arrows, cross-level aggregation, zoom/hover);
-  `normify_sync` now sees **untracked new files** (`git ls-files --others`).
-- **v0.4.0**: companion development (`planned`/`deprecated`, `replacement`, `tags`), `policy.yml`, change log with
-  `normify_change_close` (zero-error enforced), editing operators (`module_patch/batch/move/refresh`),
-  `normify_brief` / `normify_check`, sync v2, reminder hook; tools 15 → 30.
-- **v0.3.0**: render datasets (`order`/`groups`/`mode`/`reading`/`edge_hints`), id depth 8 → 12, finer granularity.
-- **v0.2.0**: DSH 0.1.5-rc.2 adaptation; tool names `normify.x.y` → `normify_x_y`; bundle layer `cordis.patch.yml`;
-  parameters compiled to standard JSON Schema; read-only tools marked `isConcurrencySafe`.
-- **v0.1.0**: initial release (14 tools, data model v1, renderer v1).
-
-</details>
-
-## 4. Screenshots
-
-| Overview (129 modules) | Tools (31 tools, five families) |
-| --- | --- |
-| ![overview](https://raw.githubusercontent.com/yan-mc/dsh-normify/main/docs/screenshots/overview.png) | ![tools](https://raw.githubusercontent.com/yan-mc/dsh-normify/main/docs/screenshots/tools.png) |
-
-| Engine level (API-direct arrows) | Model level (clean routing after the 0.5.1 fix) |
-| --- | --- |
-| ![engine](https://raw.githubusercontent.com/yan-mc/dsh-normify/main/docs/screenshots/engine.png) | ![model](https://raw.githubusercontent.com/yan-mc/dsh-normify/main/docs/screenshots/model.png) |
-
-> All four are **Normify mapping its own source** (129 modules / 214 APIs / 257 arrows / 28 render levels, `validate` 0 error).
-
-## 5. Installation
-
-### Option A — install from a packed tarball (recommended)
-
-```bash
-# 1) build the tarball (or grab it from the repository Releases)
-cd dsh-normify && npm install && npm run build && npm pack
-
-# 2) unpack it into the target profile's node_modules
-#    <profile>/node_modules/@dsh-external/dsh-normify/
-
-# 3) edit <profile>/package.json
-#    dependencies         add  "@dsh-external/dsh-normify": "file:<abs path to tgz>"
-#    dsh.profile.bundles  add  "@dsh-external/dsh-normify"
-
-# 4) restart the DSH desktop app (the tool list is snapshotted when a session starts)
-```
-
-The plugin row is registered **by the bundle itself** (`package.json > dsh.bundle.patch: ./cordis.patch.yml`),
-so you never edit the profile's `cordis.patch.yml` by hand.
-
-### Option B — `dsh plugin`
-
-```bash
-dsh plugin --profile web-desktop add <absolute path to dsh-normify>
-# or: dsh plugin --profile web-desktop add link:F:/dsh-normify
-```
-
-### Option C — development mode (edit source, restart, done)
-
-Use a `link:` dependency pointing at this repository plus a directory junction in `node_modules`.
-A `link:` install resolves dependencies against the **real path**, so this repository needs `node_modules/yaml`
-(plain `npm install`).
-
-> ⚠️ **Note**: upgrading the DSHEAC AIO desktop app re-seeds the profile from `resources/profile-seed`,
-> which wipes the plugin registration — just re-install afterwards.
-
-### Verify
-
-```bash
-# from the profile directory, importing by bare package name should print the plugin name
-node -e "import('@dsh-external/dsh-normify').then(m=>console.log(m.name))"
-```
-
-## 6. Quick start
-
-Once installed, just talk to the AI. The three most common prompts:
-
-```text
-# 1) map a repository
-Use the normify-gen skill to build a structure tree and render an architecture map for F:\my-project,
-with granularity down to single functional units.
-
-# 2) design first, then code
-I want to add a "rate limiting" module to my-project: normify_brief first, create it in planned state,
-then I implement it and you refresh(activate) and change_close.
-
-# 3) sync after code changes
-Sync the structure map of my-project (normify_sync): update affected modules and render data,
-then build + render once validate reports 0 errors.
-```
-
-Under the hood the agent runs:
-
-```text
-normify_tree_list → normify_module_upsert (root + first level)
-  → normify_module_list (drill down) → normify_module_batch (atomic batches)
-  → normify_layout_upsert (one render dataset per container)
-  → normify_fingerprint (always compute before writing a fingerprint)
-  → normify_validate (zero-error gate) → normify_build → normify_render
-```
-
-Artifacts (inside the structure directory `normify-<slug>/`):
-
-| Artifact | Content |
-| --- | --- |
-| `modules/**/*.md` | the structure data itself (frontmatter + body) |
-| `renders/**/*.json` | one render dataset per container level |
-| `policy.yml` | architecture rules (defaults installed at project creation) |
-| `changes/<id>.json` | development change log, archived together with the structure |
-| `tree.json` | compiled: module dictionary + API index + edges + layouts + policy + change stats |
-| `outline.md` / `api-index.json` | human-readable outline / API index |
-| `receipt.json` | SHA-256 frozen receipt (stats + warning summary) |
-| `normify.html` | the single-file interactive map |
-
-## 7. The 31 tools
-
-| Family | Tools | Purpose |
-| --- | --- | --- |
-| **Reference** | `normify_help` | field and tool reference (read before authoring) |
-| **Read** | `normify_tree_list` | list projects and tree roots |
-| | `normify_module_get` / `normify_module_list` | read one module / list modules by parent or tree |
-| | `normify_search` / `normify_deps_find` / `normify_outline` | search, reverse lookup ("who depends on me"), rebuild `outline.md` |
-| **Write** | `normify_module_upsert` | create/update a module (write-time L1 validation, automatic file-form promotion) |
-| | `normify_module_delete` / `normify_module_promote` | delete a subtree (with dangling-edge warnings) / promote a leaf |
-| **Evolve** | `normify_module_patch` | partial update (`expect_updated_at` guard + `dry_run`) |
-| | `normify_module_batch` | atomic batch upsert/patch (whole-batch rollback) |
-| | `normify_module_move` | rename/move (uid preserved, cascading parents, project-wide dep rewrite) |
-| | `normify_module_refresh` | recompute fingerprint/revision; `activate` flips landed planned modules to active |
-| **Layouts** | `normify_layout_get/upsert/delete` | maintain "how this level is drawn" (order/groups/mode/reading/lanes) |
-| **Pipeline** | `normify_validate` | project-wide L2 validation (zero-error gate, optional evidence checks) |
-| | `normify_build` / `normify_render` | compile + freeze artifacts / render the single-file HTML |
-| | `normify_fingerprint` | deterministic source fingerprint (call before writing `fingerprint`) |
-| | `normify_sync` | incremental regeneration planner (dirty subtrees, new-file suggestions, drift, breaking API changes) |
-| **Companion** | `normify_brief` | development brief: contracts, impact surface, policy constraints, suggested modules, acceptance list |
-| | `normify_check` | pre-flight check of proposed modules and dependencies |
-| | `normify_change_open/update/list/close` | change log; `close` enforces zero errors |
-| | `normify_policy_get/upsert` | read / install `policy.yml` |
-
-## 8. Module frontmatter
-
-```yaml
----
-uid: 8c69b5a8                 # 8 lowercase hex, unique per project, never changes
-id: dsh-normify.engine.ids    # dotted path id; first segment = tree name; unlimited depth
-parent: dsh-normify.engine    # must equal the id minus its last segment; null for a root
-name: {zh: "标识与路径", en: "Identifiers & Paths"}
-description:                  # bilingual, ≤500 chars each, read by humans and AI alike
-  zh: >
-      模块 id 的文法、派生与 id ↔ 文件路径的双向映射。
-  en: >
-      Module id grammar, derivations and the id ↔ file-path mapping.
-source:                       # code evidence (repo-relative path + optional line range)
-  - {path: src/engine/ids.ts, line: 6, end_line: 34}
-revision: 90df4a10…           # 40-hex git SHA at generation time
-updated_at: "2026-09-12T12:00:00Z"
-fingerprint: 630ac9020dba…    # deterministic fingerprint of source (use normify_fingerprint)
-state: active                 # active | planned | deprecated
-tags: [engine, ids]           # optional, ≤12
-apis:                         # leaves only; 3–5 per leaf recommended
-  - protocol: rpc             # http|ws|rpc|amqp|kafka|mysql|redis|file|grpc|graphql
-    path: splitId
-    description: {zh: "解析 id 为段数组。", en: "Parses an id into segments."}
-deps:                         # outgoing arrows (stored on the source side only)
-  - kind: call                # call|event|dataflow|reference
-    to: dsh-normify.engine.model.module
-    from_api: rpc:splitId     # optional: anchor to one of this module's APIs (API-direct)
-    to_api: rpc:Module
-    label: {zh: "id 契约", en: "Id contract"}
----
-(body: optional long-form introduction for humans)
-```
-
-File layout: `modules/<tree>/<segments…>/index.md` for containers, `<last>.md` for leaves — maintained by the tools.
-
-## 9. Render datasets (`renders/`)
-
-One per **container** module, mirroring the module tree:
+The editable graph is `{ schema_version: 1, modules: Module[], layouts: LayoutData[] }`. Store only `parent` and outgoing `deps`; children, API indexes and type relations are derived. This complete planned graph includes a future source file, an IPC API and named input/output types:
 
 ```json
 {
   "schema_version": 1,
-  "id": "dsh-normify.engine.model",
-  "updated_at": "2026-09-12T12:00:00Z",
-  "mode": "grid",              // auto | layers | groups | grid
-  "max_columns": 3,            // 1..6
-  "max_api_rows": 0,           // 0 = expand all (default); 1..48 = truncate
-  "reading": {"zh": "本层 8 个子模块…", "en": "…"},
-  "order": ["dsh-normify.engine.model.text", "…"],
-  "groups": [{"id": "model", "title": {"zh": "模型与契约", "en": "Model"}, "children": ["…"]}],
-  "edge_hints": [{"from": "a", "to": "b", "lane": 2, "style": "curve"}]
+  "modules": [
+    {
+      "uid": "aabbccdd", "id": "app", "parent": null,
+      "name": { "zh": "应用", "en": "Application" },
+      "description": { "zh": "应用模块树。", "en": "Application module tree." },
+      "source": [],
+      "revision": "0000000000000000000000000000000000000000",
+      "updated_at": "2026-10-03T00:00:00.000Z",
+      "fingerprint": "pending", "state": "planned"
+    },
+    {
+      "uid": "11223344", "id": "app.worker", "parent": "app",
+      "name": { "zh": "任务执行", "en": "Task execution" },
+      "description": { "zh": "执行一个任务并返回结果。", "en": "Execute a task and return its result." },
+      "source": [{ "path": "src/main/worker.ts" }],
+      "revision": "0000000000000000000000000000000000000000",
+      "updated_at": "2026-10-03T00:00:00.000Z",
+      "fingerprint": "pending", "state": "planned",
+      "types": [
+        {
+          "name": "Request",
+          "description": { "zh": "任务输入。", "en": "Task input." },
+          "schema": {
+            "type": "object",
+            "properties": { "taskId": { "type": "string", "minLength": 1 } },
+            "required": ["taskId"], "additionalProperties": false
+          }
+        },
+        {
+          "name": "Result",
+          "description": { "zh": "任务结果。", "en": "Task result." },
+          "schema": {
+            "type": "object",
+            "properties": { "completed": { "type": "boolean" } },
+            "required": ["completed"], "additionalProperties": false
+          }
+        }
+      ],
+      "apis": [{
+        "protocol": "ipc", "path": "app:execute",
+        "description": { "zh": "执行任务。", "en": "Execute a task." },
+        "input": { "module": "app.worker", "name": "Request" },
+        "output": { "module": "app.worker", "name": "Result" }
+      }]
+    }
+  ],
+  "layouts": []
 }
 ```
 
-Readability recipes: **order = data flow**, **groups = domain boundaries**, **reading = the path**, long back-edges
-get explicit lanes via `edge_hints`.
+`types[].schema` uses **JSON Schema 2020-12**. Cross-type `$ref` values use `urn:normify:<module-id>:<type-name>`; API type references use `{ module, name }`. Containers cannot declare `types` or `apis`. References must resolve to declared types. `ipc.path` is an IPC channel, with API key `ipc:app:execute`. Planned `source.path` values describe target files relative to the bound source repository.
 
-## 10. Companion development
+### Complete replacement and CAS
 
-### 10.1 Design first
+`normify_graph_put` replaces the complete graph: omitted modules and layouts are deleted. MCP marks it as destructive. Read first and pass the returned 64-character SHA-256 digest:
 
-```text
-(1) normify_change_open    open a change (title / intent / modules / acceptance)
-(2) normify_brief          contracts, impact surface, policy constraints, suggested modules, checklist
-(3) normify_check          pre-flight the proposed modules and dependencies
-(4) normify_module_batch   create planned modules (state=planned, fingerprint=pending, source may not exist yet)
-                           plus normify_layout_upsert for that level in the same round
-(5) 【write the code】
-(6) normify_module_refresh recompute fingerprint/revision, activate:true → planned becomes active
-(7) normify_change_close   zero-error close: refresh → validate → build → verified + revision.after
+```js
+const current = await call('normify_graph_get', {})
+const candidate = current.graph // Edit the complete snapshot.
+await call('normify_graph_validate', { graph: candidate })
+await call('normify_graph_put', { graph: candidate, expect_digest: current.digest })
 ```
 
-Planned modules keep `normify_validate` at 0 errors (a missing source is only a warning), and activating or closing
-before the code lands is refused.
+`call` denotes the established tool invocation interface. The digest covers module, layout, policy and change source data. A stale digest returns `graph/conflict`; reread and reconcile actual changes before resubmitting. The candidate is validated and compiled before replacing the current graph. Managed services coordinate in-process and cross-process access with a project lock.
 
-### 10.2 Companion update
+Managed CRUD writes use a snapshot, execution, project validation and commit/rollback boundary. Invalid dependency or type changes return `rolled_back: true` instead of leaving an inconsistent graph. Editing tools with `dry_run` execute in an isolated candidate directory, run L2 validation and remove the candidate; preview success requires more than a valid patch shape.
 
-```text
-(1) change the code (committed or not)
-(2) normify_sync           changed_files / affected / drift_fingerprints / layouts_to_review
-                           and "suggested modules" for new files (with ids and target paths)
-(3) normify_module_patch   add APIs, refresh descriptions, recompute fingerprint and revision
-(4) normify_validate       0 errors
-(5) normify_change_close   close and rebuild artifacts (tree.json reflects the change stats)
+`graph_put` builds and renders automatically. After ordinary CRUD changes, call `normify_build` before `normify_render`. Compilation records the architecture source digest in `tree.project.source_digest` and `receipt.source_digest`. Rendering checks the current digest and tree SHA-256; changed source data returns `render/stale-tree`, while a mismatched receipt or tree is rejected. The receipt's `artifacts` records tree, outline and api-index only, without a self-referential receipt hash.
+
+### Work packets
+
+`normify_work_packet({ ids: ["app.worker"] })` returns a fixed `digest`, selected modules and Markdown bodies, external dependencies and shared types, `write_paths`, conflicts and acceptance requirements. Overlap with an unselected leaf's target files prevents independent assignment. Canonical source locations are compared, including junction aliases and Windows case differences.
+
+`write_paths` is a work allocation contract; actual source write permissions come from PromptManager configuration. A packet does not grant permissions, create Workers, update task state or replace authorization, scheduling, verification and merge flows. Built-in coordinator role limits still apply; grant architecture tools to an authorized design or Worker instance that may use MCP.
+
+### Plan group branches around independent delivery
+
+A delivery unit must be implementable and verifiable against a fixed Git baseline. It may contain several leaf modules and several Workers. PromptManager currently gives each execution group one branch/worktree; each file within the group must have one responsible writer. Module and API granularity supports architecture navigation and does not determine Worker count.
+
+Suggestion, editing, validation and persistence use the same `BranchPlan` JSON shape. `normify_schema_get` exposes its `branch_plan` schema, and `branch-plan.json` stores the plan. Top-level fields are `schema_version: 1`, `id`, bilingual `title`, `graph_digest`, `base_commit`, `scope`, `requirement_ids`, `together` and `units`:
+
+- `scope` explicitly selects modules and expands selected containers to their non-deprecated leaves. `units[].modules` must list leaf IDs explicitly. Every scoped leaf belongs to exactly one unit.
+- `together` records modules that must change together. Modules sharing a canonical source file must also share a unit, including separate line ranges, junction aliases and Windows case differences. File overlap with an out-of-scope module requires a scope or file-boundary change.
+- `graph_digest` freezes the architecture. `base_commit` must be a readable full Git commit OID in the bound repository. The plan's CAS `digest` is the SHA-256 of the raw `branch-plan.json` bytes, separate from the graph digest. With no saved file, `get` returns `plan: null` and the empty-byte digest.
+- `requirement_ids` records formal requirements. Each needs at least one responsible unit; several units may share a requirement. Every unit needs a nonempty requirement list, and its verification scenarios must cover every requirement it owns.
+- `verification.commands` declares `{ id, argv: string[], cwd }`, with `cwd` relative to the bound repository. `cases` declares `{ id, description, requirement_ids, command_ids }`. Commands and scenarios must be nonempty. Required databases, ports, filesystem directories and services use `resources: [{ id, kind, description, isolation: "unit" }]`; the host implements per-unit isolation. Use an empty array when no such resources are needed.
+
+`suggest` forms initial groups only from canonical file overlap and explicit `together` constraints. It does not infer business meaning, requirement ownership, verification scenarios or implementation order, and does not turn a call graph into `needs`. A successfully generated candidate returns `ok: true`. Empty verification, unassigned requirements and `unresolved` dependencies make `ready: false`, with gaps in `readiness.errors`. Structural errors still return `ok: false`. Complete the candidate before saving or dispatching it.
+
+Each unit's `external_dependencies` declares `{ module, mode, fixture_paths }` for every effective external dependency. Units inherit explicit `deps` from their leaves' ancestor containers, expanding container targets to leaves. Together with each leaf's own dependencies, API input/output and schema type references, these form the frozen contract context. Modules within the same unit are excluded from the external set. These relationships do not automatically create `needs` or merge units:
+
+| `mode` | Independent verification requirement |
+| --- | --- |
+| `baseline` | Every source file of the dependency exists as a readable, nonempty file in `base_commit`; `fixture_paths: []`. |
+| `contract` | Use contract test doubles or fixtures. `fixture_paths` must be nonempty; each file belongs to the fixed baseline or this unit's explicit write scope. |
+| `after` | The dependency's responsible unit must be in the explicit `needs` prerequisite chain; `fixture_paths: []`. |
+| `unresolved` | Verification strategy is undecided; formal validation, persistence and packet retrieval are blocked. |
+
+For example, publication and playback can be developed independently using a fixed contract and a playback fixture despite their runtime calls. Declare `after` and `needs` when the actual implementation must be delivered first. `needs` rejects self-dependencies, missing units and cycles.
+
+```js
+const current = await call('normify_branch_plan_get', {})
+const suggested = await call('normify_branch_plan_suggest', {
+  id: 'video-development',
+  title: { zh: '视频交付计划', en: 'Video delivery plan' },
+  base_commit: baseCommit, // Full commit OID in the bound repository.
+  scope: ['video.publication', 'video.player'],
+  requirement_ids: ['REQ-publish', 'REQ-play'],
+  together: []
+})
+if (!suggested.ok) throw new Error(JSON.stringify(suggested.errors))
+const candidate = structuredClone(suggested.plan)
+// Fill requirement coverage, commands/scenarios/resources and all dependency strategies.
+const checked = await call('normify_branch_plan_validate', { plan: candidate })
+if (!checked.ok) throw new Error(JSON.stringify(checked.errors))
+await call('normify_branch_plan_put', {
+  plan: candidate,
+  expect_digest: current.digest
+})
 ```
 
-## 11. Repository layout & engineering
+`put` and `delete` require the current plan digest. `branch/conflict` requires rereading and reconciling changes. `dry_run: true` previews without replacing or deleting the saved plan. A changed architecture causes `branch/graph-drift`; packet retrieval and export reject the stale plan too. Reconfirm the plan against the new graph.
 
-```bash
-npm install          # devDependencies (typescript / @types/node / cordis / schemastery / cosmokit)
-npm run build        # src/ → lib/ via tsc
-npm run typecheck    # tsc --noEmit
-npm test             # engine-e2e.mjs + companion-e2e.mjs (DSH-independent end-to-end)
-node ci-contract-check.cjs   # bundle declaration + exactly 31 tools + provider-safe names
+`normify_branch_packet({ unit_id })` returns module bodies, full data/API contracts, external dependencies, `write_paths`, verification declarations and three frozen versions: `base_commit`, `graph_digest` and `plan_digest`. `normify_branch_plan_export({ lead_ref })` returns a `worker_plan` with one `role: "lead"` item per unit. Its `spec` is the frozen packet JSON; `requirementIds` and `needs` match the host's existing group plan structure. The plan identifier includes the logical plan ID and plan digest to distinguish versions.
+
+`lead_ref` is a leader template reference, not real group identity or authorization. PromptManager must check the formal `WorkerConfiguration` and reuse its existing branch, worktree, role, Worker-state, review and integration services. This change provides a static export adapter; end-to-end application wiring remains host work. Zero errors from `validate`, `packet` or `export` only establishes a valid static declaration. The tools do not run verification commands or establish runtime resource isolation or integration success.
+
+Host wiring must create worktrees from the packet's `base_commit` and resolve, freeze and materialize prerequisite delivery commits for the `after` strategy. The current PromptManager creates ordinary lead worktrees from `main`, while `needs` only waits for task completion. These paths do not yet consume the branch contract, so a static export cannot establish that execution is connected.
+
+The runnable example is `examples/branch-development/example.mjs` in the [source repository](https://github.com/wishbreeze/code-normify). Run it from that checkout with Git and Node.js 20+. The npm package does not include `examples/`:
+
+```sh
+npm run build
+node examples/branch-development/example.mjs
 ```
 
-| Path | Content |
+It creates a temporary Git baseline and planned graph, completes two independent delivery units, reads packets and exports a group plan. It prints summaries and preserves the artifact location for inspection. Business verification commands in the example are declarations only.
+
+## Managed MCP integration
+
+Build and pack this repository, then install the generated tarball in the target project:
+
+```sh
+npm ci
+npm run build
+npm pack
+# In the target project, use the actual generated package path.
+npm install --save-dev /absolute/path/promptmanager-code-normify-0.7.0.tgz
+```
+
+This uses a local build and does not assume an npm publication. Each execution group must have this package and its dependencies through PromptManager's existing dependency preparation flow.
+
+PromptManager uses `mcp_servers`. `command = "node"` resolves to its installed toolchain's fixed Node executable; arguments are passed unchanged and the process starts in the group's workspace. Do not configure `command = "normify-mcp"`: the native command contract accepts fixed command names or an absolute executable path, without a PATH search.
+
+```toml
+[mcp_servers.normify-design]
+command = "node"
+args = ["node_modules/@promptmanager/code-normify/lib/mcp.js", "--repo-root", ".", "--data-dir", "normify-architecture", "--access", "write"]
+
+[mcp_servers.normify-read]
+command = "node"
+args = ["node_modules/@promptmanager/code-normify/lib/mcp.js", "--repo-root", ".", "--data-dir", "normify-architecture", "--access", "read"]
+```
+
+All three arguments are required. Relative paths resolve against the **host startup cwd** before the service receives absolute paths. Absolute paths also work. `.` follows each group's worktree, avoiding source evidence pointing to the primary checkout. The data directory must be named `normify-<slug>`.
+
+Registering a server does not grant tools. This is an exact design instance `AgentSpec` fragment; configure role, MCP semantic group and native sandbox grants through existing PromptManager configuration:
+
+```json
+{
+  "mcpBindings": [{
+    "serverId": "normify-design",
+    "tools": ["normify_schema_get", "normify_graph_get", "normify_graph_validate", "normify_graph_put", "normify_work_packet", "normify_branch_plan_suggest", "normify_branch_plan_get", "normify_branch_plan_validate", "normify_branch_plan_put", "normify_branch_plan_delete", "normify_branch_packet", "normify_branch_plan_export"]
+  }]
+}
+```
+
+For a read-only instance:
+
+```json
+{
+  "mcpBindings": [{
+    "serverId": "normify-read",
+    "tools": ["normify_schema_get", "normify_graph_get", "normify_module_get", "normify_work_packet", "normify_branch_plan_get", "normify_branch_packet", "normify_branch_plan_export"]
+  }]
+}
+```
+
+Injected names include `mcp__normify-design__normify_graph_get`; bindings use original server tool names. `read` exposes only read tools. `write` exposes all 43, subject to exact host bindings. Model arguments cannot override `project`, `dir` or `repoRoot`. Source reads, artifact paths and symbolic links remain within bound workspace constraints.
+
+Stdout carries only MCP protocol; logs use stderr. Business failures retain `{ ok, errors, warnings, ... }` with MCP `isError`; exceptions use MCP error responses. Cancellation prevents engine entry, but cannot establish that an operation already started produced no writes.
+
+## Electron main-process ESM library
+
+Use the same managed tools without introducing a second filesystem or validation implementation:
+
+```ts
+import { join } from 'node:path'
+import { createPromptManagerTools } from '@promptmanager/code-normify/service'
+
+export async function openArchitectureTools(groupWorkspace: string) {
+  const tools = await createPromptManagerTools({
+    repoRoot: groupWorkspace,
+    dataDir: join(groupWorkspace, 'normify-architecture'),
+    access: 'write',
+    requireBilingual: true
+  })
+  return new Map(tools.map(tool => [tool.name, tool]))
+}
+```
+
+The host supplies an authorized absolute group workspace. Tools expose `name`, `description`, `behavior`, standard JSON Schema `parameters` and `execute(args)`. Every result is an object with `ok`, `errors` and `warnings`.
+
+React receives read-only graph or preview data through PromptManager's existing main-process IPC boundary. Do not import this package or `node:fs` in the renderer, or scan the repository there. Host wiring must reuse existing IPC, role and task resource authorization; this example adds no IPC channel.
+
+## 43 tools
+
+| Category | Tools |
 | --- | --- |
-| `src/` | TypeScript sources (16 modules, ~7.2k lines): `index.ts`, `tools.ts`, `engine/*` |
-| `lib/` | compiled output (shipped) |
-| `skills/normify-gen/SKILL.md` | the generator skill (rules, workflow, granularity, readability) |
-| `tests/` | two end-to-end suites: engine path + companion loop (eight stages) |
-| `docs/SPEC.zh-CN.md` | formal specification (data model / source format / artifacts / validation / generator / renderer) |
-| `vendor/` | vendored schemastery + cosmokit (loaded by relative path) |
+| Graph and work contracts (5) | `normify_schema_get`, `normify_graph_get`, `normify_graph_validate`, `normify_graph_put`, `normify_work_packet` |
+| Branch delivery plans (7) | `normify_branch_plan_suggest`, `normify_branch_plan_get`, `normify_branch_plan_validate`, `normify_branch_plan_put`, `normify_branch_plan_delete`, `normify_branch_plan_export`, `normify_branch_packet` |
+| Navigation and queries (8) | `normify_tree_list`, `normify_module_get`, `normify_module_list`, `normify_search`, `normify_outline`, `normify_deps_find`, `normify_brief`, `normify_help` |
+| Project and module editing (7) | `normify_project_init`, `normify_module_upsert`, `normify_module_patch`, `normify_module_batch`, `normify_module_move`, `normify_module_promote`, `normify_module_delete` |
+| Evidence, synchronization and validation (5) | `normify_fingerprint`, `normify_sync`, `normify_module_refresh`, `normify_validate`, `normify_check` |
+| Policy (2) | `normify_policy_get`, `normify_policy_upsert` |
+| Development changes (4) | `normify_change_open`, `normify_change_update`, `normify_change_list`, `normify_change_close` |
+| Layouts and artifacts (5) | `normify_layout_get`, `normify_layout_upsert`, `normify_layout_delete`, `normify_build`, `normify_render` |
 
-## 12. Compatibility & troubleshooting
+Use `normify_schema_get` or MCP `tools/list` for exact parameters. Tools support `normify_help({ topic: "tool:normify_module_patch" })` for parameter guidance. Help uses the current instance's read or write tool catalog.
 
-| Item | Requirement |
-| --- | --- |
-| DSH | `0.1.5-rc.2` (peer: `@deepseek-ai/cordis ^4`; `dsh-tools` / `dsh-skill` optional) |
-| DSHEAC AIO | 6.9.x (profile `web-desktop`) |
-| Node.js | ≥ 18 |
+## Data and verification
 
-- **Installed but no tools** → the tool list is snapshotted at session start: open a **new session** (or restart the app).
-- **Plugin disappears after an app upgrade** → the AIO re-seeds the profile from `resources/profile-seed`; re-install.
-- **`Cannot find package 'yaml'`** → with a `link:` install, dependencies resolve against the real path; run `npm install` in this repo.
-- **`evidence/fingerprint-drift`** → the code moved ahead of the structure data: run `normify_sync`, then `normify_module_refresh`.
-- **`structure/leaf-too-coarse`** → not an error: that leaf can be split further (towards single functional units).
+Persistence uses module Markdown under `modules/`, layout JSON under `renders/`, `policy.yml`, `changes/` and the explicit delivery units, verification and external dependency strategies in `branch-plan.json`. Compiled artifacts are `tree.json`, `outline.md`, `api-index.json`, `receipt.json` and `normify.html`. The standalone HTML viewer supports drill-down, search and language switching.
 
-## 13. Security & privacy
+`graph_get` / `graph_put` reuse existing persistence. `tree.json` is compiled output, not a second writable source. See [the specification](./docs/SPEC.zh-CN.md) and [normify-gen](./skills/normify-gen/SKILL.md).
 
-- **No telemetry, no network calls**: structure data and artifacts are generated locally; `normify.html` loads nothing external.
-- **No credential handling**: the plugin never reads or writes tokens, keys or passwords; `.gitignore` excludes
-  `.env*`, `*.pem`, `*.credentials.yaml`. **There are no credentials in this repository — please keep it that way.**
-- **Read-only on your code**: the generator never modifies the analysed repository; it only writes into `normify-<slug>/`.
-- `source` records only repo-relative paths and line numbers, never source text.
+```sh
+npm run check
+npx playwright install chromium
+npm run test:render
+```
 
-## 14. Documentation
+Checks cover engine regressions, named types and references, graph CAS, work packet file overlap, deletion change closure, real SDK stdio lifecycle, relative startup paths, read-only permissions, boundary rejection and cancellation. Browser checks cover type and API navigation, search, full schemas, language switching and narrow screens. Passing these checks does not establish that PromptManager application wiring is complete.
 
-| Document | Content |
-| --- | --- |
-| [`docs/SPEC.zh-CN.md`](docs/SPEC.zh-CN.md) | formal specification v1.0 (Chinese) |
-| [`skills/normify-gen/SKILL.md`](skills/normify-gen/SKILL.md) | the generator skill (the AI's playbook) |
-| [`CHANGELOG.md`](CHANGELOG.md) | version history (0.1.0 → 0.5.4) |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | contributing guide |
-| [`SECURITY.md`](SECURITY.md) | security policy |
+## Attribution and license
 
-## License
-
-[MIT](LICENSE) © yan-mc
-
----
-
-<p align="center"><sub>Normify — let the architecture map grow together with the code.</sub></p>
+Derived from [yan-mc/dsh-normify](https://github.com/yan-mc/dsh-normify), preserving its architecture engine, viewer and MIT license. The derived repository is [wishbreeze/code-normify](https://github.com/wishbreeze/code-normify); 0.6.0 replaces the host entry with a PromptManager tool library and managed MCP, and 0.7.0 adds branch plans organized by independently verifiable delivery units. Original attribution **Copyright (c) 2026 yan-mc** remains in [LICENSE](./LICENSE).

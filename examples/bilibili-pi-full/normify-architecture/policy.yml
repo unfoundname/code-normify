@@ -1,0 +1,133 @@
+# Normify 架构规则（policy.yml）：normify_validate 强制执行；规则类型与示例见 normify_policy_get。
+schema_version: 1
+updated_at: 2026-10-03T23:46:15.123Z
+rules:
+  - id: core-acyclic
+    type: acyclic
+    severity: error
+    includeCrossTree: true
+  - id: core-no-deprecated-target
+    type: forbid-dependency
+    from:
+      - "**"
+    to:
+      - "**"
+    toState: deprecated
+    severity: warning
+  - id: client-is-terminal
+    type: forbid-dependency
+    severity: error
+    from:
+      - bili.acquire
+      - bili.acquire.**
+      - bili.assembly
+      - bili.assembly.**
+      - bili.catalog
+      - bili.catalog.**
+      - bili.channel
+      - bili.channel.**
+      - bili.commerce
+      - bili.commerce.**
+      - bili.community
+      - bili.community.**
+      - bili.contract
+      - bili.contract.**
+      - bili.creator
+      - bili.creator.**
+      - bili.danmaku
+      - bili.danmaku.**
+      - bili.discover
+      - bili.discover.**
+      - bili.identity
+      - bili.identity.**
+      - bili.infra
+      - bili.infra.**
+      - bili.live
+      - bili.live.**
+      - bili.media
+      - bili.media.**
+      - bili.message
+      - bili.message.**
+      - bili.ops
+      - bili.ops.**
+      - bili.pgc
+      - bili.pgc.**
+      - bili.playback
+      - bili.playback.**
+      - bili.social
+      - bili.social.**
+      - bili.upload
+      - bili.upload.**
+    to:
+      - bili.client
+      - bili.client.**
+    message:
+      zh: 客户端前端不能被后端/基础设施反向依赖
+      en: Client front ends must not be depended on by backends or infrastructure
+  - id: assembly-is-terminal
+    type: forbid-dependency
+    severity: error
+    from:
+      - bili.acquire
+      - bili.acquire.**
+      - bili.catalog
+      - bili.catalog.**
+      - bili.channel
+      - bili.channel.**
+      - bili.client
+      - bili.client.**
+      - bili.commerce
+      - bili.commerce.**
+      - bili.community
+      - bili.community.**
+      - bili.contract
+      - bili.contract.**
+      - bili.creator
+      - bili.creator.**
+      - bili.danmaku
+      - bili.danmaku.**
+      - bili.discover
+      - bili.discover.**
+      - bili.identity
+      - bili.identity.**
+      - bili.infra
+      - bili.infra.**
+      - bili.live
+      - bili.live.**
+      - bili.media
+      - bili.media.**
+      - bili.message
+      - bili.message.**
+      - bili.ops
+      - bili.ops.**
+      - bili.pgc
+      - bili.pgc.**
+      - bili.playback
+      - bili.playback.**
+      - bili.social
+      - bili.social.**
+      - bili.upload
+      - bili.upload.**
+    to:
+      - bili.assembly
+      - bili.assembly.**
+    message:
+      zh: 系统装配是终端组件，业务模块不得依赖它
+      en: System assembly is a terminal component; no business module may depend on it
+  - id: contract-not-business-dependent
+    type: forbid-dependency
+    severity: error
+    from:
+      - bili.contract
+      - bili.contract.**
+    to:
+      - bili.client.**
+    message:
+      zh: 共享契约不得依赖客户端或装配
+      en: Shared contracts must not depend on clients or assembly
+  - id: depth-limit
+    type: max-depth
+    severity: error
+    maxDepth: 5
+    scope:
+      - bili.**

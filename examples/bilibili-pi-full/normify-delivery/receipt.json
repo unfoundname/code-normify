@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "ok": true,
+  "project": "normify-delivery",
+  "compiled_at": "2026-10-03T23:49:07.072Z",
+  "source_digest": "d05d1559e4fd161f607371f6d1acb183ba59b21aff17964f0b5c6235c614a356",
+  "stats": {
+    "tree_count": 1,
+    "module_count": 22,
+    "leaf_count": 21,
+    "api_count": 40,
+    "type_count": 61,
+    "dep_count": 111,
+    "cross_tree_dep_count": 0,
+    "max_depth": 2,
+    "layout_count": 1,
+    "planned_count": 22,
+    "deprecated_count": 0,
+    "policy_rule_count": 2,
+    "change_count": 0,
+    "open_change_count": 0
+  },
+  "warnings": {
+    "dep/unanchored": 1
+  },
+  "artifacts": {
+    "tree.json": {
+      "sha256": "b0389e268366081c8b54336df979b4186a1126949db8efe441f7d50ddecc6aad",
+      "bytes": 252152
+    },
+    "outline.md": {
+      "sha256": "d2b8a96db8518c7f098d0d077383e7a6bab43439a73569161dd58c5308498ea6",
+      "bytes": 6891
+    },
+    "api-index.json": {
+      "sha256": "bf092b44c24f85d26e56fdd45e8ff569cf5769f324eee0fb646b177ff30fc981",
+      "bytes": 151651
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "bili.contract",
+  "updated_at": "2026-10-03T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 3,
+  "reading": {
+    "zh": "本层是「共享契约」的 4 个功能单元，按设计顺序阅读；箭头指出向依赖（调用/事件/数据流/引用）。",
+    "en": "This level shows the 4 functional units of \"Shared contracts\", in design order; arrows are outbound dependencies (call/event/dataflow/reference)."
+  },
+  "order": [
+    "bili.contract.common",
+    "bili.contract.event",
+    "bili.contract.state",
+    "bili.contract.ledger"
+  ]
+}

@@ -1,12 +1,17 @@
-import type { Context } from '@deepseek-ai/cordis';
-export declare const name = "@dsh-external/dsh-normify";
-export declare const inject: string[];
-export interface Config {
-    rootDir: string;
-    requireBilingual: boolean;
-    /** 伴随开发提醒钩子（默认关）：连续修改 N 个文件后提醒同步结构树。 */
-    devCompanionReminder: boolean;
-    devCompanionReminderAfter: number;
-}
-export declare const Config: any;
-export declare function apply(ctx: Context, config: Config): void;
+/** 宿主无关的架构工具库；Electron、MCP 等适配层使用同一工具契约。 */
+export { createNormifyTools, defineNormifyTool, registerTools } from './tools.js';
+export type { NormifyTool, NormifyToolRegistration, NormifyToolResult, ObjectSchema, SchemaNode, ToolBehavior, ToolEnv } from './tools.js';
+export * from './engine/types.js';
+export { NormifyError, resolveProject, loadAllModules } from './engine/store.js';
+export { validateProject } from './engine/validate.js';
+export { buildProject } from './engine/compile.js';
+export { renderProject } from './engine/render.js';
+export { createPromptManagerTools } from './service.js';
+export type { PromptManagerOptions } from './service.js';
+export type { ArchitectureGraph } from './engine/graph.js';
+export { BRANCH_PLAN_SCHEMA, readBranchPlan, validateBranchPlan, putBranchPlan, deleteBranchPlan, suggestBranchPlan, branchPacket, branchPackets } from './engine/branches.js';
+export type { BranchPlan, BranchUnit, BranchPacket, BranchSuggestionInput } from './engine/branches.js';
+export { exportBranchWorkerPlan, projectBranchWorkerPlan } from './adapters/promptmanager.js';
+export { readBranchPlanningSnapshot } from './planning.js';
+export type { BranchPlanningSnapshot } from './planning.js';
+export type { BranchGitReader } from './engine/branches.js';

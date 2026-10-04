@@ -1,0 +1,1169 @@
+{
+  "generated_at": "2026-10-03T23:48:57.418Z",
+  "plan": {
+    "id": "bili-full-delivery",
+    "plan_digest": "f459426c73686b5ea9f7165a7053de69f7eef13bda8cd52e2ffc3c26ac750e44",
+    "graph_digest": "72bc6aa01bbcb87e80f593008effa18d2ff11e39bc38d416f41c3b16d51ed7dc",
+    "base_commit": "7b0ea7f5a56933f004bdd50d29b6ffae7bc74cde",
+    "units": 19
+  },
+  "isolated_worktree": {
+    "path": ".verify-worktree",
+    "head": "7b0ea7f5a56933f004bdd50d29b6ffae7bc74cde",
+    "matches_base_commit": true,
+    "action": "created"
+  },
+  "design_fixture_checks": {
+    "tool": "tools/verify-contracts.mjs（纯 Node 实现，Schema 校验依赖已 vendored 到仓库 vendor/node_modules 并版本固定：ajv 8.20.0 + ajv-formats 3.0.1 + 依赖闭包；TypeScript 编译检查需要宿主的 tsc，本轮显式使用 <repo-root>/node_modules/typescript/bin/tsc）",
+    "prerequisites": [
+      "vendored Schema 校验依赖（vendor/VENDOR.md + versions.json，由 check-vendor.mjs 核对）",
+      "宿主 TypeScript 编译器路径（仅用于 contracts/types/*.ts 的 strict 编译，不属于本仓库依赖）"
+    ],
+    "frozen_inputs": [
+      "plan/frozen/architecture-graph.json",
+      "plan/frozen/units.json",
+      "plan/requirements.json",
+      "contracts/samples/*.json",
+      "contracts/negative/negative-cases.json"
+    ],
+    "all_run": {
+      "argv": [
+        "node",
+        "tools/verify-contracts.mjs",
+        "--all"
+      ],
+      "cwd": "isolated-worktree",
+      "exitCode": 0,
+      "result": {
+        "ok": true,
+        "scope": "设计/契约与 fixture 层（图与分支的权威校验由 Normify 工具负责）",
+        "leaves": 186,
+        "assigned": 186,
+        "units": 19,
+        "failedUnits": [],
+        "failedGlobal": [],
+        "typeInstancesValidated": 390,
+        "designInstancesValidated": 22,
+        "unitInstanceFiles": 19,
+        "negativeCases": 19,
+        "positiveCases": 5
+      }
+    },
+    "live_all_run": {
+      "argv": [
+        "node",
+        "tools/verify-contracts.mjs",
+        "--all",
+        "--json",
+        ".verify-live.json"
+      ],
+      "cwd": "live-workdir",
+      "exitCode": 0,
+      "result": {
+        "ok": true,
+        "scope": "设计/契约与 fixture 层（图与分支的权威校验由 Normify 工具负责）",
+        "leaves": 186,
+        "assigned": 186,
+        "units": 19,
+        "failedUnits": [],
+        "failedGlobal": [],
+        "typeInstancesValidated": 390,
+        "designInstancesValidated": 22,
+        "unitInstanceFiles": 19,
+        "negativeCases": 19,
+        "positiveCases": 5
+      },
+      "note": "活目录运行额外校验 plan/units/*.json 实例（branch_packet 产出的逐组交接文件）"
+    },
+    "unit_runs": [
+      {
+        "unit": "u-contract-baseline",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-contract-baseline"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      },
+      {
+        "unit": "u-platform-core",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-platform-core"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      },
+      {
+        "unit": "u-identity",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-identity"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      },
+      {
+        "unit": "u-content-pipeline",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-content-pipeline"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      },
+      {
+        "unit": "u-media",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-media"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      },
+      {
+        "unit": "u-playback",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-playback"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      },
+      {
+        "unit": "u-danmaku",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-danmaku"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      },
+      {
+        "unit": "u-community",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-community"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      },
+      {
+        "unit": "u-social",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-social"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      },
+      {
+        "unit": "u-message",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-message"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      },
+      {
+        "unit": "u-discover",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-discover"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      },
+      {
+        "unit": "u-live",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-live"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      },
+      {
+        "unit": "u-commerce",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-commerce"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      },
+      {
+        "unit": "u-pgc",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-pgc"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      },
+      {
+        "unit": "u-creator",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-creator"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      },
+      {
+        "unit": "u-ops",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-ops"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      },
+      {
+        "unit": "u-acquire",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-acquire"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      },
+      {
+        "unit": "u-channel",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-channel"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      },
+      {
+        "unit": "u-integration",
+        "argv": [
+          "node",
+          "tools/verify-contracts.mjs",
+          "--unit",
+          "u-integration"
+        ],
+        "cwd": "isolated-worktree",
+        "exitCode": 0,
+        "ok": true,
+        "checks": 19,
+        "failedChecks": []
+      }
+    ],
+    "units_executed": 19,
+    "units_failed": [],
+    "typescript_compile": {
+      "argv": [
+        "node",
+        "<repo-root>/node_modules/typescript/bin/tsc",
+        "-p",
+        "contracts/types/tsconfig.json"
+      ],
+      "cwd": "isolated-worktree",
+      "exitCode": 0,
+      "target": "contracts/types/*.ts（strict, noEmit），含 typed-payloads.fixture.ts 的开放对象载荷赋值",
+      "note": "tsc 由宿主提供；编译对象是基线内的冻结契约桩与类型化 fixture"
+    },
+    "contract_tests": {
+      "argv": [
+        "node",
+        "--test",
+        "contracts/tests/common.test.mjs",
+        "contracts/tests/event.test.mjs",
+        "contracts/tests/ledger.test.mjs",
+        "contracts/tests/state.test.mjs",
+        "contracts/tests/message-chain.test.mjs"
+      ],
+      "cwd": "isolated-worktree",
+      "exitCode": 0,
+      "files": 5,
+      "pass": 16,
+      "fail": 0,
+      "note": "基线内可运行契约测试；它证明契约/fixture 层，不代表业务测试"
+    },
+    "scope_note": "这些结果只证明设计/契约与 fixture 层：结构、写入独占、外部依赖策略、样例符合 Schema、负例被拒绝、需求与验收定义齐备；图与分支的权威校验仍由 Normify 工具完成。它们不代表任何业务实现或集成通过。"
+  },
+  "business_acceptance": {
+    "executed": false,
+    "cases": 57,
+    "commands": [
+      "node --test contracts/tests/common.test.mjs",
+      "node --test contracts/tests/event.test.mjs",
+      "node --test contracts/tests/state.test.mjs",
+      "node --test --experimental-strip-types migrations/infra/tests/migration.test.ts",
+      "node --test --experimental-strip-types services/platform/db/tests/repository.test.ts",
+      "node --test --experimental-strip-types services/platform/outbox/tests/outbox.test.ts",
+      "node --test --experimental-strip-types services/identity/account/tests/account.test.ts",
+      "node --test --experimental-strip-types services/identity/rbac/tests/rbac.test.ts",
+      "node --test --experimental-strip-types services/identity/deletion/tests/deletion.test.ts",
+      "node --test --experimental-strip-types services/catalog/video/tests/video.test.ts",
+      "node --test --experimental-strip-types services/upload/draft/tests/draft.test.ts",
+      "node --test --experimental-strip-types services/catalog/state/tests/publish-state.test.ts",
+      "node --test --experimental-strip-types services/media/ingest/tests/upload-session.test.ts",
+      "node --test --experimental-strip-types services/media/transcode/tests/transcode.test.ts",
+      "node --test --experimental-strip-types services/media/job/tests/job-lease.test.ts",
+      "node --test --experimental-strip-types services/playback/grant/tests/grant.test.ts",
+      "node --test --experimental-strip-types services/playback/stream/tests/stream.test.ts",
+      "node --test --experimental-strip-types services/danmaku/segment/tests/segment.test.ts",
+      "node --test --experimental-strip-types services/danmaku/send/tests/send.test.ts",
+      "node --test --experimental-strip-types services/danmaku/manage/tests/manage.test.ts",
+      "node --test --experimental-strip-types services/community/comment/tests/comment.test.ts",
+      "node --test --experimental-strip-types services/community/moderation/tests/moderation.test.ts",
+      "node --test --experimental-strip-types services/community/coin/tests/coin.test.ts",
+      "node --test --experimental-strip-types services/social/feed/tests/feed.test.ts",
+      "node --test --experimental-strip-types services/social/follow/tests/follow.test.ts",
+      "node --test --experimental-strip-types services/social/group/tests/group.test.ts",
+      "node --test --experimental-strip-types services/message/dm/tests/dm.test.ts",
+      "node --test --experimental-strip-types services/message/unread/tests/unread.test.ts",
+      "node --test --experimental-strip-types services/discover/indexing/tests/index-projection.test.ts",
+      "node --test --experimental-strip-types services/discover/search/tests/search.test.ts",
+      "node --test --experimental-strip-types services/live/room/tests/room.test.ts",
+      "node --test --experimental-strip-types services/live/gift/tests/gift.test.ts",
+      "node --test --experimental-strip-types services/commerce/order/tests/order.test.ts",
+      "node --test --experimental-strip-types services/commerce/payment/tests/payment.test.ts",
+      "node --test --experimental-strip-types services/commerce/reconcile/tests/reconcile.test.ts",
+      "node --test --experimental-strip-types services/pgc/series/tests/series.test.ts",
+      "node --test --experimental-strip-types services/pgc/license/tests/license.test.ts",
+      "node --test --experimental-strip-types services/pgc/trial/tests/trial.test.ts",
+      "node --test --experimental-strip-types services/creator/manage/tests/manage.test.ts",
+      "node --test --experimental-strip-types services/creator/income/tests/income.test.ts",
+      "node --test --experimental-strip-types services/creator/activity/tests/activity.test.ts",
+      "node --test --experimental-strip-types services/ops/audit/tests/audit.test.ts",
+      "node --test --experimental-strip-types services/ops/report/tests/report.test.ts",
+      "node --test --experimental-strip-types services/ops/penalty/tests/penalty.test.ts",
+      "node --test --experimental-strip-types services/acquire/import/tests/import.test.ts",
+      "node --test --experimental-strip-types services/acquire/license/tests/license-evidence.test.ts",
+      "node --test --experimental-strip-types services/acquire/dedupe/tests/dedupe.test.ts",
+      "node --test --experimental-strip-types services/channel/article/tests/article.test.ts",
+      "node --test --experimental-strip-types services/channel/manga/tests/manga.test.ts",
+      "node --test --experimental-strip-types services/channel/dressup/tests/dressup.test.ts",
+      "node --test --experimental-strip-types apps/api/tests/app.test.ts",
+      "node --test --experimental-strip-types apps/api/tests/routes.test.ts",
+      "node --test --experimental-strip-types apps/worker/tests/main.test.ts"
+    ],
+    "reason": "业务测试入口与实现文件均不存在（全部模块 planned），因此没有任何业务验收通过结论；本文件只登记验收定义。",
+    "cases_detail": [
+      {
+        "unit": "u-contract-baseline",
+        "case": "contracts-compile-and-fixtures",
+        "requirement_ids": [
+          "R00-contract-freeze",
+          "R18-frontend",
+          "R20-data-ownership"
+        ],
+        "command_ids": [
+          "business-contracts-compile-and-fixtures"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-contract-baseline",
+        "case": "fixtures-validate-and-negatives-rejected",
+        "requirement_ids": [
+          "R00-contract-freeze",
+          "R18-frontend",
+          "R20-data-ownership"
+        ],
+        "command_ids": [
+          "business-fixtures-validate-and-negatives-rejected"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-contract-baseline",
+        "case": "contract-has-no-reverse-dependency",
+        "requirement_ids": [
+          "R00-contract-freeze",
+          "R18-frontend",
+          "R20-data-ownership"
+        ],
+        "command_ids": [
+          "business-contract-has-no-reverse-dependency"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-platform-core",
+        "case": "migrations-apply-on-isolated-db",
+        "requirement_ids": [
+          "R16-infra",
+          "R20-data-ownership"
+        ],
+        "command_ids": [
+          "business-migrations-apply-on-isolated-db"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-platform-core",
+        "case": "table-owner-enforced",
+        "requirement_ids": [
+          "R16-infra",
+          "R20-data-ownership"
+        ],
+        "command_ids": [
+          "business-table-owner-enforced"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-platform-core",
+        "case": "outbox-exactly-once-effect",
+        "requirement_ids": [
+          "R16-infra",
+          "R20-data-ownership"
+        ],
+        "command_ids": [
+          "business-outbox-exactly-once-effect"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-identity",
+        "case": "register-login-verify-flow",
+        "requirement_ids": [
+          "R01-identity",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-register-login-verify-flow"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-identity",
+        "case": "permission-and-ban-boundaries",
+        "requirement_ids": [
+          "R01-identity",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-permission-and-ban-boundaries"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-identity",
+        "case": "register-idempotent-and-deletion-cooling",
+        "requirement_ids": [
+          "R01-identity",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-register-idempotent-and-deletion-cooling"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-content-pipeline",
+        "case": "draft-to-published-chain",
+        "requirement_ids": [
+          "R02-upload",
+          "R19-publish-chain",
+          "R20-data-ownership"
+        ],
+        "command_ids": [
+          "business-draft-to-published-chain"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-content-pipeline",
+        "case": "publish-preconditions-rejected",
+        "requirement_ids": [
+          "R02-upload",
+          "R19-publish-chain",
+          "R20-data-ownership"
+        ],
+        "command_ids": [
+          "business-publish-preconditions-rejected"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-content-pipeline",
+        "case": "publish-and-transition-idempotent",
+        "requirement_ids": [
+          "R02-upload",
+          "R19-publish-chain",
+          "R20-data-ownership"
+        ],
+        "command_ids": [
+          "business-publish-and-transition-idempotent"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-media",
+        "case": "upload-probe-transcode-ready",
+        "requirement_ids": [
+          "R03-media",
+          "R19-publish-chain"
+        ],
+        "command_ids": [
+          "business-upload-probe-transcode-ready"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-media",
+        "case": "hash-mismatch-and-dead-letter",
+        "requirement_ids": [
+          "R03-media",
+          "R19-publish-chain"
+        ],
+        "command_ids": [
+          "business-hash-mismatch-and-dead-letter"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-media",
+        "case": "dedupe-and-lease-exactly-once",
+        "requirement_ids": [
+          "R03-media",
+          "R19-publish-chain"
+        ],
+        "command_ids": [
+          "business-dedupe-and-lease-exactly-once"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-playback",
+        "case": "grant-covers-video-lesson-room-audio",
+        "requirement_ids": [
+          "R04-playback",
+          "R19-publish-chain",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-grant-covers-video-lesson-room-audio"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-playback",
+        "case": "grant-denial-matrix",
+        "requirement_ids": [
+          "R04-playback",
+          "R19-publish-chain",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-grant-denial-matrix"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-playback",
+        "case": "grant-expiry-and-binding",
+        "requirement_ids": [
+          "R04-playback",
+          "R19-publish-chain",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-grant-expiry-and-binding"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-danmaku",
+        "case": "segment-fetch-and-send",
+        "requirement_ids": [
+          "R05-danmaku"
+        ],
+        "command_ids": [
+          "business-segment-fetch-and-send"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-danmaku",
+        "case": "block-and-rate-limit",
+        "requirement_ids": [
+          "R05-danmaku"
+        ],
+        "command_ids": [
+          "business-block-and-rate-limit"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-danmaku",
+        "case": "send-idempotent-and-moderation-effect",
+        "requirement_ids": [
+          "R05-danmaku"
+        ],
+        "command_ids": [
+          "business-send-idempotent-and-moderation-effect"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-community",
+        "case": "comment-like-coin-favorite",
+        "requirement_ids": [
+          "R06-community",
+          "R20-data-ownership"
+        ],
+        "command_ids": [
+          "business-comment-like-coin-favorite"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-community",
+        "case": "closed-section-and-duplicate-like",
+        "requirement_ids": [
+          "R06-community",
+          "R20-data-ownership"
+        ],
+        "command_ids": [
+          "business-closed-section-and-duplicate-like"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-community",
+        "case": "coin-ledger-and-idempotency",
+        "requirement_ids": [
+          "R06-community",
+          "R20-data-ownership"
+        ],
+        "command_ids": [
+          "business-coin-ledger-and-idempotency"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-social",
+        "case": "follow-then-feed",
+        "requirement_ids": [
+          "R07-social",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-follow-then-feed"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-social",
+        "case": "block-and-limit",
+        "requirement_ids": [
+          "R07-social",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-block-and-limit"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-social",
+        "case": "unfollow-and-idempotency",
+        "requirement_ids": [
+          "R07-social",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-unfollow-and-idempotency"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-message",
+        "case": "dm-frame-carries-message",
+        "requirement_ids": [
+          "R08-message",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-dm-frame-carries-message"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-message",
+        "case": "participant-and-permission",
+        "requirement_ids": [
+          "R08-message",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-participant-and-permission"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-message",
+        "case": "idempotent-send-and-unread-reset",
+        "requirement_ids": [
+          "R08-message",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-idempotent-send-and-unread-reset"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-discover",
+        "case": "publish-projects-to-search",
+        "requirement_ids": [
+          "R09-discover",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-publish-projects-to-search"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-discover",
+        "case": "unaudited-excluded",
+        "requirement_ids": [
+          "R09-discover",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-unaudited-excluded"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-discover",
+        "case": "projection-idempotent",
+        "requirement_ids": [
+          "R09-discover",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-projection-idempotent"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-live",
+        "case": "apply-stream-danmaku-gift-replay",
+        "requirement_ids": [
+          "R10-live",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-apply-stream-danmaku-gift-replay"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-live",
+        "case": "stream-permission-and-balance",
+        "requirement_ids": [
+          "R10-live",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-stream-permission-and-balance"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-live",
+        "case": "gift-idempotent-and-sc-text-required",
+        "requirement_ids": [
+          "R10-live",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-gift-idempotent-and-sc-text-required"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-commerce",
+        "case": "topup-to-entitlement",
+        "requirement_ids": [
+          "R11-commerce",
+          "R20-data-ownership"
+        ],
+        "command_ids": [
+          "business-topup-to-entitlement"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-commerce",
+        "case": "signature-and-balance-rejected",
+        "requirement_ids": [
+          "R11-commerce",
+          "R20-data-ownership"
+        ],
+        "command_ids": [
+          "business-signature-and-balance-rejected"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-commerce",
+        "case": "callback-idempotent-and-reconcile",
+        "requirement_ids": [
+          "R11-commerce",
+          "R20-data-ownership"
+        ],
+        "command_ids": [
+          "business-callback-idempotent-and-reconcile"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-pgc",
+        "case": "season-episode-course-flow",
+        "requirement_ids": [
+          "R12-pgc",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-season-episode-course-flow"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-pgc",
+        "case": "license-and-territory-denial",
+        "requirement_ids": [
+          "R12-pgc",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-license-and-territory-denial"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-pgc",
+        "case": "trial-then-entitlement",
+        "requirement_ids": [
+          "R12-pgc",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-trial-then-entitlement"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-creator",
+        "case": "studio-overview-and-settlement",
+        "requirement_ids": [
+          "R13-creator",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-studio-overview-and-settlement"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-creator",
+        "case": "ownership-and-withdrawal-limits",
+        "requirement_ids": [
+          "R13-creator",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-ownership-and-withdrawal-limits"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-creator",
+        "case": "task-claim-and-statement-boundary",
+        "requirement_ids": [
+          "R13-creator",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-task-claim-and-statement-boundary"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-ops",
+        "case": "audit-decision-drives-publish-state",
+        "requirement_ids": [
+          "R14-ops",
+          "R20-data-ownership"
+        ],
+        "command_ids": [
+          "business-audit-decision-drives-publish-state"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-ops",
+        "case": "reviewer-permission-and-single-handling",
+        "requirement_ids": [
+          "R14-ops",
+          "R20-data-ownership"
+        ],
+        "command_ids": [
+          "business-reviewer-permission-and-single-handling"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-ops",
+        "case": "penalty-effect-and-append-only-log",
+        "requirement_ids": [
+          "R14-ops",
+          "R20-data-ownership"
+        ],
+        "command_ids": [
+          "business-penalty-effect-and-append-only-log"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-acquire",
+        "case": "source-to-import",
+        "requirement_ids": [
+          "R15-acquire",
+          "R19-publish-chain"
+        ],
+        "command_ids": [
+          "business-source-to-import"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-acquire",
+        "case": "unverified-license-rejected",
+        "requirement_ids": [
+          "R15-acquire",
+          "R19-publish-chain"
+        ],
+        "command_ids": [
+          "business-unverified-license-rejected"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-acquire",
+        "case": "dedupe-and-import-idempotency",
+        "requirement_ids": [
+          "R15-acquire",
+          "R19-publish-chain"
+        ],
+        "command_ids": [
+          "business-dedupe-and-import-idempotency"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-channel",
+        "case": "channel-publish-and-buy",
+        "requirement_ids": [
+          "R17-channel",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-channel-publish-and-buy"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-channel",
+        "case": "paid-content-without-entitlement",
+        "requirement_ids": [
+          "R17-channel",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-paid-content-without-entitlement"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-channel",
+        "case": "ownership-unique",
+        "requirement_ids": [
+          "R17-channel",
+          "R18-frontend"
+        ],
+        "command_ids": [
+          "business-ownership-unique"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-integration",
+        "case": "assembly-boots-all-domains",
+        "requirement_ids": [
+          "R16-infra",
+          "R18-frontend",
+          "R19-publish-chain"
+        ],
+        "command_ids": [
+          "business-assembly-boots-all-domains"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-integration",
+        "case": "duplicate-route-fails-fast",
+        "requirement_ids": [
+          "R16-infra",
+          "R18-frontend",
+          "R19-publish-chain"
+        ],
+        "command_ids": [
+          "business-duplicate-route-fails-fast"
+        ],
+        "executed": false
+      },
+      {
+        "unit": "u-integration",
+        "case": "no-silent-skip-of-contracts",
+        "requirement_ids": [
+          "R16-infra",
+          "R18-frontend",
+          "R19-publish-chain"
+        ],
+        "command_ids": [
+          "business-no-silent-skip-of-contracts"
+        ],
+        "executed": false
+      }
+    ]
+  },
+  "notes": [
+    "单元 19 个，覆盖 186 个叶子模块。",
+    "设计检查在 git worktree（固定 base_commit）内执行，未借用当前活目录结果。"
+  ],
+  "final_integrity": {
+    "checked_at": "2026-10-03T23:49:13.892Z",
+    "items": [
+      {
+        "view": "architecture",
+        "graph_digest": "72bc6aa01bbcb87e80f593008effa18d2ff11e39bc38d416f41c3b16d51ed7dc",
+        "plan_graph_digest": "72bc6aa01bbcb87e80f593008effa18d2ff11e39bc38d416f41c3b16d51ed7dc",
+        "plan_digest": "f459426c73686b5ea9f7165a7053de69f7eef13bda8cd52e2ffc3c26ac750e44",
+        "graph_matches_plan": true,
+        "plan_read_ok": true,
+        "plan_revalidated": true,
+        "plan_revalidate_errors": 0,
+        "plan_revalidate_warnings": 200,
+        "validate_ok": true,
+        "errors": 0
+      },
+      {
+        "view": "data",
+        "graph_digest": "e19b52a258122306c3bf697e71095cf66bb4a30d60eca32d7046d66e09923d6c",
+        "validate_ok": true,
+        "errors": 0
+      },
+      {
+        "view": "delivery",
+        "graph_digest": "d05d1559e4fd161f607371f6d1acb183ba59b21aff17964f0b5c6235c614a356",
+        "validate_ok": true,
+        "errors": 0
+      }
+    ],
+    "ok": true
+  }
+}

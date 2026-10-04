@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "bili.client.web.shared",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "本层阅读顺序：设计系统组件 → 请求与数据访问 → 实时通道客户端 → 播放器内核封装。箭头语义：call 同步调用、event 异步事件、dataflow 数据/投影流、reference 契约引用。",
+    "en": "Read in order: Design System → Data Access Layer → Realtime Client → Player Core Wrapper. Arrow kinds: call, event, dataflow, reference."
+  },
+  "order": [
+    "bili.client.web.shared.design",
+    "bili.client.web.shared.data",
+    "bili.client.web.shared.realtime",
+    "bili.client.web.shared.player"
+  ]
+}

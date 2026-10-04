@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "bili.community",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "本层阅读顺序：评论与回复 → 点赞、分享与互动记录 → 投币与虚拟币账本 → 收藏夹。箭头语义：call 同步调用、event 异步事件、dataflow 数据/投影流、reference 契约引用。",
+    "en": "Read in order: Comments and Replies → Reactions, Sharing and Interaction Log → Coins and Virtual Ledger → Favorites. Arrow kinds: call, event, dataflow, reference."
+  },
+  "order": [
+    "bili.community.comment",
+    "bili.community.reaction",
+    "bili.community.coin",
+    "bili.community.favorite"
+  ]
+}

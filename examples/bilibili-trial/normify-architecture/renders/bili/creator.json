@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "bili.creator",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "本层阅读顺序：投稿管理 → 数据分析与粉丝画像 → 弹幕评论管理 → 活动任务与推广 → 激励收益与提现。箭头语义：call 同步调用、event 异步事件、dataflow 数据/投影流、reference 契约引用。",
+    "en": "Read in order: Work Management → Analytics and Audience → Interaction Moderation → Campaigns and Promotion → Revenue and Withdrawal. Arrow kinds: call, event, dataflow, reference."
+  },
+  "order": [
+    "bili.creator.works",
+    "bili.creator.analytics",
+    "bili.creator.moderation",
+    "bili.creator.campaign",
+    "bili.creator.revenue"
+  ]
+}

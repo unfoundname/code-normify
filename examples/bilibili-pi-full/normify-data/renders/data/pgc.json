@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "data.pgc",
+  "updated_at": "2026-10-03T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 3,
+  "reading": {
+    "zh": "「版权与课堂数据」的 11 个实体表；箭头为外键（标签含字段与目标列），每个实体只有一个业务写入所有者。",
+    "en": "The 11 entity tables of \"Premium content and course data\"; arrows are foreign keys labelled with field and target column, and each entity has exactly one business write owner."
+  },
+  "order": [
+    "data.pgc.license-window",
+    "data.pgc.season",
+    "data.pgc.episode",
+    "data.pgc.episode-schedule",
+    "data.pgc.season-follow",
+    "data.pgc.season-rating",
+    "data.pgc.trial-policy",
+    "data.pgc.course",
+    "data.pgc.course-chapter",
+    "data.pgc.lesson",
+    "data.pgc.lesson-progress"
+  ]
+}

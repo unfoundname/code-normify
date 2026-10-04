@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "id": "data",
+  "updated_at": "2026-10-03T00:00:00Z",
+  "mode": "groups",
+  "max_columns": 4,
+  "reading": {
+    "zh": "数据视图按领域分组：先读身份与权限，再读内容主链（投稿/媒体/播放/弹幕/社区/动态），再读消息发现直播交易版权，最后读创作运营获取频道与平台/投影/客户端偏好。箭头是外键引用（多对一，标签标注字段与目标列）；自引用与合法环见 data.relations。",
+    "en": "Grouped by domain: identity, then the content chain, then messaging, discovery, live, commerce and premium content, then creator, operations, acquisition, channels, platform, projections and client preferences. Arrows are foreign key references (many-to-one with field and target column); self references and legal cycles are listed in data.relations."
+  },
+  "order": [
+    "data.identity",
+    "data.content",
+    "data.media",
+    "data.playback",
+    "data.danmaku",
+    "data.community",
+    "data.social",
+    "data.message",
+    "data.discover",
+    "data.live",
+    "data.commerce",
+    "data.pgc",
+    "data.creator",
+    "data.ops",
+    "data.acquire",
+    "data.channel",
+    "data.infra",
+    "data.projection",
+    "data.client",
+    "data.relations"
+  ],
+  "groups": [
+    {
+      "id": "identity",
+      "title": {
+        "zh": "身份与权限",
+        "en": "Identity and authorization"
+      },
+      "children": [
+        "data.identity"
+      ]
+    },
+    {
+      "id": "content",
+      "title": {
+        "zh": "内容主链",
+        "en": "Content chain"
+      },
+      "children": [
+        "data.content",
+        "data.media",
+        "data.playback",
+        "data.danmaku",
+        "data.community",
+        "data.social"
+      ]
+    },
+    {
+      "id": "engage",
+      "title": {
+        "zh": "消息、发现、直播",
+        "en": "Messaging, discovery, live"
+      },
+      "children": [
+        "data.message",
+        "data.discover",
+        "data.live"
+      ]
+    },
+    {
+      "id": "business",
+      "title": {
+        "zh": "交易、版权、创作、运营",
+        "en": "Commerce, premium, creator, operations"
+      },
+      "children": [
+        "data.commerce",
+        "data.pgc",
+        "data.creator",
+        "data.ops"
+      ]
+    },
+    {
+      "id": "ecosystem",
+      "title": {
+        "zh": "获取、频道、平台与投影",
+        "en": "Acquisition, channels, platform and projections"
+      },
+      "children": [
+        "data.acquire",
+        "data.channel",
+        "data.infra",
+        "data.projection",
+        "data.client",
+        "data.relations"
+      ]
+    }
+  ]
+}

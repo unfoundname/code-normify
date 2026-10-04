@@ -1,496 +1,320 @@
-<p align="center">
-  <a href="./README_EN.md">English</a> · <strong>简体中文</strong>
-</p>
+# Code Normify · PromptManager 架构设计工具
 
-<p align="center">
-  <img src="https://img.shields.io/badge/version-0.5.4-0891b2?style=flat-square" alt="Version">
-  <img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="License">
-  <img src="https://img.shields.io/badge/DSH-Plugin-7C3AED?style=flat-square" alt="DSH Plugin">
-  <img src="https://img.shields.io/badge/DSH-0.1.5--rc.2-7C3AED?style=flat-square" alt="DSH">
-  <img src="https://img.shields.io/badge/node-%E2%89%A518-339933?style=flat-square" alt="Node">
-  <img src="https://img.shields.io/badge/tools-31-0ea5e9?style=flat-square" alt="31 tools">
-</p>
+[English](./README_EN.md) · 简体中文
 
-<h1 align="center">Normify · 归一化框架图构建器</h1>
+`@promptmanager/code-normify` 0.7.0 是 PromptManager 的本地架构与分支规划工具。先设计模块树、数据类型和接口输入输出，校验后生成可下钻的架构图，再按可独立验证的交付单元划分开发组，为实现 Worker 提供固定版本的契约与目标文件。提供 **43 个工具**、Node.js ESM library 和受管 stdio MCP，运行环境为 **Node.js 20+**。
 
-<p align="center"><b>把整个项目描述成一棵"人机共读"的分形模块树：AI 负责分析与创作，确定性引擎负责校验、编译与渲染 —— 点开任意模块，就是一张更精细的子图。</b></p>
+Normify 负责结构数据、诊断、编译、渲染与静态分支计划；PromptManager 负责真实组身份、角色权限、执行组分支与工作区、原生进程租约、Worker 派工、审查、集成和任务状态。本仓库提供工具边界和接入示例，未修改 PromptManager 或注册新的宿主 IPC 通道。
 
----
+## 先设计，再实现
 
-## 0. 一句话
+1. 调用 `normify_schema_get` 获取当前契约，调用 `normify_graph_get` 读取完整图和 `digest`。
+2. 将需求拆成模块树，叶子声明命名数据类型及 API 的 `input` / `output`；用 `state: "planned"`、`fingerprint: "pending"` 和目标 `source.path` 描述尚未实现的代码。保留未修改模块和已分配的 `uid`。
+3. 调用 `normify_graph_validate({ graph })` 校验候选。修正所有 error，再用 `normify_graph_put({ graph, expect_digest })` 提交完整图；成功后生成编译产物和 HTML。
+4. 用 `normify_branch_plan_suggest` 按显式范围、共同修改约束和文件重叠生成分组候选。编辑同一份 `BranchPlan`，补齐需求覆盖、独立验收、资源隔离和组外依赖策略；经 `normify_branch_plan_validate` 校验后，以 `normify_branch_plan_put({ plan, expect_digest })` 保存。
+5. 用 `normify_branch_packet({ unit_id })` 读取固定版本的组交接包，或用 `normify_branch_plan_export({ lead_ref })` 取得 PromptManager 组计划。宿主在已有授权和调度流程中核对计划、配置与权限后创建执行组；组内可有多个 Worker，同一文件保持唯一写入负责人。按模块读取契约仍可使用 `normify_work_packet({ ids })`。
+6. 用 `normify_change_open` 记录开发变更；实际执行交付单元声明的验收命令与场景。实现后调用 `normify_module_refresh({ ids, activate: true })`、`normify_validate` 和 `normify_change_close({ id, render: true })`，核对最终诊断、测试证据和代码版本。
 
-Normify 是 **DeepSeek Harness（DSH）插件**，也是**一套写给 AI 用的开发流程**：
+已有代码可以通过 `normify_brief`、`normify_sync`、模块 CRUD 和规则工具增量维护。Normify 不写源码，源码由获授权的实现 Worker 修改。结构变更始终经工具提交。
 
-- **给 AI 的**：`normify-gen` 技能 + **31 个 `normify_*` 工具** —— 让模型把仓库分析成模块树结构数据，
-  并在后续开发中**先建图后编程、伴随编程改图**（计划态建树 → 逐个实现 → 关单收尾）。
-- **给引擎的**：零容忍校验（L1 写时 / L2 全项目 / L3 冻结）+ 确定性编译（`tree.json` 等四件产物，SHA-256 冻结）
-  + 渲染数据（`renders/`，决定"每一层怎么画"）。
-- **给人的**：**单文件交互式架构图**（`normify.html`）—— 逐层下钻、悬停看介绍、一键中英切换、深链接、
-  多树、**API 直连箭头**、跨层聚合、缩放与搜索。零依赖，双击即开。
+## 统一 JSON 契约
 
-> 它不是"生成一张图就结束"的工具：结构数据与代码**互为契约**，每次改动都能被 `normify_sync` 检出漂移，
-> 并以 `normify_change_close`（**0 error 强制**）收尾，让"代码 → 架构图"永远同步。
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/yan-mc/dsh-normify/main/docs/screenshots/engine.png" alt="引擎层：API 直连箭头" width="100%">
-  <br><sub><b>引擎层</b>：14 个模块、API 直连箭头（箭头锚定到具体 API 行）、带标签的子系统依赖、跨层聚合虚线</sub>
-</p>
-
-## 1. 它解决什么问题
-
-| 痛点 | Normify 的做法 |
-| --- | --- |
-| 架构图一画完就过期 | 结构数据是**可校验的源数据**：`normify_sync` 按 `fingerprint` 检出漂移，`normify_change_close` 强制 0 error 收尾 |
-| 图太粗，看不出接口契约 | 粒度到**单一功能单元**，API 写在叶子上，箭头可锚定到具体 API（`from_api`/`to_api`） |
-| AI 改代码时"看不见全局" | `normify_brief` 给出目标模块契约、影响面（谁依赖我）、规则约束与验收清单 |
-| 设计先写代码后补文档，必然漂移 | **计划态先建树**（`state: planned`）→ 实现后 `normify_module_refresh(activate)` 自动转 active |
-| 结构规范靠人自觉 | `policy.yml` 架构规则（依赖方向 / 禁依赖 / 无环 / 深度 / 跨树 / 命名）由 `validate` 强制执行 |
-| 大仓库一次生成太重 | 增量再生成：只重建受影响子树，`layouts_to_review` 点名要复核的层 |
-
-## 2. 核心特性
-
-### 2.1 数据模型：分形 + 零冗余
-
-- **唯一元素**：整个数据库由无数个结构完全相同的**基本模块**构成（每个模块 = 一个 Markdown 文件）。
-- **只存 `parent`**：单方向引用，`children` 由索引导出 —— 不会出现"父子各说各话"。
-- **API 只在叶子存一次**：聚合、统计、索引全部是编译期派生数据（`tree.json` / `api-index.json`）。
-- **两类边**：containment（树边，导航骨架）+ dependency（箭头，可跨子树、跨树，按 `kind` 着色）。
-- **路径式 id + 不变 uid**：AI 沿 id 逐层定位（类二分查找）；`uid` 在改名/移动时保持不变，git diff 稳定。
-- **深度不设上限**（0.5.0 起）：想有多细就拆多细，深度不再成为"合并模块"的理由。
-
-### 2.2 三层校验，fail-closed
-
-| 层 | 时机 | 内容 |
-| --- | --- | --- |
-| **L1** | 每次写入 | 必填字段、id 文法、uid、parent 一致性、双语长度、source/apis/deps 形状、state/replacement |
-| **L2** | `normify_validate` | 全项目：唯一性、文件↔id 映射、叶子/非叶子规则、API 键唯一、依赖目标、环、渲染数据交叉校验、架构规则、变更日志、（可选）仓库证据（source 存在性 + 指纹一致） |
-| **L3** | `normify_build` | 任何 error 都不产出产物；产出即 SHA-256 冻结进 `receipt.json` |
-
-每条诊断都带 `severity / code / message / subject / evidence / supportedFixes` —— **AI 可自行修复**。
-
-### 2.3 渲染器：单文件、可下钻、API 直连
-
-- 单文件 HTML（内联 CSS/JS，**零外部依赖**、零遥测），双击即开，可直接归档/发人。
-- 逐层下钻 + 面包屑 + 搜索（模块名/API）+ 大纲视图 + API 浏览器。
-- **API 直连**：叶子框内展示 API 明细行，箭头锚定到具体 API 行的端口；同一 API 行上的多条边自动扇形分离。
-- 跨层依赖聚合为虚线 `×N`（默认隐藏，工具栏或 `?agg=1` 开启，悬停看明细）。
-- 深链接：`#module=<id>`、`#api=<rpc:key>`、`#view=outline`、`?lang=zh|en`、`?agg=1`；缩放 / 悬停高亮 / 明暗主题。
-- **几何自检**：仓库自带 `check-geometry.mjs`，逐层断言"线不出界 / 不贴框 / 不穿框 / 不压线"。
-
-### 2.4 伴随开发：先建图后编程
-
-```
-change_open → brief → check → module_batch(state=planned) → 【写代码】
-   → module_refresh(activate) → change_close(0 error 强制) → verified + revision.after
-```
-
-- **计划态**：源码还不存在也能先建树（`fingerprint: pending`），`validate` 放行；
-- **禁止假激活**：源码没落地就 `activate` 直接被拒；
-- **收尾即闭环**：`change_close` 会刷新指纹 → 校验（0 error 强制）→ 编译（可选渲染）→ 标记 `verified`，
-  任何一步失败都不关闭，变更保持原状态；
-- **改图随代码**：`normify_sync` 用 `git diff` + 未跟踪文件定位受影响模块与指纹漂移，`module_patch` 跟随更新。
-
-### 2.5 架构规则先行（policy.yml）
-
-| 规则 | 作用 |
-| --- | --- |
-| `dependency-direction` | 层顺序即允许的依赖方向（如 plugin → tools → engine），可控制同层是否允许 |
-| `forbid-dependency` | 禁止某些 from → to 的依赖（可按 kind / state 过滤） |
-| `acyclic` | 依赖图禁止成环（可含跨树） |
-| `max-depth` | id 段数上限（**可选**：不写就是不限，0.5.0 起默认不限） |
-| `cross-tree` | 跨树依赖策略：`forbid` / `allow` / `require-to-api` |
-| `naming` | 作用域内 id 段的命名正则 |
-
-安装后 `normify_validate` / `normify_build` / `normify_check` 全部强制执行；**违规先改设计，不能绕过**。
-
-## 3. 最新变化
-
-### v0.5.4 · 把"第二轮 A/B 实测"暴露的 4 个工具缺陷修掉（当前版本）
-
-第二轮 A/B 换了题目（**表格公式引擎 + CLI**，同一份规范、隐藏黑盒 88 项、外加**差分模糊测试**）。
-两组最终 B 88/88、A 87/88（差异只有一条 §5.2 语义）；这一版修的是**工具侧**新暴露的 4 个坑：
-
-- **`mode:"patch"` 的静默 no-op 被拦下**：原来 `items:[{patch:{id, tags:[...]}}]`（少一层包装）会返回
-  `ok:true, count:1` 却**一个字段都没改**——最危险的"假成功"。现在直接报 `args/invalid-patch`，
-  evidence 里给出收到的键与正确形状 `{patch:{id, patch:{...}}}`；单模块 `normify_module_patch` 传空补丁
-  同样报 `args/empty-patch`（只给 `expect_updated_at` 也不再静默通过）。
-- **`normify_module_refresh` 不再强依赖 git**：`repoRoot` 不是 git 仓库时，以前直接
-  `refresh/git-failed` 失败（实测中 AI 只能 `git init` 才能激活模块）。现在改成**降级**：指纹照常重算、
-  `state` 照常激活，`revision` 保持模块原值，并给出 `refresh/git-unavailable` 警告与修法。
-- **`change_open` 的 `acceptance` 报错具体化**：以前把 `{zh,en}` 写进 acceptance 只有一句笼统报错；
-  现在明确写出"**第 N 条不是非空字符串（收到 …）：验收标准只接受纯字符串**"，并提示双语描述写进 `title`/`intent`。
-- **`normify_help` 支持 `topic:"tool:<工具名>"`**：`tools` 主题现在每个工具都带**必填/可选**摘要，
-  新主题可按需打印**完整参数树**（类型 / 描述 / 必填，由注册表实时生成、与运行时校验同源）。
-  实测里 AI 为确认 `mode=patch` 的嵌套形状去读了插件源码——这条主题正是为了消灭这种绕路。
-
-### v0.5.3 · 把「伴随编程实测」暴露的 4 个摩擦点修掉
-
-这四个问题来自一次真实的 A/B 对照实验：两个 AI 用同一份规范写同一个后端，一个带插件走伴随流程、一个纯手写
-（最终代码在隐藏黑盒验收上都是 **42/42**）。插件组多交付了 41 模块 / 110 API / 10 层的结构数据，但也踩到了下面 4 个坑：
-
-- **`normify_help` 支持 `topic`**：此前它完全忽略入参，只返回同一份字段速查 —— 实测里 AI 为了拿准
-  `change_open` / `layout_upsert` / `change_close` 的参数名，只能去读插件源码（多花约 4 分钟）。
-  现在按主题返回：`fields`（默认）/ `deps`（箭头与 API 直连）/ `renders` / `flow`（伴随流程）/ `tools`（工具清单）/
-  `policy` / `errors`（常见诊断码与修法）/ `all`；**传错主题会直接报错并列出可用主题**，不再静默忽略。
-- **项目初始化通道**：新增第 31 个工具 `normify_project_init` —— 建 `normify-<slug>/` + 默认架构规则，
-  可选 `root` 一步创建"计划态根模块"（幂等）；同时 `normify_change_open` 现在也会**自动建项目目录**
-  （此前报 `project/no-modules`，AI 只能用 `module_batch {items:[],dry_run:true}` 绕过去）；
-  `normify_brief` 遇到不存在的模块会给出"先 init / 先建树 / 改用 task"的可执行提示。
-- **批量诊断的因果链**：一条 `label-too-long` 曾连带出 3 条 `dep/target-missing`（因为 L1 失败的模块会被移出批次工作集），
-  AI 只能去读源码才能确认根因。现在连带错误改报 `dep/target-dropped` / `structure/parent-dropped`，
-  在 message 与 evidence 里点明**根因诊断码**，并在失败响应的 `root_causes` 里直接列出被丢弃的模块（附 `hint`）。
-- **「API 直连」引导**：两端都声明了 API 却没写 `from_api` / `to_api` 的箭头，`normify_validate` 会给出**聚合**
-  warning `dep/unanchored`（条数 + 前 3 条示例）。这正是实验里被浪费的能力：110 条 API 声明，54 条箭头 0 条锚定 ——
-  不锚定，箭头就只能落在框边，钉不到 API 行上。**引导≠放宽**：锚错键仍然是 error。
-
-### v0.5.2 · 修掉三处会写坏数据的真实缺陷
-
-- **`normify_module_upsert` 的必填表不再丢失**：`parameters.required` 恢复为 `["frontmatter"]`，
-  `frontmatter` 的 9 个必填字段（uid / id / parent / name / description / source / revision / updated_at / fingerprint）
-  也重新出现在 schema 里。此前嵌套 schema 被二次编译，必填表被整段丢掉 —— 模型看到的约束与运行时实际校验不一致。
-- **`normify_module_move` 迁移渲染数据时重写内容**：`id` / `order` / `groups.children` / `edge_hints` 全部改写到新 id，
-  并同步维护**旧父级**（删掉已迁出子模块的引用）与**新父级**（把新 id 补进 `order`）。
-  修复前：move 完之后项目立刻被 L2 判为 `layout/id-mismatch` + `layout/order-child` 等（实测 8–9 个 error，0.5.2 后为 0）。
-- **晋升为容器时不再把 API 留在容器上**：叶子被晋升（显式 `normify_module_promote`、写子模块自动晋升、move 到叶子底下）
-  时，容器上残留的 `apis` 会被摘除，并回报 `structure/api-dropped-on-promote` 警告（附丢失的 API 键清单）——
-  修复前项目会直接卡在 `api/non-leaf`。
-- **API 默认全展开**：渲染数据字段 `max_api_rows` 缺省 **0 = 全部展开**，叶子上的 API 一行不折叠；需要收窄时显式写 1..48。
-- 三处缺陷各自配了回归断言：`tests/regression-0.5.2.mjs`（34 项，全绿）。
-
-### v0.5.1 · 渲染器防重叠（线压线 12 → 0）
-
-- **修复连线共线重叠**：28 层合计 **12 处 → 0 处**。四处根因：
-  ① 首选路由只判"不穿别人的框"，从不检查是否压到已画的线 → 改为只接受 `violations === 0` 的候选；
-  ② API 锚定端口没有端口分离（同一 API 行被多条边共用） → 行内 ±5.5px 扇形分离；
-  ③ API 端口落在上下边时被放进框内部 → 上下边退回按边均匀分离；
-  ④ `segClear` 整块跳过源/目标框 → 新增"进入自身框内部"检查（内缩 2px）。
-- 节点/分组间距 170 → 220，给密集层更多自由通道。
-
-### v0.5.0 · 取消模块数量上限
-
-- **删除 `MAX_DEPTH = 12`** 硬限制：树可以一直下钻到"单一功能单元"；需要限层时用 `policy.yml` 的
-  `max-depth` 规则显式声明（`maxDepth` 放宽到 1..64）。
-- SKILL：目标深度改为"不设上限"，单批上限 40 → 200，新增"每叶 API 尽量 3–5 条"的粒度指引。
-<details>
-<summary>更早的版本（v0.4.x / v0.3 / v0.2 / v0.1）</summary>
-
-- **v0.4.1**：渲染器 v3 定稿（自由通道走线、viewBox 全几何自适应、API 直连、跨层聚合、缩放与悬停）；
-  `normify_sync` 识别**未跟踪的新文件**（`git ls-files --others`）。
-- **v0.4.0**：伴随开发（`state: planned`/`deprecated`、`replacement`、`tags`）、架构规则 `policy.yml`、
-  变更日志 `changes/` 与 `normify_change_close`（0 error 强制）、编辑算子 `module_patch/batch/move/refresh`、
-  `normify_brief` / `normify_check`、`sync v2`、提醒钩子；工具 15 → 30。
-- **v0.3.0**：渲染数据集 `renders/`（`order`/`groups`/`mode`/`reading`/`edge_hints`）、id 段上限 8 → 12、下钻粒度放开。
-- **v0.2.0**：适配 DSH 0.1.5-rc.2；工具名 `normify.x.y` → `normify_x_y`；bundle 层 `cordis.patch.yml`；
-  工具 `parameters` 编译为标准 JSON Schema；只读工具标记 `isConcurrencySafe`。
-- **v0.1.0**：初始版本（14 个工具、数据模型 v1、渲染器 v1）。
-
-</details>
-
-## 4. 截图
-
-| 总览层（129 模块） | 工具层（31 个工具、五族） |
-| --- | --- |
-| ![overview](https://raw.githubusercontent.com/yan-mc/dsh-normify/main/docs/screenshots/overview.png) | ![tools](https://raw.githubusercontent.com/yan-mc/dsh-normify/main/docs/screenshots/tools.png) |
-
-| 引擎层（API 直连箭头） | 模型层（修复后的干净走线） |
-| --- | --- |
-| ![engine](https://raw.githubusercontent.com/yan-mc/dsh-normify/main/docs/screenshots/engine.png) | ![model](https://raw.githubusercontent.com/yan-mc/dsh-normify/main/docs/screenshots/model.png) |
-
-> 上面几张都是 **Normify 对自身源码**生成的架构图（129 模块 / 214 API / 257 箭头 / 28 层渲染数据，`validate` 0 error）。
-
-## 5. 安装
-
-### 方式 A：从压缩包安装（推荐，不依赖源码目录）
-
-```bash
-# 1) 构建发行包（或直接使用仓库 Releases 里的 tgz）
-cd dsh-normify && npm install && npm run build && npm pack
-
-# 2) 把包解到目标 profile 的 node_modules（DSHEAC AIO 6.9.x 的 profile 是 web-desktop）
-#    <profile>/node_modules/@dsh-external/dsh-normify/
-
-# 3) 编辑 <profile>/package.json：
-#    dependencies       增加  "@dsh-external/dsh-normify": "file:<tgz 绝对路径>"
-#    dsh.profile.bundles 增加  "@dsh-external/dsh-normify"
-
-# 4) 重启 DSH 桌面端（工具在会话启动时快照，需新会话）
-```
-
-插件行的注册**由 bundle 自身完成**：`package.json > dsh.bundle.patch: ./cordis.patch.yml`，
-DSH 会把它插进 cordis 树，**不需要手改 profile 的 `cordis.patch.yml`**。
-
-### 方式 B：`dsh plugin`（自动登记 bundle）
-
-```bash
-dsh plugin --profile web-desktop add <dsh-normify 目录的绝对路径>
-# 或：dsh plugin --profile web-desktop add link:F:/dsh-normify
-```
-
-### 方式 C：开发模式（改源码 → 重启即生效）
-
-把 profile 的依赖写成 `link:<本仓库绝对路径>`，并在 `node_modules` 里建立指向本仓库的
-目录联接（junction）。此时插件按**真实路径**解析依赖，因此本仓库需要 `node_modules/yaml`（`npm install` 即可）。
-
-> ⚠️ **注意**：DSHEAC AIO **应用升级会按 `resources/profile-seed` 重播种 profile**，
-> 已安装的插件登记会被抹掉；升级后请用方式 A/B 重装一次。
-
-### 验证安装
-
-```bash
-# 在 profile 目录下用裸包名导入，应打印 31 个工具 + 技能
-node -e "import('@dsh-external/dsh-normify').then(m=>console.log(m.name))"
-# 或在 DSH 里直接问 AI：「列出你手上的 normify 工具」
-```
-
-## 6. 快速开始
-
-装好后，直接用自然语言指挥 AI 即可。最常用的三条：
-
-```text
-# ① 为仓库建架构图（首次全量生成 + 渲染）
-用 normify-gen 技能为 F:\my-project 建结构树并渲染架构图，粒度到单一功能单元。
-
-# ② 先建图后编程（推荐开发姿势）
-我要给 my-project 加一个「限流」模块：先 normify_brief 给我指引，建计划态模块，我实现完再 refresh 激活、change_close 收尾。
-
-# ③ 代码改了，同步结构图
-同步 my-project 的结构图（normify_sync），把受影响的模块与渲染数据更新掉，0 error 后重新 build + render。
-```
-
-AI 侧实际会跑：
-
-```text
-normify_tree_list → normify_module_upsert（根 + 一级子模块）
-  → normify_module_list（逐层下钻）→ normify_module_batch（批量建树，原子）
-  → normify_layout_upsert（每个容器一层渲染数据）
-  → normify_fingerprint（写 fingerprint 前必算）
-  → normify_validate（0 error 门禁）→ normify_build → normify_render
-```
-
-产物（默认写在结构数据目录 `normify-<slug>/` 下）：
-
-| 产物 | 内容 |
-| --- | --- |
-| `modules/**/*.md` | 结构数据本体（frontmatter + 正文） |
-| `renders/**/*.json` | 每个容器一层的渲染数据 |
-| `policy.yml` | 架构规则（项目创建时自动安装默认规则） |
-| `changes/<id>.json` | 开发变更日志（随结构目录一起回档） |
-| `tree.json` | 编译产物：模块字典 + API 索引 + 边 + 渲染数据 + 规则 + 变更统计 |
-| `outline.md` / `api-index.json` | 人类可读大纲 / API 索引 |
-| `receipt.json` | 产物 SHA-256 冻结回执（含 stats 与 warning 摘要） |
-| `normify.html` | 单文件交互式架构图 |
-
-## 7. 31 个工具
-
-| 族 | 工具 | 用途 |
-| --- | --- | --- |
-| **参数** | `normify_help` | **分主题**速查：`fields` 字段 / `deps` 箭头与 API 直连 / `renders` 渲染数据 / `flow` 伴随流程 / `tools` 工具清单 / `policy` 规则 / `errors` 诊断码 / `all`（0.5.3 起忽略入参会报错并列出主题） |
-| **读取** | `normify_tree_list` | 列出项目与每棵树的根 |
-| | `normify_module_get` / `normify_module_list` | 读单个模块 / 按父级或树列模块（含统计） |
-| | `normify_search` / `normify_deps_find` / `normify_outline` | 检索、反查"谁依赖我"、重建 `outline.md` |
-| **写入** | `normify_project_init` | 初始化结构数据项目（建目录 + 默认架构规则；可一步建"计划态根模块"）——**开新项目的第 0 步** |
-| | `normify_module_upsert` | 创建/更新模块（写时 L1 校验、文件形态自动晋升/降级） |
-| | `normify_module_delete` / `normify_module_promote` | 删子树（附悬空边预警）/ 叶子晋升容器 |
-| **演进** | `normify_module_patch` | 部分更新（`expect_updated_at` 并发保护 + `dry_run`） |
-| | `normify_module_batch` | 原子批量 upsert/patch（失败整批回滚） |
-| | `normify_module_move` | 改名/挪层（保 uid、级联 parent、重写全项目 deps） |
-| | `normify_module_refresh` | 重算指纹/revision；`activate` 把已落地的 planned 转 active |
-| **渲染数据** | `normify_layout_get/upsert/delete` | 维护"这一层怎么画"（顺序/分组/模式/导语/车道） |
-| **流水线** | `normify_validate` | 全项目 L2 校验（0 error 门禁；可带 `repoRoot` 做证据校验） |
-| | `normify_build` / `normify_render` | 编译并冻结产物 / 渲染单文件 HTML |
-| | `normify_fingerprint` | 按引擎确定性算法计算 source 指纹（写 `fingerprint` 前必调） |
-| | `normify_sync` | 增量再生成规划器（只读）：脏子树 / 新文件建议 / 指纹漂移 / 破坏性 API 变更 |
-| **伴随开发** | `normify_brief` | 开发指引：目标契约、影响面、规则约束、建议模块、验收清单 |
-| | `normify_check` | 动手前预检（拟建模块与依赖：parent、深度、环、规则） |
-| | `normify_change_open/update/list/close` | 变更日志；`close` **0 error 强制**收尾 |
-| | `normify_policy_get/upsert` | 读取/安装架构规则 `policy.yml` |
-
-## 8. 数据结构（模块 frontmatter）
-
-```yaml
----
-uid: 8c69b5a8                 # 8 位小写 hex，全项目唯一，改名/移动都不变
-id: dsh-normify.engine.ids    # 路径式 id，首段=树名；深度不设上限
-parent: dsh-normify.engine    # 必须等于 id 去尾段；根为 null
-name: {zh: "标识与路径", en: "Identifiers & Paths"}
-description:                  # 双语，各 ≤500 字符，人机共读
-  zh: >
-      模块 id 的文法、派生与 id ↔ 文件路径的双向映射。
-  en: >
-      Module id grammar, derivations and the id ↔ file-path mapping.
-source:                       # 代码证据（仓库相对路径 + 可选行号）
-  - {path: src/engine/ids.ts, line: 6, end_line: 34}
-revision: 90df4a10…           # 生成时仓库的 40 位 git SHA
-updated_at: "2026-09-12T12:00:00Z"
-fingerprint: 630ac9020dba…    # source 的确定性指纹（用 normify_fingerprint 计算）
-state: active                 # active | planned（计划态）| deprecated（废弃）
-tags: [engine, ids]           # 可选，≤12 个
-apis:                         # 仅叶子；每叶建议 3–5 条
-  - protocol: rpc             # http|ws|rpc|amqp|kafka|mysql|redis|file|grpc|graphql
-    path: splitId
-    description: {zh: "解析 id 为段数组。", en: "Parses an id into segments."}
-deps:                         # 出向箭头（只存源端）；可跨树
-  - kind: call                # call|event|dataflow|reference
-    to: dsh-normify.engine.model.module
-    from_api: rpc:splitId     # 可选：锚定到本模块的某个 API（"API 直连"）
-    to_api: rpc:Module
-    label: {zh: "id 契约", en: "Id contract"}
----
-（正文：给人类读者的展开介绍，可选）
-```
-
-文件布局：`modules/<树名>/<路径段…>/index.md`（容器）/ `<最后一段>.md`（叶子）—— 由工具自动维护形态。
-
-## 9. 渲染数据（`renders/`，决定"这一层怎么画"）
-
-每个**容器模块**一层，与模块一一对应：
+可编辑图只有一种形态：`{ schema_version: 1, modules: Module[], layouts: LayoutData[] }`。只存 `parent` 和出向 `deps`；`children`、API 索引和类型关系由引擎派生。下面的叶子声明计划文件、IPC 接口和两种命名类型，源码尚未存在也可完成设计校验：
 
 ```json
 {
   "schema_version": 1,
-  "id": "dsh-normify.engine.model",
-  "updated_at": "2026-09-12T12:00:00Z",
-  "mode": "grid",              // auto | layers | groups | grid
-  "max_columns": 3,            // 1..6
-  "max_api_rows": 0,           // 0 = 全部展开（缺省）；1..48 = 截断到该行数
-  "reading": {"zh": "本层 8 个子模块…", "en": "…"},
-  "order": ["dsh-normify.engine.model.text", "…"],
-  "groups": [{"id": "model", "title": {"zh": "模型与契约", "en": "Model"}, "children": ["…"]}],
-  "edge_hints": [{"from": "a", "to": "b", "lane": 2, "style": "curve"}]
+  "modules": [
+    {
+      "uid": "aabbccdd",
+      "id": "app",
+      "parent": null,
+      "name": { "zh": "应用", "en": "Application" },
+      "description": { "zh": "应用模块树。", "en": "Application module tree." },
+      "source": [],
+      "revision": "0000000000000000000000000000000000000000",
+      "updated_at": "2026-10-03T00:00:00.000Z",
+      "fingerprint": "pending",
+      "state": "planned"
+    },
+    {
+      "uid": "11223344",
+      "id": "app.worker",
+      "parent": "app",
+      "name": { "zh": "任务执行", "en": "Task execution" },
+      "description": { "zh": "执行一个任务并返回结果。", "en": "Execute a task and return its result." },
+      "source": [{ "path": "src/main/worker.ts" }],
+      "revision": "0000000000000000000000000000000000000000",
+      "updated_at": "2026-10-03T00:00:00.000Z",
+      "fingerprint": "pending",
+      "state": "planned",
+      "types": [
+        {
+          "name": "Request",
+          "description": { "zh": "任务输入。", "en": "Task input." },
+          "schema": {
+            "type": "object",
+            "properties": { "taskId": { "type": "string", "minLength": 1 } },
+            "required": ["taskId"],
+            "additionalProperties": false
+          }
+        },
+        {
+          "name": "Result",
+          "description": { "zh": "任务结果。", "en": "Task result." },
+          "schema": {
+            "type": "object",
+            "properties": { "completed": { "type": "boolean" } },
+            "required": ["completed"],
+            "additionalProperties": false
+          }
+        }
+      ],
+      "apis": [
+        {
+          "protocol": "ipc",
+          "path": "app:execute",
+          "description": { "zh": "执行任务。", "en": "Execute a task." },
+          "input": { "module": "app.worker", "name": "Request" },
+          "output": { "module": "app.worker", "name": "Result" }
+        }
+      ]
+    }
+  ],
+  "layouts": []
 }
 ```
 
-可读性配方：**顺序 = 数据流**、**分组 = 领域边界**、**导语 = 阅读路径**、长回边用 `edge_hints` 拉开车道。
+`types[].schema` 使用 **JSON Schema 2020-12**。跨类型 `$ref` 统一写为 `urn:normify:<module-id>:<type-name>`；API 类型引用统一写为 `{ module, name }`。容器不能声明 `types` 或 `apis`；引用必须指向已声明的类型。`ipc.path` 表示 IPC channel，接口键为 `ipc:app:execute`。`source.path` 是绑定源码仓库内的相对路径；计划态使用未来的目标文件路径。
 
-## 10. 架构规则（`policy.yml`）
+### 图提交与并发
 
-```yaml
-rules:
-  - id: core-acyclic                 # 依赖图禁止成环
-    type: acyclic
-    severity: error
-    includeCrossTree: true
-  - id: layer-direction              # 层顺序 = 允许的依赖方向
-    type: dependency-direction
-    severity: error
-    allowSameLayer: true
-    layers:
-      - {name: plugin, match: ["dsh-normify.plugin"]}
-      - {name: tools,  match: ["dsh-normify.tools", "dsh-normify.tools.**"]}
-      - {name: engine, match: ["dsh-normify.engine", "dsh-normify.engine.**"]}
-  - id: naming-kebab                 # 命名约束
-    type: naming
-    pattern: "^[a-z][a-z0-9-]*$"
-    scope: ["dsh-normify.**"]
+`normify_graph_put` 是完整替换：没有包含的模块和布局会被删除，MCP 标记为破坏性操作。必须先读取图，并传入读取时的 64 位 SHA-256 `digest`：
+
+```js
+const current = await call('normify_graph_get', {})
+const candidate = current.graph // 在完整快照上编辑
+await call('normify_graph_validate', { graph: candidate })
+await call('normify_graph_put', {
+  graph: candidate,
+  expect_digest: current.digest
+})
 ```
 
-项目创建时自动安装默认规则（无环 + 禁指向废弃模块），可随时用 `normify_policy_upsert` 覆盖。
-**深度上限是可选项**：不写 `max-depth` 就是不限层。
+`call` 表示已建立的工具调用接口。digest 覆盖模块、布局、规则和变更源数据；其他 Worker 更新后，旧 digest 提交会报 `graph/conflict`。重新读取并合并实际变更后再提交。候选先校验和编译，通过后才替换当前图；失败返回结构化诊断。受管服务使用项目锁协调进程内和跨进程访问。
 
-## 11. 伴随开发：先建图后编程 / 伴随编程改图
+受管 CRUD 写操作按快照、执行、全项目校验、提交或回滚处理；违反模块依赖或类型引用等约束时返回 `rolled_back: true`，避免留下不一致的图。支持 `dry_run` 的编辑在隔离候选目录中实际执行并通过 L2 校验，然后清理候选；不会只检查补丁形状就报告预演成功。
 
-### 11.1 先建图后编程（design-first）
+`graph_put` 自动 build 和 render；普通 CRUD 修改后显式调用 `normify_build` 再 `normify_render`。编译将架构源数据摘要写入 `tree.json` 的 `project.source_digest` 和 `receipt.json` 的 `source_digest`。渲染核对当前摘要及 tree 的 SHA-256；源数据变化后旧图返回 `render/stale-tree`，回执与 tree 不一致则拒绝渲染。回执的 `artifacts` 只记录 tree、outline 和 api-index 三个产物，不记录回执自身哈希。
+
+### Worker 实现包
+
+`normify_work_packet({ ids: ["app.worker"] })` 返回固定 `digest`、选中模块及正文、外部依赖和共享类型、`write_paths`、文件冲突与验收要求。选中叶子的目标文件与其他未选中叶子重叠时拒绝独立分工；冲突按真实规范化源码位置比较，包括 junction 别名与 Windows 大小写。
+
+`write_paths` 是分工契约，实际源码写权限由 PromptManager 宿主配置。实现包不授予文件权限，不创建 Worker，不改变任务状态，也不替代授权、调度、验收和合并流程。内置 coordinator 的角色上限仍然有效；架构工具应授予允许使用 MCP 的设计或 Worker 实例。
+
+### 按独立交付单元规划组分支
+
+一个交付单元应能在固定 Git 基线上实现、验证并交付。它可以包含多个叶子模块和多个 Worker；PromptManager 当前为每个执行组提供一个 branch/worktree，组内每个文件须有唯一写入负责人。模块与 API 的粒度服务于架构阅读，不直接决定 Worker 数量。
+
+`BranchPlan` 始终使用同一份 JSON 形态，建议候选、编辑、校验和保存都使用它。`normify_schema_get` 返回的 `branch_plan` 是字段契约；计划保存到 `branch-plan.json`。顶层包含 `schema_version: 1`、`id`、双语 `title`、`graph_digest`、`base_commit`、`scope`、`requirement_ids`、`together` 和 `units`：
+
+- `scope` 显式选择模块，可选择容器并展开其非废弃叶子；`units[].modules` 则必须明确列出叶子。范围内每个叶子只归属一个单元且全部覆盖。
+- `together` 是必须共同修改的模块集合。共享同一 canonical 文件的模块也必须归入同组，包括不同源码行、junction 别名和 Windows 大小写。与 scope 外模块共享文件时须调整范围或文件边界。
+- `graph_digest` 固定架构契约；`base_commit` 必须是绑定仓库可读取的完整 Git commit OID。计划的 CAS `digest` 是 `branch-plan.json` 原始字节的 SHA-256，与图摘要分别管理。缺文件时 `get` 返回 `plan: null` 和空字节摘要。
+- `requirement_ids` 记录正式需求，每项至少由一个单元负责，允许多单元共担；每个单元必须有非空需求列表，其验收场景还须覆盖该单元负责的全部需求。
+- `verification.commands` 使用 `{ id, argv: string[], cwd }` 声明命令，`cwd` 相对绑定仓库；`cases` 使用 `{ id, description, requirement_ids, command_ids }` 关联场景、需求和命令。命令与场景必须非空。所需数据库、端口、文件目录或服务在 `resources` 中声明 `{ id, kind, description, isolation: "unit" }`，由宿主实现各组隔离；无此类资源时可声明空数组。
+
+`suggest` 只按真实文件重叠和显式 `together` 形成初始分组。它不猜业务语义、需求归属、验收场景或施工顺序，也不从调用图生成 `needs`。可编辑候选生成成功时返回 `ok: true`；空验收、未分配需求及 `unresolved` 依赖会使 `ready: false`，具体缺项在 `readiness.errors` 中列出。硬结构错误仍返回 `ok: false`。必须补全候选才能保存和派工。
+
+每个单元的 `external_dependencies` 为有效组外依赖声明 `{ module, mode, fixture_paths }`。单元继承叶子祖先容器显式声明的 `deps`，容器目标展开到叶子；这些依赖与叶子自身的依赖、API 输入输出及 Schema 类型引用共同构成冻结契约上下文。同组模块从外部集合中排除；这些关系不自动推导 `needs` 或合组：
+
+| `mode` | 独立验证条件 |
+| --- | --- |
+| `baseline` | 依赖模块的全部源码在固定 `base_commit` 中是可读取的非空文件；`fixture_paths: []`。 |
+| `contract` | 使用契约测试替身或 fixture；`fixture_paths` 非空，每个文件属于固定基线或本单元的明确写入范围。 |
+| `after` | 必须等待负责该依赖的交付单元，且该单元位于显式 `needs` 前置链中；`fixture_paths: []`。 |
+| `unresolved` | 尚未决定验证策略；正式校验、保存和派工包读取均被阻断。 |
+
+例如“投稿发布”和“播放器”互有调用关系，仍可用固定契约与播放器 fixture 独立开发。只有真实实现必须先到位时才声明 `after` 与 `needs`；`needs` 禁止自依赖、引用缺失单元和成环。
+
+```js
+const current = await call('normify_branch_plan_get', {})
+const suggested = await call('normify_branch_plan_suggest', {
+  id: 'video-development',
+  title: { zh: '视频交付计划', en: 'Video delivery plan' },
+  base_commit: baseCommit, // 绑定仓库中的完整 commit OID。
+  scope: ['video.publication', 'video.player'],
+  requirement_ids: ['REQ-publish', 'REQ-play'],
+  together: []
+})
+if (!suggested.ok) throw new Error(JSON.stringify(suggested.errors))
+const candidate = structuredClone(suggested.plan)
+// 编辑 candidate.units：补齐需求、独立命令/场景/资源和全部外部依赖策略。
+const checked = await call('normify_branch_plan_validate', { plan: candidate })
+if (!checked.ok) throw new Error(JSON.stringify(checked.errors))
+await call('normify_branch_plan_put', {
+  plan: candidate,
+  expect_digest: current.digest
+})
+```
+
+`put` 与 `delete` 都要求最新计划摘要；冲突返回 `branch/conflict`，须重新读取并核对修改。`dry_run: true` 仅预演，不替换或删除已保存计划。更新架构图后旧计划返回 `branch/graph-drift`，读取组包与导出也会拒绝；应重新确认计划，而非绕过摘要。
+
+`normify_branch_packet({ unit_id })` 返回该单元的模块正文、完整数据/API 契约、组外依赖、`write_paths`、验收声明以及 `base_commit`、`graph_digest`、`plan_digest` 三个固定版本。`normify_branch_plan_export({ lead_ref })` 返回 `worker_plan`，每个单元对应一项 `role: "lead"`；`spec` 为冻结交接包 JSON，`requirementIds` 与 `needs` 对接宿主原有组计划结构。计划标识同时包含逻辑计划 ID 与计划摘要，区分不同版本。
+
+`lead_ref` 只引用宿主的 leader 模板，不代表真实组身份或授权。PromptManager 须核对正式 `WorkerConfiguration`，复用现有分支、worktree、角色、Worker 状态、审查与集成服务。本次提供静态导出适配器；应用内端到端接线仍需宿主完成。`validate`、`packet` 和 `export` 的 0 error 只证明声明满足静态契约，工具不会执行验收命令，也不会证明资源隔离或真实集成已通过。
+
+宿主接线时须按包内 `base_commit` 创建工作树，并为 `after` 策略解析、固定和物化前置单元的交付提交。当前 PromptManager 的普通 lead 工作树从 `main` 取得基线，`needs` 只等待任务完成；这些行为尚未消费上述分支契约，不能据静态导出宣称执行流程已经接通。
+
+可运行例子位于[源码仓库](https://github.com/wishbreeze/code-normify)的 `examples/branch-development/example.mjs`。请在源码仓库中运行，需 Git 与 Node.js 20+；npm 发布包不包含 `examples/` 目录：
+
+```sh
+npm run build
+node examples/branch-development/example.mjs
+```
+
+例子创建临时 Git 基线与计划态图，补全两个独立交付单元并读取组包、导出组计划；打印摘要与保留产物路径。示例中的业务验收命令仅作声明。
+
+## PromptManager 受管 MCP 接入
+
+先在本仓库构建并打包，再将生成的 tarball 安装进目标项目，确保执行组工作区中的 `node_modules/@promptmanager/code-normify/lib/mcp.js` 及依赖可用：
+
+```sh
+npm ci
+npm run build
+npm pack
+# 在目标项目安装上一步生成的包，路径按实际文件填写
+npm install --save-dev /absolute/path/promptmanager-code-normify-0.7.0.tgz
+```
+
+本示例使用本地构建包，不假定包已经发布到 npm。各执行组须通过 PromptManager 既有依赖准备流程获得该包。
+
+PromptManager 配置使用 `mcp_servers`。`command = "node"` 由宿主解析为已安装工具链的固定 Node 可执行文件，`args` 原样传递，进程在执行组工作区启动。不要将 `command` 配成 PATH 里的 `normify-mcp`：当前原生命令契约只解析固定命令名或绝对可执行路径。
+
+```toml
+[mcp_servers.normify-design]
+command = "node"
+args = ["node_modules/@promptmanager/code-normify/lib/mcp.js", "--repo-root", ".", "--data-dir", "normify-architecture", "--access", "write"]
+
+[mcp_servers.normify-read]
+command = "node"
+args = ["node_modules/@promptmanager/code-normify/lib/mcp.js", "--repo-root", ".", "--data-dir", "normify-architecture", "--access", "read"]
+```
+
+CLI 三个参数都必填。相对 `repo-root` 和 `data-dir` 按**宿主启动 cwd**解析为绝对路径，再传入受管服务；绝对路径也支持。使用 `.` 可跟随各执行组的 worktree，避免固定主仓库路径造成源码证据指向错误工作区。数据目录名必须是 `normify-<slug>`。
+
+仅登记服务器不会授予工具。下面是设计实例 `AgentSpec` 的精确 `mcpBindings` 片段；角色、MCP 语义组和原生沙箱授权仍按 PromptManager 的已有配置设置：
+
+```json
+{
+  "mcpBindings": [
+    {
+      "serverId": "normify-design",
+      "tools": [
+        "normify_schema_get",
+        "normify_graph_get",
+        "normify_graph_validate",
+        "normify_graph_put",
+        "normify_work_packet",
+        "normify_branch_plan_suggest",
+        "normify_branch_plan_get",
+        "normify_branch_plan_validate",
+        "normify_branch_plan_put",
+        "normify_branch_plan_delete",
+        "normify_branch_packet",
+        "normify_branch_plan_export"
+      ]
+    }
+  ]
+}
+```
+
+只读实例可绑定 `normify-read`，明确列出需要的读取工具：
+
+```json
+{
+  "mcpBindings": [
+    {
+      "serverId": "normify-read",
+      "tools": ["normify_schema_get", "normify_graph_get", "normify_module_get", "normify_work_packet", "normify_branch_plan_get", "normify_branch_packet", "normify_branch_plan_export"]
+    }
+  ]
+}
+```
+
+PromptManager 注入的调用名为 `mcp__normify-design__normify_graph_get` 等；binding 中使用服务器原始工具名。`read` 服务只暴露只读工具；`write` 服务暴露 43 个工具，宿主仍按精确 binding 授权。模型不能通过工具参数覆盖 `project`、`dir` 或 `repoRoot`。源码读取、产物路径和符号链接均受绑定工作区约束。
+
+stdio stdout 仅传 MCP 协议，日志进入 stderr。业务失败保留 `{ ok, errors, warnings, ... }` 结构化结果并设置 MCP `isError`；异常使用 MCP 错误响应。取消只在进入内核前阻止执行，不能用取消推断已开始的写入没有发生。
+
+## Electron 主进程 library 接入
+
+主进程可以消费与 MCP 同一套受管工具，避免第二套校验和文件访问实现：
+
+```ts
+import { join } from 'node:path'
+import { createPromptManagerTools } from '@promptmanager/code-normify/service'
+
+export async function openArchitectureTools(groupWorkspace: string) {
+  const tools = await createPromptManagerTools({
+    repoRoot: groupWorkspace,
+    dataDir: join(groupWorkspace, 'normify-architecture'),
+    access: 'write',
+    requireBilingual: true
+  })
+  return new Map(tools.map(tool => [tool.name, tool]))
+}
+```
+
+`groupWorkspace` 必须来自宿主已授权的执行组绝对路径。工具提供 `name`、`description`、`behavior`、标准 JSON Schema `parameters` 和 `execute(args)`；结果统一为对象，包含 `ok`、`errors` 和 `warnings`。
+
+宿主接纳固定设计可调用 `readBranchPlanningSnapshot(options, {plan_digest, graph_digest}, readGit, signal)`。调用方必须提供绑定仓库的只读 Git 端口；该入口复用项目锁，在读取前后核对完整图和计划版本，返回统一 `BranchPlanningSnapshot`（plan、packets 与两个 digest）。等待锁可取消。PromptManager 将接纳结果保存为不可变 SQL 快照；此读取入口不创建 Worker，也不证明固定基线、after 提交物化或真实验收已经接通。
+
+React 通过 PromptManager 现有主进程 IPC 边界取得只读图数据或预览结果；不要在渲染进程导入本 package、`node:fs` 或自行扫描仓库。宿主接线应复用现有 IPC、角色和任务资源授权机制；本示例没有新增 IPC channel。
+
+## 43 个工具
+
+| 分类 | 工具 |
+| --- | --- |
+| 完整图与派工契约（5） | `normify_schema_get`、`normify_graph_get`、`normify_graph_validate`、`normify_graph_put`、`normify_work_packet` |
+| 分支交付计划（7） | `normify_branch_plan_suggest`、`normify_branch_plan_get`、`normify_branch_plan_validate`、`normify_branch_plan_put`、`normify_branch_plan_delete`、`normify_branch_plan_export`、`normify_branch_packet` |
+| 导航与查询（8） | `normify_tree_list`、`normify_module_get`、`normify_module_list`、`normify_search`、`normify_outline`、`normify_deps_find`、`normify_brief`、`normify_help` |
+| 项目与模块编辑（7） | `normify_project_init`、`normify_module_upsert`、`normify_module_patch`、`normify_module_batch`、`normify_module_move`、`normify_module_promote`、`normify_module_delete` |
+| 证据、同步与校验（5） | `normify_fingerprint`、`normify_sync`、`normify_module_refresh`、`normify_validate`、`normify_check` |
+| 架构规则（2） | `normify_policy_get`、`normify_policy_upsert` |
+| 开发变更（4） | `normify_change_open`、`normify_change_update`、`normify_change_list`、`normify_change_close` |
+| 布局与产物（5） | `normify_layout_get`、`normify_layout_upsert`、`normify_layout_delete`、`normify_build`、`normify_render` |
+
+完整参数以 `normify_schema_get` 和 MCP `tools/list` 为准；工具可通过 `normify_help({ topic: "tool:normify_module_patch" })` 查看参数说明。帮助目录与当前实例的只读或读写权限保持一致。
+
+## 数据与产物
 
 ```text
-① normify_change_open   开变更单（title / intent / modules / acceptance）
-② normify_brief          拿指引：目标模块与契约、影响面（谁依赖我）、规则约束、建议模块、验收清单
-③ normify_check          预检：拟建模块与依赖是否违反核心约束或 policy
-④ normify_module_batch   建「计划态」模块（state=planned, fingerprint=pending, 源码可以先不存在）
-                          同一轮用 normify_layout_upsert 写该层渲染数据
-⑤ 【人/AI 写代码】        实现对应模块
-⑥ normify_module_refresh 重算指纹与 revision，activate:true → planned 自动转 active
-⑦ normify_change_close   0 error 强制收尾：刷新 → 校验 → 编译 → 标记 verified + revision.after
+normify-architecture/
+├── modules/       模块 Markdown，严格 YAML frontmatter
+├── renders/       每层布局 JSON
+├── policy.yml     架构规则
+├── changes/       开发变更记录
+├── branch-plan.json 显式交付单元、验收与组外依赖策略
+├── tree.json      编译结构、API、类型契约及布局
+├── outline.md     派生大纲
+├── api-index.json 派生接口索引
+├── receipt.json   产物哈希与校验回执
+└── normify.html   可下钻、搜索和切换语言的单文件查看器
 ```
 
-- 计划态下 `normify_validate` **0 error**（源码未落地也合法，只记 warning）；
-- 源码没落地就 `activate` / `close` 会被**拒绝**（禁止"假激活"）；
-- 变更单存在结构目录内（`changes/<id>.json`），**随工程一起回档**。
+`graph_get` / `graph_put` 是编辑入口，持久化继续复用现有模块及布局文件。`tree.json` 是编译产物，不作为第二份可写源数据。规则包括依赖方向、禁依赖、无环、深度、跨树和命名。规范详见 [SPEC.zh-CN.md](./docs/SPEC.zh-CN.md)，配套流程见 [normify-gen](./skills/normify-gen/SKILL.md)。
 
-### 11.2 伴随编程改图（companion update）
+## 开发验证
 
-```text
-① 改代码（提交与否都行）
-② normify_sync            检出：changed_files / affected / drift_fingerprints / layouts_to_review
-                          新文件还会给出「建议模块」（含 id 与目标路径）
-③ normify_module_patch    跟随代码更新模块：补 API、改介绍、重算 fingerprint 与 revision
-④ normify_validate        0 error
-⑤ normify_change_close    收尾并重建产物（tree.json 会反映本次变更统计）
+```sh
+npm run check
+npx playwright install chromium
+npm run test:render
 ```
 
-> 实测（本项目自身）：改完 `src/engine/layout.ts` + `CHANGELOG.md` 后，`sync` 报出 **7 个 `evidence/fingerprint-drift`**，
-> `refresh` 后回到 0 error —— 这正是"图与码不脱节"的日常形态。
+验证涵盖原有引擎回归、命名类型与 Schema 引用、完整图 CAS、实现包文件冲突、变更删除闭环、真实 SDK stdio 生命周期、相对启动目录、只读权限、越界拒绝和取消语义。浏览器验证覆盖类型和接口跳转、搜索、完整 Schema、双语及窄屏显示。测试结果不等于已完成 PromptManager 应用内接线。
 
-## 12. 渲染器细节（v3 / 0.5.2）
+## 来源与许可
 
-- **走线**：连线只走"自由通道"（相邻列/行之间的空隙），节点框保持 ≥16px 净空；全局车道坐标注册表保证
-  **同一坐标不分配给两条边**；候选路径做框体/组框碰撞检测，兜底用"自由行 × 自由列"总线。
-- **防重叠（0.5.1）**：路由首选只接受 `violations === 0` 的候选（不穿框 / 不压已画线 / 不横穿自身框 /
-  端口法向正确）；API 锚定端口按到达顺序在 API 行内 ±5.5px 扇形分离。
-- **全展开（0.5.2）**：`max_api_rows` 缺省 0 → 每个叶子的 API 全部展开，箭头锚点与 API 行一一对应（不再 `+N` 折叠）。
-- **API 直连**：叶子框内展示 `max_api_rows` 行 API（0 = 全部，也是缺省），箭头锚定到具体 API 行的端口。
-- **跨层聚合**：跨层依赖默认聚合为虚线 `×N`（`?agg=1` 或工具栏开启，悬停看明细）。
-- **viewBox 自适应**：由全部几何包围盒动态计算（线不出视口）；缩放 / 适配 / 100%。
-- **几何自检**：`check-geometry.mjs` 逐层断言五项指标（越界 / 贴边 / 穿框 / 贴组框 / 线压线）。
-  本项目自身 129 模块 / 28 层：**线压线 0 处**，27/28 层五项全 0。
-
-## 13. 工程与测试
-
-```bash
-npm install          # 安装 devDependencies（typescript / @types/node / cordis / schemastery / cosmokit）
-npm run build        # src/ → lib/（tsc；两条路径：本地 vendor-ts 或 npm）
-npm run typecheck    # tsc --noEmit
-npm test             # engine-e2e.mjs + companion-e2e.mjs（不依赖 DSH 的 node 端到端）
-node ci-contract-check.cjs   # 契约检查：bundle 声明 + 恰好 31 个工具 + provider 安全命名
-```
-
-| 目录 | 内容 |
-| --- | --- |
-| `src/` | TypeScript 源码（16 个模块，7168 行）：`index.ts` / `tools.ts` / `engine/*` |
-| `lib/` | 编译产物（`tsc` 输出，随包发布） |
-| `skills/normify-gen/SKILL.md` | 生成器技能（铁律、流程、粒度、可读性配方） |
-| `tests/` | 两个端到端：引擎链路 + 伴随开发闭环（8 个环节） |
-| `docs/SPEC.zh-CN.md` | 正式规范（数据模型 / 源格式 / 产物 / 校验 / 生成器 / 渲染器 / 插件工程） |
-| `vendor/` | 内联第三方（schemastery / cosmokit，按相对路径加载） |
-
-## 14. 兼容性与排错
-
-| 项 | 要求 |
-| --- | --- |
-| DSH | `0.1.5-rc.2`（peer：`@deepseek-ai/cordis ^4`；`dsh-tools` / `dsh-skill` 可选） |
-| DSHEAC AIO | 6.9.x（profile `web-desktop`） |
-| Node.js | ≥ 18 |
-
-**常见问题**
-
-- **装了但工具不出现** → 工具列表在**会话启动时快照**：请**新开一个会话**（或重启桌面端）。
-- **升级 AIO 后插件消失** → 应用升级会按 `resources/profile-seed` 重播种 profile，重装一次即可。
-- **`Cannot find package 'yaml'`** → `link:` 安装时按真实路径解析依赖，请在本仓库执行一次 `npm install`。
-- **`evidence/fingerprint-drift`** → 源码变了而结构数据没跟上：`normify_sync` 看漂移清单，`normify_module_refresh` 重算指纹。
-- **`structure/leaf-too-coarse`** → 不是错，是提示：该叶子还能继续拆（推荐拆到"单一功能单元"）。
-
-## 15. 安全与隐私
-
-- **无遥测、无网络请求**：结构数据与渲染产物全部在本地生成，`normify.html` 不加载任何外部资源。
-- **不做凭据处理**：插件不读取、不写入任何 token / 私钥 / password；`.gitignore` 已排除 `.env*`、`*.pem`、
-  `*.credentials.yaml` 等；**仓库内不存在任何凭据，也请不要提交**。
-- **只读仓库**：生成器遵守"只读源码"铁律 —— 结构数据只写入 `normify-<slug>/`，绝不修改被分析的仓库。
-- `source` 字段只记录**仓库相对路径**与行号，不会把源码内容复制进结构数据。
-
-## 16. 文档索引
-
-| 文档 | 内容 |
-| --- | --- |
-| [`docs/SPEC.zh-CN.md`](docs/SPEC.zh-CN.md) | 正式规范 v1.0（含 v0.4.x/0.5.x 实现状态） |
-| [`skills/normify-gen/SKILL.md`](skills/normify-gen/SKILL.md) | 生成器技能全文（AI 的工作手册） |
-| [`CHANGELOG.md`](CHANGELOG.md) | 版本变更记录（0.1.0 → 0.5.4） |
-| [`docs/VIDEO-SCRIPT.zh-CN.md`](docs/VIDEO-SCRIPT.zh-CN.md) | **视频文字稿**（10 分钟完整版 + 60 秒速览 + 数字备忘卡 + 录制清单） |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | 参与贡献 |
-| [`SECURITY.md`](SECURITY.md) | 安全策略 |
-
-## 许可证
-
-[MIT](LICENSE) © yan-mc
-
----
-
-<p align="center"><sub>Normify —— 让架构图跟着代码一起生长。</sub></p>
+本项目由 [yan-mc/dsh-normify](https://github.com/yan-mc/dsh-normify) 派生，保留原有结构引擎、查看器及 MIT 许可。当前派生仓库为 [wishbreeze/code-normify](https://github.com/wishbreeze/code-normify)，0.6.0 将宿主入口迁移为 PromptManager 工具 library 与受管 MCP，0.7.0 增加按可独立验证交付单元划分的分支计划。原作者归属 **Copyright (c) 2026 yan-mc** 见 [LICENSE](./LICENSE)。

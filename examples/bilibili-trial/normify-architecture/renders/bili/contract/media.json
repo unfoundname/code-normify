@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "bili.contract.media",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "本层阅读顺序：媒体资产契约 → 媒体任务契约 → 播放授权契约。箭头语义：call 同步调用、event 异步事件、dataflow 数据/投影流、reference 契约引用。",
+    "en": "Read in order: Media Asset Contract → Media Job Contract → Playback Grant Contract. Arrow kinds: call, event, dataflow, reference."
+  },
+  "order": [
+    "bili.contract.media.asset",
+    "bili.contract.media.job",
+    "bili.contract.media.playback"
+  ]
+}

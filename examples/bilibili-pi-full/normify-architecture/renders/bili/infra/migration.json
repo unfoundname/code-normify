@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "bili.infra.migration",
+  "updated_at": "2026-10-03T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "reading": {
+    "zh": "本层是「数据库迁移」的 11 个功能单元，按设计顺序阅读；箭头指出向依赖（调用/事件/数据流/引用）。",
+    "en": "This level shows the 11 functional units of \"Database migrations\", in design order; arrows are outbound dependencies (call/event/dataflow/reference)."
+  },
+  "order": [
+    "bili.infra.migration.identity",
+    "bili.infra.migration.content",
+    "bili.infra.migration.media",
+    "bili.infra.migration.community",
+    "bili.infra.migration.message",
+    "bili.infra.migration.commerce",
+    "bili.infra.migration.live",
+    "bili.infra.migration.pgc",
+    "bili.infra.migration.ops",
+    "bili.infra.migration.infra",
+    "bili.infra.migration.content-extra"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "bili.publish",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "投稿主链顺序：上传分片 → 稿件草稿 → 多分P/合集与预约 → 目录唯一发布命令；只有目录服务可改发布状态。",
+    "en": "Submission chain: upload parts, draft, episodes/collections, then the sole catalog publish command."
+  },
+  "order": [
+    "bili.publish.upload",
+    "bili.publish.submission",
+    "bili.publish.collection",
+    "bili.publish.catalog"
+  ]
+}

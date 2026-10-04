@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "id": "bili",
+  "updated_at": "2026-10-03T00:00:00Z",
+  "mode": "groups",
+  "max_columns": 4,
+  "reading": {
+    "zh": "从左到右先读共享契约与前端基础设施，再读业务域，最后读基础设施/装配与客户端；所有箭头都是出向依赖，不代表开发先后。",
+    "en": "Read shared contracts and front-end infrastructure first, then business domains, then infrastructure/assembly and clients. Arrows are outbound dependencies, not scheduling order."
+  },
+  "order": [
+    "bili.contract",
+    "bili.identity",
+    "bili.upload",
+    "bili.catalog",
+    "bili.media",
+    "bili.playback",
+    "bili.danmaku",
+    "bili.community",
+    "bili.social",
+    "bili.message",
+    "bili.discover",
+    "bili.live",
+    "bili.commerce",
+    "bili.pgc",
+    "bili.creator",
+    "bili.ops",
+    "bili.acquire",
+    "bili.channel",
+    "bili.infra",
+    "bili.assembly",
+    "bili.client"
+  ],
+  "groups": [
+    {
+      "id": "contract",
+      "title": {
+        "zh": "共享契约",
+        "en": "Shared contracts"
+      },
+      "children": [
+        "bili.contract"
+      ]
+    },
+    {
+      "id": "domains",
+      "title": {
+        "zh": "业务域",
+        "en": "Business domains"
+      },
+      "children": [
+        "bili.identity",
+        "bili.upload",
+        "bili.catalog",
+        "bili.media",
+        "bili.playback",
+        "bili.danmaku",
+        "bili.community",
+        "bili.social",
+        "bili.message",
+        "bili.discover",
+        "bili.live",
+        "bili.commerce",
+        "bili.pgc",
+        "bili.creator",
+        "bili.ops",
+        "bili.acquire",
+        "bili.channel"
+      ]
+    },
+    {
+      "id": "platform",
+      "title": {
+        "zh": "基础设施与系统装配",
+        "en": "Infrastructure and system assembly"
+      },
+      "children": [
+        "bili.infra",
+        "bili.assembly"
+      ]
+    },
+    {
+      "id": "clients",
+      "title": {
+        "zh": "客户端与共享前端基础设施",
+        "en": "Clients and shared front-end infrastructure"
+      },
+      "children": [
+        "bili.client"
+      ]
+    }
+  ]
+}

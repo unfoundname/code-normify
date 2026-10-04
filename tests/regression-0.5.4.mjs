@@ -8,14 +8,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createHash } from 'node:crypto'
 
-const PLUGIN = new URL('../lib/index.js', import.meta.url).href
-const plug = await import(PLUGIN)
-const tools = new Map()
-plug.apply({ tools: { register: (d) => tools.set(d.name, d) }, skills: { register: () => () => {} },
-  logger: { info: () => {}, warn: () => {} }, effect: () => {}, on: () => {} },
-  { rootDir: '.', requireBilingual: true, devCompanionReminder: false, devCompanionReminderAfter: 8 })
-const raw = (n, a) => tools.get(n).execute(a ?? {})
-const call = async (n, a) => { try { return await raw(n, a) } catch (e) { return { ok: false, error: { code: 'thrown', message: String(e?.message ?? e) } } } }
+import { createNormifyTools } from '../lib/index.js'
+const tools = new Map(createNormifyTools({ rootDir: '.', requireBilingual: true }).map(tool => [tool.name, tool]))
+const call = (n, a) => tools.get(n).execute(a ?? {})
 const hex = (s) => createHash('sha256').update(s).digest('hex')
 const L = (zh, en) => ({ zh, en })
 const NOW = '2026-09-13T12:00:00Z'
@@ -51,26 +46,30 @@ console.log('== ① batch patch 内层缺失 → 必须报错，不能静默 no-
 const FILE_A = 'modules/demo/a.md'
 const before = readModule(DIR, FILE_A)
 const bad = await call('normify_module_batch', { dir: DIR, mode: 'patch', items: [{ patch: { id: 'demo.a', tags: ['bad'] } }] })
-ok('①a 单层包装报 args/invalid-patch', bad.ok === false && (bad.errors ?? []).some(e => /args\/invalid-patch/.test(String(e))), JSON.stringify(bad.errors ?? bad).slice(0, 140))
+ok('①a 单层包装报 args/invalid-patch 且指出内层缺失', bad.ok === false && bad.errors.some(d => d.code === 'args/invalid-patch' && d.evidence.inner_patch === 'missing'), JSON.stringify(bad.errors).slice(0, 140))
 ok('①b 文件确实没被改动', readModule(DIR, FILE_A) === before)
 const emptyInner = await call('normify_module_batch', { dir: DIR, mode: 'patch', items: [{ patch: { id: 'demo.a', patch: {} } }] })
-ok('①c 内层空对象同样报错', emptyInner.ok === false && (emptyInner.errors ?? []).some(e => /args\/invalid-patch/.test(String(e))))
+ok('①c 内层空对象同样报错且未写入', emptyInner.ok === false && emptyInner.errors.some(d => d.code === 'args/invalid-patch' && d.evidence.inner_patch === '{}') && readModule(DIR, FILE_A) === before)
 const good = await call('normify_module_batch', { dir: DIR, mode: 'patch', items: [{ patch: { id: 'demo.a', patch: { tags: ['ok'] } } }] })
 ok('①d 双层包装成功', good.ok === true, JSON.stringify(good.errors ?? '').slice(0, 100))
 ok('①e 双层包装真的写进去了', /tags:/.test(readModule(DIR, FILE_A)) && readModule(DIR, FILE_A) !== before)
 
 console.log('\n== ② 单模块 patch 空补丁 ==')
+const beforeEmptyPatch = readModule(DIR, FILE_A)
 const empty = await call('normify_module_patch', { dir: DIR, id: 'demo.a', patch: {} })
-ok('②a 空补丁报 args/empty-patch', empty.ok === false && /args\/empty-patch/.test(JSON.stringify(empty.errors ?? empty)), JSON.stringify(empty.errors ?? empty).slice(0, 120))
+ok('②a 空补丁报 args/empty-patch 且不写入', empty.ok === false && empty.errors.some(d => d.code === 'args/empty-patch') && readModule(DIR, FILE_A) === beforeEmptyPatch, JSON.stringify(empty.errors).slice(0, 120))
 const onlyExpect = await call('normify_module_patch', { dir: DIR, id: 'demo.a', patch: { expect_updated_at: '2026-01-01T00:00:00Z' } })
-ok('②b 只给 expect_updated_at 也报错（且不是静默通过）', onlyExpect.ok === false, JSON.stringify(onlyExpect.errors ?? onlyExpect).slice(0, 120))
+ok('②b 只给失效 expect_updated_at 报 module/conflict 且不写入', onlyExpect.ok === false && onlyExpect.errors.some(d => d.code === 'module/conflict') && readModule(DIR, FILE_A) === beforeEmptyPatch, JSON.stringify(onlyExpect.errors).slice(0, 120))
+const modBefore = await call('normify_module_get', { dir: DIR, id: 'demo.a' })
+const currentExpect = await call('normify_module_patch', { dir: DIR, id: 'demo.a', patch: { expect_updated_at: modBefore.module.updated_at } })
+ok('②b2 只给正确 expect_updated_at 仍报 args/empty-patch 且不写入', currentExpect.ok === false && currentExpect.errors.some(d => d.code === 'args/empty-patch') && readModule(DIR, FILE_A) === beforeEmptyPatch)
 const real = await call('normify_module_patch', { dir: DIR, id: 'demo.a', patch: { tags: ['patched'] } })
 ok('②c 正常补丁仍可用', real.ok === true, JSON.stringify(real.errors ?? '').slice(0, 100))
 
 console.log('\n== ③ refresh 不依赖 git（降级为 warning） ==')
 const rf = await call('normify_module_refresh', { dir: DIR, ids: ['demo.a', 'demo.b'], repoRoot: CODE, activate: true })
-ok('③a 非 git 仓库不再 refresh/git-failed', rf.ok === true, JSON.stringify(rf.errors ?? rf.error ?? '').slice(0, 140))
-ok('③b 给出 refresh/git-unavailable 警告', (rf.warnings ?? []).some(w => /refresh\/git-unavailable/.test(String(w))), JSON.stringify((rf.warnings ?? []).slice(0, 1)).slice(0, 140))
+ok('③a 非 git 仓库不再 refresh/git-failed', rf.ok === true, JSON.stringify(rf.errors).slice(0, 140))
+ok('③b 给出 refresh/git-unavailable 警告', rf.warnings.some(d => d.code === 'refresh/git-unavailable'), JSON.stringify(rf.warnings.slice(0, 1)).slice(0, 140))
 const modA = await call('normify_module_get', { dir: DIR, id: 'demo.a' })
 const fpA = JSON.stringify(modA)
 ok('③c fingerprint 已按源码重算（非 pending）', !/pending/.test(fpA) && /[a-f0-9]{64}/.test(fpA), fpA.slice(0, 120))
@@ -83,14 +82,15 @@ ok('④a tool:<name> 返回参数树', td.ok === true && /参数/.test(td.refere
 ok('④b 参数树标出必填与类型', /\* items: array/.test(td.reference) && /mode: string/.test(td.reference), td.reference.split('\n').slice(4, 6).join(' / '))
 ok('④c 参数树暴露 patch 双层结构说明', /patch: \{ id, patch \}/.test(td.reference))
 const tu = await call('normify_help', { topic: 'tool:nope' })
-ok('④d 未知工具报 args/unknown-tool', tu.ok === false && tu.error?.code === 'args/unknown-tool', JSON.stringify(tu.error).slice(0, 120))
+ok('④d 未知工具报 args/unknown-tool', tu.ok === false && tu.errors.some(d => d.code === 'args/unknown-tool'), JSON.stringify(tu.errors).slice(0, 120))
 const tl = await call('normify_help', { topic: 'tools' })
 ok('④e tools 主题带"必填/可选"摘要', /必填:/.test(tl.reference) && /可选:/.test(tl.reference))
 const NEW = join(work, 'normify-chg').replace(/\\/g, '/')
 const badChg = await call('normify_change_open', { dir: NEW, title: L('测试', 'Test'), intent: L('验收标准写错类型', 'wrong acceptance type'), modules: {}, acceptance: [L('双语对象', 'l10n object')] })
-ok('④f acceptance 传双语对象报错并点明第几条', badChg.ok === false && /第 1 条/.test(JSON.stringify(badChg.errors ?? badChg)) && /纯字符串/.test(JSON.stringify(badChg.errors ?? badChg)), JSON.stringify(badChg.errors ?? badChg).slice(0, 170))
+ok('④f acceptance 传双语对象报 args/invalid 并点明第几条', badChg.ok === false && badChg.errors.some(d => d.code === 'args/invalid' && d.subject.parameter === '/acceptance/0' && /第 1 条/.test(d.message) && /纯字符串/.test(d.message)), JSON.stringify(badChg.errors).slice(0, 170))
+ok('④f2 参数验证失败没有创建结构目录', !existsSync(NEW))
 const okChg = await call('normify_change_open', { dir: NEW, title: L('测试', 'Test'), intent: L('正常字符串数组', 'plain string array'), modules: {}, acceptance: ['验收点 A', '验收点 B'] })
-ok('④g 纯字符串数组正常通过', okChg.ok === true, JSON.stringify(okChg.error ?? okChg.id ?? '').slice(0, 100))
+ok('④g 纯字符串数组正常通过', okChg.ok === true, JSON.stringify(okChg.id).slice(0, 100))
 
 console.log('\n=== 结果：' + (fails.length === 0 ? '全部 PASS' : 'FAIL ' + fails.length + ' 项 → ' + fails.join(' | ')) + ' ===')
 rmSync(work, { recursive: true, force: true })

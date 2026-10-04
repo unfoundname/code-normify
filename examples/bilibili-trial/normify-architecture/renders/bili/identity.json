@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "bili.identity",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "本层阅读顺序：账号与会话 → 账号安全与风控 → 实名与未成年人保护 → 权限与角色 → 资料、等级与个人空间。箭头语义：call 同步调用、event 异步事件、dataflow 数据/投影流、reference 契约引用。",
+    "en": "Read in order: Accounts and Sessions → Account Security and Risk → Real-name and Minor Protection → Roles and Permissions → Profile, Level and Space. Arrow kinds: call, event, dataflow, reference."
+  },
+  "order": [
+    "bili.identity.account",
+    "bili.identity.security",
+    "bili.identity.verify",
+    "bili.identity.rbac",
+    "bili.identity.profile"
+  ]
+}

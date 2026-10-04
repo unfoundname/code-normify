@@ -26,7 +26,9 @@ export declare function loadAllModules(projectDir: string): Promise<{
 }>;
 /** 判断某模块当前是否为容器（有子模块或是根）。 */
 export declare function isContainer(module: Module, all: Module[]): boolean;
-export declare function writeModuleFile(projectDir: string, module: Module, body: string): Promise<{
+export declare function writeModuleFile(projectDir: string, module: Module, body: string, context?: {
+    files: ModuleFile[];
+}): Promise<{
     file: string;
     promoted: string[];
     warnings: Diagnostic[];
@@ -42,16 +44,15 @@ export declare function promoteModule(projectDir: string, id: string): Promise<{
     file: string;
     warnings: Diagnostic[];
 }>;
-/** 仓库当前 HEAD（40 位 SHA）。 */
-export declare function gitHead(repoRoot: string): {
+export declare function gitHead(repoRoot: string): Promise<{
     sha: string | null;
     error: string | null;
-};
+}>;
 /** git 变更文件清单（增量再生成的输入）。 */
-export declare function gitChangedFiles(repoRoot: string, diffSpec: string): {
+export declare function gitChangedFiles(repoRoot: string, diffSpec: string): Promise<{
     files: string[] | null;
     error: string | null;
-};
+}>;
 /** source 文件集合的 SHA-256 指纹（全量哈希，v1 不做采样）。 */
 export declare function fingerprintOf(repoRoot: string, sources: SourceRef[]): Promise<{
     hash: string | null;

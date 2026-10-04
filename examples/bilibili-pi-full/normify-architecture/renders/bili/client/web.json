@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "id": "bili.client.web",
+  "updated_at": "2026-10-03T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "reading": {
+    "zh": "本层是「React Web 主站」的 13 个功能单元，按设计顺序阅读；箭头指出向依赖（调用/事件/数据流/引用）。",
+    "en": "This level shows the 13 functional units of \"React web app\", in design order; arrows are outbound dependencies (call/event/dataflow/reference)."
+  },
+  "order": [
+    "bili.client.web.home",
+    "bili.client.web.video",
+    "bili.client.web.search",
+    "bili.client.web.space",
+    "bili.client.web.member",
+    "bili.client.web.publish",
+    "bili.client.web.dynamic",
+    "bili.client.web.live",
+    "bili.client.web.vip",
+    "bili.client.web.pgc",
+    "bili.client.web.channel",
+    "bili.client.web.message",
+    "bili.client.web.settings"
+  ]
+}

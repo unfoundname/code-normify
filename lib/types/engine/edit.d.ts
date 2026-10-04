@@ -14,6 +14,14 @@ export interface EditResult {
     changed: string[];
     detail: Record<string, unknown>;
 }
+/** 内部：modules/ 与 renders/ 的全量快照。 */
+export interface ProjectSnapshot {
+    files: Map<string, Buffer>;
+    roots: string[];
+}
+/** 快照 modules/ 与 renders/（用于失败回滚；数据集很小，直接全量）。 */
+export declare function snapshotProject(projectDir: string, roots?: string[]): Promise<ProjectSnapshot>;
+export declare function restoreProject(projectDir: string, snap: ProjectSnapshot): Promise<void>;
 /** 预览模块将写入的文件路径（不落盘）。 */
 export declare function previewModuleFile(projectDir: string, module: Module, all: Module[]): string;
 export interface PatchResult extends EditResult {

@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "data.identity",
+  "updated_at": "2026-10-03T20:15:11.767Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "点击结构查看字段、必填项、枚举与完整 JSON Schema。",
+    "en": "Open a type to inspect fields, required values, enums and full JSON Schema."
+  },
+  "order": [
+    "data.identity.t-c32f92f2",
+    "data.identity.t-8ffb89e3",
+    "data.identity.t-83d7cd93",
+    "data.identity.t-609eb84e",
+    "data.identity.t-a2c9d46e",
+    "data.identity.t-810e8936",
+    "data.identity.t-44e3a86d",
+    "data.identity.t-0ac57418",
+    "data.identity.t-d484ee91",
+    "data.identity.t-f1a5f939",
+    "data.identity.t-a9f4af3d",
+    "data.identity.t-92e5051c",
+    "data.identity.t-66219b54",
+    "data.identity.t-20936f12",
+    "data.identity.t-cc344e2f",
+    "data.identity.t-86becbcb",
+    "data.identity.t-0069ba87",
+    "data.identity.t-9c18f44e",
+    "data.identity.t-38728fff",
+    "data.identity.t-087f1134"
+  ]
+}

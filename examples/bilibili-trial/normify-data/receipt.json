@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "ok": true,
+  "project": "normify-data",
+  "compiled_at": "2026-10-03T20:15:15.585Z",
+  "source_digest": "d339a13e594be082e83245898136660ba150f225d077d32d30d91ec6ffd89985",
+  "stats": {
+    "tree_count": 1,
+    "module_count": 341,
+    "leaf_count": 321,
+    "api_count": 0,
+    "type_count": 321,
+    "dep_count": 580,
+    "cross_tree_dep_count": 0,
+    "max_depth": 3,
+    "layout_count": 20,
+    "planned_count": 341,
+    "deprecated_count": 0,
+    "policy_rule_count": 2,
+    "change_count": 0,
+    "open_change_count": 0
+  },
+  "warnings": {
+    "api/leaf-empty": 321,
+    "structure/shallow-hierarchy": 1,
+    "structure/planned-source-missing": 321
+  },
+  "artifacts": {
+    "tree.json": {
+      "sha256": "1aedaf9895047ec9b74196899c243dedd6bdfe04854e957bae0a35c79bf69475",
+      "bytes": 1160029
+    },
+    "outline.md": {
+      "sha256": "0a7400cafd716db302f390b72b688178b4d2a85e0901155f5c322e2db3d67615",
+      "bytes": 41888
+    },
+    "api-index.json": {
+      "sha256": "a704f4808ff7c373d5c8dc5b65624db6e367895ec73f215cdb66938a3db01737",
+      "bytes": 512453
+    }
+  }
+}

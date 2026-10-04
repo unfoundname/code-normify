@@ -8,13 +8,26 @@ export interface SourceRef {
     line?: number;
     end_line?: number;
 }
-export declare const PROTOCOLS: readonly ["http", "ws", "rpc", "amqp", "kafka", "mysql", "redis", "file", "grpc", "graphql"];
+export declare const PROTOCOLS: readonly ["http", "ws", "rpc", "ipc", "amqp", "kafka", "mysql", "redis", "file", "grpc", "graphql"];
 export declare const DEP_KINDS: readonly ["call", "event", "dataflow", "reference"];
+/** 命名类型的唯一引用形态；module 是类型定义所属的模块 id。 */
+export interface TypeRef {
+    module: string;
+    name: string;
+}
+/** 数据契约使用 JSON Schema 2020-12，禁止另造字段描述语言。 */
+export interface DataType {
+    name: string;
+    description: LocalizedText;
+    schema: Record<string, unknown>;
+}
 export interface Api {
     protocol: string;
     method?: string;
     path: string;
     description: LocalizedText;
+    input?: TypeRef;
+    output?: TypeRef;
 }
 export interface Dep {
     kind: string;
@@ -123,6 +136,8 @@ export interface Module {
     tags?: string[];
     /** 仅叶子允许 */
     apis?: Api[];
+    /** 命名数据契约仅定义在叶子模块，与 APIs 同层。 */
+    types?: DataType[];
     /** 出向依赖箭头，只在源端存储 */
     deps?: Dep[];
 }

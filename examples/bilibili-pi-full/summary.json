@@ -1,0 +1,411 @@
+{
+  "generated_at": "2026-10-03T23:50:26.321Z",
+  "entity_scope": {
+    "business_entities": 149,
+    "rds_entities": 142,
+    "search_projections": 7,
+    "metadata_leaves": 1,
+    "data_leaves_total": 150,
+    "note": "149 = 142 RDS 实体 + 7 搜索投影；另 1 个 data.relations 元数据目录叶不是实体；OSS 对象元数据行存于 RDS，计在 RDS 内。职责区分：DDL/迁移文件维护者=u-platform-core；每张表的唯一运行期业务写入者=各实体 worker 标签。"
+  },
+  "views": {
+    "architecture": {
+      "modules": 214,
+      "leaves": 186,
+      "types": 390,
+      "apis": 278,
+      "deps": 640,
+      "layouts": 28,
+      "planned": 214,
+      "max_depth": 4,
+      "graph_digest": "72bc6aa01bbcb87e80f593008effa18d2ff11e39bc38d416f41c3b16d51ed7dc",
+      "errors": 0,
+      "warnings": 199
+    },
+    "data": {
+      "modules": 170,
+      "entities": 149,
+      "data_leaves": 150,
+      "types": 150,
+      "apis": 299,
+      "relations": 186,
+      "layouts": 20,
+      "graph_digest": "e19b52a258122306c3bf697e71095cf66bb4a30d60eca32d7046d66e09923d6c",
+      "errors": 0,
+      "warnings": 151
+    },
+    "delivery": {
+      "modules": 22,
+      "graph_digest": "d05d1559e4fd161f607371f6d1acb183ba59b21aff17964f0b5c6235c614a356",
+      "errors": 0,
+      "warnings": 1
+    }
+  },
+  "plan": {
+    "id": "bili-full-delivery",
+    "units": 19,
+    "requirements": 21,
+    "together": 6,
+    "base_commit": "7b0ea7f5a56933f004bdd50d29b6ffae7bc74cde",
+    "graph_digest": "72bc6aa01bbcb87e80f593008effa18d2ff11e39bc38d416f41c3b16d51ed7dc",
+    "plan_digest": "f459426c73686b5ea9f7165a7053de69f7eef13bda8cd52e2ffc3c26ac750e44",
+    "plan_matches_graph": true
+  },
+  "packets": {
+    "units": 19
+  },
+  "worker_plan": {
+    "items": 19,
+    "lead_ref": "lead_ref:promptmanager/worker-plan/default"
+  },
+  "verification": {
+    "units": 19,
+    "unit_exit_codes": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "all_exit": 0,
+    "live_all_exit": 0,
+    "tsc_exit": 0,
+    "instances": 390,
+    "worktree": {
+      "path": ".verify-worktree",
+      "head": "7b0ea7f5a56933f004bdd50d29b6ffae7bc74cde",
+      "matches_base_commit": true,
+      "action": "created"
+    },
+    "business_executed": false,
+    "business_cases": 57,
+    "plan_revalidated": true
+  },
+  "fixtures": {
+    "samples": 186,
+    "instances": 390,
+    "negatives": 19,
+    "stubs": 44,
+    "imports": 57
+  },
+  "review_checks": {
+    "passed": 17,
+    "total": 17,
+    "failed": []
+  },
+  "generated_request_types": 0,
+  "storageSplit": {
+    "rds": 143,
+    "search": 7
+  },
+  "entityAccounting": {
+    "leaves_total": 150,
+    "business_entities": 149,
+    "metadata_leaves": 1,
+    "rds": 142,
+    "search": 7,
+    "oss_objects": 0,
+    "note": "业务实体 149（RDS 142 + 搜索投影 7）+ 元数据目录叶 1（data.relations，不是实体，已从 RDS 计数中扣除）；OSS 对象元数据行存于 RDS，计在 RDS 内"
+  },
+  "ownerSplit": {
+    "W-ACQUIRE": 6,
+    "W-ASSEMBLY": 7,
+    "W-CONTENT": 12,
+    "W-CHANNEL": 7,
+    "W-WEB-CORE": 5,
+    "W-OPS": 13,
+    "W-CONTRACT": 9,
+    "W-CREATOR": 11,
+    "W-SOCIAL": 9,
+    "W-DISCOVER": 10,
+    "W-LIVE": 8,
+    "W-PLAYBACK": 9,
+    "W-MESSAGE": 7,
+    "W-PGC": 8,
+    "W-IDENTITY": 9,
+    "W-COMMERCE": 9,
+    "W-COMMUNITY": 6,
+    "W-DANMAKU": 7,
+    "W-INFRA": 23,
+    "W-MEDIA": 11
+  },
+  "externalModes": {
+    "contract": 57,
+    "baseline": 34,
+    "after": 117
+  },
+  "writePathCount": 595,
+  "anchors": [
+    "bili.client.web.video → bili.playback.detail",
+    "bili.client.web.video → bili.danmaku.segment",
+    "bili.commerce.order → bili.commerce.payment",
+    "bili.commerce.payment → bili.commerce.ledger",
+    "bili.community.coin → bili.commerce.ledger",
+    "bili.discover.indexing → bili.catalog.event",
+    "bili.discover.indexing → bili.infra.search",
+    "bili.ops.audit → bili.catalog.state",
+    "bili.playback.detail → bili.playback.grant",
+    "bili.playback.grant → bili.catalog.video",
+    "bili.playback.grant → bili.pgc.license",
+    "bili.playback.grant → bili.commerce.vip",
+    "bili.playback.stream → bili.playback.grant",
+    "bili.upload.draft → bili.catalog.video"
+  ],
+  "modulesByDomain": {
+    "bili.acquire": {
+      "leaves": 6,
+      "types": 10,
+      "apis": 8
+    },
+    "bili.assembly": {
+      "leaves": 7,
+      "types": 7,
+      "apis": 7
+    },
+    "bili.catalog": {
+      "leaves": 5,
+      "types": 17,
+      "apis": 10
+    },
+    "bili.channel": {
+      "leaves": 6,
+      "types": 10,
+      "apis": 8
+    },
+    "bili.client": {
+      "leaves": 32,
+      "types": 33,
+      "apis": 32
+    },
+    "bili.commerce": {
+      "leaves": 8,
+      "types": 21,
+      "apis": 15
+    },
+    "bili.community": {
+      "leaves": 6,
+      "types": 16,
+      "apis": 12
+    },
+    "bili.contract": {
+      "leaves": 4,
+      "types": 27,
+      "apis": 4
+    },
+    "bili.creator": {
+      "leaves": 6,
+      "types": 14,
+      "apis": 9
+    },
+    "bili.danmaku": {
+      "leaves": 7,
+      "types": 14,
+      "apis": 8
+    },
+    "bili.discover": {
+      "leaves": 8,
+      "types": 17,
+      "apis": 10
+    },
+    "bili.identity": {
+      "leaves": 8,
+      "types": 31,
+      "apis": 19
+    },
+    "bili.infra": {
+      "leaves": 23,
+      "types": 26,
+      "apis": 29
+    },
+    "bili.live": {
+      "leaves": 7,
+      "types": 21,
+      "apis": 12
+    },
+    "bili.media": {
+      "leaves": 11,
+      "types": 22,
+      "apis": 20
+    },
+    "bili.message": {
+      "leaves": 6,
+      "types": 13,
+      "apis": 9
+    },
+    "bili.ops": {
+      "leaves": 9,
+      "types": 26,
+      "apis": 17
+    },
+    "bili.pgc": {
+      "leaves": 7,
+      "types": 18,
+      "apis": 13
+    },
+    "bili.playback": {
+      "leaves": 7,
+      "types": 15,
+      "apis": 10
+    },
+    "bili.social": {
+      "leaves": 7,
+      "types": 16,
+      "apis": 13
+    },
+    "bili.upload": {
+      "leaves": 6,
+      "types": 16,
+      "apis": 13
+    }
+  },
+  "entitiesByDomain": {
+    "data.acquire": 6,
+    "data.channel": 10,
+    "data.client": 2,
+    "data.commerce": 13,
+    "data.community": 6,
+    "data.content": 13,
+    "data.creator": 4,
+    "data.danmaku": 6,
+    "data.discover": 4,
+    "data.identity": 11,
+    "data.infra": 7,
+    "data.live": 9,
+    "data.media": 11,
+    "data.message": 6,
+    "data.ops": 10,
+    "data.pgc": 11,
+    "data.playback": 5,
+    "data.projection": 7,
+    "data.relations": 1,
+    "data.social": 8
+  },
+  "waves": [
+    {
+      "wave": "W0",
+      "depth": 0,
+      "units": [
+        "u-contract-baseline"
+      ],
+      "parallel": 1
+    },
+    {
+      "wave": "W1",
+      "depth": 1,
+      "units": [
+        "u-platform-core"
+      ],
+      "parallel": 1
+    },
+    {
+      "wave": "W2",
+      "depth": 2,
+      "units": [
+        "u-identity",
+        "u-media"
+      ],
+      "parallel": 2
+    },
+    {
+      "wave": "W3",
+      "depth": 3,
+      "units": [
+        "u-commerce",
+        "u-content-pipeline",
+        "u-message"
+      ],
+      "parallel": 3
+    },
+    {
+      "wave": "W4",
+      "depth": 4,
+      "units": [
+        "u-acquire",
+        "u-channel",
+        "u-community",
+        "u-creator",
+        "u-danmaku",
+        "u-discover",
+        "u-live",
+        "u-playback",
+        "u-social"
+      ],
+      "parallel": 9
+    },
+    {
+      "wave": "W5",
+      "depth": 5,
+      "units": [
+        "u-integration",
+        "u-ops",
+        "u-pgc"
+      ],
+      "parallel": 3
+    }
+  ],
+  "frozenGraphStats": {
+    "modules": 214,
+    "containers": 28,
+    "leaves": 186,
+    "types": 390,
+    "apis": 278,
+    "deps": 640,
+    "layouts": 28,
+    "owners": [
+      "worker:W-ACQUIRE",
+      "worker:W-ASSEMBLY",
+      "worker:W-CHANNEL",
+      "worker:W-COMMERCE",
+      "worker:W-COMMUNITY",
+      "worker:W-CONTENT",
+      "worker:W-CONTRACT",
+      "worker:W-CREATOR",
+      "worker:W-DANMAKU",
+      "worker:W-DISCOVER",
+      "worker:W-IDENTITY",
+      "worker:W-INFRA",
+      "worker:W-LIVE",
+      "worker:W-MEDIA",
+      "worker:W-MESSAGE",
+      "worker:W-OPS",
+      "worker:W-PGC",
+      "worker:W-PLAYBACK",
+      "worker:W-SOCIAL",
+      "worker:W-WEB-CORE"
+    ],
+    "maxDepth": 4
+  },
+  "live": {
+    "architecture": {
+      "errors": 0,
+      "warnings": 199,
+      "graph_digest": "72bc6aa01bbcb87e80f593008effa18d2ff11e39bc38d416f41c3b16d51ed7dc",
+      "plan_digest": "f459426c73686b5ea9f7165a7053de69f7eef13bda8cd52e2ffc3c26ac750e44",
+      "plan_matches_graph": true
+    },
+    "data": {
+      "errors": 0,
+      "warnings": 151,
+      "graph_digest": "e19b52a258122306c3bf697e71095cf66bb4a30d60eca32d7046d66e09923d6c"
+    },
+    "delivery": {
+      "errors": 0,
+      "warnings": 1,
+      "graph_digest": "d05d1559e4fd161f607371f6d1acb183ba59b21aff17964f0b5c6235c614a356"
+    }
+  }
+}

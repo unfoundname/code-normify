@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "bili.contract.adapters",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "本层阅读顺序：关系存储适配器 → 对象存储适配器 → 事件总线适配器 → 外部能力适配器。箭头语义：call 同步调用、event 异步事件、dataflow 数据/投影流、reference 契约引用。",
+    "en": "Read in order: RDS Adapter → OSS Adapter → Event Bus Adapter → External Capability Adapters. Arrow kinds: call, event, dataflow, reference."
+  },
+  "order": [
+    "bili.contract.adapters.rds",
+    "bili.contract.adapters.oss",
+    "bili.contract.adapters.bus",
+    "bili.contract.adapters.capabilities"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "id": "data.commerce",
+  "updated_at": "2026-10-03T20:15:11.767Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "点击结构查看字段、必填项、枚举与完整 JSON Schema。",
+    "en": "Open a type to inspect fields, required values, enums and full JSON Schema."
+  },
+  "order": [
+    "data.commerce.t-78b36a06",
+    "data.commerce.t-b1c1f2b9",
+    "data.commerce.t-0ece6f12",
+    "data.commerce.t-363478a9",
+    "data.commerce.t-d8572bb3",
+    "data.commerce.t-571ae86f",
+    "data.commerce.t-c6455455",
+    "data.commerce.t-217f147b",
+    "data.commerce.t-5eff512c",
+    "data.commerce.t-6883eab1",
+    "data.commerce.t-82110131",
+    "data.commerce.t-7316cd18",
+    "data.commerce.t-751080fd",
+    "data.commerce.t-4d734903",
+    "data.commerce.t-6ec12ade"
+  ]
+}

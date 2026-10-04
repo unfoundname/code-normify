@@ -1,0 +1,9 @@
+{
+  "runner": "pi",
+  "model": "deepseek-v4-flash",
+  "architecture_modules": 149,
+  "architecture_apis": 309,
+  "data_types": 321,
+  "data_view": "机械投影原架构 JSON Schema；不是单独生成的数据库 ER 模型",
+  "data_digest": "d339a13e594be082e83245898136660ba150f225d077d32d30d91ec6ffd89985"
+}

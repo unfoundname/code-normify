@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "data",
+  "updated_at": "2026-10-03T20:15:11.767Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "按领域下钻，每个叶子是一种数据结构。图中展示真实 Schema 引用，不把接口 DTO 误称为数据库表。",
+    "en": "Drill into a domain, then a named type. Edges show actual schema references; API DTOs are not database tables."
+  },
+  "order": [
+    "data.client",
+    "data.commerce",
+    "data.community",
+    "data.contract",
+    "data.creator",
+    "data.danmaku",
+    "data.data",
+    "data.discovery",
+    "data.ecosystem",
+    "data.identity",
+    "data.infra",
+    "data.live",
+    "data.media",
+    "data.ops",
+    "data.playback",
+    "data.premium",
+    "data.publish",
+    "data.social",
+    "data.sourcing"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "bili.media",
+  "updated_at": "2026-10-03T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "reading": {
+    "zh": "本层是「媒体处理」的 11 个功能单元，按设计顺序阅读；箭头指出向依赖（调用/事件/数据流/引用）。",
+    "en": "This level shows the 11 functional units of \"Media processing\", in design order; arrows are outbound dependencies (call/event/dataflow/reference)."
+  },
+  "order": [
+    "bili.media.asset",
+    "bili.media.storage",
+    "bili.media.ingest",
+    "bili.media.probe",
+    "bili.media.transcode",
+    "bili.media.cover",
+    "bili.media.preview",
+    "bili.media.audio",
+    "bili.media.subtitle",
+    "bili.media.job",
+    "bili.media.state"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "bili.data",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "本层阅读顺序：关系模型与表归属 → 迁移执行器 → outbox 与任务租约表 → 账本表契约 → OSS 对象布局契约 → 投影契约。箭头语义：call 同步调用、event 异步事件、dataflow 数据/投影流、reference 契约引用。",
+    "en": "Read in order: Relational Model and Ownership → Migration Runner → Outbox and Job Lease Tables → Ledger Table Contracts → OSS Object Layout → Projection Contracts. Arrow kinds: call, event, dataflow, reference."
+  },
+  "order": [
+    "bili.data.model",
+    "bili.data.migrate",
+    "bili.data.outbox",
+    "bili.data.ledger",
+    "bili.data.oss",
+    "bili.data.projections"
+  ]
+}

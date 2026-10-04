@@ -7,6 +7,8 @@ import { edgeKey, validateLayouts } from './layout.js';
 import { evaluatePolicy, loadPolicyFile } from './policy.js';
 import { validateChanges } from './changes.js';
 import { diag } from './diag.js';
+import { boundPath, WorkspaceError } from '../workspace.js';
+import { validateContracts } from './contracts.js';
 const BILINGUAL_CODES = new Set([
     'structure/name-shape', 'structure/name-empty', 'structure/name-too-long',
     'structure/description-shape', 'structure/description-empty', 'structure/description-too-long',
@@ -122,7 +124,7 @@ export async function validateProject(projectDir: string, opts: ValidateOptions)
         if (derivedFileId !== m.id) {
             errors.push(diag('error', 'structure/file-id-mismatch', '文件路径与 id 映射不一致', { module: m.id }, { file: f.file, expected: derivedFileId }, ['将文件移至 ' + expectedPathHint(f.file, m.id)]));
         }
-        const isLeaf = !childrenOf.has(m.id);
+        const isLeaf = m.parent !== null && !childrenOf.has(m.id);
         if (isLeaf) {
             const spans = m.source.map(s => (s.end_line ?? s.line ?? 0) - (s.line ?? 0));
             const maxSpan = spans.length > 0 ? Math.max(...spans) : 0;
@@ -145,40 +147,41 @@ export async function validateProject(projectDir: string, opts: ValidateOptions)
                 list.push(m.id);
                 apiOwners.set(key, list);
             }
-            const fromApiKeys = new Set(m.apis.map(a => apiKey(a)));
-            if (m.deps !== undefined) {
-                for (const d of m.deps) {
-                    if (d.to === m.id) {
-                        errors.push(diag('error', 'dep/self-loop', '依赖箭头不能指向自身', { module: m.id }, { to: d.to }, ['删除该箭头']));
+        }
+        // 模块级依赖与 API 独立：容器和尚未声明 API 的叶子同样必须验证边。
+        const fromApiKeys = new Set((m.apis ?? []).map(a => apiKey(a)));
+        if (m.deps !== undefined) {
+            for (const d of m.deps) {
+                if (d.to === m.id) {
+                    errors.push(diag('error', 'dep/self-loop', '依赖箭头不能指向自身', { module: m.id }, { to: d.to }, ['删除该箭头']));
+                }
+                const target = byId.get(d.to);
+                if (target === undefined) {
+                    errors.push(diag('error', 'dep/target-missing', '箭头目标模块不存在（悬空边）', { module: m.id }, { to: d.to }, ['创建目标模块或修正/删除该箭头']));
+                    continue;
+                }
+                if (d.from_api !== undefined) {
+                    if (!isLeaf) {
+                        errors.push(diag('error', 'dep/from-api-non-leaf', 'from_api 只能引用本模块 API（非叶子没有 API）', { module: m.id }, { from_api: d.from_api }, ['删除 from_api 或改为模块级箭头']));
                     }
-                    const target = byId.get(d.to);
-                    if (target === undefined) {
-                        errors.push(diag('error', 'dep/target-missing', '箭头目标模块不存在（悬空边）', { module: m.id }, { to: d.to }, ['创建目标模块或修正/删除该箭头']));
-                        continue;
-                    }
-                    if (d.from_api !== undefined) {
-                        if (!isLeaf) {
-                            errors.push(diag('error', 'dep/from-api-non-leaf', 'from_api 只能引用本模块 API（非叶子没有 API）', { module: m.id }, { from_api: d.from_api }, ['删除 from_api 或改为模块级箭头']));
-                        }
-                        else if (!fromApiKeys.has(d.from_api)) {
-                            errors.push(diag('error', 'dep/from-api-invalid', 'from_api 不是本模块的 API 键', { module: m.id }, { from_api: d.from_api, own: [...fromApiKeys] }, ['使用本模块 apis 中的键']));
-                        }
-                    }
-                    if (d.to_api !== undefined) {
-                        const targetApis = new Set((target.module.apis ?? []).map(a => apiKey(a)));
-                        if (!targetApis.has(d.to_api)) {
-                            errors.push(diag('error', 'dep/to-api-invalid', 'to_api 不是目标模块自身的 API 键', { module: m.id }, { to: d.to, to_api: d.to_api, target_apis: [...targetApis] }, ['使用目标模块 apis 中的键或删除 to_api']));
-                        }
+                    else if (!fromApiKeys.has(d.from_api)) {
+                        errors.push(diag('error', 'dep/from-api-invalid', 'from_api 不是本模块的 API 键', { module: m.id }, { from_api: d.from_api, own: [...fromApiKeys] }, ['使用本模块 apis 中的键']));
                     }
                 }
-                const seenDeps = new Set<string>();
-                for (const d of m.deps) {
-                    const sig = [d.from_api ?? '', d.to, d.to_api ?? '', d.kind].join('|');
-                    if (seenDeps.has(sig)) {
-                        errors.push(diag('error', 'dep/duplicate', '重复的依赖箭头', { module: m.id }, { sig }, ['删除重复项']));
+                if (d.to_api !== undefined) {
+                    const targetApis = new Set((target.module.apis ?? []).map(a => apiKey(a)));
+                    if (!targetApis.has(d.to_api)) {
+                        errors.push(diag('error', 'dep/to-api-invalid', 'to_api 不是目标模块自身的 API 键', { module: m.id }, { to: d.to, to_api: d.to_api, target_apis: [...targetApis] }, ['使用目标模块 apis 中的键或删除 to_api']));
                     }
-                    seenDeps.add(sig);
                 }
+            }
+            const seenDeps = new Set<string>();
+            for (const d of m.deps) {
+                const sig = [d.from_api ?? '', d.to, d.to_api ?? '', d.kind].join('|');
+                if (seenDeps.has(sig)) {
+                    errors.push(diag('error', 'dep/duplicate', '重复的依赖箭头', { module: m.id }, { sig }, ['删除重复项']));
+                }
+                seenDeps.add(sig);
             }
         }
     }
@@ -187,6 +190,7 @@ export async function validateProject(projectDir: string, opts: ValidateOptions)
             errors.push(diag('error', 'api/key-duplicate', 'API 键全项目重复', { api: key }, { modules: ids }, ['只保留一个定义，或调整 path/method']));
         }
     }
+    errors.push(...validateContracts(files, childrenOf));
     // 生命周期：deprecated/replacement 与指向 deprecated 的入边
     for (const f of files) {
         const m = f.module;
@@ -289,6 +293,16 @@ export async function validateProject(projectDir: string, opts: ValidateOptions)
         for (const f of files) {
             const m = f.module;
             const planned = m.state === 'planned';
+            let bounded = true;
+            for (const source of m.source) {
+                try { await boundPath(repoRoot, source.path); }
+                catch (error) {
+                    bounded = false;
+                    errors.push(diag('error', error instanceof WorkspaceError ? error.code : 'evidence/path-unavailable',
+                        error instanceof Error ? error.message : String(error), { module: m.id }, { path: source.path }, ['修正源码路径，使其真实位置位于当前仓库内']));
+                }
+            }
+            if (!bounded) continue;
             if (m.source.length === 0) {
                 if (m.parent === null && !planned)
                     warnings.push(diag('warning', 'evidence/root-no-source', '根模块无 source（纯文档根）', { module: m.id }, {}, []));

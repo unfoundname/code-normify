@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "data.media",
+  "updated_at": "2026-10-03T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 3,
+  "reading": {
+    "zh": "「媒体与对象存储数据」的 11 个实体表；箭头为外键（标签含字段与目标列），每个实体只有一个业务写入所有者。",
+    "en": "The 11 entity tables of \"Media and object storage data\"; arrows are foreign keys labelled with field and target column, and each entity has exactly one business write owner."
+  },
+  "order": [
+    "data.media.oss-object",
+    "data.media.media-asset",
+    "data.media.upload-session",
+    "data.media.probe-result",
+    "data.media.transcode-job",
+    "data.media.transcode-version",
+    "data.media.audio-track",
+    "data.media.subtitle-track",
+    "data.media.cover-candidate",
+    "data.media.preview-artifact",
+    "data.media.media-job-lease"
+  ]
+}

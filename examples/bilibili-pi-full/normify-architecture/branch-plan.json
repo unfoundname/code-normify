@@ -1,0 +1,4040 @@
+{
+  "schema_version": 1,
+  "id": "bili-full-delivery",
+  "title": {
+    "zh": "bilibili 类视频平台全量交付分支计划",
+    "en": "Full-scope delivery branch plan for the bilibili-like video platform"
+  },
+  "graph_digest": "72bc6aa01bbcb87e80f593008effa18d2ff11e39bc38d416f41c3b16d51ed7dc",
+  "base_commit": "7b0ea7f5a56933f004bdd50d29b6ffae7bc74cde",
+  "scope": [
+    "bili.acquire",
+    "bili.assembly",
+    "bili.catalog",
+    "bili.channel",
+    "bili.client",
+    "bili.commerce",
+    "bili.community",
+    "bili.contract",
+    "bili.creator",
+    "bili.danmaku",
+    "bili.discover",
+    "bili.identity",
+    "bili.infra",
+    "bili.live",
+    "bili.media",
+    "bili.message",
+    "bili.ops",
+    "bili.pgc",
+    "bili.playback",
+    "bili.social",
+    "bili.upload"
+  ],
+  "requirement_ids": [
+    "R00-contract-freeze",
+    "R01-identity",
+    "R02-upload",
+    "R03-media",
+    "R04-playback",
+    "R05-danmaku",
+    "R06-community",
+    "R07-social",
+    "R08-message",
+    "R09-discover",
+    "R10-live",
+    "R11-commerce",
+    "R12-pgc",
+    "R13-creator",
+    "R14-ops",
+    "R15-acquire",
+    "R16-infra",
+    "R17-channel",
+    "R18-frontend",
+    "R19-publish-chain",
+    "R20-data-ownership"
+  ],
+  "together": [
+    [
+      "bili.contract.common",
+      "bili.contract.event",
+      "bili.contract.state",
+      "bili.contract.ledger"
+    ],
+    [
+      "bili.catalog.video",
+      "bili.catalog.state"
+    ],
+    [
+      "bili.media.asset",
+      "bili.media.storage"
+    ],
+    [
+      "bili.assembly.server",
+      "bili.assembly.routes",
+      "bili.assembly.datasource"
+    ],
+    [
+      "bili.commerce.order",
+      "bili.commerce.payment",
+      "bili.commerce.ledger"
+    ],
+    [
+      "bili.client.app.router",
+      "bili.client.app.bootstrap",
+      "bili.client.app.providers",
+      "bili.client.app.shell"
+    ]
+  ],
+  "units": [
+    {
+      "id": "u-contract-baseline",
+      "title": {
+        "zh": "共享契约与前端基础设施冻结",
+        "en": "Shared contracts and front-end infrastructure freeze"
+      },
+      "modules": [
+        "bili.assembly.testkit",
+        "bili.client.shared.design",
+        "bili.client.shared.http",
+        "bili.client.shared.i18n",
+        "bili.client.shared.player",
+        "bili.client.shared.uploader",
+        "bili.contract.common",
+        "bili.contract.event",
+        "bili.contract.ledger",
+        "bili.contract.state"
+      ],
+      "requirement_ids": [
+        "R00-contract-freeze",
+        "R18-frontend",
+        "R20-data-ownership"
+      ],
+      "needs": [],
+      "external_dependencies": [
+        {
+          "module": "bili.infra.db",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.infra.db.json"
+          ]
+        },
+        {
+          "module": "bili.playback.stream",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.playback.stream.json"
+          ]
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-contract-baseline"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-contracts-compile-and-fixtures",
+            "argv": [
+              "node",
+              "--test",
+              "contracts/tests/common.test.mjs"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-fixtures-validate-and-negatives-rejected",
+            "argv": [
+              "node",
+              "--test",
+              "contracts/tests/event.test.mjs"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-contract-has-no-reverse-dependency",
+            "argv": [
+              "node",
+              "--test",
+              "contracts/tests/state.test.mjs"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-contract-baseline 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R00-contract-freeze",
+              "R18-frontend",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "contracts-compile-and-fixtures",
+            "description": "业务验收（未执行，待实现）：成功（已实际执行）：契约测试入口用基线 vendored Ajv 校验全部样例、断言伪造服务端字段与非法取值被拒绝、并检查写请求均已声明幂等键与请求上下文；strict tsc --noEmit 另由 tools/contracts-tsc.mjs 在集成阶段执行；目标模块 bili.contract.common；测试入口 contracts/tests/common.test.mjs",
+            "requirement_ids": [
+              "R00-contract-freeze",
+              "R18-frontend",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "business-contracts-compile-and-fixtures"
+            ]
+          },
+          {
+            "id": "fixtures-validate-and-negatives-rejected",
+            "description": "业务验收（未执行，待实现）：成功：全部样例通过 Schema 校验，且 5 个负例（本地时区时间/带空格 ID/浮点金额/缺 hasMore/缺必填）全部被拒绝（已实际执行）；目标模块 bili.contract.event；测试入口 contracts/tests/event.test.mjs",
+            "requirement_ids": [
+              "R00-contract-freeze",
+              "R18-frontend",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "business-fixtures-validate-and-negatives-rejected"
+            ]
+          },
+          {
+            "id": "contract-has-no-reverse-dependency",
+            "description": "业务验收（未执行，待实现）：失败面：任何共享契约模块依赖业务模块时必须报错阻断（policy contract-not-business-dependent 为 error）；目标模块 bili.contract.state；测试入口 contracts/tests/state.test.mjs",
+            "requirement_ids": [
+              "R00-contract-freeze",
+              "R18-frontend",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "business-contract-has-no-reverse-dependency"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u-platform-core",
+      "title": {
+        "zh": "平台底座：接入/RDS/outbox/适配器/部署/迁移",
+        "en": "Platform core: ingress, RDS, outbox, adapters, deploy, migrations"
+      },
+      "modules": [
+        "bili.infra.backup",
+        "bili.infra.cache",
+        "bili.infra.capacity",
+        "bili.infra.cdn",
+        "bili.infra.config",
+        "bili.infra.db",
+        "bili.infra.deploy",
+        "bili.infra.gateway",
+        "bili.infra.migration.commerce",
+        "bili.infra.migration.community",
+        "bili.infra.migration.content",
+        "bili.infra.migration.content-extra",
+        "bili.infra.migration.identity",
+        "bili.infra.migration.infra",
+        "bili.infra.migration.live",
+        "bili.infra.migration.media",
+        "bili.infra.migration.message",
+        "bili.infra.migration.ops",
+        "bili.infra.migration.pgc",
+        "bili.infra.observe",
+        "bili.infra.outbox",
+        "bili.infra.queue",
+        "bili.infra.search"
+      ],
+      "requirement_ids": [
+        "R16-infra",
+        "R20-data-ownership"
+      ],
+      "needs": [
+        "u-contract-baseline"
+      ],
+      "external_dependencies": [
+        {
+          "module": "bili.contract.common",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.event",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.identity.rbac",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.identity.rbac.json"
+          ]
+        },
+        {
+          "module": "bili.media.storage",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.media.storage.json"
+          ]
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-platform-core"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-migrations-apply-on-isolated-db",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "migrations/infra/tests/migration.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-table-owner-enforced",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/platform/db/tests/repository.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-outbox-exactly-once-effect",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/platform/outbox/tests/outbox.test.ts"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-platform-core 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R16-infra",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "migrations-apply-on-isolated-db",
+            "description": "业务验收（未执行，待实现）：成功：11 个域的 0001_init.sql 在隔离数据库顺序执行，schema_migration 记录 checksum 且可重入（幂等）；目标模块 bili.infra.migration.infra；测试入口 migrations/infra/tests/migration.test.ts",
+            "requirement_ids": [
+              "R16-infra",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "business-migrations-apply-on-isolated-db"
+            ]
+          },
+          {
+            "id": "table-owner-enforced",
+            "description": "业务验收（未执行，待实现）：失败面：写非本域表、或缺少表所有者声明的写入被拒绝并返回 PERMISSION_DENIED；目标模块 bili.infra.db；测试入口 services/platform/db/tests/repository.test.ts",
+            "requirement_ids": [
+              "R16-infra",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "business-table-owner-enforced"
+            ]
+          },
+          {
+            "id": "outbox-exactly-once-effect",
+            "description": "业务验收（未执行，待实现）：状态边界：同 dedupeKey 的消息重复投递只产生一次业务效果；租约过期可重新领取；目标模块 bili.infra.outbox；测试入口 services/platform/outbox/tests/outbox.test.ts",
+            "requirement_ids": [
+              "R16-infra",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "business-outbox-exactly-once-effect"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u-identity",
+      "title": {
+        "zh": "身份账号与个人空间（含设置页）",
+        "en": "Identity, accounts and personal space (with settings page)"
+      },
+      "modules": [
+        "bili.client.web.settings",
+        "bili.identity.account",
+        "bili.identity.deletion",
+        "bili.identity.level",
+        "bili.identity.privacy",
+        "bili.identity.profile",
+        "bili.identity.rbac",
+        "bili.identity.security",
+        "bili.identity.verify"
+      ],
+      "requirement_ids": [
+        "R01-identity",
+        "R18-frontend"
+      ],
+      "needs": [
+        "u-contract-baseline",
+        "u-platform-core"
+      ],
+      "external_dependencies": [
+        {
+          "module": "bili.client.shared.design",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.shared.http",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.common",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.event",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.db",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.outbox",
+          "mode": "after",
+          "fixture_paths": []
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-identity"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-register-login-verify-flow",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/identity/account/tests/account.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-permission-and-ban-boundaries",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/identity/rbac/tests/rbac.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-register-idempotent-and-deletion-cooling",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/identity/deletion/tests/deletion.test.ts"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-identity 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R01-identity",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "register-login-verify-flow",
+            "description": "业务验收（未执行，待实现）：成功：注册→登录→会话刷新→实名→等级初始化，account/credential/session 三表一致；目标模块 bili.identity.account；测试入口 services/identity/account/tests/account.test.ts",
+            "requirement_ids": [
+              "R01-identity",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-register-login-verify-flow"
+            ]
+          },
+          {
+            "id": "permission-and-ban-boundaries",
+            "description": "业务验收（未执行，待实现）：失败面：未实名调用需实名能力返回 403；被封禁账号登录被拒并写 login_attempt；无权限码调用后台接口返回 PERMISSION_DENIED；目标模块 bili.identity.rbac；测试入口 services/identity/rbac/tests/rbac.test.ts",
+            "requirement_ids": [
+              "R01-identity",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-permission-and-ban-boundaries"
+            ]
+          },
+          {
+            "id": "register-idempotent-and-deletion-cooling",
+            "description": "业务验收（未执行，待实现）：幂等/状态边界：同 idempotencyKey 重复注册只建一个账号；注销冷却期内登录被拒绝；目标模块 bili.identity.deletion；测试入口 services/identity/deletion/tests/deletion.test.ts",
+            "requirement_ids": [
+              "R01-identity",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-register-idempotent-and-deletion-cooling"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u-content-pipeline",
+      "title": {
+        "zh": "投稿编辑与内容目录（含唯一发布命令、投稿台）",
+        "en": "Publishing workspace and content catalog"
+      },
+      "modules": [
+        "bili.catalog.event",
+        "bili.catalog.query",
+        "bili.catalog.state",
+        "bili.catalog.taxonomy",
+        "bili.catalog.video",
+        "bili.client.web.publish",
+        "bili.upload.coauthor",
+        "bili.upload.collection",
+        "bili.upload.draft",
+        "bili.upload.lifecycle",
+        "bili.upload.part",
+        "bili.upload.schedule"
+      ],
+      "requirement_ids": [
+        "R02-upload",
+        "R19-publish-chain",
+        "R20-data-ownership"
+      ],
+      "needs": [
+        "u-contract-baseline",
+        "u-platform-core",
+        "u-identity"
+      ],
+      "external_dependencies": [
+        {
+          "module": "bili.client.shared.design",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.shared.http",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.common",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.event",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.state",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.identity.profile",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.db",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.outbox",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.media.asset",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.media.asset.json"
+          ]
+        },
+        {
+          "module": "bili.media.state",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.media.state.json"
+          ]
+        },
+        {
+          "module": "bili.ops.audit",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.ops.audit.json"
+          ]
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-content-pipeline"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-draft-to-published-chain",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/catalog/video/tests/video.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-publish-preconditions-rejected",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/upload/draft/tests/draft.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-publish-and-transition-idempotent",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/catalog/state/tests/publish-state.test.ts"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-content-pipeline 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R02-upload",
+              "R19-publish-chain",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "draft-to-published-chain",
+            "description": "业务验收（未执行，待实现）：成功：草稿→分P→媒体就绪→唯一发布命令→PUBLISHED，且发布事件写入 outbox；目标模块 bili.catalog.video；测试入口 services/catalog/video/tests/video.test.ts",
+            "requirement_ids": [
+              "R02-upload",
+              "R19-publish-chain",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "business-draft-to-published-chain"
+            ]
+          },
+          {
+            "id": "publish-preconditions-rejected",
+            "description": "业务验收（未执行，待实现）：失败面：媒体未就绪/无投稿权限/审核未通过时发布返回 PRECONDITION_FAILED，且不产生 catalog_video 行；目标模块 bili.upload.draft；测试入口 services/upload/draft/tests/draft.test.ts",
+            "requirement_ids": [
+              "R02-upload",
+              "R19-publish-chain",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "business-publish-preconditions-rejected"
+            ]
+          },
+          {
+            "id": "publish-and-transition-idempotent",
+            "description": "业务验收（未执行，待实现）：幂等/状态边界：同 bvid 重复发布命令幂等；非法发布状态迁移被拒绝；目标模块 bili.catalog.state；测试入口 services/catalog/state/tests/publish-state.test.ts",
+            "requirement_ids": [
+              "R02-upload",
+              "R19-publish-chain",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "business-publish-and-transition-idempotent"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u-media",
+      "title": {
+        "zh": "媒体管道：上传/探测/转码/封面/字幕/任务",
+        "en": "Media pipeline: ingest, probe, transcode, cover, subtitles, jobs"
+      },
+      "modules": [
+        "bili.media.asset",
+        "bili.media.audio",
+        "bili.media.cover",
+        "bili.media.ingest",
+        "bili.media.job",
+        "bili.media.preview",
+        "bili.media.probe",
+        "bili.media.state",
+        "bili.media.storage",
+        "bili.media.subtitle",
+        "bili.media.transcode"
+      ],
+      "requirement_ids": [
+        "R03-media",
+        "R19-publish-chain"
+      ],
+      "needs": [
+        "u-contract-baseline",
+        "u-platform-core"
+      ],
+      "external_dependencies": [
+        {
+          "module": "bili.contract.common",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.event",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.state",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.db",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.outbox",
+          "mode": "after",
+          "fixture_paths": []
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-media"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-upload-probe-transcode-ready",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/media/ingest/tests/upload-session.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-hash-mismatch-and-dead-letter",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/media/transcode/tests/transcode.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-dedupe-and-lease-exactly-once",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/media/job/tests/job-lease.test.ts"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-media 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R03-media",
+              "R19-publish-chain"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "upload-probe-transcode-ready",
+            "description": "业务验收（未执行，待实现）：成功：分片上传→探测→3 档转码→字幕/音轨登记，asset 最终 READY；目标模块 bili.media.ingest；测试入口 services/media/ingest/tests/upload-session.test.ts",
+            "requirement_ids": [
+              "R03-media",
+              "R19-publish-chain"
+            ],
+            "command_ids": [
+              "business-upload-probe-transcode-ready"
+            ]
+          },
+          {
+            "id": "hash-mismatch-and-dead-letter",
+            "description": "业务验收（未执行，待实现）：失败面：分片哈希不符时完成上传被拒绝；转码重试超过 attemptLimit 进入死信且状态 FAILED；目标模块 bili.media.transcode；测试入口 services/media/transcode/tests/transcode.test.ts",
+            "requirement_ids": [
+              "R03-media",
+              "R19-publish-chain"
+            ],
+            "command_ids": [
+              "business-hash-mismatch-and-dead-letter"
+            ]
+          },
+          {
+            "id": "dedupe-and-lease-exactly-once",
+            "description": "业务验收（未执行，待实现）：幂等/状态边界：同 sha256+owner 的原件不重复创建；租约过期任务被重新领取后仍只执行一次；目标模块 bili.media.job；测试入口 services/media/job/tests/job-lease.test.ts",
+            "requirement_ids": [
+              "R03-media",
+              "R19-publish-chain"
+            ],
+            "command_ids": [
+              "business-dedupe-and-lease-exactly-once"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u-playback",
+      "title": {
+        "zh": "播放授权与播放页（含个人中心）",
+        "en": "Playback grants and playback page"
+      },
+      "modules": [
+        "bili.client.web.member",
+        "bili.client.web.video",
+        "bili.playback.detail",
+        "bili.playback.grant",
+        "bili.playback.history",
+        "bili.playback.progress",
+        "bili.playback.sequence",
+        "bili.playback.stream",
+        "bili.playback.watchlater"
+      ],
+      "requirement_ids": [
+        "R04-playback",
+        "R19-publish-chain",
+        "R18-frontend"
+      ],
+      "needs": [
+        "u-contract-baseline",
+        "u-platform-core",
+        "u-content-pipeline",
+        "u-media",
+        "u-identity"
+      ],
+      "external_dependencies": [
+        {
+          "module": "bili.catalog.query",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.catalog.video",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.shared.design",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.shared.http",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.commerce.vip",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.commerce.vip.json"
+          ]
+        },
+        {
+          "module": "bili.community.comment",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.community.comment.json"
+          ]
+        },
+        {
+          "module": "bili.community.favorite",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.community.favorite.json"
+          ]
+        },
+        {
+          "module": "bili.community.like",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.community.like.json"
+          ]
+        },
+        {
+          "module": "bili.contract.common",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.state",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.danmaku.segment",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.danmaku.segment.json"
+          ]
+        },
+        {
+          "module": "bili.discover.recommend",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.discover.recommend.json"
+          ]
+        },
+        {
+          "module": "bili.identity.privacy",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.identity.profile",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.cdn",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.db",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.outbox",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.media.asset",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.pgc.license",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.pgc.license.json"
+          ]
+        },
+        {
+          "module": "bili.pgc.series",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.pgc.series.json"
+          ]
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-playback"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-grant-covers-video-lesson-room-audio",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/playback/grant/tests/grant.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-grant-denial-matrix",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/playback/grant/tests/grant.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-grant-expiry-and-binding",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/playback/stream/tests/stream.test.ts"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-playback 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R04-playback",
+              "R19-publish-chain",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "grant-covers-video-lesson-room-audio",
+            "description": "业务验收（未执行，待实现）：成功：视频、剧集课时、直播间、音频都通过同一 GrantRequest 签发授权与地址；目标模块 bili.playback.grant；测试入口 services/playback/grant/tests/grant.test.ts",
+            "requirement_ids": [
+              "R04-playback",
+              "R19-publish-chain",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-grant-covers-video-lesson-room-audio"
+            ]
+          },
+          {
+            "id": "grant-denial-matrix",
+            "description": "业务验收（未执行，待实现）：失败面：未登录 NEED_LOGIN、非会员 NEED_VIP、地域不符 REGION_LOCKED、审核中 UNDER_REVIEW、已删除 DELETED，全部不签发地址；目标模块 bili.playback.grant；测试入口 services/playback/grant/tests/grant.test.ts",
+            "requirement_ids": [
+              "R04-playback",
+              "R19-publish-chain",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-grant-denial-matrix"
+            ]
+          },
+          {
+            "id": "grant-expiry-and-binding",
+            "description": "业务验收（未执行，待实现）：状态边界：过期授权请求地址被拒绝；同一 grantId 不能换资源复用；进度上报只影响本人历史；目标模块 bili.playback.stream；测试入口 services/playback/stream/tests/stream.test.ts",
+            "requirement_ids": [
+              "R04-playback",
+              "R19-publish-chain",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-grant-expiry-and-binding"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u-danmaku",
+      "title": {
+        "zh": "弹幕全链路（分段/发送/样式/屏蔽/举报/管理/实时）",
+        "en": "Danmaku end to end"
+      },
+      "modules": [
+        "bili.danmaku.manage",
+        "bili.danmaku.preference",
+        "bili.danmaku.protocol",
+        "bili.danmaku.report",
+        "bili.danmaku.segment",
+        "bili.danmaku.send",
+        "bili.danmaku.style"
+      ],
+      "requirement_ids": [
+        "R05-danmaku"
+      ],
+      "needs": [
+        "u-contract-baseline",
+        "u-platform-core",
+        "u-content-pipeline"
+      ],
+      "external_dependencies": [
+        {
+          "module": "bili.catalog.video",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.common",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.identity.security",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.identity.security.json"
+          ]
+        },
+        {
+          "module": "bili.infra.db",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.outbox",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.ops.audit",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.ops.audit.json"
+          ]
+        },
+        {
+          "module": "bili.ops.report",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.ops.report.json"
+          ]
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-danmaku"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-segment-fetch-and-send",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/danmaku/segment/tests/segment.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-block-and-rate-limit",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/danmaku/send/tests/send.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-send-idempotent-and-moderation-effect",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/danmaku/manage/tests/manage.test.ts"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-danmaku 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R05-danmaku"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "segment-fetch-and-send",
+            "description": "业务验收（未执行，待实现）：成功：分段拉取按时间排序；发送落入对应分片且分片版本递增；目标模块 bili.danmaku.segment；测试入口 services/danmaku/segment/tests/segment.test.ts",
+            "requirement_ids": [
+              "R05-danmaku"
+            ],
+            "command_ids": [
+              "business-segment-fetch-and-send"
+            ]
+          },
+          {
+            "id": "block-and-rate-limit",
+            "description": "业务验收（未执行，待实现）：失败面：命中屏蔽词/黑名单发送被拒绝；超频返回 RATE_LIMITED；非 UP 主执行管理动作返回 PERMISSION_DENIED；目标模块 bili.danmaku.send；测试入口 services/danmaku/send/tests/send.test.ts",
+            "requirement_ids": [
+              "R05-danmaku"
+            ],
+            "command_ids": [
+              "business-block-and-rate-limit"
+            ]
+          },
+          {
+            "id": "send-idempotent-and-moderation-effect",
+            "description": "业务验收（未执行，待实现）：幂等/状态边界：同 idempotencyKey 只产生一条；UP 主删除后拉取不再返回该条；目标模块 bili.danmaku.manage；测试入口 services/danmaku/manage/tests/manage.test.ts",
+            "requirement_ids": [
+              "R05-danmaku"
+            ],
+            "command_ids": [
+              "business-send-idempotent-and-moderation-effect"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u-community",
+      "title": {
+        "zh": "社区互动（评论/管理/点赞/投币/收藏/分享）",
+        "en": "Community interactions"
+      },
+      "modules": [
+        "bili.community.coin",
+        "bili.community.comment",
+        "bili.community.favorite",
+        "bili.community.like",
+        "bili.community.moderation",
+        "bili.community.share"
+      ],
+      "requirement_ids": [
+        "R06-community",
+        "R20-data-ownership"
+      ],
+      "needs": [
+        "u-contract-baseline",
+        "u-platform-core",
+        "u-content-pipeline",
+        "u-identity"
+      ],
+      "external_dependencies": [
+        {
+          "module": "bili.catalog.video",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.commerce.ledger",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.commerce.ledger.json"
+          ]
+        },
+        {
+          "module": "bili.contract.common",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.ledger",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.identity.privacy",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.identity.security",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.cdn",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.db",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.outbox",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.message.notify",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.message.notify.json"
+          ]
+        },
+        {
+          "module": "bili.ops.audit",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.ops.audit.json"
+          ]
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-community"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-comment-like-coin-favorite",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/community/comment/tests/comment.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-closed-section-and-duplicate-like",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/community/moderation/tests/moderation.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-coin-ledger-and-idempotency",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/community/coin/tests/coin.test.ts"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-community 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R06-community",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "comment-like-coin-favorite",
+            "description": "业务验收（未执行，待实现）：成功：评论/回复/点赞/投币/收藏/分享成功并更新互动统计投影；目标模块 bili.community.comment；测试入口 services/community/comment/tests/comment.test.ts",
+            "requirement_ids": [
+              "R06-community",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "business-comment-like-coin-favorite"
+            ]
+          },
+          {
+            "id": "closed-section-and-duplicate-like",
+            "description": "业务验收（未执行，待实现）：失败面：关闭评论区的稿件发表评论被拒绝；重复点赞不增加计数；目标模块 bili.community.moderation；测试入口 services/community/moderation/tests/moderation.test.ts",
+            "requirement_ids": [
+              "R06-community",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "business-closed-section-and-duplicate-like"
+            ]
+          },
+          {
+            "id": "coin-ledger-and-idempotency",
+            "description": "业务验收（未执行，待实现）：幂等/状态边界：投币累计不超上限；同 idempotencyKey 重复投币只产生一条 coin_ledger_entry；目标模块 bili.community.coin；测试入口 services/community/coin/tests/coin.test.ts",
+            "requirement_ids": [
+              "R06-community",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "business-coin-ledger-and-idempotency"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u-social",
+      "title": {
+        "zh": "关注动态与个人空间页",
+        "en": "Following, dynamics and the personal space page"
+      },
+      "modules": [
+        "bili.client.web.dynamic",
+        "bili.client.web.space",
+        "bili.social.dynamic",
+        "bili.social.feed",
+        "bili.social.follow",
+        "bili.social.group",
+        "bili.social.mute",
+        "bili.social.subscription",
+        "bili.social.topic"
+      ],
+      "requirement_ids": [
+        "R07-social",
+        "R18-frontend"
+      ],
+      "needs": [
+        "u-contract-baseline",
+        "u-platform-core",
+        "u-identity",
+        "u-content-pipeline"
+      ],
+      "external_dependencies": [
+        {
+          "module": "bili.catalog.query",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.shared.design",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.shared.http",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.common",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.state",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.discover.recommend",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.discover.recommend.json"
+          ]
+        },
+        {
+          "module": "bili.identity.profile",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.db",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.outbox",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.message.notify",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.message.notify.json"
+          ]
+        },
+        {
+          "module": "bili.ops.audit",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.ops.audit.json"
+          ]
+        },
+        {
+          "module": "bili.pgc.series",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.pgc.series.json"
+          ]
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-social"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-follow-then-feed",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/social/feed/tests/feed.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-block-and-limit",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/social/follow/tests/follow.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-unfollow-and-idempotency",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/social/group/tests/group.test.ts"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-social 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R07-social",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "follow-then-feed",
+            "description": "业务验收（未执行，待实现）：成功：关注后动态流出现该作者动态；图文/视频/转发动态均可发布；目标模块 bili.social.feed；测试入口 services/social/feed/tests/feed.test.ts",
+            "requirement_ids": [
+              "R07-social",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-follow-then-feed"
+            ]
+          },
+          {
+            "id": "block-and-limit",
+            "description": "业务验收（未执行，待实现）：失败面：被拉黑用户关注被拒绝；超过关注上限返回 RATE_LIMITED；目标模块 bili.social.follow；测试入口 services/social/follow/tests/follow.test.ts",
+            "requirement_ids": [
+              "R07-social",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-block-and-limit"
+            ]
+          },
+          {
+            "id": "unfollow-and-idempotency",
+            "description": "业务验收（未执行，待实现）：幂等/状态边界：取关后动态流不再出现该作者；重复关注幂等；目标模块 bili.social.group；测试入口 services/social/group/tests/group.test.ts",
+            "requirement_ids": [
+              "R07-social",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-unfollow-and-idempotency"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u-message",
+      "title": {
+        "zh": "消息中心（私信/通知/系统/偏好/推送/未读）",
+        "en": "Messaging center"
+      },
+      "modules": [
+        "bili.client.web.message",
+        "bili.message.dm",
+        "bili.message.notify",
+        "bili.message.preference",
+        "bili.message.push",
+        "bili.message.system",
+        "bili.message.unread"
+      ],
+      "requirement_ids": [
+        "R08-message",
+        "R18-frontend"
+      ],
+      "needs": [
+        "u-contract-baseline",
+        "u-platform-core",
+        "u-identity"
+      ],
+      "external_dependencies": [
+        {
+          "module": "bili.client.shared.design",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.shared.http",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.common",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.identity.level",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.identity.privacy",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.db",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.observe",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.outbox",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.ops.activity",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.ops.activity.json"
+          ]
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-message"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-dm-frame-carries-message",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/message/dm/tests/dm.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-participant-and-permission",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/message/dm/tests/dm.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-idempotent-send-and-unread-reset",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/message/unread/tests/unread.test.ts"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-message 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R08-message",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "dm-frame-carries-message",
+            "description": "业务验收（未执行，待实现）：成功：私信 ws 帧包含 messageId/text/conversationId 且未读 +1；目标模块 bili.message.dm；测试入口 services/message/dm/tests/dm.test.ts",
+            "requirement_ids": [
+              "R08-message",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-dm-frame-carries-message"
+            ]
+          },
+          {
+            "id": "participant-and-permission",
+            "description": "业务验收（未执行，待实现）：失败面：非参与者读写会话返回 PERMISSION_DENIED；关闭私信的用户拒收；目标模块 bili.message.dm；测试入口 services/message/dm/tests/dm.test.ts",
+            "requirement_ids": [
+              "R08-message",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-participant-and-permission"
+            ]
+          },
+          {
+            "id": "idempotent-send-and-unread-reset",
+            "description": "业务验收（未执行，待实现）：幂等/状态边界：同 idempotencyKey 只落一条消息；标记已读后未读归零；目标模块 bili.message.unread；测试入口 services/message/unread/tests/unread.test.ts",
+            "requirement_ids": [
+              "R08-message",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-idempotent-send-and-unread-reset"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u-discover",
+      "title": {
+        "zh": "搜索发现与首页/搜索页",
+        "en": "Search, discovery, home and search pages"
+      },
+      "modules": [
+        "bili.client.web.home",
+        "bili.client.web.search",
+        "bili.discover.feedback",
+        "bili.discover.home",
+        "bili.discover.indexing",
+        "bili.discover.rank",
+        "bili.discover.recommend",
+        "bili.discover.search",
+        "bili.discover.suggest",
+        "bili.discover.timeline"
+      ],
+      "requirement_ids": [
+        "R09-discover",
+        "R18-frontend"
+      ],
+      "needs": [
+        "u-contract-baseline",
+        "u-platform-core",
+        "u-content-pipeline"
+      ],
+      "external_dependencies": [
+        {
+          "module": "bili.catalog.event",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.catalog.query",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.shared.design",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.shared.http",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.common",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.event",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.state",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.db",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.outbox",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.search",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.ops.audit",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.ops.audit.json"
+          ]
+        },
+        {
+          "module": "bili.ops.recommend",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.ops.recommend.json"
+          ]
+        },
+        {
+          "module": "bili.social.follow",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.social.follow.json"
+          ]
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-discover"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-publish-projects-to-search",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/discover/indexing/tests/index-projection.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-unaudited-excluded",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/discover/search/tests/search.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-projection-idempotent",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/discover/indexing/tests/index-projection.test.ts"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-discover 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R09-discover",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "publish-projects-to-search",
+            "description": "业务验收（未执行，待实现）：成功：发布事件→检索文档→关键词命中；首页与榜单结构完整；目标模块 bili.discover.indexing；测试入口 services/discover/indexing/tests/index-projection.test.ts",
+            "requirement_ids": [
+              "R09-discover",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-publish-projects-to-search"
+            ]
+          },
+          {
+            "id": "unaudited-excluded",
+            "description": "业务验收（未执行，待实现）：失败面：审核未通过/已下架内容不出现在检索、榜单与首页；目标模块 bili.discover.search；测试入口 services/discover/search/tests/search.test.ts",
+            "requirement_ids": [
+              "R09-discover",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-unaudited-excluded"
+            ]
+          },
+          {
+            "id": "projection-idempotent",
+            "description": "业务验收（未执行，待实现）：幂等边界：同一 bvid 重复投影为幂等 upsert；分页游标稳定；目标模块 bili.discover.indexing；测试入口 services/discover/indexing/tests/index-projection.test.ts",
+            "requirement_ids": [
+              "R09-discover",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-projection-idempotent"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u-live",
+      "title": {
+        "zh": "直播域（准入/房间/推流/弹幕/礼物/预约/回放）与直播页",
+        "en": "Live domain and live page"
+      },
+      "modules": [
+        "bili.client.web.live",
+        "bili.live.apply",
+        "bili.live.danmaku",
+        "bili.live.gift",
+        "bili.live.replay",
+        "bili.live.reserve",
+        "bili.live.room",
+        "bili.live.stream"
+      ],
+      "requirement_ids": [
+        "R10-live",
+        "R18-frontend"
+      ],
+      "needs": [
+        "u-contract-baseline",
+        "u-platform-core",
+        "u-identity",
+        "u-media",
+        "u-commerce"
+      ],
+      "external_dependencies": [
+        {
+          "module": "bili.catalog.taxonomy",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.catalog.taxonomy.json"
+          ]
+        },
+        {
+          "module": "bili.client.shared.design",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.shared.http",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.commerce.ledger",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.commerce.wallet",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.common",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.ledger",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.danmaku.preference",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.danmaku.preference.json"
+          ]
+        },
+        {
+          "module": "bili.danmaku.send",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.danmaku.send.json"
+          ]
+        },
+        {
+          "module": "bili.identity.verify",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.config",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.db",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.outbox",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.media.ingest",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.media.transcode",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.message.push",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.message.push.json"
+          ]
+        },
+        {
+          "module": "bili.ops.audit",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.ops.audit.json"
+          ]
+        },
+        {
+          "module": "bili.playback.grant",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.playback.grant.json"
+          ]
+        },
+        {
+          "module": "bili.upload.draft",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.upload.draft.json"
+          ]
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-live"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-apply-stream-danmaku-gift-replay",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/live/room/tests/room.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-stream-permission-and-balance",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/live/gift/tests/gift.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-gift-idempotent-and-sc-text-required",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/live/gift/tests/gift.test.ts"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-live 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R10-live",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "apply-stream-danmaku-gift-replay",
+            "description": "业务验收（未执行，待实现）：成功：主播准入→开播→推流地址→实时弹幕→礼物→回放转投稿全链路；目标模块 bili.live.room；测试入口 services/live/room/tests/room.test.ts",
+            "requirement_ids": [
+              "R10-live",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-apply-stream-danmaku-gift-replay"
+            ]
+          },
+          {
+            "id": "stream-permission-and-balance",
+            "description": "业务验收（未执行，待实现）：失败面：未通过准入申请推流地址被拒绝；余额不足送礼返回 PRECONDITION_FAILED；目标模块 bili.live.gift；测试入口 services/live/gift/tests/gift.test.ts",
+            "requirement_ids": [
+              "R10-live",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-stream-permission-and-balance"
+            ]
+          },
+          {
+            "id": "gift-idempotent-and-sc-text-required",
+            "description": "业务验收（未执行，待实现）：幂等/状态边界：同 idempotencyKey 重复送礼只记一次账；醒目留言缺 messageText 被拒绝；下播后不可再收礼；目标模块 bili.live.gift；测试入口 services/live/gift/tests/gift.test.ts",
+            "requirement_ids": [
+              "R10-live",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-gift-idempotent-and-sc-text-required"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u-commerce",
+      "title": {
+        "zh": "会员交易与账本（含会员中心页）",
+        "en": "Membership commerce and ledger"
+      },
+      "modules": [
+        "bili.client.web.vip",
+        "bili.commerce.charge",
+        "bili.commerce.ledger",
+        "bili.commerce.order",
+        "bili.commerce.payment",
+        "bili.commerce.reconcile",
+        "bili.commerce.refund",
+        "bili.commerce.vip",
+        "bili.commerce.wallet"
+      ],
+      "requirement_ids": [
+        "R11-commerce",
+        "R20-data-ownership"
+      ],
+      "needs": [
+        "u-contract-baseline",
+        "u-platform-core",
+        "u-identity"
+      ],
+      "external_dependencies": [
+        {
+          "module": "bili.client.shared.design",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.shared.http",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.common",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.ledger",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.creator.income",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.creator.income.json"
+          ]
+        },
+        {
+          "module": "bili.identity.profile",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.db",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.outbox",
+          "mode": "after",
+          "fixture_paths": []
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-commerce"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-topup-to-entitlement",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/commerce/order/tests/order.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-signature-and-balance-rejected",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/commerce/payment/tests/payment.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-callback-idempotent-and-reconcile",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/commerce/reconcile/tests/reconcile.test.ts"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-commerce 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R11-commerce",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "topup-to-entitlement",
+            "description": "业务验收（未执行，待实现）：成功：充值→订单→支付回调→账本分录→余额更新→会员权益生效；目标模块 bili.commerce.order；测试入口 services/commerce/order/tests/order.test.ts",
+            "requirement_ids": [
+              "R11-commerce",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "business-topup-to-entitlement"
+            ]
+          },
+          {
+            "id": "signature-and-balance-rejected",
+            "description": "业务验收（未执行，待实现）：失败面：回调签名校验失败被拒且不写账本；余额不足下单被拒绝；无权限查询他人账本返回 PERMISSION_DENIED；目标模块 bili.commerce.payment；测试入口 services/commerce/payment/tests/payment.test.ts",
+            "requirement_ids": [
+              "R11-commerce",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "business-signature-and-balance-rejected"
+            ]
+          },
+          {
+            "id": "callback-idempotent-and-reconcile",
+            "description": "业务验收（未执行，待实现）：幂等/状态边界：同 idempotencyKey 重复回调只入账一次；渠道差异被记录进对账报告；目标模块 bili.commerce.reconcile；测试入口 services/commerce/reconcile/tests/reconcile.test.ts",
+            "requirement_ids": [
+              "R11-commerce",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "business-callback-idempotent-and-reconcile"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u-pgc",
+      "title": {
+        "zh": "版权内容与课堂（含番剧课程页）",
+        "en": "Premium content and courses"
+      },
+      "modules": [
+        "bili.client.web.pgc",
+        "bili.pgc.course",
+        "bili.pgc.follow",
+        "bili.pgc.license",
+        "bili.pgc.rating",
+        "bili.pgc.schedule",
+        "bili.pgc.series",
+        "bili.pgc.trial"
+      ],
+      "requirement_ids": [
+        "R12-pgc",
+        "R18-frontend"
+      ],
+      "needs": [
+        "u-contract-baseline",
+        "u-platform-core",
+        "u-content-pipeline",
+        "u-media",
+        "u-commerce",
+        "u-playback"
+      ],
+      "external_dependencies": [
+        {
+          "module": "bili.acquire.license",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.acquire.license.json"
+          ]
+        },
+        {
+          "module": "bili.catalog.video",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.shared.design",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.shared.http",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.commerce.vip",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.common",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.identity.security",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.identity.security.json"
+          ]
+        },
+        {
+          "module": "bili.infra.db",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.outbox",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.media.asset",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.playback.grant",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.social.subscription",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.social.subscription.json"
+          ]
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-pgc"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-season-episode-course-flow",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/pgc/series/tests/series.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-license-and-territory-denial",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/pgc/license/tests/license.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-trial-then-entitlement",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/pgc/trial/tests/trial.test.ts"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-pgc 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R12-pgc",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "season-episode-course-flow",
+            "description": "业务验收（未执行，待实现）：成功：版权窗口→季度→剧集→排期→追番→评分→试看；课程章节与课时映射视频；目标模块 bili.pgc.series；测试入口 services/pgc/series/tests/series.test.ts",
+            "requirement_ids": [
+              "R12-pgc",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-season-episode-course-flow"
+            ]
+          },
+          {
+            "id": "license-and-territory-denial",
+            "description": "业务验收（未执行，待实现）：失败面：窗口过期 LICENSE_EXPIRED、地域不符 REGION_LOCKED、未购买课程看付费课时被拒绝；目标模块 bili.pgc.license；测试入口 services/pgc/license/tests/license.test.ts",
+            "requirement_ids": [
+              "R12-pgc",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-license-and-territory-denial"
+            ]
+          },
+          {
+            "id": "trial-then-entitlement",
+            "description": "业务验收（未执行，待实现）：状态边界：试看超时必须升级为会员授权；同一用户重复评分被覆盖而非累加；目标模块 bili.pgc.trial；测试入口 services/pgc/trial/tests/trial.test.ts",
+            "requirement_ids": [
+              "R12-pgc",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-trial-then-entitlement"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u-creator",
+      "title": {
+        "zh": "创作中心后端与前端（管理/分析/互动/粉丝/活动/收益）",
+        "en": "Creator studio backend and front end"
+      },
+      "modules": [
+        "bili.client.studio.analytics",
+        "bili.client.studio.content",
+        "bili.client.studio.dashboard",
+        "bili.client.studio.interact",
+        "bili.client.studio.monetize",
+        "bili.creator.activity",
+        "bili.creator.analytics",
+        "bili.creator.fans",
+        "bili.creator.income",
+        "bili.creator.interact",
+        "bili.creator.manage"
+      ],
+      "requirement_ids": [
+        "R13-creator",
+        "R18-frontend"
+      ],
+      "needs": [
+        "u-contract-baseline",
+        "u-platform-core",
+        "u-content-pipeline",
+        "u-identity"
+      ],
+      "external_dependencies": [
+        {
+          "module": "bili.catalog.video",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.shared.design",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.shared.http",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.commerce.ledger",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.commerce.ledger.json"
+          ]
+        },
+        {
+          "module": "bili.community.comment",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.community.comment.json"
+          ]
+        },
+        {
+          "module": "bili.community.moderation",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.community.moderation.json"
+          ]
+        },
+        {
+          "module": "bili.contract.common",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.state",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.danmaku.manage",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.danmaku.manage.json"
+          ]
+        },
+        {
+          "module": "bili.danmaku.segment",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.danmaku.segment.json"
+          ]
+        },
+        {
+          "module": "bili.discover.indexing",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.discover.indexing.json"
+          ]
+        },
+        {
+          "module": "bili.infra.db",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.outbox",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.ops.activity",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.ops.activity.json"
+          ]
+        },
+        {
+          "module": "bili.ops.service",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.ops.service.json"
+          ]
+        },
+        {
+          "module": "bili.social.follow",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.social.follow.json"
+          ]
+        },
+        {
+          "module": "bili.upload.collection",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.upload.draft",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.upload.part",
+          "mode": "after",
+          "fixture_paths": []
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-creator"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-studio-overview-and-settlement",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/creator/manage/tests/manage.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-ownership-and-withdrawal-limits",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/creator/income/tests/income.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-task-claim-and-statement-boundary",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/creator/activity/tests/activity.test.ts"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-creator 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R13-creator",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "studio-overview-and-settlement",
+            "description": "业务验收（未执行，待实现）：成功：稿件/数据/粉丝/互动/收益结算单均可查，任务奖励可领取；目标模块 bili.creator.manage；测试入口 services/creator/manage/tests/manage.test.ts",
+            "requirement_ids": [
+              "R13-creator",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-studio-overview-and-settlement"
+            ]
+          },
+          {
+            "id": "ownership-and-withdrawal-limits",
+            "description": "业务验收（未执行，待实现）：失败面：非稿件归属者调用互动管理返回 PERMISSION_DENIED；提现超过可提现额被拒绝；目标模块 bili.creator.income；测试入口 services/creator/income/tests/income.test.ts",
+            "requirement_ids": [
+              "R13-creator",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-ownership-and-withdrawal-limits"
+            ]
+          },
+          {
+            "id": "task-claim-and-statement-boundary",
+            "description": "业务验收（未执行，待实现）：幂等/状态边界：同任务不可重复领取奖励；已确认结算单不可重复提现；目标模块 bili.creator.activity；测试入口 services/creator/activity/tests/activity.test.ts",
+            "requirement_ids": [
+              "R13-creator",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-task-claim-and-statement-boundary"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u-ops",
+      "title": {
+        "zh": "运营后台后端与前端（审核/举报/申诉/处罚/版权/配置/客服/审计）",
+        "en": "Operations backend and console"
+      },
+      "modules": [
+        "bili.client.ops.audit",
+        "bili.client.ops.config",
+        "bili.client.ops.content",
+        "bili.client.ops.service",
+        "bili.ops.activity",
+        "bili.ops.appeal",
+        "bili.ops.audit",
+        "bili.ops.auditlog",
+        "bili.ops.copyright",
+        "bili.ops.penalty",
+        "bili.ops.recommend",
+        "bili.ops.report",
+        "bili.ops.service"
+      ],
+      "requirement_ids": [
+        "R14-ops",
+        "R20-data-ownership"
+      ],
+      "needs": [
+        "u-contract-baseline",
+        "u-platform-core",
+        "u-content-pipeline",
+        "u-identity",
+        "u-community",
+        "u-danmaku"
+      ],
+      "external_dependencies": [
+        {
+          "module": "bili.acquire.provenance",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.acquire.provenance.json"
+          ]
+        },
+        {
+          "module": "bili.catalog.state",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.catalog.taxonomy",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.shared.design",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.shared.http",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.common",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.event",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.state",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.identity.security",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.db",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.outbox",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.message.system",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.message.system.json"
+          ]
+        },
+        {
+          "module": "bili.upload.lifecycle",
+          "mode": "after",
+          "fixture_paths": []
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-ops"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-audit-decision-drives-publish-state",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/ops/audit/tests/audit.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-reviewer-permission-and-single-handling",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/ops/report/tests/report.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-penalty-effect-and-append-only-log",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/ops/penalty/tests/penalty.test.ts"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-ops 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R14-ops",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "audit-decision-drives-publish-state",
+            "description": "业务验收（未执行，待实现）：成功：审核结论→发布状态迁移→搜索投影同步；举报/申诉/处罚/版权投诉按状态机流转；目标模块 bili.ops.audit；测试入口 services/ops/audit/tests/audit.test.ts",
+            "requirement_ids": [
+              "R14-ops",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "business-audit-decision-drives-publish-state"
+            ]
+          },
+          {
+            "id": "reviewer-permission-and-single-handling",
+            "description": "业务验收（未执行，待实现）：失败面：无审核权限提交结论返回 PERMISSION_DENIED；已处理工单重复处理被拒绝；目标模块 bili.ops.report；测试入口 services/ops/report/tests/report.test.ts",
+            "requirement_ids": [
+              "R14-ops",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "business-reviewer-permission-and-single-handling"
+            ]
+          },
+          {
+            "id": "penalty-effect-and-append-only-log",
+            "description": "业务验收（未执行，待实现）：状态边界：处罚生效后内容不可见、解除后恢复；操作审计日志只追加不可修改；目标模块 bili.ops.penalty；测试入口 services/ops/penalty/tests/penalty.test.ts",
+            "requirement_ids": [
+              "R14-ops",
+              "R20-data-ownership"
+            ],
+            "command_ids": [
+              "business-penalty-effect-and-append-only-log"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u-acquire",
+      "title": {
+        "zh": "内容获取与导入（许可/下载/去重/溯源/导入）",
+        "en": "Content acquisition and import"
+      },
+      "modules": [
+        "bili.acquire.dedupe",
+        "bili.acquire.import",
+        "bili.acquire.job",
+        "bili.acquire.license",
+        "bili.acquire.provenance",
+        "bili.acquire.source"
+      ],
+      "requirement_ids": [
+        "R15-acquire",
+        "R19-publish-chain"
+      ],
+      "needs": [
+        "u-contract-baseline",
+        "u-platform-core",
+        "u-content-pipeline",
+        "u-media"
+      ],
+      "external_dependencies": [
+        {
+          "module": "bili.catalog.video",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.common",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.identity.rbac",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.identity.rbac.json"
+          ]
+        },
+        {
+          "module": "bili.infra.config",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.db",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.outbox",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.media.asset",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.media.ingest",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.media.storage",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.upload.draft",
+          "mode": "after",
+          "fixture_paths": []
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-acquire"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-source-to-import",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/acquire/import/tests/import.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-unverified-license-rejected",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/acquire/license/tests/license-evidence.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-dedupe-and-import-idempotency",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/acquire/dedupe/tests/dedupe.test.ts"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-acquire 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R15-acquire",
+              "R19-publish-chain"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "source-to-import",
+            "description": "业务验收（未执行，待实现）：成功：登记来源→登记并核验许可证据→下载任务→去重→溯源→导入为草稿→发布；目标模块 bili.acquire.import；测试入口 services/acquire/import/tests/import.test.ts",
+            "requirement_ids": [
+              "R15-acquire",
+              "R19-publish-chain"
+            ],
+            "command_ids": [
+              "business-source-to-import"
+            ]
+          },
+          {
+            "id": "unverified-license-rejected",
+            "description": "业务验收（未执行，待实现）：失败面：许可证据未核验时创建下载任务被拒绝；无核验角色的账号调用核验接口返回 PERMISSION_DENIED；目标模块 bili.acquire.license；测试入口 services/acquire/license/tests/license-evidence.test.ts",
+            "requirement_ids": [
+              "R15-acquire",
+              "R19-publish-chain"
+            ],
+            "command_ids": [
+              "business-unverified-license-rejected"
+            ]
+          },
+          {
+            "id": "dedupe-and-import-idempotency",
+            "description": "业务验收（未执行，待实现）：幂等/状态边界：同指纹内容被标记 dedupeOf；同 idempotencyKey 重复导入只创建一份草稿；溯源记录不可变；目标模块 bili.acquire.dedupe；测试入口 services/acquire/dedupe/tests/dedupe.test.ts",
+            "requirement_ids": [
+              "R15-acquire",
+              "R19-publish-chain"
+            ],
+            "command_ids": [
+              "business-dedupe-and-import-idempotency"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u-channel",
+      "title": {
+        "zh": "生态频道与频道页（专栏/音频/漫画/赛事/会员购/装扮）",
+        "en": "Ecosystem channels and channel pages"
+      },
+      "modules": [
+        "bili.channel.article",
+        "bili.channel.audio",
+        "bili.channel.dressup",
+        "bili.channel.esports",
+        "bili.channel.mall",
+        "bili.channel.manga",
+        "bili.client.web.channel"
+      ],
+      "requirement_ids": [
+        "R17-channel",
+        "R18-frontend"
+      ],
+      "needs": [
+        "u-contract-baseline",
+        "u-platform-core",
+        "u-content-pipeline",
+        "u-commerce",
+        "u-media"
+      ],
+      "external_dependencies": [
+        {
+          "module": "bili.client.shared.design",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.shared.http",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.commerce.ledger",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.commerce.order",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.commerce.vip",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.common",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.contract.state",
+          "mode": "baseline",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.discover.indexing",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.discover.indexing.json"
+          ]
+        },
+        {
+          "module": "bili.identity.profile",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.identity.profile.json"
+          ]
+        },
+        {
+          "module": "bili.infra.db",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.outbox",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.live.room",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.live.room.json"
+          ]
+        },
+        {
+          "module": "bili.media.ingest",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.media.storage",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.ops.audit",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.ops.audit.json"
+          ]
+        },
+        {
+          "module": "bili.playback.grant",
+          "mode": "contract",
+          "fixture_paths": [
+            "contracts/samples/bili.playback.grant.json"
+          ]
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-channel"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-channel-publish-and-buy",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/channel/article/tests/article.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-paid-content-without-entitlement",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/channel/manga/tests/manga.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-ownership-unique",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "services/channel/dressup/tests/dressup.test.ts"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-channel 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R17-channel",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "channel-publish-and-buy",
+            "description": "业务验收（未执行，待实现）：成功：专栏/音频/漫画/赛事/装扮发布或购买成功；音频播放持有统一授权；目标模块 bili.channel.article；测试入口 services/channel/article/tests/article.test.ts",
+            "requirement_ids": [
+              "R17-channel",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-channel-publish-and-buy"
+            ]
+          },
+          {
+            "id": "paid-content-without-entitlement",
+            "description": "业务验收（未执行，待实现）：失败面：无权益访问付费漫画章节返回 NEED_VIP；已下架商品不可下单；目标模块 bili.channel.manga；测试入口 services/channel/manga/tests/manga.test.ts",
+            "requirement_ids": [
+              "R17-channel",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-paid-content-without-entitlement"
+            ]
+          },
+          {
+            "id": "ownership-unique",
+            "description": "业务验收（未执行，待实现）：状态边界：用户与装扮的拥有关系唯一；同一订单重复支付回调只入账一次；目标模块 bili.channel.dressup；测试入口 services/channel/dressup/tests/dressup.test.ts",
+            "requirement_ids": [
+              "R17-channel",
+              "R18-frontend"
+            ],
+            "command_ids": [
+              "business-ownership-unique"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u-integration",
+      "title": {
+        "zh": "系统装配与 React 应用壳（路由/Provider/Worker/数据源/可观测/本地栈）",
+        "en": "System assembly and React app shell"
+      },
+      "modules": [
+        "bili.assembly.datasource",
+        "bili.assembly.devstack",
+        "bili.assembly.obs",
+        "bili.assembly.routes",
+        "bili.assembly.server",
+        "bili.assembly.workers",
+        "bili.client.app.bootstrap",
+        "bili.client.app.build",
+        "bili.client.app.providers",
+        "bili.client.app.router",
+        "bili.client.app.shell"
+      ],
+      "requirement_ids": [
+        "R16-infra",
+        "R18-frontend",
+        "R19-publish-chain"
+      ],
+      "needs": [
+        "u-contract-baseline",
+        "u-platform-core",
+        "u-identity",
+        "u-content-pipeline",
+        "u-media",
+        "u-playback",
+        "u-commerce",
+        "u-discover",
+        "u-message"
+      ],
+      "external_dependencies": [
+        {
+          "module": "bili.client.shared.design",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.web.home",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.web.publish",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.client.web.video",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.db",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.gateway",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.migration.content",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.observe",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.infra.outbox",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.media.job",
+          "mode": "after",
+          "fixture_paths": []
+        },
+        {
+          "module": "bili.message.unread",
+          "mode": "after",
+          "fixture_paths": []
+        }
+      ],
+      "verification": {
+        "commands": [
+          {
+            "id": "design-check",
+            "argv": [
+              "node",
+              "tools/verify-contracts.mjs",
+              "--unit",
+              "u-integration"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-assembly-boots-all-domains",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "apps/api/tests/app.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-duplicate-route-fails-fast",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "apps/api/tests/routes.test.ts"
+            ],
+            "cwd": "."
+          },
+          {
+            "id": "business-no-silent-skip-of-contracts",
+            "argv": [
+              "node",
+              "--test",
+              "--experimental-strip-types",
+              "apps/worker/tests/main.test.ts"
+            ],
+            "cwd": "."
+          }
+        ],
+        "cases": [
+          {
+            "id": "design-contract-fixtures",
+            "description": "设计与 fixture 验收（当前可执行，已实际执行）：u-integration 的叶子范围、写入文件独占、外部契约 fixture、needs 前置与 schema 样例",
+            "requirement_ids": [
+              "R16-infra",
+              "R18-frontend",
+              "R19-publish-chain"
+            ],
+            "command_ids": [
+              "design-check"
+            ]
+          },
+          {
+            "id": "assembly-boots-all-domains",
+            "description": "业务验收（未执行，待实现）：成功：app.ts 装配全部域路由并通过健康检查；worker 注册表启动成功；目标模块 bili.assembly.server；测试入口 apps/api/tests/app.test.ts",
+            "requirement_ids": [
+              "R16-infra",
+              "R18-frontend",
+              "R19-publish-chain"
+            ],
+            "command_ids": [
+              "business-assembly-boots-all-domains"
+            ]
+          },
+          {
+            "id": "duplicate-route-fails-fast",
+            "description": "业务验收（未执行，待实现）：失败面：重复路由或重复权限码在启动时失败（fail fast），不静默覆盖；目标模块 bili.assembly.routes；测试入口 apps/api/tests/routes.test.ts",
+            "requirement_ids": [
+              "R16-infra",
+              "R18-frontend",
+              "R19-publish-chain"
+            ],
+            "command_ids": [
+              "business-duplicate-route-fails-fast"
+            ]
+          },
+          {
+            "id": "no-silent-skip-of-contracts",
+            "description": "业务验收（未执行，待实现）：失败面：装配 Worker/域时缺契约或未实现必须显式报错并停止注册，不得静默跳过或降级；共享契约工具自身的验收在 u-contract-baseline 组内进行；目标模块 bili.assembly.workers；测试入口 apps/worker/tests/main.test.ts",
+            "requirement_ids": [
+              "R16-infra",
+              "R18-frontend",
+              "R19-publish-chain"
+            ],
+            "command_ids": [
+              "business-no-silent-skip-of-contracts"
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "id": "unit-db",
+            "kind": "database",
+            "description": "本单元独占的 RDS schema/实例（迁移后执行；单测禁止共享同一 schema）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-port",
+            "kind": "port",
+            "description": "本单元 HTTP/WS 测试端口独占分配（含网关与 Worker 健康端口）",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-tmp",
+            "kind": "filesystem",
+            "description": "本单元独立临时目录与 fixture 目录，禁止写其他单元目录",
+            "isolation": "unit"
+          },
+          {
+            "id": "unit-oss-prefix",
+            "kind": "service",
+            "description": "对象存储测试前缀或 S3 兼容替身，隔离 bucket 前缀与生命周期规则",
+            "isolation": "unit"
+          }
+        ]
+      }
+    }
+  ]
+}

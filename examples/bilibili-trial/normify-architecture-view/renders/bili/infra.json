@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "bili.infra",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "本层阅读顺序：接入网关 → 任务与 outbox 派发 → 缓存接入 → 搜索接入 → CDN 与回源 → 通知通道接入 → 可观测性与审计 → 部署、备份与容量。箭头语义：call 同步调用、event 异步事件、dataflow 数据/投影流、reference 契约引用。",
+    "en": "Read in order: API Gateway → Jobs and Outbox Dispatcher → Cache Adapter → Search Adapter → CDN and Origin → Notification Channels → Observability and Audit → Deployment, Backup and Capacity. Arrow kinds: call, event, dataflow, reference."
+  },
+  "order": [
+    "bili.infra.gateway",
+    "bili.infra.jobs",
+    "bili.infra.cache",
+    "bili.infra.search",
+    "bili.infra.cdn",
+    "bili.infra.notify",
+    "bili.infra.observability",
+    "bili.infra.deploy"
+  ]
+}

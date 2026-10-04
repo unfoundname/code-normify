@@ -1,0 +1,110 @@
+{
+  "opened_at": "2026-10-03T23:50:27.438Z",
+  "pageErrors": [],
+  "samples": [
+    {
+      "view": "architecture",
+      "file": "architecture.html",
+      "rootNodes": 21,
+      "shot": "<repo-root>\\examples\\bilibili-pi-full\\screenshots\\architecture.png",
+      "bytes": 31005,
+      "drillSteps": [
+        {
+          "target": "bili.client",
+          "clicked": true,
+          "nodesAfter": 5,
+          "detailPanels": 22,
+          "hasContent": true
+        },
+        {
+          "target": "bili.contract",
+          "clicked": true,
+          "nodesAfter": 4,
+          "detailPanels": 0,
+          "hasContent": true
+        },
+        {
+          "target": "bili.assembly",
+          "clicked": true,
+          "nodesAfter": 7,
+          "detailPanels": 0,
+          "hasContent": true
+        }
+      ]
+    },
+    {
+      "view": "data",
+      "file": "data.html",
+      "rootNodes": 20,
+      "shot": "<repo-root>\\examples\\bilibili-pi-full\\screenshots\\data.png",
+      "bytes": 46469,
+      "drillSteps": [
+        {
+          "target": "data.content",
+          "clicked": true,
+          "nodesAfter": 13,
+          "detailPanels": 0,
+          "hasContent": true
+        },
+        {
+          "target": "data.media",
+          "clicked": true,
+          "nodesAfter": 11,
+          "detailPanels": 0,
+          "hasContent": true
+        },
+        {
+          "target": "data.relations",
+          "clicked": true,
+          "nodesAfter": 0,
+          "detailPanels": 2,
+          "hasContent": true
+        }
+      ]
+    },
+    {
+      "view": "delivery",
+      "file": "delivery.html",
+      "rootNodes": 21,
+      "shot": "<repo-root>\\examples\\bilibili-pi-full\\screenshots\\delivery.png",
+      "bytes": 203688,
+      "drillSteps": [
+        {
+          "target": "delivery.waves",
+          "clicked": true,
+          "nodesAfter": 0,
+          "detailPanels": 3,
+          "hasContent": true
+        },
+        {
+          "target": "delivery.u-playback",
+          "clicked": true,
+          "nodesAfter": 0,
+          "detailPanels": 4,
+          "hasContent": true
+        },
+        {
+          "target": "delivery.u-integration",
+          "clicked": true,
+          "nodesAfter": 0,
+          "detailPanels": 4,
+          "hasContent": true
+        }
+      ]
+    },
+    {
+      "view": "index",
+      "file": "index.html",
+      "title": "bilibili 类视频网站 · 设计交付入口（评审修正版）",
+      "shot": "<repo-root>\\examples\\bilibili-pi-full\\screenshots\\index.png",
+      "bytes": 753908
+    }
+  ],
+  "not_covered": [
+    "抽样范围：3 个视图的根层 + 每个根层抽 2-3 个直接子节点点击（每条路径都会真正渲染子层或详情面板）；未逐层穷举全部 214/170/22 个模块",
+    "未验证交互细节（搜索、双语切换、深链接分享、导出）",
+    "未在移动端/多浏览器验证，也未做无障碍与性能测量",
+    "未验证任何业务页面（业务实现不存在）"
+  ],
+  "ok": true
+}

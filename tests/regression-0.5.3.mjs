@@ -8,12 +8,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createHash } from 'node:crypto'
 
-const PLUGIN = new URL('../lib/index.js', import.meta.url).href // 跨平台：直接用 URL 解析；不要手工去掉前导斜杠再拼 file URL（POSIX 下会变成相对路径）
-const plug = await import(PLUGIN)
-const tools = new Map()
-plug.apply({ tools: { register: (d) => tools.set(d.name, d) }, skills: { register: () => () => {} },
-  logger: { info: () => {}, warn: () => {} }, effect: () => {}, on: () => {} },
-  { rootDir: '.', requireBilingual: true, devCompanionReminder: false, devCompanionReminderAfter: 8 })
+import { createNormifyTools } from '../lib/index.js'
+const tools = new Map(createNormifyTools({ rootDir: '.', requireBilingual: true }).map(tool => [tool.name, tool]))
 const call = (n, a) => tools.get(n).execute(a ?? {})
 const hex = (s) => createHash('sha256').update(s).digest('hex')
 const A = (path, zh, en) => ({ protocol: 'rpc', path, description: { zh, en } })
@@ -43,21 +39,21 @@ ok('①c topic=tools 列出全部工具（0.5.4 起每行还带必填/可选摘�
 const hDeps = await call('normify_help', { topic: 'deps' })
 ok('①d topic=deps 讲 API 直连', hDeps.ok === true && /from_api/.test(hDeps.reference) && /to_api/.test(hDeps.reference))
 const hBad = await call('normify_help', { topic: 'nope' })
-ok('①e 未知主题报错并列出可用主题', hBad.ok === false && hBad.error?.code === 'args/invalid-topic' && /fields/.test(hBad.error.message), JSON.stringify(hBad.error).slice(0, 120))
+ok('①e 未知主题报错并列出可用主题', hBad.ok === false && hBad.errors.some(d => d.code === 'args/invalid-topic' && /fields/.test(d.message)), JSON.stringify(hBad.errors).slice(0, 120))
 ok('①f topic=all 覆盖各段', (await call('normify_help', { topic: 'all' })).reference.includes('=== policy ==='))
 
 console.log('\n== ② 项目初始化通道 ==')
 const init = await call('normify_project_init', { dir: DIR, root: { id: 'demo', name: L('演示', 'Demo'), description: L('回归项目根模块', 'Regression root') } })
-ok('②a project_init 建目录 + 根模块', init.ok === true && existsSync(join(work, 'normify-demo', 'modules', 'demo', 'index.md')) || existsSync(join(work, 'normify-demo', 'modules', 'demo.md')), JSON.stringify(init).slice(0, 140))
+ok('②a project_init 建目录 + 根模块', init.ok === true && (existsSync(join(work, 'normify-demo', 'modules', 'demo', 'index.md')) || existsSync(join(work, 'normify-demo', 'modules', 'demo.md'))), JSON.stringify(init).slice(0, 140))
 ok('②b 自动安装默认架构规则', init.ok === true && init.policy_rules > 0, 'rules=' + init.policy_rules)
 ok('②c 幂等：重复调用不报错', (await call('normify_project_init', { dir: DIR, root: { id: 'demo' } })).ok === true)
 const br = await call('normify_brief', { dir: DIR, id: 'demo' })
-ok('②d 初始化后 brief(id) 可用（此前 module/not-found）', br.ok !== false && !br.error, JSON.stringify(br.error ?? br.target ?? '').slice(0, 100))
+ok('②d 初始化后 brief(id) 可用（此前 module/not-found）', br.ok === true && br.errors.length === 0, JSON.stringify(br.targets).slice(0, 100))
 const brMiss = await call('normify_brief', { dir: DIR, id: 'demo.nope' })
-ok('②e brief 缺失模块给出可执行 hint', brMiss.ok === false && brMiss.error?.code === 'module/not-found' && /normify_project_init/.test(String(brMiss.hint)), String(brMiss.hint).slice(0, 90))
+ok('②e brief 缺失模块给出可执行 hint', brMiss.ok === false && brMiss.errors.some(d => d.code === 'module/not-found') && /normify_project_init/.test(brMiss.hint), String(brMiss.hint).slice(0, 90))
 const NEWDIR = join(work, 'normify-fresh').replace(/\\/g, '/')
 const co = await call('normify_change_open', { dir: NEWDIR, title: L('首变更', 'First change'), intent: L('验证 change_open 自动建项目', 'verify auto-create'), modules: {}, acceptance: ['目录被自动创建'] })
-ok('②f change_open 自动建项目（此前 project/no-modules）', co.ok === true && existsSync(join(work, 'normify-fresh', 'modules')), JSON.stringify(co.error ?? co.id ?? '').slice(0, 100))
+ok('②f change_open 自动建项目（此前 project/no-modules）', co.ok === true && existsSync(join(work, 'normify-fresh', 'modules')), JSON.stringify(co.id).slice(0, 100))
 
 console.log('\n== ③ 批量诊断的因果链 ==')
 const DIR2 = join(work, 'normify-batch').replace(/\\/g, '/')
@@ -68,9 +64,10 @@ const batch = await call('normify_module_batch', { dir: DIR2, mode: 'upsert', it
   { frontmatter: { ...fm('b.api', 'b', [A('go', '跑', 'run')]), deps: [{ kind: 'call', to: 'b.core' }] } },
   { frontmatter: { ...fm('b.core.child', 'b.core') } },
 ] })
-ok('③a 整批原子失败（根因仍在）', batch.ok === false && (batch.errors ?? []).some(e => /label-too-long/.test(String(e))), 'errors=' + (batch.errors ?? []).length)
-ok('③b 悬空箭头改报 dep/target-dropped 并指向根因', (batch.errors ?? []).some(e => /dep\/target-dropped/.test(String(e)) && /label-too-long/.test(String(e))), JSON.stringify((batch.errors ?? []).filter(e => /target-dropped/.test(String(e)))).slice(0, 150))
-ok('③c 子模块父级失败报 structure/parent-dropped', (batch.errors ?? []).some(e => /structure\/parent-dropped/.test(String(e))))
+ok('③a 整批原子失败（根因仍在）', batch.ok === false && batch.errors.some(d => d.code === 'structure/label-too-long' && d.evidence.length === 33 && d.evidence.max === 30), 'errors=' + batch.errors.length)
+ok('③b 悬空箭头改报 dep/target-dropped 并指向根因', batch.errors.some(d => d.code === 'dep/target-dropped' && d.evidence.root_cause_code === 'structure/label-too-long'), JSON.stringify(batch.errors.filter(d => d.code === 'dep/target-dropped')).slice(0, 150))
+ok('③c 子模块父级失败报 structure/parent-dropped', batch.errors.some(d => d.code === 'structure/parent-dropped' && d.evidence.root_cause_code === 'structure/label-too-long'))
+ok('③c2 原子失败未写入任何模块', !existsSync(join(DIR2, 'modules', 'b', 'index.md')) && !existsSync(join(DIR2, 'modules', 'b.md')))
 ok('③d root_causes 直接列出被丢弃模块 + hint', Array.isArray(batch.root_causes) && batch.root_causes.some(d => d.module === 'b.core' && /label-too-long/.test(String(d.code))) && /原子写入/.test(String(batch.hint)), JSON.stringify(batch.root_causes ?? null).slice(0, 150))
 const fixed = await call('normify_module_batch', { dir: DIR2, mode: 'upsert', items: [
   { frontmatter: { ...fm('b', null) } },
@@ -87,14 +84,14 @@ await call('normify_module_batch', { dir: DIR3, mode: 'upsert', items: [
   { frontmatter: { ...fm('a.y', 'a', [A('y/go', '跑 y', 'run y')]) } },
 ] })
 const v1 = await call('normify_validate', { dir: DIR3 })
-ok('④a 未锚定 → 聚合 warning dep/unanchored', v1.ok === true && (v1.warnings ?? []).some(w => /dep\/unanchored/.test(String(w))), JSON.stringify((v1.warnings ?? []).slice(0, 2)).slice(0, 160))
-ok('④b warning 文案里带条数与示例', (v1.warnings ?? []).some(w => /1 条箭头可锚定/.test(String(w)) && /a\.x → a\.y/.test(String(w))), JSON.stringify((v1.warnings ?? [])[0] ?? '').slice(0, 150))
+ok('④a 未锚定 → 聚合 warning dep/unanchored', v1.ok === true && v1.warnings.some(d => d.code === 'dep/unanchored'), JSON.stringify(v1.warnings.slice(0, 2)).slice(0, 160))
+ok('④b warning 文案里带条数与示例', v1.warnings.some(d => d.code === 'dep/unanchored' && /1 条箭头可锚定/.test(d.message) && /a\.x → a\.y/.test(d.message)), JSON.stringify(v1.warnings[0]).slice(0, 150))
 await call('normify_module_upsert', { dir: DIR3, frontmatter: { ...fm('a.x', 'a', [A('x/run', '跑 x', 'run x')]), deps: [{ kind: 'call', to: 'a.y', from_api: 'rpc:x/run', to_api: 'rpc:y/go' }] } })
 const v2 = await call('normify_validate', { dir: DIR3 })
-ok('④c 锚定后 warning 消失', v2.ok === true && !(v2.warnings ?? []).some(w => /dep\/unanchored/.test(String(w))), JSON.stringify((v2.warnings ?? []).slice(0, 2)).slice(0, 140))
+ok('④c 锚定后 warning 消失', v2.ok === true && !v2.warnings.some(d => d.code === 'dep/unanchored'), JSON.stringify(v2.warnings.slice(0, 2)).slice(0, 140))
 await call('normify_module_upsert', { dir: DIR3, frontmatter: { ...fm('a.x', 'a', [A('x/run', '跑 x', 'run x')]), deps: [{ kind: 'call', to: 'a.y', from_api: 'rpc:not-here', to_api: 'rpc:y/go' }] } })
 const v3 = await call('normify_validate', { dir: DIR3 })
-ok('④d 锚错键仍是 error（引导≠放宽）', v3.ok === false && (v3.errors ?? []).some(e => /from-api-invalid/.test(String(e))), JSON.stringify((v3.errors ?? []).slice(0, 1)).slice(0, 120))
+ok('④d 锚错键仍是 error（引导≠放宽）', v3.ok === false && v3.errors.some(d => d.code === 'dep/from-api-invalid'), JSON.stringify(v3.errors.slice(0, 1)).slice(0, 120))
 
 console.log('\n=== 结果：' + (fails.length === 0 ? '全部 PASS' : 'FAIL ' + fails.length + ' 项 → ' + fails.join(' | ')) + ' ===')
 rmSync(work, { recursive: true, force: true })

@@ -1,0 +1,8 @@
+sessions/
+.pi/
+pi-events.jsonl
+pi-stderr.log
+pi-mcp-trace.jsonl
+screenshots/
+project/
+.normify-*.lock/

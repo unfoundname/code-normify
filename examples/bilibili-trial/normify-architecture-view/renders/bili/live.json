@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "bili.live",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "本层阅读顺序：主播准入与资质 → 直播间与推流 → 直播实时弹幕 → 礼物、舰队与醒目留言 → 连麦与互动连屏 → 回放与回放转投稿。箭头语义：call 同步调用、event 异步事件、dataflow 数据/投影流、reference 契约引用。",
+    "en": "Read in order: Anchor Onboarding → Live Rooms and Streaming → Live Danmaku → Gifts, Guards and Super Chat → Co-host and Multi-guest → Replays and Promote to Video. Arrow kinds: call, event, dataflow, reference."
+  },
+  "order": [
+    "bili.live.anchor",
+    "bili.live.room",
+    "bili.live.danmaku",
+    "bili.live.gift",
+    "bili.live.link",
+    "bili.live.replay"
+  ]
+}

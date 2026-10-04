@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "id": "delivery",
+  "updated_at": "2026-10-03T00:00:00Z",
+  "mode": "groups",
+  "max_columns": 4,
+  "reading": {
+    "zh": "根层先读需求与治理策略、再看可并行波次，最后是各交付单元；单元之间的箭头是真实 needs 前置（含理由），不是调用顺序。",
+    "en": "Read the requirement and governance policy first, then the parallelisable waves, then the delivery units; arrows between units are real needs prerequisites with rationale, not call order."
+  },
+  "order": [
+    "delivery.requirements",
+    "delivery.waves",
+    "delivery.u-contract-baseline",
+    "delivery.u-platform-core",
+    "delivery.u-identity",
+    "delivery.u-content-pipeline",
+    "delivery.u-media",
+    "delivery.u-playback",
+    "delivery.u-danmaku",
+    "delivery.u-community",
+    "delivery.u-social",
+    "delivery.u-message",
+    "delivery.u-discover",
+    "delivery.u-live",
+    "delivery.u-commerce",
+    "delivery.u-pgc",
+    "delivery.u-creator",
+    "delivery.u-ops",
+    "delivery.u-acquire",
+    "delivery.u-channel",
+    "delivery.u-integration"
+  ],
+  "groups": [
+    {
+      "id": "policy",
+      "title": {
+        "zh": "计划契约",
+        "en": "Plan contracts"
+      },
+      "children": [
+        "delivery.requirements"
+      ]
+    },
+    {
+      "id": "waves",
+      "title": {
+        "zh": "并行波次",
+        "en": "Parallel waves"
+      },
+      "children": [
+        "delivery.waves"
+      ]
+    },
+    {
+      "id": "units",
+      "title": {
+        "zh": "交付单元（组）",
+        "en": "Delivery units (groups)"
+      },
+      "children": [
+        "delivery.u-contract-baseline",
+        "delivery.u-platform-core",
+        "delivery.u-identity",
+        "delivery.u-content-pipeline",
+        "delivery.u-media",
+        "delivery.u-playback",
+        "delivery.u-danmaku",
+        "delivery.u-community",
+        "delivery.u-social",
+        "delivery.u-message",
+        "delivery.u-discover",
+        "delivery.u-live",
+        "delivery.u-commerce",
+        "delivery.u-pgc",
+        "delivery.u-creator",
+        "delivery.u-ops",
+        "delivery.u-acquire",
+        "delivery.u-channel",
+        "delivery.u-integration"
+      ]
+    }
+  ]
+}

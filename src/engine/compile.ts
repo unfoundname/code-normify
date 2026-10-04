@@ -2,9 +2,11 @@ import { join } from 'node:path';
 import { writeFile } from 'node:fs/promises';
 import { apiKey, depthOf, treeOf } from './ids.js';
 import { sha256Text } from './store.js';
-import type { Api, Dep, Diagnostic, LayoutData, LocalizedText, ModuleState, SourceRef } from './types.js';
+import type { Api, DataType, Dep, Diagnostic, LayoutData, LocalizedText, ModuleState, SourceRef } from './types.js';
 import { validateProject, type ValidateOptions, type ValidateOutput } from './validate.js';
 import { diag } from './diag.js';
+import { graphDigest } from './manifest.js';
+import { typeRefUri } from './contracts.js';
 export interface BuildOptions extends ValidateOptions {
 }
 export interface BuildOutput {
@@ -32,6 +34,7 @@ interface ModuleSummary {
     fingerprint: string;
     repository?: string;
     apis?: Array<Api & { key: string }>;
+    types?: DataType[];
     deps?: Array<Dep & { cross_tree: boolean }>;
     aggregate: {
         descendant_count: number;
@@ -166,6 +169,7 @@ export async function buildProject(projectDir: string, opts: BuildOptions): Prom
     edges.sort((a, b) => String(a.from).localeCompare(String(b.from)) || String(a.to).localeCompare(String(b.to)));
     const modules: Record<string, ModuleSummary> = {};
     let apiCount = 0;
+    let typeCount = 0;
     let leafCount = 0;
     let maxDepth = 0;
     let plannedCount = 0;
@@ -174,7 +178,8 @@ export async function buildProject(projectDir: string, opts: BuildOptions): Prom
         const m = f.module;
         const ownApis = m.apis ?? [];
         apiCount += ownApis.length;
-        const isLeaf = !v.childrenOf.has(m.id);
+        typeCount += m.types?.length ?? 0;
+        const isLeaf = m.parent !== null && !v.childrenOf.has(m.id);
         if (isLeaf)
             leafCount++;
         maxDepth = Math.max(maxDepth, depthOf(m.id));
@@ -199,6 +204,7 @@ export async function buildProject(projectDir: string, opts: BuildOptions): Prom
             fingerprint: m.fingerprint,
             ...(m.repository !== undefined ? { repository: m.repository } : {}),
             ...(ownApis.length > 0 ? { apis: ownApis.map(a => ({ ...a, key: apiKey(a) })) } : {}),
+            ...(m.types !== undefined ? { types: m.types } : {}),
             ...(m.deps !== undefined && m.deps.length > 0 ? { deps: m.deps.map(d => ({ ...d, cross_tree: treeOf(d.to) !== treeOf(m.id) })) } : {}),
             aggregate: {
                 descendant_count: countDesc(m.id),
@@ -210,12 +216,19 @@ export async function buildProject(projectDir: string, opts: BuildOptions): Prom
         };
     }
     const apiIndex: Record<string, string> = {};
+    const apiContracts: Record<string, Api & { module: string }> = {};
+    const typeContracts: Record<string, DataType & { module: string }> = {};
     for (const f of files) {
         const m = f.module;
-        for (const a of m.apis ?? [])
+        for (const a of m.apis ?? []) {
             apiIndex[apiKey(a)] = m.id;
+            apiContracts[apiKey(a)] = { module: m.id, ...a };
+        }
+        for (const type of m.types ?? [])
+            typeContracts[typeRefUri({ module: m.id, name: type.name })] = { module: m.id, ...type };
     }
     const compiledAt = new Date().toISOString();
+    const sourceDigest = await graphDigest(projectDir);
     const layouts: Record<string, LayoutData | undefined> = {};
     for (const id of [...v.layouts.keys()].sort())
         layouts[id] = v.layouts.get(id);
@@ -229,11 +242,13 @@ export async function buildProject(projectDir: string, opts: BuildOptions): Prom
                 ...(r.module.repository !== undefined ? { repository: r.module.repository } : {}),
             })),
             compiled_at: compiledAt,
+            source_digest: sourceDigest,
             stats: {
                 tree_count: roots.length,
                 module_count: files.length,
                 leaf_count: leafCount,
                 api_count: apiCount,
+                type_count: typeCount,
                 dep_count: depCount,
                 cross_tree_dep_count: crossTreeDepCount,
                 max_depth: maxDepth,
@@ -255,7 +270,11 @@ export async function buildProject(projectDir: string, opts: BuildOptions): Prom
     try {
         const treeText = JSON.stringify(treeJson, null, 2) + '\n';
         const outline = outlineText(slug, v);
-        const apiIndexText = JSON.stringify(Object.fromEntries(Object.entries(apiIndex).sort(([a], [b]) => a.localeCompare(b))), null, 2) + '\n';
+        const apiIndexText = JSON.stringify({
+            schema_version: 2,
+            apis: Object.fromEntries(Object.entries(apiContracts).sort(([a], [b]) => a.localeCompare(b))),
+            types: Object.fromEntries(Object.entries(typeContracts).sort(([a], [b]) => a.localeCompare(b))),
+        }, null, 2) + '\n';
         await writeFile(join(projectDir, 'tree.json'), treeText, 'utf8');
         await writeFile(join(projectDir, 'outline.md'), outline, 'utf8');
         await writeFile(join(projectDir, 'api-index.json'), apiIndexText, 'utf8');
@@ -272,14 +291,13 @@ export async function buildProject(projectDir: string, opts: BuildOptions): Prom
             ok: true,
             project: slug,
             compiled_at: compiledAt,
+            source_digest: sourceDigest,
             stats: treeJson.project && typeof treeJson.project === 'object'
                 ? treeJson.project.stats
                 : {},
             warnings: warningSummary,
             artifacts,
         };
-        const receiptText0 = JSON.stringify(receipt, null, 2) + '\n';
-        artifacts['receipt.json'] = { sha256: sha256Text(receiptText0), bytes: Buffer.byteLength(receiptText0, 'utf8') };
         const receiptText = JSON.stringify(receipt, null, 2) + '\n';
         await writeFile(join(projectDir, 'receipt.json'), receiptText, 'utf8');
         return { ok: true, receipt, errors: [], warnings: v.warnings, validate: v };

@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "id": "bili.contract",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "mode": "groups",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "契约层不反向依赖业务：core 提供标量/分页/错误/幂等/事件/鉴权，media 提供 Video 与 MediaAsset 分离与播放票据，adapters 提供 RDS/OSS/总线/外部能力接口。",
+    "en": "Contract layer never depends on business: core scalars/paging/errors/idempotency/events/authz, media asset and playback grant, adapters for RDS/OSS/bus."
+  },
+  "order": [
+    "bili.contract.core",
+    "bili.contract.media",
+    "bili.contract.adapters"
+  ],
+  "groups": [
+    {
+      "id": "c-core",
+      "title": {
+        "zh": "核心契约",
+        "en": "Core"
+      },
+      "children": [
+        "bili.contract.core"
+      ]
+    },
+    {
+      "id": "c-media",
+      "title": {
+        "zh": "媒体与播放契约",
+        "en": "Media and playback"
+      },
+      "children": [
+        "bili.contract.media"
+      ]
+    },
+    {
+      "id": "c-adapters",
+      "title": {
+        "zh": "存储与总线适配器",
+        "en": "Adapters"
+      },
+      "children": [
+        "bili.contract.adapters"
+      ]
+    }
+  ]
+}

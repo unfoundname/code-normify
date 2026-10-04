@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "id": "bili.infra",
+  "updated_at": "2026-10-03T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "reading": {
+    "zh": "本层是「基础设施」的 13 个功能单元，按设计顺序阅读；箭头指出向依赖（调用/事件/数据流/引用）。",
+    "en": "This level shows the 13 functional units of \"Infrastructure\", in design order; arrows are outbound dependencies (call/event/dataflow/reference)."
+  },
+  "order": [
+    "bili.infra.gateway",
+    "bili.infra.db",
+    "bili.infra.outbox",
+    "bili.infra.cache",
+    "bili.infra.search",
+    "bili.infra.cdn",
+    "bili.infra.queue",
+    "bili.infra.deploy",
+    "bili.infra.backup",
+    "bili.infra.observe",
+    "bili.infra.capacity",
+    "bili.infra.config",
+    "bili.infra.migration"
+  ]
+}

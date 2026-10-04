@@ -207,9 +207,12 @@ export async function validateChanges(projectDir: string, byId: Map<string, Modu
         if (change === null)
             continue;
         changes.push(change);
+        // 已关闭/放弃的是历史证据，后续重命名、删除不能反向使历史失效。
+        if (change.status === 'verified' || change.status === 'abandoned')
+            continue;
         if (change.status === 'in_progress')
             inProgress++;
-        const refs = [...(change.modules.create ?? []), ...(change.modules.modify ?? []), ...(change.modules.delete ?? [])];
+        const refs = [...(change.modules.create ?? []), ...(change.modules.modify ?? [])];
         for (const ref of refs) {
             if (!byId.has(ref)) {
                 errors.push(diag('error', 'change/module-missing', '变更引用的模块不存在', { change: id, module: ref }, {}, ['先创建该模块（计划态允许）或修正变更清单']));
@@ -219,7 +222,8 @@ export async function validateChanges(projectDir: string, byId: Map<string, Modu
             for (const ref of change.modules[key] ?? []) {
                 const target = byId.get(ref.module);
                 if (target === undefined) {
-                    errors.push(diag('error', 'change/api-module-missing', '变更引用的 API 所属模块不存在', { change: id, module: ref.module }, {}, []));
+                    if (key === 'api_add')
+                        errors.push(diag('error', 'change/api-module-missing', '拟新增 API 所属模块不存在', { change: id, module: ref.module }, {}, []));
                 }
                 else if (key === 'api_remove' && !(target.module.apis ?? []).some(a => apiKey(a) === ref.key)) {
                     warnings.push(diag('warning', 'change/api-already-removed', '要移除的 API 当前不在模块上（可能已移除）', { change: id, module: ref.module, api: ref.key }, {}, []));

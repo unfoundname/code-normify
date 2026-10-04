@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "data.acquire",
+  "updated_at": "2026-10-03T00:00:00Z",
+  "mode": "grid",
+  "max_columns": 3,
+  "reading": {
+    "zh": "「内容获取数据」的 6 个实体表；箭头为外键（标签含字段与目标列），每个实体只有一个业务写入所有者。",
+    "en": "The 6 entity tables of \"Acquisition data\"; arrows are foreign keys labelled with field and target column, and each entity has exactly one business write owner."
+  },
+  "order": [
+    "data.acquire.acquire-source",
+    "data.acquire.license-evidence",
+    "data.acquire.acquire-job",
+    "data.acquire.dedupe-record",
+    "data.acquire.provenance-record",
+    "data.acquire.import-record"
+  ]
+}

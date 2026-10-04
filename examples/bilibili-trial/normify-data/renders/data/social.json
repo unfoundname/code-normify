@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "id": "data.social",
+  "updated_at": "2026-10-03T20:15:11.767Z",
+  "mode": "grid",
+  "max_columns": 4,
+  "max_api_rows": 0,
+  "reading": {
+    "zh": "点击结构查看字段、必填项、枚举与完整 JSON Schema。",
+    "en": "Open a type to inspect fields, required values, enums and full JSON Schema."
+  },
+  "order": [
+    "data.social.t-91fbd4b1",
+    "data.social.t-2ef7b206",
+    "data.social.t-0db20062",
+    "data.social.t-bb24aade",
+    "data.social.t-b2e80b29",
+    "data.social.t-7e90391c",
+    "data.social.t-2cf59e48",
+    "data.social.t-3a55077c",
+    "data.social.t-340d4b50",
+    "data.social.t-81e3603a",
+    "data.social.t-a5de5645",
+    "data.social.t-6870e740"
+  ]
+}
