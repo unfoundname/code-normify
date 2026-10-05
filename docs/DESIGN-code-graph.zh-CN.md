@@ -38,7 +38,7 @@
 | 整文件指纹 | `src/engine/store.ts` 的 `fingerprintOf`；`types.ts:149` `Module.fingerprint` | **模块级**：按 path 升序去重后哈希文件字节 → 单个 SHA-256 | 只回答"这个模块的源码变了"，**不回答哪里变了、谁被波及** |
 | L2 证据诊断 | `src/engine/validate.ts:299,306,321,328,334,343,346,351`（8 个 `evidence/*` code） | 路径可用性 / 根无 source / 不是普通文件 / 缺失 / 指纹 pending / 指纹不可算 / 指纹漂移 / 跳过校验 | 全部是"**现在**是否漂移"，**没有引用维度、没有历史维度** |
 | 相对说明符解析 | `scripts/check-references.cjs` 的 `collectSpecifiersWithTypescript`(2184) / `collectSpecifiersWithRegex`(2274) / `resolveRelativeSpecifier`(2336) | **单文件语法树** + 相对路径解析 | 能列边，但**不解析符号**：`import { foo }` 里的 `foo` 到底指哪个声明，它不知道 |
-| 文件级台账 | `scripts/check-file-ledger.cjs`（1997 行）+ 共享内核 `scripts/file-ledger-core.cjs`（462 行）+ `ledger/file-ledger.json`（`schema_version: 2`，168 行 / 10131 B）+ 独立豁免清单 `ledger/exempt.gitignore`（56 行 / 19 条模式） | **文件级**归属状态 | 回答"这个文件有没有人管"，与引用关系无关 |
+| 文件级台账 | `scripts/check-file-ledger.cjs`（2003 行）+ 共享内核 `scripts/file-ledger-core.cjs`（462 行）+ `ledger/file-ledger.json`（`schema_version: 2`，168 行 / 10131 B）+ 独立豁免清单 `ledger/exempt.gitignore`（56 行 / 19 条模式） | **文件级**归属状态 | 回答"这个文件有没有人管"，与引用关系无关 |
 | 声明式依赖箭头 | `src/engine/reference.ts` 的 `DEPS_REFERENCE`；`DEP_KINDS`（`src/engine/types.ts`） | 模块/API 级，人工在 `modules/*.md` 写 | 是**设计意图**，不是**代码事实**；两者不能互相替代 |
 
 **一句话**：仓库现在能回答"哪个模块现在漂移了"和"哪个文件没人管"，**完全不能**回答"这个符号谁在用、删了会波及谁"。
@@ -229,7 +229,7 @@
 | 量 | 实测值（`src/**/*.ts`，28 文件） |
 | --- | --- |
 | 行数（`\n` 计数） | **9,782** |
-| 字节数 | 521,118 |
+| 字节数 | 516,319（旧记 521,118 B 是改造前快照，见 §7.6） |
 | 声明名（`declaration_names`） | **2,624**（其中模块级/顶层 207，**函数内 2,417**） |
 | 标识符引用（`identifier_references`） | **10,336** |
 | 模块说明符边（`import` 声明 201 + `export … from` 19） | **220** |
@@ -238,6 +238,12 @@
 | 动态 `import()` / `require()` 调用 | 0 / 0 |
 
 即 `src/` 一个目录就有 **12,960 个图元素**（2,624 声明 + 10,336 引用），与用户预期的「上万条边」一致。因此**不能**把每条边都按最啰嗦的形态落盘。
+
+> **口径警告（读任何行数之前先读这一段）：本文档手写表格里的「行数」与产物 `ledger/references.json` 的 `files[].lines` 不是同一个量，两者不可互相求和、也不可互相校验。**
+> - **文档表格 = LF 口径**：文本里 `\n` 的个数（= `(git show :<p> -split "\n").Length - 1`）。本表的 `src/**/*.ts` = **9,782**。
+> - **产物 `files[].lines` = split 口径**：`split('\n')` 之后数组的长度；文件末尾有换行时**恰好比 LF 口径多 1**。同一批 28 个文件在产物里求和 = **9,810**（= 9,782 + 28）。
+> - 单文件对照（实测，`git show :<p>`）：`scripts/check-references.cjs` 在产物里 `lines = 2374`，其 LF 计数 = **2373**；`ledger/file-ledger.json` 在产物里 `lines = 168`，其 LF 计数 = **167**；本文档自身在产物里 `lines = 1325`，其 LF 计数 = **1324**。
+> - **处置：产物口径不改，只在这里声明差异。** 把产物改成 LF 会让 1,412 条登记项的 `lines` 全体变动、图摘要随之改变，为纯口径问题不值得；因此两张表**各按各的口径读**，跨表引用行数时必须先换算（减 1/文件）或改用字节数。
 
 **分层与稀疏化策略**（四层，逐层放大）：
 
@@ -261,7 +267,7 @@
 - **落点**：仓库根 `ledger/` 目录（与增量 1 的 `ledger/file-ledger.json` 同域）；图数据分片存放，分片键 = 文件路径的 **UTF-8 字节序**排序后的连续段（**不用** `localeCompare`——`src/engine/manifest.ts:11` 用 `localeCompare` 是本仓的一处已知跨平台风险，图数据不得沿用它）。
 - **分片依据（实测）**：逐文件记录数在 `src/` 内分布极不均——最大 `src/tools.ts` 2,371 条、均值 462.6 条/文件、最小 `src/index.ts` 0 条（该文件不含任何声明，只有 16 条 `export … from`，正说明"文件层节点"与"边"是两层不同的东西）。因此分片按**文件**切，而不是按固定条数切，才能让一次改动的重算面等于改动的文件面。
 - **单条字节数（实测，用本文档 2.2/2.3 的字段构造真实记录后 `JSON.stringify` + UTF-8 字节数）**：节点记录 199–243 B（n=13，均值 221.3）；边记录 234–270 B（n=20，均值 253.2）。**符号级层的单条字节数（增量 3 实测，同一口径）**：声明记录 **155–230 B（n=402，均值 191.0）**；符号边记录 **309–463 B（n=1,347，均值 391.1）**——符号边比文件级边胖约 54%，因为它多了 `from.sym` / `to.sym` / `cross_file` / `type_only` 四栏。
-- **外推（记录数实测 × 单条字节实测）**：`src/` 按最啰嗦形态全量落盘约 `12,960 × ~250 B ≈ 3.1 MiB`；采用 2.5 的分层后，落盘部分为 `2,624 声明 + ≥220 跨文件边 ≈ 2,844 条 ≈ 0.7 MiB`。**这两个数都是外推不是实测总量**；真实总量与压缩后体积按 9.7 的方法测。**增量 3 实测结果（2026-10-05）：外推偏乐观**——实际落盘的顶层声明 + 全部符号边共 1,749 条，符号级两数组紧凑序列化 ≈ **605,377 B（0.58 MiB）**，产物整份 **1,482,684 B（1.41 MiB）**。差异来自两点：① 本批落的是**全部**符号边（1,347 条，不只 `cross_file` 的 756 条）；② 符号边单条 391.1 B 而非外推用的 ~250 B。详见 §2.8。
+- **外推（记录数实测 × 单条字节实测）**：`src/` 按最啰嗦形态全量落盘约 `12,960 × ~250 B ≈ 3.1 MiB`；采用 2.5 的分层后，落盘部分为 `2,624 声明 + ≥220 跨文件边 ≈ 2,844 条 ≈ 0.7 MiB`。**这两个数都是外推不是实测总量**；真实总量与压缩后体积按 9.7 的方法测。**增量 3 实测结果（2026-10-05）：外推偏乐观**——实际落盘的顶层声明 + 全部符号边共 1,749 条，符号级两数组紧凑序列化 ≈ **605,344 B（0.58 MiB）**（口径 = 两数组各自**无缩进** `JSON.stringify` 的 UTF-8 字节之和，本批复测），产物整份 **1,482,686 B（1.41 MiB）**。差异来自两点：① 本批落的是**全部**符号边（1,347 条，不只 `cross_file` 的 756 条）；② 符号边单条 391.1 B 而非外推用的 ~250 B。详见 §2.8。
 - **全仓规模**：工作区（排除 `node_modules/` 与 `.git/`）合计约 **99.3 万行**（实测，附录 A 第 4 条），是 `src/` 的约 100 倍。全仓符号级图的规模**待实测**，测量方法见 9.7；在测出来之前**不预设**它可接受。**增量 3 的实测边界**：本批符号面刻意只覆盖扫描面内的 `.ts`（本仓 = `src/**/*.ts`，**28 个文件 / 9,782 行 / 516,319 B**），因此上面那个"全仓 ≈100 倍"的担忧在本批**不适用**——全仓级（`examples/` 的机器产物、`lib/` 的编译产物）**不在符号面内**，也进不了 Program（§2.8 的结构性保证）。
 
 ### 2.7 增量 2 落地：文件级引用图的字段表与 JSON Schema 草案
@@ -306,7 +312,7 @@
 | `lang` | enum `ts`\|`js`\|`md`\|`json`\|`yaml`\|`other` | 与 2.2 的 `lang` 同枚举 |
 | `state` | enum `indexed`\|`ignored`\|`untracked`\|`deleted` | L0 四态；`deleted` = 在 git 历史删除清单里 |
 | `bytes` | integer\|null | 索引 blob 字节数；非索引节点为 `null`（磁盘字节数会随检出变，不落盘） |
-| `lines` | integer\|null | LF 归一化后的行数（等于 `split('\n').length`）；未扫描文件为 `null` |
+| `lines` | integer\|null | 行数，口径 = `split('\n').length`（**split 口径**：在 LF 归一化文本上切分，末尾有换行时比 `\n` 计数多 1——与本文档表格的 **LF 口径**不同，**不可互相求和**，见 §2.5 表下的口径警告）；未扫描文件为 `null` |
 | `edge_out` / `edge_in` | integer | 出边 / 入边计数（按 `from.file` / `to.file` 统计；目录与非节点目标只计入边表，不建节点） |
 
 **`edges`（边）字段表**：
@@ -466,9 +472,9 @@
 | 未解析原因码 | `symbol-not-found-in-program` 215 · `bare-module-specifier` 126 · `declaration-out-of-scope` 9 · `external-module-symbol` 8 | 同上 → `symbolGraph.unresolvedReasons` |
 | **无静默 null** | `to.sym === null && !reason` 的边 **0 条**（抛错级不变量，不是统计值） | 同上 → `symbolGraph.silentNullEdges` |
 | Program 范围 | `root_names` **28** · `program_source_files` **28** · `program_outside_repo_files` **0** | 同上 → `symbolGraph.rootNames / programSourceFiles / programOutsideRepoFiles` |
-| 符号面规模 | **28 个文件 / 9,782 行 / 516,319 B**（= 扫描面内 `lang=ts`；全仓扫描面 76 个文件 / 93,490 行 / 3,459,088 B——**随重算同步**，口径见 §9.7 测量条件） | `git ls-files` + 索引 blob 逐文件求和 |
+| 符号面规模 | **28 个文件 / 9,782 行（LF 口径） / 516,319 B**（= 扫描面内 `lang=ts`；全仓扫描面 **76 个文件 / 93,496 行（split 口径） / 3,461,917 B**——这两个数**含图自身** `ledger/references.json`（图里该条 `bytes`/`lines` 记 `null`，自指，设计如此）⇒ **随每次重算同步**，两处引用（本行与 §9.7 测量条件）必须同批一起改；与符号面那个 LF 口径的 9,782 **不可相加**，完整口径说明见 §2.5 表下的口径警告） | `git ls-files` + 索引 blob 逐文件求和（`git cat-file -s :<p>` 求字节、`git show :<p>` 按 `\n` 切分求 split 行数） |
 | 产物体积 | **1,482,686 B（1.41 MiB）**（LF；`schema_version` 2 整份） | `git cat-file blob :ledger/references.json` 的长度 |
-| 体积分解（缩进 2，与产物同口径） | `symbol_edges` **727,531 B** + `files` 291,466 B + `edges` 239,834 B + `declarations` **101,293 B** + `meta` 4,789 B（+ 括号/逗号 3,773 B = 1,482,686 B，逐项自洽） | `JSON.stringify(<该部分>, null, 2) + '\n'` 的 UTF-8 字节 |
+| 体积分解（缩进 2，与产物同口径） | `symbol_edges` **727,531 B** + `files` 291,466 B + `edges` 239,834 B + `declarations` **101,293 B** + `meta` 4,789 B（五项之和 = **1,364,913 B**；余项 **117,773 B** = 各部分的括号/逗号 **+ 嵌套缩进差**——各部分单独 `JSON.stringify` 时缩进从 0 起算，在整份产物里整体多一层 ⇒ `1,364,913 + 117,773 = 1,482,686`，实测自洽） | `JSON.stringify(<该部分>, null, 2) + '\n'` 的 UTF-8 字节 |
 | 相对文件级的增长 | **2.543 倍**（1,482,686 ÷ 583,014；分母 = 同一份索引上「`meta` + `files` + `edges` + `schema_version: 1`」的口径近似） | 同上 |
 | 参考上界 | `.git` 目录 **47,284,561 B**（本批实测；测量时刻 = 本批改动**尚未 `git add`** 的检出态，提交后复核只会略大；含本产物提交后的 1,482,686 B ⇒ 扣掉产物本身 **45,801,875 B**）⇒ 产物占 **3.14%**（毛值；按净 .git 是 **3.24%**）（§9.7 的红线建议是 ≤ 10%） | `(Get-ChildItem .git -Recurse -File -Force \| Measure-Object Length -Sum).Sum` |
 | 幂等 | 连跑两次逐字节相同；`--check` exit 0 | `node scripts/generate-reference-graph.cjs --check` |
@@ -579,7 +585,7 @@
 
 ### 3.5 复用 `scripts/check-references.cjs` 的既有解析器（不造第二套）
 
-该脚本**已经**在算文件级的 import / markdown / package.json / CI / 锚点边，必须复用而不是重写。现状约束（实测）：
+该脚本**已经**在算文件级的 import / markdown / package.json / CI / 锚点边，必须复用而不是重写。现状约束（实测；**下列两条是抽取前的形态**——抽取后 `scripts/check-references.cjs` = **2374 行 / 107,815 B** 且已 `module.exports`，见 §7.6）：
 
 - 它是一个 **CLI-only 的 3,384 行（151,442 B）脚本**，文件末尾直接 `main(process.argv.slice(2));`，**全仓 `git grep "module.exports" scripts/` 无命中** ⇒ 现在**无法被 require 复用**。
 - 它的解析器是**闭包内函数**，依赖 `ctx`（`createContext` 的产物）与模块级可变状态（如 `SPECIFIER_ANALYSIS`、`TYPESCRIPT_CANDIDATE_ROOTS`）。
@@ -889,11 +895,11 @@
 
 | 门禁 | 脚本 | 它管什么 | 与图/改动记录的边界（**不重复的判据**） |
 | --- | --- | --- | --- |
-| `check:refs` | `scripts/check-references.cjs`（3,384 行，`CHECK_TITLES` 9 项） | 引用**完整性**：悬空、未跟踪、已删除、版本字面量、测试清单、锚点 | 图**复用**它的解析器（3.5）；图的悬空状态是它的诊断码的投影（6.1）。图**不**做版本字面量与测试清单 |
-| `check:docs` | `scripts/check-doc-snippets.cjs`（1,629 行，4 项检查） | 文档代码块能否编译、必填选项、工具数量断言、`execute` 签名描述 | 图**不解析文档代码块**；本文档落在 `docs/` 下会被它扫描（约束见附录 C） |
+| `check:refs` | `scripts/check-references.cjs`（2374 行，`CHECK_TITLES` 9 项） | 引用**完整性**：悬空、未跟踪、已删除、版本字面量、测试清单、锚点 | 图**复用**它的解析器（3.5）；图的悬空状态是它的诊断码的投影（6.1）。图**不**做版本字面量与测试清单 |
+| `check:docs` | `scripts/check-doc-snippets.cjs`（1630 行，4 项检查） | 文档代码块能否编译、必填选项、工具数量断言、`execute` 签名描述 | 图**不解析文档代码块**；本文档落在 `docs/` 下会被它扫描（约束见附录 C） |
 | `check:libsync` | `scripts/check-lib-sync.cjs`（1,573 行） | **git 索引里的 `lib/`** 与"索引版 `src/` 全新编译产物"逐字节一致 | 图生成器放 `scripts/` ⇒ 与它零交互（9.5）。若将来把生成器移进 `src/`，则必须同提交重建 `lib/` |
 | `check:examples` | `scripts/check-examples.cjs`（1,051 行） | 示例可执行 + 运行前后 git 快照**零变化**（含 `--ignored`） | 图生成器**不得**在示例运行期间写工作区；生成器只写 `ledger/`，且 `ledger/**` 已在台账豁免模式内 |
-| `check:ledger` | `scripts/check-file-ledger.cjs`（1997 行，`CHECK_TITLES` 13 项）+ 共享内核 `scripts/file-ledger-core.cjs`（462 行） | **文件级**台账：每个已跟踪文件落到四态之一（`owned` / `exempt` / `accounted` / `unowned`），并与真 `.gitignore` 交叉校验（交集 / 折叠误伤 / 放行本该 `git add` 的普通文件） | 图是**符号级**、与文件归属无关；两者共用 `ledger/` 目录但**不共用判定**。第 7 节的用户口径**已于 2026-10-05 落地** |
+| `check:ledger` | `scripts/check-file-ledger.cjs`（2003 行，`CHECK_TITLES` 13 项）+ 共享内核 `scripts/file-ledger-core.cjs`（462 行） | **文件级**台账：每个已跟踪文件落到四态之一（`owned` / `exempt` / `accounted` / `unowned`），并与真 `.gitignore` 交叉校验（交集 / 折叠误伤 / 放行本该 `git add` 的普通文件） | 图是**符号级**、与文件归属无关；两者共用 `ledger/` 目录但**不共用判定**。第 7 节的用户口径**已于 2026-10-05 落地** |
 | （建议新增）`check:impact` | `scripts/check-change-impact.cjs` | 6.2 的未处理引用影响 | 只在有改动记录时触发；不重做 6.1 的任何判定 |
 
 **统一接线**：`package.json` 的 `check` 链（当前 `typecheck → build → test → ci-contract-check.cjs → check:refs → check:docs → check:libsync → check:examples → check:ledger`）与 `.github/workflows/ci.yml`（每道门禁一个独立 step）。新增门禁必须同时改这三处（`package.json` / `ci.yml` / `CONTRIBUTING.md` 的检查项清单与快照行）——CI 注释里已有这条约束。
@@ -1063,7 +1069,7 @@
 
 | 量 | 实测值 |
 | --- | --- |
-| **同步义务（先说清）** | 下表的「行数 / 字节数」是**当时实测的快照**——**数据随实现变化，改实现要同步这里**。涉及的文件：门禁 `scripts/check-file-ledger.cjs`（1997 行）、生成器 `scripts/generate-file-ledger.cjs`（732 行）、共享内核 `scripts/file-ledger-core.cjs`（462 行）、台账 `ledger/file-ledger.json`（168 行 / 10131 B）、豁免清单 `ledger/exempt.gitignore`（56 行 / 7226 B）；另有 `scripts/check-references.cjs`（**2374 行 / 107815 B**——本批复核，口径 = `git cat-file -s :scripts/check-references.cjs` 与 `(git show :scripts/check-references.cjs).split('\n').length`；原记的 3384 行 / 151442 B 是解析器抽到 `scripts/reference-graph-core.cjs` **之前**的快照）等既有门禁脚本，**这四个文件只被引用、不被本节定义**。 |
+| **同步义务（先说清）** | 下表的「行数 / 字节数」是**当时实测的快照**——**数据随实现变化，改实现要同步这里**。涉及的文件：门禁 `scripts/check-file-ledger.cjs`（2003 行）、生成器 `scripts/generate-file-ledger.cjs`（799 行）、共享内核 `scripts/file-ledger-core.cjs`（462 行）、台账 `ledger/file-ledger.json`（168 行 / 10131 B）、豁免清单 `ledger/exempt.gitignore`（56 行 / 7226 B）；另有 `scripts/check-references.cjs`（**2374 行 / 107815 B**——本批复核，口径 = `git cat-file -s :scripts/check-references.cjs` 与 `(git show :scripts/check-references.cjs).split('\n').length`；原记的 3384 行 / 151442 B 是解析器抽到 `scripts/reference-graph-core.cjs` **之前**的快照）等既有门禁脚本，**这四个文件只被引用、不被本节定义**。 |
 | `src/**/*.ts` 文件数 / 行数 / 字节数 | 28 / 9,782 / **516,319 B**（本批复测；原记 521,118 B 是**索引口径不同**的旧值——见下方 9.7 实测表的条件栏，两者都不是"行数变了"） |
 | `src/` 声明名（含函数内 2,417） | 2,624 |
 | `src/` 标识符引用 | 10,336 |
@@ -1091,7 +1097,7 @@
 
 **增量 3 实测结果（2026-10-05；四个 ✅ 项的原始数字与条件）**
 
-**测量条件（缺一不可，否则数字对不上）**：Windows 10.0.26200 x64 · Intel Core i5-13500H（16 逻辑核）· 15.7 GiB 内存 · **Node v24.21.0**（V8 13.6.233.17-node.53）· **TypeScript 5.9.3**（仓库自带 `node_modules/typescript/lib/typescript.js`）· **不含 `node_modules` 类型**（Program 显式 `noLib: true` + `types: []`）· **`skipLibCheck: true`**（与仓库 `tsconfig.json` 一致；本批没有 lib 文件，取值只为口径一致）· 扫描面 **76 个文件 / 93,204 行 / 3,419,368 B**，其中符号面（`lang=ts`）**28 个文件 / 9,782 行 / 516,319 B** · 索引 = 本批提交态（`git ls-files` 1,412 条）。**「冷」的定义与限度**：同一进程中 `createProgram` 的**首次**调用（TypeScript 模块本身已在更早的 `initSpecifierAnalysis` 里加载）——测量脚本自身只做了一次 blob 读取，因此它测的是「TypeScript 解析器未预热」，**不是**「OS 文件缓存冷」；后者在本机无法在不重启的前提下可控复现，故**不声称**测过。**测量脚本**：临时脚本（写在系统 temp、跑完自删），用与生成器**同一批**内核函数（`createIndexCompilerHost` / `symbolCompilerOptions` / `buildSymbolGraph`）避免另造第二套解析；逐项命令见下表。
+**测量条件（缺一不可，否则数字对不上）**：Windows 10.0.26200 x64 · Intel Core i5-13500H（16 逻辑核）· 15.7 GiB 内存 · **Node v24.21.0**（V8 13.6.233.17-node.53）· **TypeScript 5.9.3**（仓库自带 `node_modules/typescript/lib/typescript.js`）· **不含 `node_modules` 类型**（Program 显式 `noLib: true` + `types: []`）· **`skipLibCheck: true`**（与仓库 `tsconfig.json` 一致；本批没有 lib 文件，取值只为口径一致）· 扫描面 **76 个文件 / 93,496 行 / 3,461,917 B**（**split 口径**：按 `\n` 切分后数组长度求和；**含图自身** `ledger/references.json`——图里该条 `bytes`/`lines` 记 `null`（自指，设计如此），因此本行**随每次重算同步**，改完文档必须与 §2.8 的同一行一起重测、一起改；测量 = 扫描面 76 个文件的 `git ls-tree -r -l` 尺寸与 `git show :<p>` 的切分求和），其中符号面（`lang=ts`）**28 个文件 / 9,782 行（LF 口径，与上一条不同口径） / 516,319 B** · 索引 = 本批提交态（`git ls-files` 1,412 条）。**「冷」的定义与限度**：同一进程中 `createProgram` 的**首次**调用（TypeScript 模块本身已在更早的 `initSpecifierAnalysis` 里加载）——测量脚本自身只做了一次 blob 读取，因此它测的是「TypeScript 解析器未预热」，**不是**「OS 文件缓存冷」；后者在本机无法在不重启的前提下可控复现，故**不声称**测过。**测量脚本**：临时脚本（写在系统 temp、跑完自删），用与生成器**同一批**内核函数（`createIndexCompilerHost` / `symbolCompilerOptions` / `buildSymbolGraph`）避免另造第二套解析；逐项命令见下表。
 
 | 量 | 实测值 | 条件 / 命令 |
 | --- | --- | --- |
@@ -1100,7 +1106,7 @@
 | ①c **端到端**进程耗时（`node scripts/generate-reference-graph.cjs`，含 git 读取 + 文件级边 + 序列化 + 写盘判定） | **冷 1,786 ms** · 热 1,934 / 1,534 ms（**中位数 1,734 ms**）；生成器自报 1,263–1,576 ms | `spawnSync` 3 次；**红线「单次 CAS 提交 ≤ 2 s」在热态中位数下通过（1.73 s < 2 s），但冷/热三次里有 1 次 1,934 ms 逼近红线**——如实记账 |
 | ② 声明 / 符号边条数 | **402 / 1,347**（`type-reference` 805 · `import` 472 · `export-from` 70） | `--json` → `symbolGraph.*` |
 | ② 符号级两数组字节（缩进 2，与产物同口径） | `declarations` **101,293 B** + `symbol_edges` **727,531 B** = **828,824 B（0.79 MiB）** | `JSON.stringify(<该数组>, null, 2) + '\n'` 的 UTF-8 字节 |
-| ② 产物整份字节 | **1,482,686 B（1.41 MiB）**，分解：`symbol_edges` 727,531 + `files` 291,466 + `edges` 239,834 + `declarations` 101,293 + `meta` 4,789 + 括号逗号 3,773 | `git cat-file blob :ledger/references.json` 的长度 |
+| ② 产物整份字节 | **1,482,686 B（1.41 MiB）**，分解：`symbol_edges` 727,531 + `files` 291,466 + `edges` 239,834 + `declarations` 101,293 + `meta` 4,789 = **1,364,913** + 余项 **117,773**（括号/逗号 + 嵌套缩进差）= 1,482,686 | `git cat-file blob :ledger/references.json` 的长度 |
 | ② 相对文件级的增长倍数 | **2.543 倍**（1,482,686 ÷ 583,014；分母 = 同一份索引上「`meta` + `files` + `edges` + `schema_version: 1`」的口径近似，**不是**历史 v1 产物的原样字节——那一份从未提交、已不在仓库里） | 同上 |
 | ② 规模护栏（产物 ≤ 5 MB · 生成 ≤ 30 s） | **都通过且余量很大**：产物 1.41 MiB（占护栏 28%）· 端到端 1.73 s（占护栏 5.8%）⇒ **本批不需要分层存储 / 按需展开 / 分片**（P8 的取舍判据） | 同上 |
 | ③ 单文件语法树（`ts.createSourceFile`，`ScriptTarget.Latest` + `setParentNodes`） | `src/index.ts`（18 行）**0.08 ms** · `src/engine/store.ts`（378 行）**1.31 ms** · `src/engine/template.ts`（1,893 行）**0.23 ms** · `src/engine/edit.ts`（869 行）**3.16 ms** · `src/tools.ts`（1,835 行）**5.72 ms**（各 5 次取中位数） | 注意 `template.ts` 比 `tools.ts` **行数更多却快 25 倍**：`createSourceFile` 只构造语法树、不求值，单文件耗时由**语法复杂度**而非行数主导。所以「按需展开的代价」不能按行数外推 |
@@ -1138,7 +1144,7 @@
 | --- | --- | --- | --- | --- |
 | **1** | **新增了第 5 道门禁**：`scripts/check-file-ledger.cjs`（`npm run check:ledger`）+ 配套写入侧 `scripts/generate-file-ledger.cjs`（`npm run ledger:gen` / `check:ledger:gen`），并把 `ledger/file-ledger.json` 作为唯一新增数据文件 | 旧稿的分工假设是"门禁数量不变、复用既有解析器"；该假设在本文档里已被改写为**既定事实**——§6.3 标题即"与五道既有门禁的分工"（节标题现行位置 `docs/DESIGN-code-graph.zh-CN.md:573`；本文档本行以下又新增了内容，全部自引用锚点都会随之漂移，按内容搜而不是按行号数；§6.3 里的 "CHECK_TITLES（84-94）" 这类**指向脚本**的行号同样会随脚本改动漂移），第 11 节 P1 也记着"增量 1 已经把门禁从 4 道推到 5 道"（§10.2 建议段 `docs/DESIGN-code-graph.zh-CN.md:571`、P1 行 `:905`） | 用户的增量 1 目标就是"让『这个文件有没有人管』变成可断言的机器事实"。既有四道门禁没有一道管**文件归属**：`check-references` 管引用完整性、`check-doc-snippets` 管文档示例、`check-lib-sync` 管产物逐字节、`check-examples` 管示例可执行。不新增门禁就只能"描述"归属而不能"断言"它 | 门禁计数 4 → 5；`package.json`（`check:ledger`/`check:ledger:gen`/`ledger:gen`/`check` 链）、`.github/workflows/ci.yml`（两个独立 step）、`CONTRIBUTING.md:22-34` 三处同步；后续增量新增门禁时**必须**按这套三处同步走（§6.3 末段 `:558` 已写成约束） |
 | **2** | **改动了 `src/` 行为**：索引里 `src/*.ts` 的改动面是 18 个文件（`git status --porcelain -- src` 有 18 条，含新增的 `src/execution.ts`） | 本文档两处写"不改 `src/` 行为、不需要重建 `lib/`"（文档头边界声明 `docs/DESIGN-code-graph.zh-CN.md:7`、§9.5 `:706`）。但这两句的**主语是"图与改动记录的生成器"（第 2–6 节的新方向）**，不是增量 1：增量 1 的门禁脚本本身只读、确实不碰 `src/`；改动 `src/` 的是同一工作区里**另一批已暂存的引擎改造**（`git diff --cached --stat -- src`：17 个文件的差异统计为 524 插入 / 157 删除，另加新增的 `src/execution.ts`，合计 18 条） | 该批 `src/` 改动早于本轮、已 `git add` 进索引在本轮之前，不是增量 1 的产物；本轮（R4 + 文档对齐）**一个字都没有改 `src/`**（改动前后 `git status --porcelain -- src` 输出逐字节相同） | ⚠ **必须区分两个命题，否则会把"增量 2 不改 `src/`"误推成"增量 1 没改 `src/`"**：① 增量 2 的落点选择（生成器放 `scripts/`）⇒ 与 `check:libsync` 零交互；② 增量 1 落地时的 `src/` 改动面 = 索引里那 18 个文件。二者都真，但说的不是同一件事。本轮只**记录**这张改动面，不动它（触碰它会牵连 `lib/` 重建与 `check:libsync`，超出本轮范围） |
-| **3** | **跨文档引用的行号与命中范围更正**：脚本内枚举（`CHECK_TITLES`）、`--help`、人类报告、`--json` 的 `summary.checks` 曾各自演进，文档里引用的"行号 / 命中范围"随之失效，必须按当前实测值写 | 旧稿与本轮的早期引用给过已失效的锚点，例如"台账豁免模式的 2-115 行"；按**当时**文件实测，`exempt_patterns` 数组的范围是 **18-115 行**（`:18` 是数组起点、`:116` 是 `grandfathered` 起点）——**该内嵌数组已在 v2 迁到 `ledger/exempt.gitignore`，这两个行号只是改造前的历史锚点，现状不再适用**；旧的 `tracked-mismatch / unlisted` 检查名现已不存在，被拆成 `tracked-mismatch`（`:120`）、`ledger-index-drift`（`:119`）、`ledger-missing`（`:118`）三项 | 用户要求"结论必须带文件:行号"，行号写了就得能复核；引用一个已改名或已删的入口，等于制造第二份真相互相矛盾 | 只动**引用与措辞**，不动任何判定与数字。**数据随实现变化，改实现要同步这里**：每次改门禁 / 生成器 / 内核 / 台账 / 豁免清单，都要按下面的实测值回改本行。本轮（v2 语义校准）复核后的实测值：门禁 `scripts/check-file-ledger.cjs` **1997 行**、生成器 `scripts/generate-file-ledger.cjs` **732 行**、共享内核 `scripts/file-ledger-core.cjs` **462 行**、台账 `ledger/file-ledger.json` **168 行 / 10131 B**、豁免清单 `ledger/exempt.gitignore` **56 行 / 7226 B**、`CONTRIBUTING.md` **95 行**（上一轮的 1,426 行 / 403 行 / 147 行 / 82 行已被本次语义校准取代，本节按新值更正；`CONTRIBUTING.md` 的 88 行是本轮补文档前的值）。**补测（v3 版本字面量门禁轮次）**：`scripts/check-references.cjs` **2374 行 / 107815 B**（v3 记 3384 行 / 151442 B、更早记 3,089 行 / 136,739 B，两者都已被本次复核取代——解析器已抽到 `scripts/reference-graph-core.cjs`）、`scripts/check-doc-snippets.cjs` **1630 行**、`scripts/check-lib-sync.cjs` **1573 行**（原写 1,439 行）、`scripts/check-examples.cjs` **1051 行**（原写 974 行）。**行数口径**：等于「显式行数」= `([IO.File]::ReadAllText(f) -split "\`n").Length`，等价于编辑器 / `Set-Content` 的**末行号**（文件末尾无换行时少 1），等价于 Linux `wc -l` 的**换行符数 + 1**；`ledger/file-ledger.json` 的 168 行可由数据自证（`meta.tracked_total` 之外，其 `git ls-files` 计数与本文件行数同口径）。字面量数量口径见下方「字面量清单规模」小节 |
+| **3** | **跨文档引用的行号与命中范围更正**：脚本内枚举（`CHECK_TITLES`）、`--help`、人类报告、`--json` 的 `summary.checks` 曾各自演进，文档里引用的"行号 / 命中范围"随之失效，必须按当前实测值写 | 旧稿与本轮的早期引用给过已失效的锚点，例如"台账豁免模式的 2-115 行"；按**当时**文件实测，`exempt_patterns` 数组的范围是 **18-115 行**（`:18` 是数组起点、`:116` 是 `grandfathered` 起点）——**该内嵌数组已在 v2 迁到 `ledger/exempt.gitignore`，这两个行号只是改造前的历史锚点，现状不再适用**；旧的 `tracked-mismatch / unlisted` 检查名现已不存在，被拆成 `tracked-mismatch`（`:120`）、`ledger-index-drift`（`:119`）、`ledger-missing`（`:118`）三项 | 用户要求"结论必须带文件:行号"，行号写了就得能复核；引用一个已改名或已删的入口，等于制造第二份真相互相矛盾 | 只动**引用与措辞**，不动任何判定与数字。**数据随实现变化，改实现要同步这里**：每次改门禁 / 生成器 / 内核 / 台账 / 豁免清单，都要按下面的实测值回改本行。本轮（v2 语义校准）复核后的实测值：门禁 `scripts/check-file-ledger.cjs` **2003 行**、生成器 `scripts/generate-file-ledger.cjs` **799 行**、共享内核 `scripts/file-ledger-core.cjs` **462 行**、台账 `ledger/file-ledger.json` **168 行 / 10131 B**、豁免清单 `ledger/exempt.gitignore` **56 行 / 7226 B**、`CONTRIBUTING.md` **100 行**（上一轮的 1,426 行 / 403 行 / 147 行 / 82 行已被本次语义校准取代，本节按新值更正；`CONTRIBUTING.md` 的 88 行是本轮补文档前的值）。**补测（v3 版本字面量门禁轮次）**：`scripts/check-references.cjs` **2374 行 / 107815 B**（v3 记 3384 行 / 151442 B、更早记 3,089 行 / 136,739 B，两者都已被本次复核取代——解析器已抽到 `scripts/reference-graph-core.cjs`）、`scripts/check-doc-snippets.cjs` **1630 行**、`scripts/check-lib-sync.cjs` **1573 行**（原写 1,439 行）、`scripts/check-examples.cjs` **1051 行**（原写 974 行）。**行数口径**：等于「显式行数」= `([IO.File]::ReadAllText(f) -split "\`n").Length`，等价于编辑器 / `Set-Content` 的**末行号**（文件末尾无换行时少 1），等价于 Linux `wc -l` 的**换行符数 + 1**；`ledger/file-ledger.json` 的 168 行可由数据自证（`meta.tracked_total` 之外，其 `git ls-files` 计数与本文件行数同口径）。字面量数量口径见下方「字面量清单规模」小节 |
 
 **本轮顺带修正的 3 处已失效交叉引用**（与上表第 3 条同源，只改引用、不改判定）。
 
@@ -1152,7 +1158,7 @@
 
 ### 增量 1：全仓文件台账（**已落地**）
 
-- **产物（实测存在）**：数据 `ledger/file-ledger.json`（168 行 / 10131 B，`schema_version: 2`）+ 独立豁免清单 `ledger/exempt.gitignore`（56 行 / 19 条模式）；生成器 `scripts/generate-file-ledger.cjs`（732 行）；门禁 `scripts/check-file-ledger.cjs`（1997 行，`CHECK_TITLES` **13 项**）；两者共用的内核 `scripts/file-ledger-core.cjs`（462 行，唯一事实来源）。
+- **产物（实测存在）**：数据 `ledger/file-ledger.json`（168 行 / 10131 B，`schema_version: 2`）+ 独立豁免清单 `ledger/exempt.gitignore`（56 行 / 19 条模式）；生成器 `scripts/generate-file-ledger.cjs`（799 行）；门禁 `scripts/check-file-ledger.cjs`（2003 行，`CHECK_TITLES` **13 项**）；两者共用的内核 `scripts/file-ledger-core.cjs`（462 行，唯一事实来源）。
 - **接线（实测存在）**：`package.json` 的 `check:ledger` / `check:ledger:gen` / `ledger:gen`，并已追加进 `check` 链；`.github/workflows/ci.yml` 的 "File ledger guard (four-state ownership ratchet)" 与 "File ledger generator check" 两个独立 step；`CONTRIBUTING.md` 的检查项清单（13 项）与快照行。
 - **状态：已落地（v2 语义校准完成）。** 机器可算部分能生成并与 git 索引对账（`meta.universe_hash` = `sha256(sort(git ls-files).join('\n') + '\n')`、`meta.tracked_total` = 1402）。独立验证方在 2026-10-05 给过一次 **fail**（实测假绿 + 文档与实现逐字矛盾），随后两轮按清单修完：
   - **R1 门禁可被一条豁免模式静默关掉** → 「过宽模式」三条判据保留（判据 1/2 不可人工确认；判据 3 可用 `broad_confirmed=true` 人工确认），被判过宽的模式**不参与匹配**。负例：`tests/file-ledger-ratchet-e2e.mjs` 第 4 组断言豁免清单里一条 `**` → **exit 1**、报 `exempt-too-broad-no-literal`。
@@ -1175,7 +1181,7 @@
   4. **豁免独立文件**存在、每条带非空理由；缺理由 → 退出码非 0 —— 第 1 组（干净态解析）+ 门禁 `exempt-invalid`（error）；
   5. **`.gitignore` 交叉校验**：构造一条会在 `.gitignore` 与豁免清单上同时命中的模式，门禁必须报出 —— 第 6 组（`*review*.md` 复现真实事故：交集 + 折叠误伤，exit 1）；
   6. `accounted` 每条都有非空 `accounted_at` 与非空 `basis`；缺失 → 退出码非 0 —— 第 2 组（缺 `basis` → exit 1，生成器同样 fail-closed）。
-  - 全链证据：`npm test` 里的 `file-ledger-ratchet-e2e.mjs` 共 **62 条断言全通过**（含两条验收项：「`schema_version` 不匹配 → 门禁与生成器都 exit 1」与「豁免条目缺 `reason` → exit 1」）；`npm run check:ledger` 与 `npm run check:ledger:gen` 在本轮提交后 **exit 0**、`npm run ledger:gen` 再次运行报告"未改动文件"（幂等）。
+  - 全链证据：`npm test` 里的 `file-ledger-ratchet-e2e.mjs` 共 **84 条断言全通过**（含两条验收项：「`schema_version` 不匹配 → 门禁与生成器都 exit 1」与「豁免条目缺 `reason` → exit 1」）；`npm run check:ledger` 与 `npm run check:ledger:gen` 在本轮提交后 **exit 0**、`npm run ledger:gen` 再次运行报告"未改动文件"（幂等）。
 - **不做**：不做符号级图、不做改动记录、不碰工具契约、不跑全仓重算。
 
 ### 增量 2：文件级引用图 + 改动记录骨架
@@ -1279,7 +1285,7 @@
 | 1 | 旧路径是否被引用（改名前核实） | `git grep -n -i "line-provenance"`；`git grep -n -i "provenance"` | 改名前：前者**仅命中旧文档自身的标题行**；后者命中的全是 `examples/` 里目标工程的业务词（`ProvenanceChain` 等），与本设计无关。`package.json` 的 `files` 字段只列 `docs/SPEC.zh-CN.md` ⇒ **改名安全，零悬空引用**。改名后复跑：前者唯一的命中就是**本表格这一行**（它记录的是一条历史检索命令，不是路径引用；`check-references` 的 `dangling-reference` / `deleted-reference` 均为 0），`git ls-files docs` 里已无旧路径 |
 | 2 | 仓库状态 | `git status --porcelain`；`git config --get core.ignoreCase` | 无 `??` 条目；`core.ignoreCase=true` |
 | 3 | `src/` 图元素普查 | `node <临时只读脚本>`：`ts.createSourceFile` 逐文件遍历（`declaration_names` / `identifier_references` / `ImportSpecifier` / `TypeReferenceNode` / `ImportDeclaration` / `ExportDeclaration`）；TypeScript **5.9.3**（仓库自带 `node_modules/typescript`） | `ts_files=28`、`declaration_names=2624`（顶层 207 / **函数内 2417**）、`identifier_references=10336`、`import_declarations=201`、`export_from_declarations=19`、`import_specifiers=672`、`type_reference_nodes=805`、`dynamic_imports=0`、`require_calls=0`；逐文件最大 `src/tools.ts` 2371 条、均值 462.6、最小 `src/index.ts` 0 条 |
-| 4 | 规模 | `Get-ChildItem -Recurse src -Filter *.ts` 逐文件统计 `\n` 数与字节；工作区同法（排除 `node_modules/`、`.git/`） | `src/**.ts`：9,782 行 / 521,118 B；工作区：约 992,790 行（部分二进制/空文件读取报错，不影响量级） |
+| 4 | 规模 | `Get-ChildItem -Recurse src -Filter *.ts` 逐文件统计 `\n` 数与字节；工作区同法（排除 `node_modules/`、`.git/`） | `src/**.ts`：9,782 行 / 516,319 B（旧记 521,118 B 是改造前快照，见 §7.6）；工作区：约 992,790 行（部分二进制/空文件读取报错，不影响量级） |
 | 5 | 单条记录字节 | 用本文档 2.2/2.3 的字段构造**真实**记录（真实文件、真实行列）后 `JSON.stringify` + `Buffer.byteLength` | 节点记录 199–243 B（n=13，均值 221.3）；边记录 234–270 B（n=20，均值 253.2） |
 | 6 | 索引与目录规模 | `git ls-files` / `git ls-files 'src/*.ts'` / `git ls-files 'lib/*'`；`Get-ChildItem .git -Recurse \| Measure-Object Length -Sum` | **当时实测**（改造前快照）：已跟踪 **1,399**；`src/*.ts` **28**；`lib/*` **84**；`.git` **43,479,139 B**。**本轮复测已变**：已跟踪 **1,402**、`.git` **44,307,366 B**（`src/*.ts` 28 与 `lib/*` 84 未变）——见 §7.6 与本表的时点说明 |
 | 7 | `changes/` 是否存在 | `git ls-files \| Select-String 'changes/'`；`Get-ChildItem -Recurse -Directory -Filter changes` | **两处均无命中** ⇒ 本仓库没有 `changes/` 目录；`changes` 只是目标工程数据目录的源根名（`src/engine/manifest.ts:5`） |
