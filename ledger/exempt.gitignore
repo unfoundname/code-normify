@@ -1,0 +1,55 @@
+# ledger/exempt.gitignore —— 全仓文件台账的**独立豁免清单**（schema_version 2）
+# ---------------------------------------------------------------------------
+# 这是什么：豁免是「绿灯三条来路」之一（owned / exempt / accounted）。一个已跟踪文件不必被
+#   任何模块拥有，只要它命中本文件里的一条模式，就算「台账里有条目」。
+#   它不是 .gitignore 的一部分、也不复用 .gitignore 的规则：已跟踪文件本来就不受 ignore 约束，
+#   把忽略规则当豁免依据是语义碰撞（本会话真实事故：`*review*.md` 在 core.ignoreCase=true 下
+#   命中 preview.md）。两者的交叉校验见 scripts/check-file-ledger.cjs 的 exempt-gitignore-cross-check。
+#
+# 语法（gitignore 语法 + 行尾字段约定）：
+#   · 空行忽略；`#` 开头的整行是注释；
+#   · 模式行：<pattern> ## reason=<非空理由> [ ## since=YYYY-MM-DD ] [ ## broad_confirmed=true|false ]
+#   · <pattern> 只支持 `**`（至少一层，跨 /）、`*`（不跨 /）、`?`（单个非 / 字符）；
+#     `[` `]` `{` `}` 与开头的 `\` 不受支持 → 报 error，不猜；
+#   · `!` 前缀 = 反选（把已被前面条目豁免的路径重新收回）。顺序有意义：
+#     **最后一条命中的条目说了算**（与 gitignore 一致）；
+#   · 每条**必须**写 reason，缺理由 / 理由为空 / 出现未知字段 → error（豁免是放宽门禁，必须留痕）；
+#   · 行尾字段名固定三个：reason（必填）、since（可选，首次引入日期）、
+#     broad_confirmed（可选，仅用于「单条模式命中率 > 50% 宇宙」的人工确认）。
+#
+# 与真 .gitignore 的交叉校验（error，判据在 check-file-ledger.cjs 的 exempt-gitignore-cross-check）：
+#   ① 本清单命中的路径若**同时**被真 .gitignore 覆盖 → 报出（它根本不在台账宇宙里，
+#      为它写豁免等于把忽略规则当成了豁免依据）；
+#   ② 只靠 core.ignoreCase 折叠才命中的路径 → 报出（`*review*.md` 命中 `preview.md` 那类误伤）；
+#   ③ 本清单命中的路径若是「未被忽略、也不在 git 索引里」的普通文件 → 报出（本该 git add）。
+#
+# 「过宽」判据（error，三条，见 check-file-ledger.cjs --help）：
+#   ① 归一化后无任何字面量字符（`**` / `*` / `**` 后接 `/*` / `?`）；
+#   ② 通配字符占比 > 50%；
+#   ③ 单条模式命中率 > 50% 台账宇宙，除非该条目显式写 broad_confirmed=true。
+#   被判过宽的模式**不参与匹配**：它本该吞掉的文件会落回 accounted / unowned，绝不静默放过。
+# 未被任何已跟踪文件命中的条目 → warning（未命中的豁免等于永久空白特权）。
+#
+# 判定基准：git 索引里的这一份（`git show :ledger/exempt.gitignore`）。工作区与索引不一致、
+#   或本文件不在索引里 → ledger-index-drift（error），判定仍按索引版进行。
+# ---------------------------------------------------------------------------
+
+examples/** ## reason=示例项目宇宙：examples/ 下是 normify 工具所描述的**目标工程**（真实工程样例），不是本工具自身的代码，也不被本仓库的模块声明所拥有——本仓库根没有 normify-* 数据目录，6 个数据目录全在 examples/ 下，它们声明的是各自目标工程的路径。按模式豁免，避免把 1249 个示例文件逐个塞进 accounted 清单。本模式命中 1249/1400 个已跟踪文件（89.2%），超过「过宽」判据 3 的 50% 阈值，故人工确认 broad_confirmed=true（判据见 scripts/file-ledger-core.cjs 的 PATTERN_MAX_HIT_RATIO 与 scripts/check-file-ledger.cjs --help）。 ## since=2026-10-05 ## broad_confirmed=true
+lib/** ## reason=编译产物：lib/ 是被 git 跟踪的构建产物（由 src/ 经 tsc 生成），归属随源文件走，不单独归属；其可再生性由 scripts/check-lib-sync.cjs 逐字节门禁保证。让产物参与台账会制造第二份真相（同一份归属既在 src/ 又在 lib/）。 ## since=2026-10-05
+tests/** ## reason=验证基础设施：测试文件验证模块行为，本身不被任何架构模块拥有；它们的「归属」是它们断言的那个模块，无法用 source.path 表达。 ## since=2026-10-05
+scripts/** ## reason=门禁与工具脚本：与 tests/ 同属验证基础设施，且本门禁自身就在 scripts/ 下（含门禁与生成器共用的 scripts/file-ledger-core.cjs）——若把门禁自己算作「待归属」，就会形成「台账要求给它自己指定 owner」的自指。 ## since=2026-10-05
+ledger/** ## reason=台账数据目录自身：台账是门禁的唯一事实来源与元数据（ledger/file-ledger.json 的 accounted 清单与元信息 + ledger/exempt.gitignore 这份独立豁免清单），不被任何架构模块拥有。若它落在 scripts/** 之外又不豁免，就会形成「台账必须给自己记一条归属」的自指。 ## since=2026-10-05
+.github/** ## reason=CI 配置：仓库级基础设施，不对应任何架构模块。 ## since=2026-10-05
+docs/** ## reason=工具自身文档：文档描述模块与流程，但不被模块「拥有」；docs/RELEASE-*.md 另属历史文体（既有门禁 check-references.cjs / check-doc-snippets.cjs 对历史文体同样按文体规则处理）。 ## since=2026-10-05
+README.md ## reason=仓库元数据（根级说明文档）：不对应任何架构模块。 ## since=2026-10-05
+README_EN.md ## reason=仓库元数据（英文说明文档）：不对应任何架构模块。 ## since=2026-10-05
+CHANGELOG.md ## reason=仓库元数据（历史记录文体）：逐版本记录「当时发生了哪些文件级变更」，是历史事实而非模块源码。 ## since=2026-10-05
+CONTRIBUTING.md ## reason=仓库元数据（贡献指南）：不对应任何架构模块。 ## since=2026-10-05
+SECURITY.md ## reason=仓库元数据（安全策略）：不对应任何架构模块。 ## since=2026-10-05
+LICENSE ## reason=仓库元数据（许可证）：第三方法律文本，不对应任何架构模块。 ## since=2026-10-05
+AGENTS.md ## reason=仓库元数据（宿主 agent 工作模式说明）：仓库级约定，不对应任何架构模块。 ## since=2026-10-05
+.gitignore ## reason=仓库元数据（忽略规则）：不对应任何架构模块；它定义「哪些路径不进入 git 索引」，是台账宇宙的**边界**而不是豁免依据——本文件（ledger/exempt.gitignore）才是豁免清单，两者由 exempt-gitignore-cross-check 交叉校验。 ## since=2026-10-05
+package.json ## reason=仓库元数据（包清单）：台账门禁的接线点之一，不对应任何架构模块。 ## since=2026-10-05
+package-lock.json ## reason=依赖锁文件（生成物）：由 npm 生成与维护，不对应任何架构模块。 ## since=2026-10-05
+tsconfig.json ## reason=仓库元数据（编译配置）：不对应任何架构模块。 ## since=2026-10-05
+ci-contract-check.cjs ## reason=仓库级契约自检脚本：与 scripts/ 同属验证基础设施（历史上位于仓库根），不对应任何架构模块。 ## since=2026-10-05

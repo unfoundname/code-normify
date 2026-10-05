@@ -1,147 +1,167 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "meta": {
     "generated_at": "2026-10-05",
     "generator": "scripts/generate-file-ledger.cjs",
     "gate": "scripts/check-file-ledger.cjs",
-    "universe": "git ls-files（git 索引内容；台账宇宙 = 已跟踪文件，不含被忽略文件与被跟踪之外的磁盘文件）",
-    "tracked_total": 1400,
-    "universe_hash": "2663c365f5eaa114fa98a6a702214817f5c728cf3b4376bf593d23b5581c4ee0",
+    "exempt_file": "ledger/exempt.gitignore",
+    "universe": "git ls-files —— 索引只定义**待清点的全集**，绿灯的唯一依据是台账里有条目（owned / exempt / accounted 三条来路）；「在 HEAD 里 / 已在 git 索引里」**不是**绿灯理由。台账宇宙 = 已跟踪文件，不含被忽略文件与被跟踪之外的磁盘文件。",
+    "tracked_total": 1402,
+    "universe_hash": "3a66093b8d840ecca1147065f3965f2a7397105fe4feec7d3abb361405b08f13",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "byte_basis": "台账以 git 索引（git ls-files）为权威：文件的「存在」与「归属」都以索引条目为准，另用 lstat 区分普通文件与目录（目录不算普通文件）。工作区与索引不一致时以索引为准（仓库既有约定：compare git index, not worktree）。",
-    "coverage_basis": "bound 只统计「被模块 source.path 精确声明且该路径是仓库里真实存在的普通文件」；planned 声明（声明存在但目标不存在）单独计数，绝不计入 bound，否则覆盖率会从 0% 假性跳到 100%。",
+    "byte_basis": "台账以 git 索引（git ls-files）为**判定基准**：文件的「存在」与「归属」都以索引条目为准，另用 lstat 区分普通文件与目录（目录不算普通文件）。工作区与索引不一致时以索引为准（仓库既有约定：compare git index, not worktree）。注意：索引只定义待清点的全集，不是绿灯依据。",
+    "coverage_basis": "owned 只统计「被模块 source.path 精确声明且该路径是仓库里真实存在的普通文件」；planned 声明（声明存在但目标不存在）单独计数，绝不计入 owned，否则覆盖率会从 0% 假性跳到 100%。",
+    "accounted_basis": "accounted = **已清点记账的正账**（不是欠账）：每条必须带 accounted_at（清点日期）与 basis（清点依据），依据为空即 error；清单**只减不增**——判据是与 HEAD 版台账比集合包含，任何新增即 error（挡住「手工把路径写进清单 + git add」这条洗白路径）。",
     "known_divergences": [
-      "引擎按文件系统读取模块（src/engine/store.ts:92-96 递归 walk <projectDir>/modules 下所有 .md），台账按 git ls-files 取宇宙。二者在这些情形下不一致：(1) 被 .gitignore 覆盖的模块文件（历史上 examples/bilibili-pi-full 下有两个被 `*review*.md` 规则命中的模块文件）；(2) 磁盘上有但未 git add 的新模块文件。台账以索引为准，不一致时由本门禁的 tracked-mismatch / ledger-index-drift / ledger-missing 三项检查报出，不静默忽略。",
+      "引擎按文件系统读取模块（src/engine/store.ts:92-96 递归 walk <projectDir>/modules 下所有 .md），台账按 git ls-files 取宇宙。二者在这些情形下不一致：(1) 被 .gitignore 覆盖的模块文件（历史上 examples/bilibili-pi-full 下有两个被 `*review*.md` 规则命中的模块文件）；(2) 磁盘上有但未 git add 的新模块文件。台账以索引为准，不一致时由本门禁的 tracked-mismatch / ledger-index-drift / ledger-missing 三项检查报出，不静默忽略——该事故现由 exempt-gitignore-cross-check 与真 .gitignore 交叉校验拦住（豁免命中 ∩ .gitignore 覆盖、以及仅靠 core.ignoreCase 折叠命中的路径都报 error）。",
       "台账不覆盖被忽略文件（当前 4336 条，其中 node_modules/ 4315）：它们不在 git 索引里，也不是本台账的「已跟踪文件」宇宙；被忽略文件的存在性与内容由 git 忽略规则与各自的生成流程负责，本台账不假装覆盖它们。"
     ]
   },
-  "exempt_patterns": [
+  "accounted": [
     {
-      "pattern": "examples/**",
-      "reason": "示例项目宇宙：examples/ 下是 normify 工具所描述的**目标工程**（真实工程样例），不是本工具自身的代码，也不被本仓库的模块声明所拥有——本仓库根没有 normify-* 数据目录，6 个数据目录全在 examples/ 下，它们声明的是各自目标工程的路径。按模式豁免，避免把 1249 个示例文件逐个塞进祖父清单。本模式命中 1249/1399 个已跟踪文件（89.3%），超过豁免过宽判据 3 的 50% 阈值，故附 broad_confirmed: true 作为人工确认（见 scripts/check-file-ledger.cjs 的 PATTERN_MAX_HIT_RATIO 与 --help）。",
-      "since": "2026-10-05",
-      "broad_confirmed": true
+      "path": "skills/normify-gen/SKILL.md",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     },
     {
-      "pattern": "lib/**",
-      "reason": "编译产物：lib/ 是被 git 跟踪的构建产物（由 src/ 经 tsc 生成），归属随源文件走，不单独归属；其可再生性由 scripts/check-lib-sync.cjs 逐字节门禁保证。让产物参与台账会制造第二份真相（同一份归属既在 src/ 又在 lib/）。",
-      "since": "2026-10-05"
+      "path": "src/adapters/mcp.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     },
     {
-      "pattern": "tests/**",
-      "reason": "验证基础设施：测试文件验证模块行为，本身不被任何架构模块拥有；它们的「归属」是它们断言的那个模块，无法用 source.path 表达。",
-      "since": "2026-10-05"
+      "path": "src/adapters/promptmanager.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     },
     {
-      "pattern": "scripts/**",
-      "reason": "门禁与工具脚本：与 tests/ 同属验证基础设施，且本门禁自身就在 scripts/ 下——若把门禁自己算作「待归属」，就会形成「台账要求给它自己指定 owner」的自指。",
-      "since": "2026-10-05"
+      "path": "src/engine/branches.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     },
     {
-      "pattern": "ledger/**",
-      "reason": "台账数据目录自身：台账是本门禁的唯一事实来源与元数据（豁免清单 + 祖父清单 + 宇宙元信息），不被任何架构模块拥有。若它落在 scripts/** 之外又不豁免，就会形成「台账必须给自己记一条归属」的自指。",
-      "since": "2026-10-05"
+      "path": "src/engine/changes.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     },
     {
-      "pattern": ".github/**",
-      "reason": "CI 配置：仓库级基础设施，不对应任何架构模块。",
-      "since": "2026-10-05"
+      "path": "src/engine/companion.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     },
     {
-      "pattern": "docs/**",
-      "reason": "工具自身文档：文档描述模块与流程，但不被模块「拥有」；docs/RELEASE-*.md 另属历史文体（既有门禁 check-references.cjs / check-doc-snippets.cjs 对历史文体同样按文体规则处理）。",
-      "since": "2026-10-05"
+      "path": "src/engine/compile.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     },
     {
-      "pattern": "README.md",
-      "reason": "仓库元数据（根级说明文档）：不对应任何架构模块。",
-      "since": "2026-10-05"
+      "path": "src/engine/contracts.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     },
     {
-      "pattern": "README_EN.md",
-      "reason": "仓库元数据（英文说明文档）：不对应任何架构模块。",
-      "since": "2026-10-05"
+      "path": "src/engine/diag.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     },
     {
-      "pattern": "CHANGELOG.md",
-      "reason": "仓库元数据（历史记录文体）：逐版本记录「当时发生了哪些文件级变更」，是历史事实而非模块源码。",
-      "since": "2026-10-05"
+      "path": "src/engine/edit.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     },
     {
-      "pattern": "CONTRIBUTING.md",
-      "reason": "仓库元数据（贡献指南）：不对应任何架构模块。",
-      "since": "2026-10-05"
+      "path": "src/engine/frontmatter.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     },
     {
-      "pattern": "SECURITY.md",
-      "reason": "仓库元数据（安全策略）：不对应任何架构模块。",
-      "since": "2026-10-05"
+      "path": "src/engine/graph.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     },
     {
-      "pattern": "LICENSE",
-      "reason": "仓库元数据（许可证）：第三方法律文本，不对应任何架构模块。",
-      "since": "2026-10-05"
+      "path": "src/engine/ids.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     },
     {
-      "pattern": "AGENTS.md",
-      "reason": "仓库元数据（宿主 agent 工作模式说明）：仓库级约定，不对应任何架构模块。",
-      "since": "2026-10-05"
+      "path": "src/engine/layout.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     },
     {
-      "pattern": ".gitignore",
-      "reason": "仓库元数据（忽略规则）：不对应任何架构模块，且它本身定义了「哪些路径不进入 git 索引」，属于台账宇宙的定义性文件。",
-      "since": "2026-10-05"
+      "path": "src/engine/manifest.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     },
     {
-      "pattern": "package.json",
-      "reason": "仓库元数据（包清单）：台账门禁的接线点之一，不对应任何架构模块。",
-      "since": "2026-10-05"
+      "path": "src/engine/policy.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     },
     {
-      "pattern": "package-lock.json",
-      "reason": "依赖锁文件（生成物）：由 npm 生成与维护，不对应任何架构模块。",
-      "since": "2026-10-05"
+      "path": "src/engine/reference.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     },
     {
-      "pattern": "tsconfig.json",
-      "reason": "仓库元数据（编译配置）：不对应任何架构模块。",
-      "since": "2026-10-05"
+      "path": "src/engine/render.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     },
     {
-      "pattern": "ci-contract-check.cjs",
-      "reason": "仓库级契约自检脚本：与 scripts/ 同属验证基础设施（历史上位于仓库根），不对应任何架构模块。",
-      "since": "2026-10-05"
+      "path": "src/engine/store.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
+    },
+    {
+      "path": "src/engine/template.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
+    },
+    {
+      "path": "src/engine/types.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
+    },
+    {
+      "path": "src/engine/validate.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
+    },
+    {
+      "path": "src/execution.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
+    },
+    {
+      "path": "src/index.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
+    },
+    {
+      "path": "src/mcp.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
+    },
+    {
+      "path": "src/planning.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
+    },
+    {
+      "path": "src/service.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
+    },
+    {
+      "path": "src/tools.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
+    },
+    {
+      "path": "src/workspace.ts",
+      "accounted_at": "2026-10-05",
+      "basis": "本会话之前的既有文件，尚未分配归属（2026-10-05 清点记账；本次 v1→v2 语义校准逐条补记，未编造审计结论）"
     }
-  ],
-  "grandfathered": [
-    "skills/normify-gen/SKILL.md",
-    "src/adapters/mcp.ts",
-    "src/adapters/promptmanager.ts",
-    "src/engine/branches.ts",
-    "src/engine/changes.ts",
-    "src/engine/companion.ts",
-    "src/engine/compile.ts",
-    "src/engine/contracts.ts",
-    "src/engine/diag.ts",
-    "src/engine/edit.ts",
-    "src/engine/frontmatter.ts",
-    "src/engine/graph.ts",
-    "src/engine/ids.ts",
-    "src/engine/layout.ts",
-    "src/engine/manifest.ts",
-    "src/engine/policy.ts",
-    "src/engine/reference.ts",
-    "src/engine/render.ts",
-    "src/engine/store.ts",
-    "src/engine/template.ts",
-    "src/engine/types.ts",
-    "src/engine/validate.ts",
-    "src/execution.ts",
-    "src/index.ts",
-    "src/mcp.ts",
-    "src/planning.ts",
-    "src/service.ts",
-    "src/tools.ts",
-    "src/workspace.ts"
   ]
 }

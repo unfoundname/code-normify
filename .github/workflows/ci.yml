@@ -96,11 +96,12 @@ jobs:
         # 单列一步是为了红了能一眼看出是「示例」还是「单测」。
         run: npm run check:examples
       - name: File ledger generator check (ratchet — no auto-add, no rot)
-        # 生成器 --check（scripts/generate-file-ledger.cjs v1.2.0，只比较不写盘）：台账必须与「重新生成的结果」
-        # 逐字节一致，否则 exit 1。它把「台账还是不是机器可算出来的那一份」变成链上的硬失败，拦三类：
+        # 生成器 --check（scripts/generate-file-ledger.cjs v1.3.0，只比较不写盘）：台账必须与「重新生成的结果」
+        # 逐字节一致，否则 exit 1。它把「台账还是不是机器可算出来的那一份」变成链上的硬失败，拦四类：
         #   ① 索引清单变了（新增/删除/改名）而台账没重跑 → tracked_total / universe_hash 漂移；
-        #   ② 祖父清单腐烂没清（条目已 bound / 已命中豁免 / 已从索引消失）→ 门禁只给 warning，本步直接红；
-        #   ③ **索引版 grandfathered 相对 HEAD 版有新增**（手工洗白）→ 逐条点名新增路径后 exit 1。
+        #   ② accounted 清单腐烂没清（条目已 owned / 已命中豁免 / 已从索引消失）→ 门禁只给 warning，本步直接红；
+        #   ③ **索引版 accounted 相对 HEAD 版有新增**（手工洗白）→ 逐条点名新增路径后 exit 1；
+        #   ④ accounted 条目缺 accounted_at / basis，或豁免清单有语法问题（缺 reason / 未知行尾字段）→ exit 1。
         # 比较基准 = **git 索引 blob**（`git show :ledger/file-ledger.json`，与 guard 同基准），索引里没有该
         # 台账时才退回工作区文件。改基准的理由（2026-10-05 实测）：比工作区时，「把条目加进**索引版**台账 +
         # git add 而工作区不动」会让本步报绿 —— 旧实现的真实缺口；现在比索引后直接红。判据是**集合包含**
@@ -108,54 +109,64 @@ jobs:
         # 工作区改动影响），写入侧同样如此：输出恒为「基线清单 ∩ 索引版清单 ∩ 当前条件」，手工条目在第一次
         # 重算就被剔除并点名（否则「写盘 → git add」会把洗白固化）。**首次引入**（HEAD 里没有该台账 / 仓库
         # 尚无提交）按一次性初始化处理：基线退回索引→工作区，本步 exit 0 并回显「基线由本次提交建立」；
-        # HEAD 里有该文件却读不出 / 结构非法 → exit 1（fail-closed，写坏基线不能变成洗白路径）。
-        # 它**不是**棘轮的牙齿本身：新增的未归属文件不会被生成器写进 grandfathered（只减不增），
+        # HEAD 里有该文件却读不出 / 结构非法 / **schema_version 不匹配** → exit 1（fail-closed，写坏或只升一半
+        # 版本的基线不能变成洗白路径——版本不匹配直接红是有意的：台账数据 / 门禁 / 生成器 / 豁免清单同一次提交一起改）。
+        # 豁免清单（ledger/exempt.gitignore）是**只读输入**（本脚本不写它），按**索引版**读取（与 guard 同基准）。
+        # 它**不是**棘轮的牙齿本身：新增的无条目文件不会被生成器写进 accounted（只减不增），
         # 所以「跑一次 ledger:gen 就把 unowned 洗白」不成立。
-        # 与 File ledger guard 的分工：本步查「台账还是不是机器可算出来的那一份」（guard 的第 3 项检查对
+        # 与 File ledger guard 的分工：本步查「台账还是不是机器可算出来的那一份」（guard 的 accounted-growth 对
         # 「相对 HEAD 的新增」口径一致），guard 查「四态归属是否成立」。
         run: npm run check:ledger:gen
       - name: File ledger guard (four-state ownership ratchet)
-        # 全仓文件台账门禁（scripts/check-file-ledger.cjs v1.2.0，11 项检查）：把「这个文件有没有人管」
-        # 变成可断言的机器事实。台账数据文件 = ledger/file-ledger.json（豁免模式清单 + 祖父清单 + 元信息）。
+        # 全仓文件台账门禁（scripts/check-file-ledger.cjs v1.3.0 + 共享内核 scripts/file-ledger-core.cjs，13 项检查）：
+        # 把「这个文件有没有人管」变成可断言的机器事实。数据 = ledger/file-ledger.json（accounted 清单 + 元信息）
+        # 与 ledger/exempt.gitignore（独立豁免清单：gitignore 语法 + 每条必填 reason）。
+        # 绿灯依据只有一条：**台账里有条目**（owned / exempt / accounted 三条来路）——「在 HEAD 里 / 已在 git
+        # 索引里」不是绿灯理由（文件旧 ≠ 已记账）；**已跟踪但无条目 → error**（包括刚提交的文件）。
         # 四态归属（计数之和必须等于 `git ls-files` 条数，逐条对账；等式本身是门禁的内部不变量断言，破了即 error）：
-        #   ① bound            被模块 source.path 精确声明，且目标是真实存在的**已跟踪普通文件**（目录不算文件）；
-        #   ② exempt-pattern   命中台账 exempt_patterns 的某条模式（每条必带 reason；缺 reason 是 error）；
-        #   ③ grandfathered    台账 grandfathered 清单里的存量未归属文件——**只减不增**：已 bound / 已豁免 /
-        #                       已从索引消失 / 重复的条目都会报 warning，报告回显「祖父清单还可再减 N 条」；
-        #   ④ unowned          三类之外 → **error**（新增文件必须归属或显式豁免；用新增未归属文件稀释覆盖率
-        #                       正是本项要拦的事，且**不允许**往 grandfathered 里加来绕过）。
-        # 「只减不增」的判据（grandfathered-growth，error）= 与 **HEAD 版台账**比集合包含：
-        #   `git show HEAD:ledger/file-ledger.json` 的 grandfathered ⊇ 本次索引版台账的 grandfathered。
+        #   ① owned        被模块 source.path 精确声明，且目标是真实存在的**已跟踪普通文件**（目录不算文件）；
+        #   ② exempt       命中 ledger/exempt.gitignore 的某条模式（每条必带 reason；缺 reason 是 error）；
+        #   ③ accounted    ledger/file-ledger.json 的 accounted 清单（每条 { path, accounted_at, basis }）——
+        #                   缺 accounted_at / basis → accounted-invalid（error，没有依据的条目不是记账）；清单
+        #                   **只减不增**：已 owned / 已豁免 / 已从索引消失 / 重复的条目报 warning（accounted-removable），
+        #                   相对 HEAD 的任何新增报 error（accounted-growth，逐条点名）；
+        #   ④ unowned      三类之外 → **error**（已跟踪但无条目，必须归属或显式豁免；**不允许**往 accounted 里加）。
+        # 「只减不增」的判据（accounted-growth，error）= 与 **HEAD 版台账**比集合包含：
+        #   `git show HEAD:ledger/file-ledger.json` 的 accounted 路径集合 ⊇ 本次索引版台账的路径集合。
         #   任何新增 → error（逐条列出新增路径，并给合法修法指引）；允许集合缩小。基线必须是 HEAD：旧版
-        #   keep-only 比的是**同一份被改过的台账**，于是「手工把一条已在索引里的路径写进 grandfathered 再
-        #   git add」能蒙过门禁与 --check（实测后门，台账进 HEAD 后已堵）。判据看**集合**不看条数：手工 +1 与
-        #   合法 -1 同时发生时条数不变，照样红（实测）。三态：HEAD 里有台账 → 正常比对；**HEAD 里没有该文件
+        #   keep-only 比的是**同一份被改过的台账**，于是「手工把一条已在索引里的路径写进清单再 git add」能蒙过
+        #   门禁与 --check（实测后门，台账进 HEAD 后已堵）。判据看**集合**不看条数：手工 +1 与合法 -1 同时发生时
+        #   条数不变照样红（实测）。三态：HEAD 里有台账且 schema_version 匹配 → 正常比对；**HEAD 里没有该文件
         #   （首次引入）/ 仓库尚无提交 → 本项跳过、退出码 0**（一次性初始化：基线由本次提交建立）；HEAD 里有
-        #   却读不出 / 不是合法 JSON / 缺 grandfathered 数组 → error（fail-closed）。索引里没有台账但 HEAD 里有
-        #   → ledger-index-drift（error，type=ledger-missing-in-index）。
-        # 绿灯依据只有一条：**台账里有条目**（owned / exempt / accounted 三条来路）——「在 HEAD 里」不是绿灯
-        # 理由（文件旧 ≠ 已记账）；祖父清单**不是欠账**，那 29 条是 2026-10-05 已清点记账的正账，只是不再增长。
-        # planned 与 bound 严格分离（否则覆盖率假绿）：声明存在 ≠ 已覆盖。当前仓库的 1924 条声明全部指向
-        # **不存在的目标路径**（计划态），所以 bound = 0、覆盖率必须报 0.00%；报告把 planned / bound /
+        #   却读不出 / 不是合法 JSON / schema_version 不匹配 / 缺 accounted 数组 → error（fail-closed）。
+        # planned 与 owned 严格分离（否则覆盖率假绿）：声明存在 ≠ 已拥有。当前仓库的 1924 条声明全部指向
+        # **不存在的目标路径**（计划态），所以 owned = 0、覆盖率必须报 0.00%；报告把 planned / owned /
         # existing-file / existing-dir / declared-untracked 分开回显，绝不合并成一个「覆盖率」。
         # 判定基准是 **git 索引**（`git ls-files`）而不是工作区磁盘列举；被忽略文件不在台账宇宙内，理由写在
-        # 台账 meta.known_divergences 里。台账**内容**同样取索引 blob（`git show :ledger/file-ledger.json`）：
-        # 工作区与索引不一致、或台账不在索引里（没 git add）→ ledger-index-drift（error）。
+        # 台账 meta.known_divergences 里。台账**与豁免清单**的内容同样取索引 blob（`git show :<rel>`）：
+        # 工作区与索引不一致、或其中任何一份不在索引里（没 git add）→ ledger-index-drift（error）。
         # --root 非仓库根一律 error（fail-closed，不回退到别的仓库）。
-        # 豁免「过宽」判据（exempt-too-broad，error）：一条 `**` 式的模式会让整个宇宙变成 exempt-pattern 而门禁
-        # 仍然报绿（实测假绿），故 ① 归一化后无字面量字符（`**` / `*` / `**` 后接 `/*`）② 通配占比 > 50%
-        # 一律拒（不可豁免）；③ 单条命中率 > 50% 宇宙需要条目上显式写 "broad_confirmed": true 人工确认。
+        # 豁免「过宽」判据（exempt-too-broad，error）：一条 `**` 式的模式会让整个宇宙变成 exempt 而门禁仍然报绿
+        # （实测假绿），故 ① 归一化后无字面量字符（`**` / `*` / `**` 后接 `/*`）② 通配占比 > 50% 一律拒
+        # （不可豁免）；③ 单条命中率 > 50% 宇宙需要条目上显式写 broad_confirmed=true 人工确认。
         # 豁免语义与标准 glob 的差异：`**` 至少匹配一层，`**` 后接 `/*.md` **不**匹配根级 c.md。
+        # 豁免 × 真 .gitignore 交叉校验（exempt-gitignore-cross-check，error）：`git check-ignore --no-index`
+        # 求「豁免命中 ∩ .gitignore 覆盖」（尊重 `!` 反选）、只靠 `core.ignoreCase` 折叠才命中的路径、以及
+        # 「未被忽略也不在索引里」却被豁免放行的普通文件——本会话真实事故（*review*.md 在 core.ignoreCase=true
+        # 下命中 preview.md）就是第一类与第二类，回归用例见 tests/file-ledger-ratchet-e2e.mjs 第 6 组。
         # 另含：台账元信息与索引不一致（universe_hash / tracked_total 漂移）→ error；台账缺失/不可解析/结构非法
-        # → ledger-missing（error，不再借用 guard-unavailable）；git / yaml 不可用 → guard-unavailable（error）。
-        # 红了先看是不是「仓库里新加了文件但没归属」「台账已过期」「台账改了没 git add」或「台账相对 HEAD 多记了
-        # 条目」，前者只能加归属或加带 reason 的豁免，后三者重跑 `npm run ledger:gen` 后 `git add`
-        # （生成器只减不增，**绝不**新增豁免与祖父条目）。回归用例：`npm test` 里的 tests/file-ledger-ratchet-e2e.mjs
-        # （临时夹具物化、跑完自删；断言干净态 0 / 手工加条目 1 / 合法删除 0 / 首次引入 0）。
-        # 快照（2026-10-05，本增量后）：台账宇宙 1400 个已跟踪文件 = bound 0 + exempt-pattern 1371 + grandfathered 29 + unowned 0；
-        # 豁免模式 19 条（其中 examples/** 命中 89.3%，带 broad_confirmed 人工确认）、祖父清单 29 条、
-        # 归属覆盖率 0.00%（bound 0）。该脚本仍在扩充，**新增检查项或改动豁免模式/元信息口径时必须同步改
-        # 本注释与 CONTRIBUTING.md**（数量、编号、覆盖范围三处）。
+        # → ledger-missing（error）；git / yaml / 模块文件 / `git check-ignore` 输出不可用 → guard-unavailable（error）。
+        # 红了先看是不是「仓库里新加了文件但没条目」「台账已过期」「台账或豁免清单改了没 git add」「台账相对 HEAD
+        # 多记了条目」「accounted 缺依据」或「豁免模式与 .gitignore 打架」，前者只能加归属或加带 reason 的豁免，
+        # 后几者重跑 `npm run ledger:gen` 后 `git add`（生成器只减不增，**绝不**新增豁免与 accounted 条目）。
+        # 回归用例：`npm test` 里的 tests/file-ledger-ratchet-e2e.mjs（62 条断言；临时夹具物化、跑完自删；
+        # 覆盖干净态与幂等 / schema_version 不匹配直接 error / accounted 缺 basis / 无条目新文件 /
+        # `**` 过宽豁免 / 豁免条目缺 reason / 手工洗白与集合差异 / *review*.md 折叠误伤与交集 /
+        # 合法缩小 / 首次引入）。
+        # 快照（2026-10-05，v2 语义校准后）：台账宇宙 1402 个已跟踪文件 = owned 0 + exempt 1373 + accounted 29
+        # + unowned 0；豁免清单 19 条（其中 examples/** 命中 89.2%，带 broad_confirmed 人工确认）、accounted 29 条
+        # （每条带 accounted_at + basis）、归属覆盖率 0.00%（owned 0）、交叉校验三类均为 0。该脚本仍在扩充，
+        # **新增检查项或改动豁免模式/元信息口径时必须同步改本注释与 CONTRIBUTING.md**（数量、编号、覆盖范围三处）。
         run: npm run check:ledger
       - name: Portability guard (no Windows-only path juggling)
         # 教训：tests 里曾用 pathname.replace(/^\//,'') 拼 file URL —— Windows 正常（/F:/…），

@@ -38,7 +38,7 @@
 | 整文件指纹 | `src/engine/store.ts` 的 `fingerprintOf`；`types.ts:149` `Module.fingerprint` | **模块级**：按 path 升序去重后哈希文件字节 → 单个 SHA-256 | 只回答"这个模块的源码变了"，**不回答哪里变了、谁被波及** |
 | L2 证据诊断 | `src/engine/validate.ts:299,306,321,328,334,343,346,351`（8 个 `evidence/*` code） | 路径可用性 / 根无 source / 不是普通文件 / 缺失 / 指纹 pending / 指纹不可算 / 指纹漂移 / 跳过校验 | 全部是"**现在**是否漂移"，**没有引用维度、没有历史维度** |
 | 相对说明符解析 | `scripts/check-references.cjs` 的 `collectSpecifiersWithTypescript`(2184) / `collectSpecifiersWithRegex`(2274) / `resolveRelativeSpecifier`(2336) | **单文件语法树** + 相对路径解析 | 能列边，但**不解析符号**：`import { foo }` 里的 `foo` 到底指哪个声明，它不知道 |
-| 文件级台账 | `scripts/check-file-ledger.cjs`（1,426 行）+ `ledger/file-ledger.json`（147 行 / 7,629 B） | **文件级**归属状态 | 回答"这个文件有没有人管"，与引用关系无关 |
+| 文件级台账 | `scripts/check-file-ledger.cjs`（1997 行）+ 共享内核 `scripts/file-ledger-core.cjs`（462 行）+ `ledger/file-ledger.json`（`schema_version: 2`，168 行 / 10131 B）+ 独立豁免清单 `ledger/exempt.gitignore`（56 行 / 19 条模式） | **文件级**归属状态 | 回答"这个文件有没有人管"，与引用关系无关 |
 | 声明式依赖箭头 | `src/engine/reference.ts` 的 `DEPS_REFERENCE`；`DEP_KINDS`（`src/engine/types.ts`） | 模块/API 级，人工在 `modules/*.md` 写 | 是**设计意图**，不是**代码事实**；两者不能互相替代 |
 
 **一句话**：仓库现在能回答"哪个模块现在漂移了"和"哪个文件没人管"，**完全不能**回答"这个符号谁在用、删了会波及谁"。
@@ -578,7 +578,7 @@
 | `check:docs` | `scripts/check-doc-snippets.cjs`（1,629 行，4 项检查） | 文档代码块能否编译、必填选项、工具数量断言、`execute` 签名描述 | 图**不解析文档代码块**；本文档落在 `docs/` 下会被它扫描（约束见附录 C） |
 | `check:libsync` | `scripts/check-lib-sync.cjs`（1,439 行） | **git 索引里的 `lib/`** 与"索引版 `src/` 全新编译产物"逐字节一致 | 图生成器放 `scripts/` ⇒ 与它零交互（9.5）。若将来把生成器移进 `src/`，则必须同提交重建 `lib/` |
 | `check:examples` | `scripts/check-examples.cjs`（974 行） | 示例可执行 + 运行前后 git 快照**零变化**（含 `--ignored`） | 图生成器**不得**在示例运行期间写工作区；生成器只写 `ledger/`，且 `ledger/**` 已在台账豁免模式内 |
-| `check:ledger` | `scripts/check-file-ledger.cjs`（1,426 行，`CHECK_TITLES` 10 项） | **文件级**台账：每个已跟踪文件落到四态之一 | 图是**符号级**、与文件归属无关；两者共用 `ledger/` 目录但**不共用判定**。第 7 节按用户口径校准台账语义 |
+| `check:ledger` | `scripts/check-file-ledger.cjs`（1997 行，`CHECK_TITLES` 13 项）+ 共享内核 `scripts/file-ledger-core.cjs`（462 行） | **文件级**台账：每个已跟踪文件落到四态之一（`owned` / `exempt` / `accounted` / `unowned`），并与真 `.gitignore` 交叉校验（交集 / 折叠误伤 / 放行本该 `git add` 的普通文件） | 图是**符号级**、与文件归属无关；两者共用 `ledger/` 目录但**不共用判定**。第 7 节的用户口径**已于 2026-10-05 落地** |
 | （建议新增）`check:impact` | `scripts/check-change-impact.cjs` | 6.2 的未处理引用影响 | 只在有改动记录时触发；不重做 6.1 的任何判定 |
 
 **统一接线**：`package.json` 的 `check` 链（当前 `typecheck → build → test → ci-contract-check.cjs → check:refs → check:docs → check:libsync → check:examples → check:ledger`）与 `.github/workflows/ci.yml`（每道门禁一个独立 step）。新增门禁必须同时改这三处（`package.json` / `ci.yml` / `CONTRIBUTING.md` 的检查项清单与快照行）——CI 注释里已有这条约束。
@@ -588,6 +588,8 @@
 ## 7. 台账语义校准（用户口径）
 
 > 本节是**用户口径的照写**，不是可以自由发挥的设计空间。增量 1 的实现（`scripts/check-file-ledger.cjs` + `scripts/generate-file-ledger.cjs` + `ledger/file-ledger.json`）**已接线但语义未经此校准**，必须按本节对齐。
+>
+> **状态（2026-10-05）：本节口径已落地。** `schema_version` 1 → 2——台账数据（`accounted` 每条带 `accounted_at` + `basis`）、门禁（`scripts/check-file-ledger.cjs`，13 项检查）、生成器、独立豁免清单 `ledger/exempt.gitignore`（gitignore 语法 + 每条必填 reason）与共享内核 `scripts/file-ledger-core.cjs` **同一次提交**一起改。实测：`node scripts/check-file-ledger.cjs --json` → `trackedTotal: 1402`、`states: {owned: 0, exempt: 1373, accounted: 29, unowned: 0}`、`statesSum: 1402`、`exempt.total: 19`、交叉校验三类均为 0，**绿灯依据 = 台账里有条目**。落地清单与逐条断言见第 10 节「增量 1」末尾的 v2 小节。
 
 ### 7.1 绿灯依据
 
@@ -634,7 +636,7 @@
 **交叉校验规则（新增，必须实现）**：
 
 1. **交集必须报出**：`{台账 exempt 模式命中的路径}` ∩ `{真实 .gitignore 命中的路径}` ≠ ∅ 时 → 报出并**要求人工确认**。理由：如果一个路径同时被 `.gitignore` 覆盖，那它根本不在台账宇宙里，为它写豁免是把忽略规则当成了豁免依据。
-2. **每条 `exempt` 必须能追到来源**：条目要么是"仓库级基础设施"（`docs/**`、`lib/**`、`scripts/**`、`tests/**`、`.github/**` 等，依据是"它不属于任何架构模块"），要么显式标注它引用了哪条 `.gitignore` 规则；后者必须带 `gitignore_backed: true` + reason，否则 error。
+2. **每条 `exempt` 必须能追到来源**：条目要么是"仓库级基础设施"（`docs/**`、`lib/**`、`scripts/**`、`tests/**`、`.github/**` 等，依据是"它不属于任何架构模块"），要么显式标注它引用了哪条 `.gitignore` 规则；后者必须带 `gitignore_backed: true` + reason，否则 error。 —— **落地调整（2026-10-05）**：本轮**未**引入 `gitignore_backed` 字段（那会新增一个可填字段来"声明"来源，而"引用了某条 .gitignore 规则"这件事恰恰正是规则 1 要报出的不一致）。改为两条更硬的判据：① 每条豁免**必须**在 `reason` 里写明依据（仓库级基础设施 / 编译产物 / 历史文体等），缺理由即 `exempt-invalid`（error）；② "拿 .gitignore 规则当豁免依据"的路径由规则 1 的**交集检查**直接报出（`exempt-gitignore-cross-check`，error），不依赖人工声明。
 3. **大小写敏感性必须显式**：模式匹配的大小写语义必须与 `core.ignoreCase` 一致（本仓为 `true`）；不得依赖平台默认，也不得用 `localeCompare` 之类的区域相关比较。
 4. **反选规则必须被尊重**：`.gitignore` 里的 `!` 反选（如 `!**/modules/**/*.md`）必须参与求交，否则会把"已被反选、其实在索引里"的文件误报成"被忽略"。
 5. **豁免过期检测保留**：未被任何已跟踪文件命中的 `exempt` 条目 → warning（现行 `exempt-unused` 已有此语义）。理由：未被命中的豁免等于**永久空白特权**，它会无声地放过未来任何匹配该模式的路径。
@@ -642,15 +644,16 @@
 ### 7.6 与增量 1 现状的差异清单（必须逐条对齐）
 
 | 用户口径（新） | 增量 1 现状（实测） | 需要的改动 |
+| 用户口径（新） | 增量 1 现状（改造前，实测） | 落地结果（2026-10-05，已实现） |
 | --- | --- | --- |
-| `owned` | `bound` | **改名**；判据不变（被 `source.path` 精确声明 + 目标真实存在 + 在索引里） |
-| `exempt`（独立文件 + gitignore 语法 + 每条必填理由） | `exempt_patterns`（**内嵌在 `ledger/file-ledger.json`**，147 行里的 18-115 行；只支持 `**`/`*`/`?`，见 `exempt-invalid` / `exempt-too-broad` 检查项的说明） | ① **抽成独立豁免文件**；② 模式语法升为 **gitignore 语法**；③ 保留"每条必填 reason"（现状已强制） |
-| `accounted`（已清点记账 + 日期 + 依据） | `grandfathered`（**纯路径字符串数组**，29 条，无日期无依据，语义被写成"存量未归属，只减不增"） | **语义重写 + 结构升级**：每条从 `"path"` 变成 `{path, accounted_at, basis}`；措辞从"欠账/棘轮"改为"已清点记账" |
-| 绿灯依据 = 台账里有条目 | "已跟踪 − bound − exempt-pattern − grandfathered ≠ ∅ → error" | 判定结果不变，**措辞与报告**必须改写为"台账里有条目即绿；无条目即 error（含刚提交的）" |
-| 豁免 × `.gitignore` 交叉校验 | **不存在**任何与 `.gitignore` 的交叉校验（`check-file-ledger.cjs` 的 10 个检查项里没有） | **新增检查项**（7.5 的 5 条规则） |
-| 无条目即 error（含刚提交的） | `unowned-file` 已是 error（已具备） | 无需改判定；需删掉 `meta` 里"宇宙 = 已跟踪文件"这类会被读成"在 HEAD 里即绿"的措辞 |
+| `owned` | `bound` | **已改名**：门禁代码 / `--json` / 人类报告 / `CONTRIBUTING.md` / CI 注释全用 `owned`；判据不变（`source.path` 精确声明 + 目标真实存在 + 在索引里） |
+| `exempt`（独立文件 + gitignore 语法 + 每条必填理由） | `exempt_patterns` **内嵌在 `ledger/file-ledger.json`**（改造前 18-115 行） | **已抽成 `ledger/exempt.gitignore`**：gitignore 语法（`**`（至少一层）/`*`/`?`）、`!` 反选（顺序敏感，最后命中的条目说了算）、`#` 整行注释；行尾字段约定 `<pattern> ## reason=<非空理由> [ ## since=YYYY-MM-DD ] [ ## broad_confirmed=true\|false ]`，缺理由 / 未知字段 → `exempt-invalid`（error）；未命中的条目 → `exempt-unused`（warning）；「过宽」三条判据保留 |
+| `accounted`（已清点记账 + 日期 + 依据） | `grandfathered`（**纯路径字符串数组**，29 条，无日期无依据） | **已升级结构**：每条 `{path, accounted_at, basis}`；字段缺失 / 空依据 → `accounted-invalid`（error）；措辞统一为"**已清点记账的正账**（只减不增，相对 HEAD 比对）" |
+| 绿灯依据 = 台账里有条目 | "已跟踪 − bound − exempt-pattern − grandfathered ≠ ∅ → error" | **判定不变、措辞已改**：报告首段即"绿灯依据 = 台账里有条目"，`--help` / `CONTRIBUTING.md` 写明「在 HEAD 里」不是绿灯理由、"`accounted` 不是欠账，是已记账的正账"；台账 `meta.universe` / `meta.byte_basis` 同步改写 |
+| 豁免 × `.gitignore` 交叉校验 | **不存在**任何交叉校验 | **已新增 `exempt-gitignore-cross-check`（error）**：`git check-ignore --no-index -v -z --stdin` 求交集（尊重 `!` 反选）+ 仅靠 `core.ignoreCase` 折叠才命中的路径 + 「未被忽略也不在索引里」却被豁免放行的普通文件；三类都是 error |
+| 无条目即 error（含刚提交的） | `unowned-file` 已是 error | 判定不变；报错措辞已改（"它已经在 HEAD / 已在 git 索引里"不是条目） |
 
-**兼容性代价（必须写明）**：`ledger/file-ledger.json` 是 `schema_version: 1` 的结构，且门禁对不匹配的版本**直接 error**（`LEDGER_SCHEMA_VERSION = 1`，"结构变了必须显式升级，不做静默兼容"）。`accounted` 的结构升级 ⇒ `schema_version` 升到 `2`，并且**必须同一次提交里**改生成器、门禁、豁免文件与 `ledger/file-ledger.json` 本身。这是**用户口径落地的最小完整改动面**。
+**兼容性代价（实测值）**：`schema_version` 1 → 2，门禁与生成器对**不匹配的版本直接 error**（`LEDGER_SCHEMA_VERSION = 2`，"结构变了必须显式升级，不做静默兼容"）。因此台账数据、门禁、生成器、独立豁免清单、共享内核**必须同一次提交**一起改——改造期间 HEAD 仍是 v1，门禁与 `check:ledger:gen` 都按预期 **exit 1** 报「HEAD 版台账不可用作棘轮基线：schema_version=1，本门禁要求 2」，这正是"版本不匹配直接 error 是有意的"的实测证据。
 
 ---
 
@@ -796,7 +799,7 @@
 | --- | --- | --- | --- | --- |
 | **1** | **新增了第 5 道门禁**：`scripts/check-file-ledger.cjs`（`npm run check:ledger`）+ 配套写入侧 `scripts/generate-file-ledger.cjs`（`npm run ledger:gen` / `check:ledger:gen`），并把 `ledger/file-ledger.json` 作为唯一新增数据文件 | 旧稿的分工假设是"门禁数量不变、复用既有解析器"；该假设在本文档里已被改写为**既定事实**——§6.3 标题即"与五道既有门禁的分工"（`docs/DESIGN-code-graph.zh-CN.md:547`），第 11 节 P1 也记着"增量 1 已经把门禁从 4 道推到 5 道"（`:843`、`:545`） | 用户的增量 1 目标就是"让『这个文件有没有人管』变成可断言的机器事实"。既有四道门禁没有一道管**文件归属**：`check-references` 管引用完整性、`check-doc-snippets` 管文档示例、`check-lib-sync` 管产物逐字节、`check-examples` 管示例可执行。不新增门禁就只能"描述"归属而不能"断言"它 | 门禁计数 4 → 5；`package.json`（`check:ledger`/`check:ledger:gen`/`ledger:gen`/`check` 链）、`.github/workflows/ci.yml`（两个独立 step）、`CONTRIBUTING.md:22-34` 三处同步；后续增量新增门禁时**必须**按这套三处同步走（§6.3 末段 `:558` 已写成约束） |
 | **2** | **改动了 `src/` 行为**：索引里 `src/*.ts` 的改动面是 18 个文件（`git status --porcelain -- src` 有 18 条，含新增的 `src/execution.ts`） | 本文档两处写"不改 `src/` 行为、不需要重建 `lib/`"（文档头边界声明 `docs/DESIGN-code-graph.zh-CN.md:7`、§9.5 `:706`）。但这两句的**主语是"图与改动记录的生成器"（第 2–6 节的新方向）**，不是增量 1：增量 1 的门禁脚本本身只读、确实不碰 `src/`；改动 `src/` 的是同一工作区里**另一批已暂存的引擎改造**（`git diff --cached --stat -- src`：17 个文件的差异统计为 524 插入 / 157 删除，另加新增的 `src/execution.ts`，合计 18 条） | 该批 `src/` 改动早于本轮、已 `git add` 进索引在本轮之前，不是增量 1 的产物；本轮（R4 + 文档对齐）**一个字都没有改 `src/`**（改动前后 `git status --porcelain -- src` 输出逐字节相同） | ⚠ **必须区分两个命题，否则会把"增量 2 不改 `src/`"误推成"增量 1 没改 `src/`"**：① 增量 2 的落点选择（生成器放 `scripts/`）⇒ 与 `check:libsync` 零交互；② 增量 1 落地时的 `src/` 改动面 = 索引里那 18 个文件。二者都真，但说的不是同一件事。本轮只**记录**这张改动面，不动它（触碰它会牵连 `lib/` 重建与 `check:libsync`，超出本轮范围） |
-| **3** | **跨文档引用的行号与命中范围更正**：脚本内枚举（`CHECK_TITLES`）、`--help`、人类报告、`--json` 的 `summary.checks` 曾各自演进，文档里引用的"行号 / 命中范围"随之失效，必须按当前实测值写 | 旧稿与本轮的早期引用给过已失效的锚点，例如"台账豁免模式的 2-115 行"；按当前文件**实测**，`exempt_patterns` 数组的范围是 **18-115 行**（`:18` 是数组起点、`:116` 是 `grandfathered` 起点）；旧的 `tracked-mismatch / unlisted` 检查名现已不存在，被拆成 `tracked-mismatch`（`:120`）、`ledger-index-drift`（`:119`）、`ledger-missing`（`:118`）三项 | 用户要求"结论必须带文件:行号"，行号写了就得能复核；引用一个已改名或已删的入口，等于制造第二份真相互相矛盾 | 只动**引用与措辞**，不动任何判定与数字。本轮复核并沿用的实测值：生成器 **403 行**、门禁 **1,426 行**、台账 **147 行 / 7,629 B**、`CONTRIBUTING.md` **82 行**（均与本文档现有引用一致） |
+| **3** | **跨文档引用的行号与命中范围更正**：脚本内枚举（`CHECK_TITLES`）、`--help`、人类报告、`--json` 的 `summary.checks` 曾各自演进，文档里引用的"行号 / 命中范围"随之失效，必须按当前实测值写 | 旧稿与本轮的早期引用给过已失效的锚点，例如"台账豁免模式的 2-115 行"；按**当时**文件实测，`exempt_patterns` 数组的范围是 **18-115 行**（`:18` 是数组起点、`:116` 是 `grandfathered` 起点）——**该内嵌数组已在 v2 迁到 `ledger/exempt.gitignore`，这两个行号只是改造前的历史锚点，现状不再适用**；旧的 `tracked-mismatch / unlisted` 检查名现已不存在，被拆成 `tracked-mismatch`（`:120`）、`ledger-index-drift`（`:119`）、`ledger-missing`（`:118`）三项 | 用户要求"结论必须带文件:行号"，行号写了就得能复核；引用一个已改名或已删的入口，等于制造第二份真相互相矛盾 | 只动**引用与措辞**，不动任何判定与数字。本轮（v2 语义校准）复核后的实测值：门禁 `scripts/check-file-ledger.cjs` **1997 行**、生成器 `scripts/generate-file-ledger.cjs` **732 行**、共享内核 `scripts/file-ledger-core.cjs` **462 行**、台账 `ledger/file-ledger.json` **168 行 / 10131 B**、豁免清单 `ledger/exempt.gitignore` **56 行**、`CONTRIBUTING.md` **88 行**（上一轮的 1,426 行 / 403 行 / 147 行 / 82 行已被本次语义校准取代，本节按新值更正） |
 
 **本轮顺带修正的 3 处已失效交叉引用**（与上表第 3 条同源，只改引用、不改判定）：
 
@@ -804,34 +807,34 @@
 2. §7.6 表（`docs/DESIGN-code-graph.zh-CN.md:621`）里的 "147 行里的 18-115 行" 已标注为**实测**范围，并写明两条边界分别落在 `:18` 与 `:116`。
 3. §6.3 的 "**五道**既有门禁"（`docs/DESIGN-code-graph.zh-CN.md:547`）与第 11 节 P1（`:873`）的计数口径统一：门禁总数 = **5**（含增量 1 新增的 `check:ledger`），`check:ledger:gen` 是同一道门禁的写入侧校验，不另计一道。
 
-**本轮明确不做、但必须记账的一处**：§7.6 表格（`docs/DESIGN-code-graph.zh-CN.md:621-625`）里承诺的"台账语义校准"（`owned` / `exempt` / `accounted`、豁免抽成独立文件、`accounted` 补日期与依据、`.gitignore` 交叉校验、`schema_version` 1 → 2）**本轮仍未落地**——它与本轮被点名修的缺陷清单（R1/R2/R3/R4/R6/R7/R8）是两批工作，且改动面和代价见 7.6，不适合塞进一轮"最小改动"的修复里。这里如实记为待办，不写成"已完成"。
+**§7.6 承诺的「台账语义校准」已落地（2026-10-05，后续增量）**：`owned` / `exempt` / `accounted`、豁免抽成独立文件（`ledger/exempt.gitignore`）、`accounted` 补清点日期与依据、`.gitignore` 交叉校验、`schema_version` 1 → 2 **全部实现**，与上表的缺陷修复（R1/R2/R3/R4/R6/R7/R8）分两批进行：上表是本轮（R 系列）的偏差记录，语义校准是随后一轮的落地，两者都在本节的"增量 1"里留了实测锚点。改造前的状态**不再代表现状**，现状以第 7 节的状态行与下面的 v2 小节为准。
 
 ### 增量 1：全仓文件台账（**已落地**）
 
-- **范围**：给仓库里每个已跟踪文件一个**台账条目**，让"这个文件有没有人管"变成可断言的机器事实。
-- **产物（实测存在）**：数据 `ledger/file-ledger.json`（147 行 / 7,629 B，`schema_version: 1`）；生成器 `scripts/generate-file-ledger.cjs`（403 行）；门禁 `scripts/check-file-ledger.cjs`（1,426 行，`CHECK_TITLES` 10 项）。
-- **接线（实测存在）**：`package.json` 的 `check:ledger`(79) / `check:ledger:gen`(80) / `ledger:gen`(81)，并已追加进 `check` 链(82)；`.github/workflows/ci.yml` 的 "File ledger guard (four-state ownership ratchet)" 与 "File ledger generator check" 两个独立 step；`CONTRIBUTING.md:22-32` 的检查项清单与快照行。
-- **状态：已落地。** 机器可算部分已能生成并与 git 索引对账（`meta.universe_hash` = `sha256(sort(git ls-files).join('\n') + '\n')`、`meta.tracked_total` = 1,399、`tracked-mismatch` 检查）。独立验证方在 2026-10-05 给过一次 **fail**（实测假绿 + 文档与实现逐字矛盾），本轮按清单修完：
-  - **R1 门禁可被一条豁免模式静默关掉**（实测 `pattern` 为两个星号时四态全落 `exempt-pattern`、`unowned 0`、exit 0）→ 已加「过宽模式」三条判据（归一化后无字面量 / 通配占比超阈值 / 单条命中率超阈值），被判过宽的模式**不参与匹配**；check id `exempt-too-broad`（`scripts/check-file-ledger.cjs:1156`），阈值与判据同时写进该脚本 `--help` 与 `CONTRIBUTING.md:27`。
-  - **R2 棘轮可被官方修复命令洗白**（实测「新增文件 → 红 → 跑一次生成器 → 绿」）→ 生成器改为**只保留原清单里、且仍满足条件的条目**，本次新增的未归属路径绝不进 `grandfathered`（`scripts/generate-file-ledger.cjs:12-22`）；`--check` 已接进 `check` 链（`package.json:80`、`:82`）与 CI（`.github/workflows/ci.yml` 的 "File ledger generator check" step）。
-  - **R3 索引里的台账陈旧** → 已 `git add`，并由 R7 建立长期防线：门禁判定基准改为 **git 索引 blob**（`scripts/check-file-ledger.cjs` 的 `ledger-index-drift`，`:577`），「索引与工作区不一致」这一类问题现在由门禁自己在链上抓住。
-  - **R6 死 check id `ledger-missing`**（四处登记、零 emission）→ 台账缺失 / 不可解析 / 结构非法三处改报 `ledger-missing`（`scripts/check-file-ledger.cjs:557`），`guard-unavailable`（`:534`）只留给 git / yaml / 模块文件不可用。
-  - **R8 小项** → 四态计数之和有了真正的 invariant 断言（不再只是报告字符串）；`meta.known_divergences` 纳入必填结构校验；`--json` 顶层 `root` 回显请求路径；本门禁的 `**` 语义（至少匹配一层）写进 `--help` 与 `CONTRIBUTING.md:36`。
-  - **R4 快照数字**：CI 注释与 `ledger/file-ledger.json` 的 `meta.known_divergences` 里的计数改为**本轮实测值**（取数与命令见下），不再出现"快照写一套、机器事实另一套"。
+- **产物（实测存在）**：数据 `ledger/file-ledger.json`（168 行 / 10131 B，`schema_version: 2`）+ 独立豁免清单 `ledger/exempt.gitignore`（56 行 / 19 条模式）；生成器 `scripts/generate-file-ledger.cjs`（732 行）；门禁 `scripts/check-file-ledger.cjs`（1997 行，`CHECK_TITLES` **13 项**）；两者共用的内核 `scripts/file-ledger-core.cjs`（462 行，唯一事实来源）。
+- **接线（实测存在）**：`package.json` 的 `check:ledger` / `check:ledger:gen` / `ledger:gen`，并已追加进 `check` 链；`.github/workflows/ci.yml` 的 "File ledger guard (four-state ownership ratchet)" 与 "File ledger generator check" 两个独立 step；`CONTRIBUTING.md` 的检查项清单（13 项）与快照行。
+- **状态：已落地（v2 语义校准完成）。** 机器可算部分能生成并与 git 索引对账（`meta.universe_hash` = `sha256(sort(git ls-files).join('\n') + '\n')`、`meta.tracked_total` = 1402）。独立验证方在 2026-10-05 给过一次 **fail**（实测假绿 + 文档与实现逐字矛盾），随后两轮按清单修完：
+  - **R1 门禁可被一条豁免模式静默关掉** → 「过宽模式」三条判据保留（判据 1/2 不可人工确认；判据 3 可用 `broad_confirmed=true` 人工确认），被判过宽的模式**不参与匹配**。负例：`tests/file-ledger-ratchet-e2e.mjs` 第 4 组断言豁免清单里一条 `**` → **exit 1**、报 `exempt-too-broad-no-literal`。
+  - **R2 棘轮可被官方修复命令洗白** → 生成器只保留基线清单里、且仍满足条件的条目。负例：第 3 组断言「新增无条目文件 + 跑一次生成器」不会把它写进 `accounted`，门禁仍 **exit 1**（`unowned-file`）。
+  - **R3/R7 索引里的台账陈旧** → 判定基准 = **git 索引 blob**（台账与豁免清单**两份**都是），工作区不一致 → `ledger-index-drift`（error）。
+  - **R6 死 check id `ledger-missing`** → 台账缺失 / 不可解析 / 结构非法三处改报 `ledger-missing`；`guard-unavailable` 只留给 git / yaml / 模块文件 / `git check-ignore` 输出不可用。
+  - **R8 小项** → 四态计数之和有真正的 invariant 断言；`meta.known_divergences` 与 `meta.exempt_file` 纳入必填结构校验；`--json` 顶层 `root` 回显请求路径；`**` 语义写进 `--help` 与 `CONTRIBUTING.md`。
+  - **手工洗白后门（第三轮）** → 棘轮基线改为 **HEAD 版台账**。负例：第 5 组断言「手工把一条在索引里的路径写进 `accounted` + `git add`」→ 门禁 **exit 1**（`accounted-added-vs-head`）、生成器 `--check` **exit 1**；第 5b 组断言「条数不变但集合不相等」仍 **exit 1**。
+  - **v2 语义校准（本轮）** → 四态 `owned` / `exempt` / `accounted` / `unowned`；豁免抽成独立文件（gitignore 语法 + 每条必填 reason + 未命中告警 + 过宽判据）；`accounted` 每条带 `accounted_at` + `basis`（缺依据 → `accounted-invalid`/error）；与真 `.gitignore` 交叉校验（交集 / 折叠误伤 / 放行本该 `git add` 的普通文件，都是 error）；`--help` 与 `CONTRIBUTING.md` 写明「绿灯依据 = 台账里有条目」「在 HEAD 里不是绿灯理由」「`accounted` 不是欠账，是已记账的正账」。
 - **本轮实测口径（2026-10-05，命令照抄可复现）**：
-  - `node scripts/check-file-ledger.cjs --json` → `trackedTotal: 1399`、`states: {bound: 0, exempt-pattern: 1370, grandfathered: 29, unowned: 0}`、`statesSum: 1399`、`exemptPatterns.total: 19`、`exemptPatterns.hitFiles: 1370`、`grandfathered.removable: 0`、`moduleCoverage.percent: 0`。`.github/workflows/ci.yml` 的 File ledger guard 注释快照行与之一致 = **1,399 / 0 / 1,370 / 29 / 0，豁免模式 19 条**。
-  - `(git ls-files --others --ignored --exclude-standard | Measure-Object).Count` → **4336**（其中 `node_modules/` 4315，其余为 `examples/` 下的运行产物与仓库根的本地 `npm pack` 产物）；台账 `meta.known_divergences` 的自述数（`ledger/file-ledger.json:15`）已改为 4336。
-- **仍遗留（未修，明确记账）**：
-  - **第 7 节的语义校准未做**：`bound` / `exempt-pattern` / `grandfathered` / `unowned` 四态与第 7 节的 `owned` / `exempt` / `accounted` 三来路尚未对齐；豁免模式仍**内嵌在台账 JSON**（`ledger/file-ledger.json:18-115`）而未抽成独立文件、语法仍是 `**`/`*`/`?` 而非 gitignore 语法；`grandfathered` 仍是**纯路径字符串数组（29 条，无清点日期、无依据）**；**与 `.gitignore` 的交叉校验仍不存在**。改动面与代价见 7.6（`schema_version` 1 → 2）。
-  - **棘轮仍有一个已记账的缺口**：门禁与生成器能拦住"生成器自动新增祖父条目"，但拦不住"人手工把路径写进 `grandfathered` 并一起 `git add`"——`grandfathered` 集合尚未与 `HEAD` 版台账做基线比对（本仓台账尚未进入 `HEAD`）。缺口写在 `CONTRIBUTING.md:59`。
-  - **第 7.5 节承诺的 `.gitignore` × 豁免清单交叉校验**：本轮未实现（属语义校准范围，不是本轮缺陷清单项），仍是 7.6 表里的待办。
-- **可被脚本或测试断言的验收标准**：
-  1. 台账数据文件存在且可解析；`git ls-files` 的每一条都能在台账里查到条目（三来路之一），查不到即 error；
-  2. 新增一个已跟踪文件后，门禁**退出码非 0**（反向测试），且报告点名该文件；
-  3. 给该文件补上条目后，门禁退出 0（正向测试）；
-  4. **豁免独立文件**存在，每条带非空理由；缺理由 → 退出码非 0；
-  5. **`.gitignore` 交叉校验**：构造一条会在 `.gitignore` 与豁免清单上同时命中的模式，门禁必须报出（对应 7.5 规则 1）；
-  6. `accounted` 每条都有非空 `accounted_at` 与非空 `basis`；缺失 → 退出码非 0。
+  - `node scripts/check-file-ledger.cjs --json` → `trackedTotal: 1402`、`states: {owned: 0, exempt: 1373, accounted: 29, unowned: 0}`、`statesSum: 1402`、`exempt.total: 19`、`exempt.gitignoreCrossCheck: {交集 0 / 折叠误伤 0 / 放行本该 git add 的普通文件 0}`、`moduleCoverage.percent: 0`。`.github/workflows/ci.yml` 的 File ledger guard 注释快照行与之一致（1,402 / 0 / 1,373 / 29 / 0，豁免 19 条）。
+  - `git ls-files --others --ignored --exclude-standard` → **4336**（其中 `node_modules/` 4315）；台账 `meta.known_divergences` 的自述数与之一致。
+- **仍遗留（明确记账）**：
+  - **P4（`accounted` 条目依据失效时报 error 还是 warning）**：本轮实现取**折中**，与第 11 节 P4 的推荐值 (a) 不同，如实记账——**字段缺失 / 空依据 → error**（`accounted-invalid`），**条目腐烂**（已 `owned` / 已豁免 / 已从索引消失 / 重复）**仍为 warning**（`accounted-removable`，报告回显"还可再减 N 条"）。理由：腐烂是清单卫生问题，条目本身的依据仍在；把它做成 error 会让"把一条已记账路径改成豁免"这类合法动作直接变红。
+  - 行级内容溯源**整套作废**（§8.1），不再实现。
+- **可被脚本或测试断言的验收标准（本轮全部有断言）**：
+  1. 台账数据文件存在且可解析；`git ls-files` 的每一条都能在台账里查到条目（三来路之一），查不到即 error —— `tests/file-ledger-ratchet-e2e.mjs` 第 3 组（exit 1 + 逐条点名）；
+  2. 新增一个已跟踪文件后，门禁**退出码非 0** 且点名该文件 —— 同上（第 3 组）；
+  3. 给该文件补上条目后门禁退出 0 —— 第 7 组（合法缩小 → exit 0）；
+  4. **豁免独立文件**存在、每条带非空理由；缺理由 → 退出码非 0 —— 第 1 组（干净态解析）+ 门禁 `exempt-invalid`（error）；
+  5. **`.gitignore` 交叉校验**：构造一条会在 `.gitignore` 与豁免清单上同时命中的模式，门禁必须报出 —— 第 6 组（`*review*.md` 复现真实事故：交集 + 折叠误伤，exit 1）；
+  6. `accounted` 每条都有非空 `accounted_at` 与非空 `basis`；缺失 → 退出码非 0 —— 第 2 组（缺 `basis` → exit 1，生成器同样 fail-closed）。
+  - 全链证据：`npm test` 里的 `file-ledger-ratchet-e2e.mjs` 共 **62 条断言全通过**（含两条验收项：「`schema_version` 不匹配 → 门禁与生成器都 exit 1」与「豁免条目缺 `reason` → exit 1」）；`npm run check:ledger` 与 `npm run check:ledger:gen` 在本轮提交后 **exit 0**、`npm run ledger:gen` 再次运行报告"未改动文件"（幂等）。
 - **不做**：不做符号级图、不做改动记录、不碰工具契约、不跑全仓重算。
 
 ### 增量 2：文件级引用图 + 改动记录骨架
@@ -899,9 +902,9 @@
 | **P1** | 6.2 的"未处理引用影响"检查放哪？ | (a) 塞进 `scripts/check-references.cjs` 的新 check id；(b) 新增 `scripts/check-change-impact.cjs`（第 6 道门禁）；(c) 只做查询、不做门禁 | **(b)**：它依赖图快照与改动记录（有状态），而 `check-references` 的核心不变量是"无状态、只信任 git 索引、可对任意 `--root` fail-closed"。代价是门禁数量再 +1（增量 1 已把 4 道推到 5 道）。若用户不接受第 6 道门禁，退 **(a)** 但需接受该脚本边界被破坏 |
 | **P2** | 图数据放哪？ | (a) 仓库根 `ledger/graph/`（与增量 1 同域）；(b) 仓库根新目录 `graph/`；(c) 放进某个 `normify-*` 数据目录 | **(a)**：与 `ledger/file-ledger.json` 同域，`ledger/**` 已在台账豁免模式内（`git ls-files` 宇宙一致），且 9.1 已证明它不在任何 `graphDigest` 域内 |
 | **P3** | 类成员（`property` / `method`）算不算节点？ | (a) 算（完整）；(b) 只记边不记节点 | **(b) 起步**：类成员可由所属 `class` 节点派生，先记边即可回答"谁引用了这个成员"；节点化留到有实际问句时再加 |
-| **P4** | `accounted` 条目依据失效时报 error 还是 warning？ | (a) error；(b) warning（沿用现状 `grandfathered-removable` 的级别） | **(a)**：既然否掉了"祖父清单=欠账"，`accounted` 就是**正账**；正账的依据失效属于事实错误，不是提示。代价是历史条目需要一次性补齐依据（7.6） |
+| **P4** | `accounted` 条目依据失效时报 error 还是 warning？ | (a) error；(b) warning（沿用现状 `grandfathered-removable` 的级别） | **本轮实测取折中（与推荐值 (a) 不同，如实记账）**：字段缺失 / 空依据（缺 `accounted_at` / `basis`）→ **error**（`accounted-invalid`）；**条目腐烂**（已 `owned` / 已豁免 / 已从索引消失 / 重复）→ **warning**（`accounted-removable`）。理由：腐烂是清单卫生问题，条目本身的依据仍在；升为 error 会让"把一条已记账路径改成豁免"这类合法动作直接变红 |
 | **P5** | 图与 `ChangeModules` 的对账不一致时报什么？ | (a) error；(b) warning；(c) 只报告不断言 | **(b)**：两者是"人工声明"与"机器事实"，不一致既可能是漏声明也可能是解析缺口（3.4 的退化）；先按 warning 观察，等增量 3 的解析精度实测出来再决定是否升 error |
-| **P6** | `exempt` 的独立豁免文件叫什么、放哪？ | (a) `ledger/exempt.txt`（gitignore 语法，纯文本）；(b) `ledger/exempt.json`（每条 `{pattern, reason, since}`）；(c) `.normifyignore`（仓库根，独立于 `ledger/`） | **(b)**：gitignore 语法可以写在 JSON 字符串里，同时保住"每条必填理由"这个已被现有门禁强制的结构（纯文本表达不了 per-entry reason）。若用户更看重"像 `.gitignore` 一样好写"，选 (a) 并把 reason 移到注释行 |
+| **P6** | `exempt` 的独立豁免文件叫什么、放哪？ | (a) `ledger/exempt.txt`（gitignore 语法，纯文本）；(b) `ledger/exempt.json`（每条 `{pattern, reason, since}`）；(c) `.normifyignore`（仓库根，独立于 `ledger/`） | **(a) 的变体：`ledger/exempt.gitignore`**（纯文本、gitignore 语法、与台账同域）+ **行尾字段约定** `<pattern> ## reason=<非空理由> [ ## since=YYYY-MM-DD ] [ ## broad_confirmed=true\|false ]`——纯文本保住"像 .gitignore 一样好写"，行尾 `key=value` 保住"每条必填理由"可机器校验（缺理由 → `exempt-invalid`/error）。用户口径优先于本表原推荐值 (b)：JSON 字符串里装 gitignore 语法既不好写，也表达不了 `#` 注释 |
 | **P7** | 观测点的"每次 CAS 写入"具体挂在哪？ | (a) 引擎写 `graphDigest` 域时顺带触发；(b) 由宿主（PromptManager）在 CAS 成功回调里触发；(c) 只做提交级、CAS 级留到宿主明确后再做 | **待用户拍板**：本仓库无法单方面决定 CAS 写入的触发点（`graphDigest` 的域在目标工程数据目录，见 9.1）。在拍板前，增量 2 只实现**提交级**观测点并保留 `kind: "cas-write"` 字段 |
 | **P8** | 图不分片 vs 分片？分片键用什么？ | (a) 单文件；(b) 按文件路径 UTF-8 字节序连续段分片；(c) 按目录分片 | **(b)**：单文件会让"改一个文件"变成"重写整个图"（写放大最差）；按目录分片会让 `src/engine/` 这种高频目录成为热点。分片粒度与体积的最终取舍按 9.7 的实测定 |
 | **P9** | `src/` 之外的覆盖面？ | (a) 全部已跟踪文本文件；(b) 先 `src/` + `scripts/` + `tests/`，`examples/` 留到规模实测后 | **(b)**：`examples/` 占工作区行数的绝大部分（工作区约 99.3 万行 vs `src/` 9,782 行），而它几乎不改；先在有改动密度的地方拿到精度，再按 9.7 的实测决定是否外扩 |
