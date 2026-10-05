@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, mkdir, readFile, writeFile, rm, symlink } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, readdir, writeFile, rm, symlink } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { createHash } from 'node:crypto'
 import { spawn } from 'node:child_process'
-import { createNormifyTools, createPromptManagerTools } from '../lib/index.js'
+import { createNormifyTools, createPromptManagerTools, defineNormifyTool } from '../lib/index.js'
+
+import { withProjectLock, WorkspaceError } from '../lib/workspace.js'
 
 const work = await mkdtemp(join(tmpdir(), 'normify-graph-e2e-'))
 const repoRoot = join(work, 'repo')
@@ -37,7 +39,7 @@ const graph = {
   ], layouts: [{ schema_version: 1, id: 'demo', updated_at: '2026-10-03T00:00:00Z', mode: 'grid', order: ['demo.types', 'demo.kernel', 'demo.ui'] }],
 }
 try {
-  const catalog = await createPromptManagerTools({ repoRoot, dataDir, access: 'write' })
+  const catalog = await createPromptManagerTools({ repoRoot, dataDir, access: 'write', execution: 'standalone' })
   const tools = new Map(catalog.map(tool => [tool.name, tool]))
   const call = (name, args = {}) => tools.get(name).execute(args)
   assert.equal(catalog.length, 43)
@@ -56,7 +58,7 @@ try {
   assert.match(fields.reference, /types 条目:.*JSON Schema 2020-12/)
   assert.match(fields.reference, /input\?\{module,name\} output\?\{module,name\}/)
   assert.match(fields.reference, /ipc\.path 为 Electron IPC channel/)
-  const readCatalog = await createPromptManagerTools({ repoRoot, dataDir, access: 'read' })
+  const readCatalog = await createPromptManagerTools({ repoRoot, dataDir, access: 'read', execution: 'standalone' })
   const readHelp = readCatalog.find(tool => tool.name === 'normify_help')
   for (const topic of ['tools', 'all']) {
     const result = await readHelp.execute({ topic })
@@ -83,6 +85,113 @@ try {
   const written = await call('normify_graph_put', { graph, expect_digest: empty.digest })
   assert.equal(written.ok, true, JSON.stringify(written.errors))
   assert.notEqual(written.digest, empty.digest)
+  // Host execution is a separate argument and never a model-selected permission fallback.
+  await assert.rejects(createPromptManagerTools({ repoRoot, dataDir, access: 'write' }), /execution/)
+  const host = new Map((await createPromptManagerTools({ repoRoot, dataDir, access: 'write', execution: 'host' })).map(tool => [tool.name, tool]))
+  const signal = new AbortController().signal
+  const execution = { signal, check: () => {}, readGit: async () => { throw Error('graph APIs must not invoke Git') } }
+  const hostGet = host.get('normify_graph_get'), hostPut = host.get('normify_graph_put')
+  assert.equal((await hostGet.execute()).errors[0].code, 'workspace/execution-required')
+  assert.equal((await hostGet.execute({}, { signal, check: () => {} })).errors[0].code, 'workspace/execution-required')
+  for (const key of ['signal', 'check', 'readGit']) {
+    const forged = await hostGet.execute({ [key]: 'model-controlled' }, execution)
+    assert.equal(forged.ok, false)
+    assert.equal(forged.errors[0].code, 'args/invalid')
+    assert.equal(Object.hasOwn(hostGet.parameters.properties, key), false)
+  }
+  for (const key of ['repoRoot', 'dataDir', 'dir', 'project'])
+    assert.equal((await hostGet.execute({ [key]: repoRoot }, execution)).errors[0].code, 'workspace/binding-fixed')
+  const bytes = async root => {
+    const entries = []
+    const visit = async (dir, prefix = '') => {
+      for (const entry of (await readdir(dir, { withFileTypes: true })).sort((a,b) => a.name.localeCompare(b.name))) {
+        const path = prefix + entry.name
+        if (entry.isDirectory()) await visit(join(dir, entry.name), path + '/')
+        else entries.push([path, (await readFile(join(dir, entry.name))).toString('base64')])
+      }
+    }
+    await visit(root)
+    return entries
+  }
+  const originalBytes = await bytes(dataDir)
+  const candidate = structuredClone(graph)
+  candidate.modules[2].description = names('must not publish')
+  let publicationChecks = 0
+  const rejectedPublication = await hostPut.execute({ graph: candidate, expect_digest: written.digest }, {
+    ...execution, check: phase => { if (phase === 'publish') { publicationChecks++; throw new WorkspaceError('host/revoked', 'fixed Worker attempt revoked') } },
+  })
+  assert.equal(rejectedPublication.ok, false)
+  assert.equal(rejectedPublication.errors[0].code, 'host/revoked')
+  assert.equal(publicationChecks, 1, 'the actual graph publication boundary is reached after candidate compile/render')
+  assert.deepEqual(await bytes(dataDir), originalBytes, 'pre-publication revoke must preserve every old source and artifact byte')
+  // Revoke between roots: the existing publication rollback restores all bytes.
+  let rootsChecked = 0
+  const failedMidPublish = await hostPut.execute({ graph: candidate, expect_digest: written.digest }, {
+    ...execution, check: phase => { if (phase === 'publish' && ++rootsChecked === 3) throw new WorkspaceError('host/revoked', 'revoked during multi-root publication') },
+  })
+  assert.equal(failedMidPublish.ok, false)
+  assert.equal(rootsChecked, 3)
+  assert.deepEqual(await bytes(dataDir), originalBytes, 'partial multi-root publication still uses the original rollback')
+  // 异步门禁等于没有门禁：会返回 thenable 的 check 必须显式失败关闭，绝不把拒绝丢成未处理 Promise。
+  const unhandled = []
+  const onUnhandled = reason => { unhandled.push(reason) }
+  process.on('unhandledRejection', onUnhandled)
+  let asyncDenied, thenableDenied, lateThenableDenied
+  try {
+    asyncDenied = await hostPut.execute({ graph: candidate, expect_digest: written.digest }, { ...execution, check: async () => { throw new Error('host denied') } })
+    thenableDenied = await hostPut.execute({ graph: candidate, expect_digest: written.digest }, { ...execution, check: () => Promise.reject(new Error('host denied')) })
+    lateThenableDenied = await hostPut.execute({ graph: candidate, expect_digest: written.digest }, { ...execution, check: phase => phase === 'publish' ? Promise.reject(new Error('host denied')) : undefined })
+    await new Promise(resolve => setTimeout(resolve, 50))
+  } finally { process.off('unhandledRejection', onUnhandled) }
+  for (const [label, denied] of [['async check', asyncDenied], ['返回 Promise 的 check', thenableDenied], ['发布阶段才返回 Promise 的 check', lateThenableDenied]]) {
+    assert.equal(denied.ok, false, label + '必须以 ok:false 失败关闭')
+    assert.equal(denied.errors[0].code, 'workspace/execution-invalid', label + '必须给出稳定的执行门禁诊断码')
+    assert.match(denied.errors[0].message, /授权门禁 check/, label + '必须给出中文说明')
+  }
+  assert.equal(unhandled.length, 0, '宿主的拒绝不得变成未处理 Promise')
+  assert.deepEqual(await bytes(dataDir), originalBytes, '失效的执行门禁不得发布任何字节')
+  // Real file-lock wait cancellation/revocation cannot write or release the owner's lock.
+  let unlock, locked
+  const ready = new Promise(resolve => { locked = resolve })
+  const hold = withProjectLock(dataDir, async () => { locked(); await new Promise(resolve => { unlock = resolve }) })
+  await ready
+  try {
+    const controller = new AbortController()
+    const pending = hostPut.execute({ graph: candidate, expect_digest: written.digest }, { ...execution, signal: controller.signal })
+    await new Promise(resolve => setTimeout(resolve, 80))
+    controller.abort(new Error('cancelled while awaiting project lock'))
+    assert.equal((await pending).ok, false)
+    let authorized = true
+    const revokedWait = hostPut.execute({ graph: candidate, expect_digest: written.digest }, {
+      ...execution, check: () => { if (!authorized) throw new WorkspaceError('host/revoked', 'revoked while waiting for project lock') },
+    })
+    await new Promise(resolve => setTimeout(resolve, 80))
+    authorized = false
+    assert.equal((await revokedWait).errors[0].code, 'host/revoked')
+    assert.deepEqual(await bytes(dataDir), originalBytes)
+    assert.equal((await readFile(join(work, '.normify-demo.lock', 'owner.json'), 'utf8')).includes(String(process.pid)), true)
+  } finally { unlock(); await hold }
+  assert.equal((await hostGet.execute({}, execution)).ok, true, 'both cancelled waits leave the original lock reusable')
+  // Cancellation of a queued call cannot release the preceding call's queue barrier.
+  let releaseQueue, enteredQueue
+  const entered = new Promise(resolve => { enteredQueue = resolve })
+  let runs = 0
+  const queued = defineNormifyTool({ rootDir: dataDir, requireBilingual: true }, {
+    name: 'test_queue', description: 'owned fixture', behavior: 'read', parameters: { type: 'object', additionalProperties: false },
+  }, async () => { runs++; if (runs === 1) { enteredQueue(); await new Promise(resolve => { releaseQueue = resolve }) }; return { ok: true } })
+  const firstQueued = queued.execute({}, execution)
+  await entered
+  const queueController = new AbortController()
+  const cancelledQueue = queued.execute({}, { ...execution, signal: queueController.signal })
+  queueController.abort(new Error('cancel queued call'))
+  assert.equal((await cancelledQueue).ok, false)
+  const following = queued.execute({}, execution)
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(runs, 1, 'a cancelled middle call must not allow the next call to overtake its predecessor')
+  releaseQueue()
+  assert.equal((await firstQueued).ok, true)
+  assert.equal((await following).ok, true)
+  assert.equal(runs, 2)
   const tree = JSON.parse(await readFile(join(dataDir, 'tree.json'), 'utf8'))
   assert.equal(tree.project.name, 'normify-demo', '候选临时目录不能泄漏到产品名称')
   assert.equal(tree.modules['demo.types'].types[0].name, 'Task')
@@ -151,7 +260,7 @@ try {
   const current = await call('normify_graph_get')
   const newer = structuredClone(graph)
   newer.modules[2].description = names('版本二')
-  const second = new Map((await createPromptManagerTools({ repoRoot, dataDir, access: 'write' })).map(tool => [tool.name, tool]))
+  const second = new Map((await createPromptManagerTools({ repoRoot, dataDir, access: 'write', execution: 'standalone' })).map(tool => [tool.name, tool]))
   const races = await Promise.all([
     call('normify_graph_put', { graph, expect_digest: current.digest }),
     second.get('normify_graph_put').execute({ graph: newer, expect_digest: current.digest }),
@@ -188,7 +297,7 @@ try {
   const entry = new URL('../lib/index.js', import.meta.url).href
   await writeFile(runner, `import {createPromptManagerTools} from ${JSON.stringify(entry)}; const tools=await createPromptManagerTools(JSON.parse(process.argv[2])); const result=await tools.find(t=>t.name==='normify_graph_put').execute(JSON.parse(process.argv[3])); process.stdout.write(JSON.stringify(result));`)
   const processCall = candidate => new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [runner, JSON.stringify({ repoRoot, dataDir, access: 'write' }), JSON.stringify({ graph: candidate, expect_digest: latest })], { windowsHide: true })
+    const child = spawn(process.execPath, [runner, JSON.stringify({ repoRoot, dataDir, access: 'write', execution: 'standalone' }), JSON.stringify({ graph: candidate, expect_digest: latest })], { windowsHide: true })
     let stdout = '', stderr = ''
     child.stdout.on('data', chunk => { stdout += chunk })
     child.stderr.on('data', chunk => { stderr += chunk })

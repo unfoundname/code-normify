@@ -1,3 +1,4 @@
+import { type NormifyToolExecution } from '../execution.js';
 import type { Diagnostic, Module, ModuleFile, SourceRef } from './types.js';
 export declare const PROJECT_PREFIX = "normify-";
 export declare class NormifyError extends Error {
@@ -44,18 +45,33 @@ export declare function promoteModule(projectDir: string, id: string): Promise<{
     file: string;
     warnings: Diagnostic[];
 }>;
-export declare function gitHead(repoRoot: string): Promise<{
+export declare function gitHead(repoRoot: string, execution?: NormifyToolExecution): Promise<{
     sha: string | null;
     error: string | null;
 }>;
 /** git 变更文件清单（增量再生成的输入）。 */
-export declare function gitChangedFiles(repoRoot: string, diffSpec: string): Promise<{
+export declare function gitChangedFiles(repoRoot: string, diffSpec: string, execution?: NormifyToolExecution): Promise<{
     files: string[] | null;
     error: string | null;
 }>;
-/** source 文件集合的 SHA-256 指纹（全量哈希，v1 不做采样）。 */
+/** source 路径的落地形态：普通文件（含指向普通文件的符号链接）/ 路径不存在 / 存在但不是普通文件。 */
+export type SourcePathKind = 'file' | 'missing' | 'not-a-file';
+/**
+ * 判定 source 路径属于哪种落地形态。三态必须分开：existsSync 对目录同样返回 true，
+ * 用它判存在会把「目录」算成已落地的源码文件（历史上目录于是被报成「文件缺失」）。
+ *  · lstat ENOENT           → missing（路径确实不存在）；
+ *  · lstat 其它 io 错误     → not-a-file（EACCES/EPERM/ELOOP 等都不是「不存在」）；
+ *  · 普通文件               → file；
+ *  · 符号链接               → 按目标判定：指向普通文件仍算 file，断链或指向目录/设备算 not-a-file。
+ */
+export declare function classifySourcePath(repoRoot: string, path: string): Promise<{
+    kind: SourcePathKind;
+    abs: string;
+}>;
+/** source 文件集合的 SHA-256 指纹（全量哈希，v1 不做采样）。missing 与 notFiles 都让 hash 为 null。 */
 export declare function fingerprintOf(repoRoot: string, sources: SourceRef[]): Promise<{
     hash: string | null;
     missing: string[];
+    notFiles: string[];
 }>;
 export declare function sha256Text(text: string): string;

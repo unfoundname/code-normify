@@ -9,7 +9,7 @@ const repoRoot = join(trial, 'project')
 const results = {}
 for (const view of ['architecture', 'data']) {
   const dataDir = join(trial, 'normify-' + view)
-  const tools = new Map((await createPromptManagerTools({ repoRoot, dataDir, access: 'read' })).map(tool => [tool.name, tool]))
+  const tools = new Map((await createPromptManagerTools({ repoRoot, dataDir, access: 'read', execution: 'standalone' })).map(tool => [tool.name, tool]))
   const invoke = async (name, args = {}) => {
     const result = await tools.get(name).execute(args)
     assert.equal(result.ok, true, `${name}: ${JSON.stringify(result.errors)}`)

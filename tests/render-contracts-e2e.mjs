@@ -57,7 +57,7 @@ const graph = {
 
 let browser
 try {
-  const tools = new Map((await createPromptManagerTools({ repoRoot, dataDir, access: 'write' })).map(tool => [tool.name, tool]))
+  const tools = new Map((await createPromptManagerTools({ repoRoot, dataDir, access: 'write', execution: 'standalone' })).map(tool => [tool.name, tool]))
   const before = await tools.get('normify_graph_get').execute({})
   const saved = await tools.get('normify_graph_put').execute({ graph, expect_digest: before.digest })
   assert.equal(saved.ok, true, JSON.stringify(saved.errors))

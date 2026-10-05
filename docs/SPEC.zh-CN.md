@@ -1,11 +1,11 @@
-# Normify 引擎规范与 PromptManager 0.7 接入契约
+# Normify 引擎规范与 PromptManager 0.8 接入契约
 
-> 当前实现：`@promptmanager/code-normify` **0.7.0**，Node.js 20+，43 个工具，ESM library 与受管 stdio MCP。图数据与分支计划的 `schema_version` 仍为 1，不能将软件版本与数据版本混用。
-> 本文保留原有模块树、源格式、校验、编译与查看器规范，并补充当前宿主契约。下述 0.7 契约及运行时 `normify_schema_get` 优先于旧引擎文档中的历史描述。原项目由 yan-mc 创建，曾以 DSH 插件交付；从 0.6 起使用 PromptManager library 与受管 MCP，不再使用 Cordis 注入、plugin apply 或 DSH 安装流程。
+> 当前实现：`@promptmanager/code-normify` **0.8.0**，Node.js 20+，43 个工具，ESM library 与受管 stdio MCP。图数据与分支计划的 `schema_version` 仍为 1，不能将软件版本与数据版本混用。
+> 本文保留原有模块树、源格式、校验、编译与查看器规范，并补充当前宿主契约。下述 0.8 契约及运行时 `normify_schema_get` 优先于旧引擎文档中的历史描述。原项目由 yan-mc 创建，曾以 DSH 插件交付；从 0.6 起使用 PromptManager library 与受管 MCP，不再使用 Cordis 注入、plugin apply 或 DSH 安装流程。
 
-## 0.7 当前契约
+## 0.8 当前契约
 
-宿主固定设计读取使用 `readBranchPlanningSnapshot`：MUST 显式提供绑定仓库的只读 Git 端口及预期 graph/plan digest，MUST 在项目锁内复核读取前后的两个版本。取消等待 MUST 保留其他进程的锁所有权。返回 `BranchPlanningSnapshot` 仅表示静态设计快照；Worker 身份、资源、执行与交付证据仍由宿主持有。
+宿主发现当前设计版本使用 `readBranchPlanningHead(options, signal, check)`：返回当前 `plan`（尚无计划时为 `null`）与 `plan_digest`、`graph_digest`，不要求 Git 端口，也不执行接纳；等待项目锁 MUST 可取消。宿主固定设计读取使用 `readBranchPlanningSnapshot(options, { plan_digest, graph_digest }, readGit, signal, check)`：MUST 显式提供绑定仓库的只读 Git 端口及预期 graph/plan digest，MUST 在项目锁内复核读取前后的两个版本。取消等待 MUST 保留其他进程的锁所有权。返回 `BranchPlanningHead` / `BranchPlanningSnapshot` 仅表示静态设计快照；Worker 身份、资源、执行与交付证据仍由宿主持有。
 
 ### 设计数据与命名类型
 
@@ -136,13 +136,23 @@ unit 包含验收、needs 和 external_dependencies；模块正文、接口和�
 
 ### 宿主与 MCP
 
-- `createPromptManagerTools({ repoRoot, dataDir, access, requireBilingual? })` 位于 package 的 `./service` ESM 导出。library 的两个目录 MUST 为宿主提供的绝对路径，`access` MUST 显式为 `read` 或 `write`。
-- CLI MUST 显式接收 `--repo-root <path> --data-dir <path> --access <read|write>`。相对路径统一按 `process.cwd()`（宿主启动 cwd）解析为绝对路径，再交给服务；不缺省路径或权限。
-- 一个服务实例只绑定一个源码仓库与结构数据目录。模型 MUST NOT 覆盖 `project`、`dir`、`repoRoot` 或项目枚举的 `root`。结构目录 MUST 名为 `normify-<slug>`；读取源码、渲染输出和符号链接均受工作区约束。
+- `createPromptManagerTools({ repoRoot, dataDir, access, execution, requireBilingual? })` 位于 package 的 `./service` ESM 导出。library 的两个目录 MUST 为宿主提供的绝对路径，`access` MUST 显式为 `read` 或 `write`，`execution` MUST 显式配置为 `host` 或 `standalone`；缺失或取值非法 MUST 以 `workspace/config` 拒绝，不得留默认值。
+- CLI MUST 显式接收 `--repo-root <path> --data-dir <path> --access <read|write>`。相对路径统一按 `process.cwd()`（宿主启动 cwd）解析为绝对路径，再交给服务；不缺省路径或权限。stdio 服务 MUST 固定以 `execution: 'standalone'` 构造（使用库内置只读 Git 端口），MUST NOT 经命令行接收 `signal`/`check`/`readGit` 等宿主能力；`host` 模式只能由宿主在进程内以 library 直接使用。
+- 一个服务实例只绑定一个源码仓库与结构数据目录。`project`、`dir`、`repoRoot`、`dataDir` 与项目枚举的 `root` MUST 从模型可见的参数 Schema 中移除；模型参数出现这些键 MUST 以 `workspace/binding-fixed` 拒绝。`signal`、`check`、`readGit` MUST NOT 出现在工具 JSON Schema 或模型参数中。结构目录 MUST 名为 `normify-<slug>`；读取源码、渲染输出和符号链接均受工作区约束。
 - `read` 只暴露 read 工具；`write` 暴露 43 个工具。PromptManager 的 `mcpBindings: [{ serverId, tools: [...] }]` MUST 精确授权工具，不能因登记服务器获得整台服务器的能力。
 - PromptManager 的 `command: "node"` 解析到安装工具链；静态 `args` 在执行组工作区使用。推荐 `--repo-root . --data-dir normify-architecture`，以跟随各组 worktree。主仓库绝对路径不可代表其他执行组。
-- stdout MUST 仅传 stdio MCP 协议；日志到 stderr。业务失败映射 `isError` 并保留 structuredContent；异常映射 MCP 错误。取消只在进入内核前阻止执行，不能据此声称已开始操作未落盘。
+- stdout MUST 仅传 stdio MCP 协议；日志到 stderr。业务失败映射 `isError` 并保留 structuredContent；异常映射 MCP 错误。MCP 协议取消 MUST 在进入内核前阻止执行；宿主执行信号另按「宿主执行契约（execution）」贯穿队列、项目锁等待与 Git。任何取消都不能据此声称已开始的操作未落盘。
 - Electron 主进程消费统一 service；React 经现有 IPC 边界取得只读图数据，MUST NOT 直接导入 Node 文件系统或在渲染进程读写仓库。本仓库未注册 PromptManager IPC channel。
+
+### 宿主执行契约（execution）
+
+- 每个受管工具 MUST 暴露 `execute(args, execution)`：`args` 为模型 JSON，`execution` 只由宿主在进程内传入，MUST NOT 出现在工具 JSON Schema 或模型参数中。
+- `host` 模式：每次调用 MUST 提供 `{ signal, check, readGit }`；缺失任一能力 MUST 以 `workspace/execution-required` 拒绝，MUST NOT 退化为库内置 Git。`signal` MUST 为 `AbortSignal`；`check(phase)` 的 `phase` 为 `'access'` 或 `'publish'`。
+- `check(phase)` 两阶段：`access` MUST 在取项目锁、读文件与读 Git 前后核对固定的 Worker/尝试/需求身份；`publish` MUST 在写边界提交前再次核对，宿主据此核对草稿 CAS。一次 `access` 通过 MUST NOT 被当作 `publish` 仍然有效的依据。
+- `readGit` MUST 为绑定仓库的固定只读 Git 端口：库只以绑定的 `repoRoot` 调用它，传入其他根 MUST 以 `workspace/binding-fixed` 拒绝；`host` 模式下库 MUST NOT 自行 spawn Git。
+- 取消 MUST 贯穿串行队列、项目锁等待与 Git；每个关键 await 之后 MUST 用同一 `execution` 重新核对身份，撤权 MUST NOT 被降级成坏 OID 或"Git 缺失"之类的普通诊断。
+- `standalone` 模式 MAY 使用库内置只读 Git 端口（`git --no-replace-objects` 加固定超时），仅用于 CLI 与独立示例；它 MUST NOT 声称拥有宿主身份、草稿 CAS 或真实执行组授权。
+- `readBranchPlanningHead` / `readBranchPlanningSnapshot` 同受本节约束：前者 MUST NOT 读取 Git，后者 MUST 使用宿主提供的 `readGit`；两者都 MUST 在项目锁内复核版本，等待锁 MUST 可取消且 MUST 保留其他进程的锁所有权。
 
 ### 编译来源与渲染校验
 
@@ -604,7 +614,7 @@ deps:
 
 ### 6.2 需求先行设计与已有代码分析
 
-需求先行设计采用本文 0.7 契约与 `normify-gen` 当前技能：Schema/完整图读取 → 计划模块、类型与输入输出接口 → 候选校验 → 图 CAS 提交 → 分支计划建议与补全 → 计划校验与 CAS 保存 → 固定组交接包/宿主组计划 → PromptManager 派工与实际验收 → 激活与变更关闭。下面保留已有代码的分析策略，目录和源码仓库均以受管绑定为准。
+需求先行设计采用本文 0.8 契约与 `normify-gen` 当前技能：Schema/完整图读取 → 计划模块、类型与输入输出接口 → 候选校验 → 图 CAS 提交 → 分支计划建议与补全 → 计划校验与 CAS 保存 → 固定组交接包/宿主组计划 → PromptManager 派工与实际验收 → 激活与变更关闭。下面保留已有代码的分析策略，目录和源码仓库均以受管绑定为准。
 
 1. **确认范围**：当前服务绑定的源码仓库、`revision` 与结构数据目录；多个仓库分别使用明确绑定的服务，多树本身不扩大文件访问范围；
 2. **顶层骨架**：每仓库产出一棵树（根 = 项目名 slug，一级 3–8 个模块）；
@@ -629,9 +639,9 @@ deps:
 
 **约束**：只修改受影响内容；保留无关模块；增量后全项目校验仍 0 error。
 
-### 6.4 引擎工具与 0.7 受管扩展
+### 6.4 引擎工具与 0.8 受管扩展
 
-下表列出原有引擎工具；受管目录与源码根由宿主绑定，不作为模型参数。0.6 增加 `normify_schema_get`、`normify_graph_get`、`normify_graph_validate`、`normify_graph_put` 和 `normify_work_packet`；0.7 再增加 7 个分支计划工具，总数 43。`normify_schema_get` 同时返回 `branch_plan` Schema。完整参数以运行时 Schema 为准。
+下表列出原有引擎工具；受管目录与源码根由宿主绑定，不作为模型参数，执行能力（`execution`）同样只由宿主提供（见「宿主执行契约（execution）」）。0.6 增加 `normify_schema_get`、`normify_graph_get`、`normify_graph_validate`、`normify_graph_put` 和 `normify_work_packet`；0.7 再增加 7 个分支计划工具，总数 43；0.8 不增减工具，但 `createPromptManagerTools` 的 `execution` 成为必填项、`closeChange` 的 refresh 阶段与分支计划删除补上宿主执行端口和发布前 CAS 复核，`readBranchPlanningHead` 作为库入口公开。
 
 | 工具 | 作用 |
 |---|---|
@@ -666,7 +676,14 @@ deps:
 | `normify_branch_plan_put({plan,expect_digest,dry_run?})` | 校验后 CAS 保存完整分支计划 |
 | `normify_branch_plan_delete({expect_digest,dry_run?})` | CAS 删除分支计划 |
 | `normify_branch_packet({unit_id})` | 读取固定图/计划/基线的交付单元交接包 |
-| `normify_branch_plan_export({lead_ref})` | 导出匹配 PromptManager WorkerPlan 的静态 lead 组计划 |
+| `normify_project_init(root?)` | 初始化结构数据目录并安装默认架构规则（幂等）；可选一步建"计划态根模块" |
+| `normify_help({topic?})` | 规范速查：fields / deps / renders / flow / tools / policy / errors / all / `tool:<工具名>`（单工具完整参数树） |
+| `normify_schema_get()` | 返回 JSON 架构图、模块与数据类型的统一 Schema（含工具完整参数 Schema） |
+| `normify_graph_get()` | 读当前完整 JSON 架构图与固定 digest（写前 CAS 基准） |
+| `normify_graph_validate({graph})` | 静态校验候选 JSON 图（模块树/类型/接口/依赖/规则），不修改当前图 |
+| `normify_graph_put({graph, expect_digest})` | 以完整 JSON 图替换当前架构（候选先校验和编译；未包含的模块会被删除） |
+| `normify_work_packet({ids})` | 生成 Worker 实现包（契约/正文/共享类型/目标文件/验收/架构 digest；文件重叠时拒绝独立分工） |
+| `normify_branch_plan_export({lead_ref})` | 将已保存且重新校验的分支计划投影为 PromptManager WorkerPlan |
 
 工具白名单：只允许读写指定 `normify-*` 目录与只读指定仓库；其余路径一律拒绝。
 
@@ -755,7 +772,9 @@ code-normify/
 ├── src/
 │   ├── index.ts              # ESM 导出
 │   ├── tools.ts              # 31 个宿主无关引擎工具及统一 Schema/结果
-│   ├── service.ts            # 固定项目、权限、事务；增加 5 个图工具与 7 个分支计划工具
+│   ├── service.ts            # 固定项目、权限、执行能力与事务；增加 5 个图工具与 7 个分支计划工具
+│   ├── execution.ts          # 宿主执行能力（signal/check/readGit 与两阶段 check）及库内置只读 Git 端口
+│   ├── planning.ts           # 固定设计读取（readBranchPlanningHead / readBranchPlanningSnapshot）
 │   ├── workspace.ts          # 真实路径边界与跨进程项目锁
 │   ├── mcp.ts                # 显式 CLI 参数及 stdio 生命周期
 │   ├── adapters/mcp.ts       # MCP 协议转换
@@ -774,7 +793,7 @@ npm run check
 npm pack
 ```
 
-在目标项目安装构建包。PromptManager 的受管配置使用 `command = "node"`，`args` 为 `node_modules/@promptmanager/code-normify/lib/mcp.js` 和三个显式 CLI 参数；在执行组启动 cwd 下解析相对路径。完整配置及精确 `mcpBindings` 见 README。library 使用 `@promptmanager/code-normify/service`，不使用历史 DSH plugin apply。
+在目标项目安装构建包。PromptManager 的受管配置使用 `command = "node"`，`args` 为 `node_modules/@promptmanager/code-normify/lib/mcp.js` 和三个显式 CLI 参数；在执行组启动 cwd 下解析相对路径。完整配置及精确 `mcpBindings` 见 README。library 使用 `@promptmanager/code-normify/service` 并 MUST 显式声明 `execution`（宿主进程内为 `host`，见「宿主执行契约（execution）」），不使用历史 DSH plugin apply。
 
 ### 8.3 测试策略
 
@@ -795,6 +814,7 @@ npm pack
 | **M5 规模化与发布** | 3000+ 模块压测、npm 打包 | 作为性能目标验证，不代表当前已完成该规模验收 |
 | **0.6 受管契约** | 类型 Schema、接口输入输出、完整图 CAS、实现包、library 与 stdio MCP | 引擎回归、事务回滚、工作区越界、相对 cwd、只读权限、真实 SDK 生命周期通过 |
 | **0.7 分支交付计划** | 统一 BranchPlan、范围与需求覆盖、文件/together 分组、固定基线、独立验收、依赖策略、计划 CAS、组交接包与静态 WorkerPlan 导出 | 契约和静态诊断通过；真实验收执行及 PromptManager 应用内接线分别提供证据 |
+| **0.8 宿主执行契约** | `execution` 必填（host/standalone）、`{ signal, check, readGit }` 宿主执行端口、同步 `check` 门禁、`readBranchPlanningHead` 与发布前 CAS 复核 | 宿主撤权/取消贯穿队列、项目锁与 Git 的回归通过；`npm run check:refs` 与 `npm run check:docs` 并入 `npm run check` 与 CI |
 | **后续候选** | 当前层 PNG/SVG 导出、正文渲染、宿主预览集成、fingerprint 采样 | 按实际需求启动 |
 
 ---

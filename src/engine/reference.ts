@@ -61,11 +61,11 @@ const FLOW_REFERENCE = [
 ].join('\n');
 
 const ERRORS_REFERENCE = [
-    '常见诊断码与修法（节选，完整表见 skills/normify-gen/SKILL.md）：',
+    '常见诊断码与修法（节选）：每条诊断都会带 subject（出错路径）与 supportedFixes（具体修法），以运行时诊断为准；',
     '  structure/uid-format             uid 必须是 8 位小写 hex（不要用 slug 派生）',
     '  structure/id-format              id 为小写点分路径，段名 ^[a-z][a-z0-9-]*$，深度不限',
     '  structure/parent-mismatch        parent 必须等于 id 去掉最后一段；根模块 parent=null',
-    '  structure/label-too-long         name/description/label 的 zh ≤ 30 / en ≤ 30（description ≤ 500）',
+    '  structure/name-too-long         超长截断名：name 的 zh/en ≤ 60、description 的 zh/en ≤ 500、deps.label 的 zh/en ≤ 30',
     '  structure/fingerprint-invalid    fingerprint 用 normify_fingerprint 重算；planned 或空 source 才能填 pending',
     '  api/non-leaf                     只有叶子能声明 apis；容器/根要把 API 下放到叶子（晋升时会自动摘除并 warning）',
     '  api/leaf-missing                 叶子必须写 apis（可为空数组，会记 warning）',
@@ -76,6 +76,7 @@ const ERRORS_REFERENCE = [
     '  layout/order-child               order 只能列直接子模块 id（move 之后由工具自动重写）',
     '  layout/id-mismatch               渲染数据的 id 必须等于对应模块 id',
     '  evidence/source-missing          source 指向的文件在仓库里不存在（路径相对 repoRoot）',
+    '  evidence/source-not-a-file       source 路径存在但不是普通文件（目录/设备文件），不能当源码文件：改指具体文件',
     '  evidence/fingerprint-drift       结构数据过期：改完代码跑 normify_module_refresh 或 normify_change_close',
 ].join('\n');
 

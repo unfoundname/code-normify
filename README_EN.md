@@ -2,7 +2,7 @@
 
 English · [简体中文](./README.md)
 
-`@promptmanager/code-normify` 0.7.0 is a local architecture and branch planning tool for PromptManager. Design module trees, named data types and API inputs/outputs before implementation; validate and render the design, then organize development groups around independently verifiable delivery units and produce fixed contracts for implementation Workers. It provides **43 tools**, a Node.js ESM library and a managed stdio MCP server. Requires **Node.js 20+**.
+`@promptmanager/code-normify` 0.8.0 is a local architecture and branch planning tool for PromptManager. Design module trees, named data types and API inputs/outputs before implementation; validate and render the design, then organize development groups around independently verifiable delivery units and produce fixed contracts for implementation Workers. It provides **43 tools**, a Node.js ESM library and a managed stdio MCP server. Requires **Node.js 20+**.
 
 Normify owns architecture data, diagnostics, compilation, rendering and static branch plans. PromptManager owns real group identity, role permissions, execution group branches and workspaces, managed process leases, Worker scheduling, review, integration and task state. This repository provides integration examples; it does not modify PromptManager or register new host IPC channels.
 
@@ -87,15 +87,15 @@ await call('normify_graph_validate', { graph: candidate })
 await call('normify_graph_put', { graph: candidate, expect_digest: current.digest })
 ```
 
-`call` denotes the established tool invocation interface. The digest covers module, layout, policy and change source data. A stale digest returns `graph/conflict`; reread and reconcile actual changes before resubmitting. The candidate is validated and compiled before replacing the current graph. Managed services coordinate in-process and cross-process access with a project lock.
+`call` denotes the established tool invocation interface. The digest covers module, layout, policy and change source data. A stale digest returns `graph/conflict`; reread and reconcile actual changes before resubmitting. The candidate is validated and compiled first, and only then replaces the current graph; failure returns structured diagnostics. Managed services coordinate in-process and cross-process access with a project lock.
 
 Managed CRUD writes use a snapshot, execution, project validation and commit/rollback boundary. Invalid dependency or type changes return `rolled_back: true` instead of leaving an inconsistent graph. Editing tools with `dry_run` execute in an isolated candidate directory, run L2 validation and remove the candidate; preview success requires more than a valid patch shape.
 
-`graph_put` builds and renders automatically. After ordinary CRUD changes, call `normify_build` before `normify_render`. Compilation records the architecture source digest in `tree.project.source_digest` and `receipt.source_digest`. Rendering checks the current digest and tree SHA-256; changed source data returns `render/stale-tree`, while a mismatched receipt or tree is rejected. The receipt's `artifacts` records tree, outline and api-index only, without a self-referential receipt hash.
+`graph_put` builds and renders automatically. After ordinary CRUD changes, explicitly call `normify_build` and then `normify_render`. Compilation records the architecture source digest in `tree.json`'s `project.source_digest` and `receipt.json`'s `source_digest`. Rendering checks the current digest and tree SHA-256; changed source data returns `render/stale-tree`, while a mismatched receipt or tree is rejected. The receipt's `artifacts` records tree, outline and api-index only, without a self-referential receipt hash.
 
 ### Work packets
 
-`normify_work_packet({ ids: ["app.worker"] })` returns a fixed `digest`, selected modules and Markdown bodies, external dependencies and shared types, `write_paths`, conflicts and acceptance requirements. Overlap with an unselected leaf's target files prevents independent assignment. Canonical source locations are compared, including junction aliases and Windows case differences.
+`normify_work_packet({ ids: ["app.worker"] })` returns a fixed `digest`, selected modules and Markdown bodies, external dependencies and shared types, `write_paths`, file conflicts and acceptance requirements. Overlap with an unselected leaf's target files prevents independent assignment. Canonical source locations are compared, including junction aliases and Windows case differences.
 
 `write_paths` is a work allocation contract; actual source write permissions come from PromptManager configuration. A packet does not grant permissions, create Workers, update task state or replace authorization, scheduling, verification and merge flows. Built-in coordinator role limits still apply; grant architecture tools to an authorized design or Worker instance that may use MCP.
 
@@ -105,11 +105,11 @@ A delivery unit must be implementable and verifiable against a fixed Git baselin
 
 Suggestion, editing, validation and persistence use the same `BranchPlan` JSON shape. `normify_schema_get` exposes its `branch_plan` schema, and `branch-plan.json` stores the plan. Top-level fields are `schema_version: 1`, `id`, bilingual `title`, `graph_digest`, `base_commit`, `scope`, `requirement_ids`, `together` and `units`:
 
-- `scope` explicitly selects modules and expands selected containers to their non-deprecated leaves. `units[].modules` must list leaf IDs explicitly. Every scoped leaf belongs to exactly one unit.
+- `scope` explicitly selects modules and expands selected containers to their non-deprecated leaves. `units[].modules` must list leaf IDs explicitly. Every scoped leaf belongs to exactly one unit and all of them are covered.
 - `together` records modules that must change together. Modules sharing a canonical source file must also share a unit, including separate line ranges, junction aliases and Windows case differences. File overlap with an out-of-scope module requires a scope or file-boundary change.
 - `graph_digest` freezes the architecture. `base_commit` must be a readable full Git commit OID in the bound repository. The plan's CAS `digest` is the SHA-256 of the raw `branch-plan.json` bytes, separate from the graph digest. With no saved file, `get` returns `plan: null` and the empty-byte digest.
 - `requirement_ids` records formal requirements. Each needs at least one responsible unit; several units may share a requirement. Every unit needs a nonempty requirement list, and its verification scenarios must cover every requirement it owns.
-- `verification.commands` declares `{ id, argv: string[], cwd }`, with `cwd` relative to the bound repository. `cases` declares `{ id, description, requirement_ids, command_ids }`. Commands and scenarios must be nonempty. Required databases, ports, filesystem directories and services use `resources: [{ id, kind, description, isolation: "unit" }]`; the host implements per-unit isolation. Use an empty array when no such resources are needed.
+- `verification.commands` declares `{ id, argv: string[], cwd }`, with `cwd` relative to the bound repository. `cases` declares `{ id, description, requirement_ids, command_ids }`. Commands and scenarios must be nonempty. Required databases, ports, filesystem directories and services declare `{ id, kind, description, isolation: "unit" }` in `resources`; the host implements isolation per group. Use an empty array when no such resources are needed.
 
 `suggest` forms initial groups only from canonical file overlap and explicit `together` constraints. It does not infer business meaning, requirement ownership, verification scenarios or implementation order, and does not turn a call graph into `needs`. A successfully generated candidate returns `ok: true`. Empty verification, unassigned requirements and `unresolved` dependencies make `ready: false`, with gaps in `readiness.errors`. Structural errors still return `ok: false`. Complete the candidate before saving or dispatching it.
 
@@ -145,36 +145,36 @@ await call('normify_branch_plan_put', {
 })
 ```
 
-`put` and `delete` require the current plan digest. `branch/conflict` requires rereading and reconciling changes. `dry_run: true` previews without replacing or deleting the saved plan. A changed architecture causes `branch/graph-drift`; packet retrieval and export reject the stale plan too. Reconfirm the plan against the new graph.
+`put` and `delete` require the current plan digest. `branch/conflict` requires rereading and reconciling changes. `dry_run: true` previews without replacing or deleting the saved plan. A changed architecture causes `branch/graph-drift`; packet retrieval and export reject the stale plan too. Reconfirm the plan instead of bypassing the digest.
 
 `normify_branch_packet({ unit_id })` returns module bodies, full data/API contracts, external dependencies, `write_paths`, verification declarations and three frozen versions: `base_commit`, `graph_digest` and `plan_digest`. `normify_branch_plan_export({ lead_ref })` returns a `worker_plan` with one `role: "lead"` item per unit. Its `spec` is the frozen packet JSON; `requirementIds` and `needs` match the host's existing group plan structure. The plan identifier includes the logical plan ID and plan digest to distinguish versions.
 
-`lead_ref` is a leader template reference, not real group identity or authorization. PromptManager must check the formal `WorkerConfiguration` and reuse its existing branch, worktree, role, Worker-state, review and integration services. This change provides a static export adapter; end-to-end application wiring remains host work. Zero errors from `validate`, `packet` or `export` only establishes a valid static declaration. The tools do not run verification commands or establish runtime resource isolation or integration success.
+`lead_ref` is a leader template reference, not real group identity or authorization. PromptManager must check the formal `WorkerConfiguration` and reuse its existing branch, worktree, role, Worker-state, review and integration services. The library provides fixed design reads and pure plan projection; it holds no runtime authority. Zero errors from `validate`, `packet` or `export` only establishes a valid static declaration. The tools do not run verification commands or establish runtime resource isolation or integration success.
 
-Host wiring must create worktrees from the packet's `base_commit` and resolve, freeze and materialize prerequisite delivery commits for the `after` strategy. The current PromptManager creates ordinary lead worktrees from `main`, while `needs` only waits for task completion. These paths do not yet consume the branch contract, so a static export cannot establish that execution is connected.
+Host wiring must create worktrees from the packet's `base_commit` and resolve, freeze and materialize prerequisite delivery commits for the `after` strategy. PromptManager now also provides SQL design snapshots, structured unit references, materialized fixed Git inputs and candidate artifacts, and argv verification wiring; ordinary manual work allocation still uses the pre-existing contract. Unit-specific bindings for declared databases, services and named ports, along with the new native end-to-end verification, are not finished, so a static export cannot establish that delivery passed.
 
-The runnable example is `examples/branch-development/example.mjs` in the [source repository](https://github.com/wishbreeze/code-normify). Run it from that checkout with Git and Node.js 20+. The npm package does not include `examples/`:
+The runnable example is at `examples/branch-development/example.mjs` in the [source repository](https://github.com/wishbreeze/code-normify). Run it in that source checkout with Git and Node.js 20+. The npm package does not include `examples/`:
 
 ```sh
 npm run build
 node examples/branch-development/example.mjs
 ```
 
-It creates a temporary Git baseline and planned graph, completes two independent delivery units, reads packets and exports a group plan. It prints summaries and preserves the artifact location for inspection. Business verification commands in the example are declarations only.
+It creates a temporary Git baseline and planned graph, completes two independent delivery units, reads packets and exports a group plan. It prints summaries and preserves the artifact location for inspection. The example consumes this repository's build output directly through the relative path `../../lib/service.js`, so no package install or `node_modules` link is needed — after `npm run build` you can run it straight from the repository root. Business verification commands in the example are declarations only.
 
 ## Managed MCP integration
 
-Build and pack this repository, then install the generated tarball in the target project:
+Build and pack this repository first, then install the generated tarball in the target project, making sure `node_modules/@promptmanager/code-normify/lib/mcp.js` and its dependencies are available in the execution group workspace:
 
 ```sh
 npm ci
 npm run build
 npm pack
 # In the target project, use the actual generated package path.
-npm install --save-dev /absolute/path/promptmanager-code-normify-0.7.0.tgz
+npm install --save-dev /absolute/path/promptmanager-code-normify-0.8.0.tgz
 ```
 
-This uses a local build and does not assume an npm publication. Each execution group must have this package and its dependencies through PromptManager's existing dependency preparation flow.
+This uses a local build and does not assume an npm publication. Each execution group must obtain this package through PromptManager's existing dependency preparation flow.
 
 PromptManager uses `mcp_servers`. `command = "node"` resolves to its installed toolchain's fixed Node executable; arguments are passed unchanged and the process starts in the group's workspace. Do not configure `command = "normify-mcp"`: the native command contract accepts fixed command names or an absolute executable path, without a PATH search.
 
@@ -188,7 +188,7 @@ command = "node"
 args = ["node_modules/@promptmanager/code-normify/lib/mcp.js", "--repo-root", ".", "--data-dir", "normify-architecture", "--access", "read"]
 ```
 
-All three arguments are required. Relative paths resolve against the **host startup cwd** before the service receives absolute paths. Absolute paths also work. `.` follows each group's worktree, avoiding source evidence pointing to the primary checkout. The data directory must be named `normify-<slug>`.
+All three CLI arguments are required. Relative `repo-root` and `data-dir` resolve against the **host startup cwd** into absolute paths before the managed service receives them. Absolute paths also work. `.` follows each group's worktree, avoiding source evidence pointing to the primary checkout. The data directory must be named `normify-<slug>`.
 
 Registering a server does not grant tools. This is an exact design instance `AgentSpec` fragment; configure role, MCP semantic group and native sandbox grants through existing PromptManager configuration:
 
@@ -214,7 +214,7 @@ For a read-only instance:
 
 Injected names include `mcp__normify-design__normify_graph_get`; bindings use original server tool names. `read` exposes only read tools. `write` exposes all 43, subject to exact host bindings. Model arguments cannot override `project`, `dir` or `repoRoot`. Source reads, artifact paths and symbolic links remain within bound workspace constraints.
 
-Stdout carries only MCP protocol; logs use stderr. Business failures retain `{ ok, errors, warnings, ... }` with MCP `isError`; exceptions use MCP error responses. Cancellation prevents engine entry, but cannot establish that an operation already started produced no writes.
+Stdout carries only MCP protocol; logs use stderr. Business failures retain `{ ok, errors, warnings, ... }` with MCP `isError`; exceptions use MCP error responses. Cancellation only prevents execution before engine entry; it cannot be used to infer that a write which already started did not happen.
 
 ## Electron main-process ESM library
 
@@ -229,13 +229,18 @@ export async function openArchitectureTools(groupWorkspace: string) {
     repoRoot: groupWorkspace,
     dataDir: join(groupWorkspace, 'normify-architecture'),
     access: 'write',
+    execution: 'host',
     requireBilingual: true
   })
   return new Map(tools.map(tool => [tool.name, tool]))
 }
 ```
 
-The host supplies an authorized absolute group workspace. Tools expose `name`, `description`, `behavior`, standard JSON Schema `parameters` and `execute(args)`. Every result is an object with `ok`, `errors` and `warnings`.
+The host supplies an authorized absolute group workspace. `execution` must be set explicitly to `host` or `standalone`; the MCP CLI always runs `standalone`. In host mode every call must supply `{ signal, check, readGit }`, and a call missing any of them is rejected — the library never falls back to its own Git. `check(phase)` has two phases, `access` and `publish`: the host confirms the fixed Worker/attempt/requirement identity, and confirms the draft CAS at `publish`. The cancellation signal runs through the queue, project-lock waits and Git, and identity is re-checked after key awaits. Model JSON never carries these capabilities and cannot set `repoRoot`, `dataDir`, `dir` or `project`. Tools expose `name`, `description`, `behavior`, standard JSON Schema `parameters` and `execute(args, execution)`; every result is an object with `ok`, `errors` and `warnings`.
+
+The host can call `readBranchPlanningHead(options, signal, check)` first to discover the current plan and both digests; to admit it, call `readBranchPlanningSnapshot(options, {plan_digest, graph_digest}, readGit, signal, check)`. The caller must supply a read-only Git port for the bound repository. The read reuses the project lock, checks the complete graph and the plan revision before and after, and returns a unified `BranchPlanningSnapshot` (plan, packets and both digests). Waiting for the lock can be cancelled. `projectBranchWorkerPlan(snapshot, leadRef)` only projects the frozen snapshot and rereads no files. PromptManager stores the admitted result as an immutable SQL snapshot; these library entry points do not create Workers and do not establish that delivery or verification actually completed.
+
+Graph publishing still replaces files one at a time and rolls back on failure; it is not a multi-file atomic commit. Host edits should bind a single candidate directory, and on success the host switches the SQL draft head with an atomic CAS; an admitted SQL design snapshot does not change when the candidate directory is modified. The library holds neither the SQL draft head nor formal requirement authority.
 
 React receives read-only graph or preview data through PromptManager's existing main-process IPC boundary. Do not import this package or `node:fs` in the renderer, or scan the repository there. Host wiring must reuse existing IPC, role and task resource authorization; this example adds no IPC channel.
 
@@ -254,11 +259,27 @@ React receives read-only graph or preview data through PromptManager's existing 
 
 Use `normify_schema_get` or MCP `tools/list` for exact parameters. Tools support `normify_help({ topic: "tool:normify_module_patch" })` for parameter guidance. Help uses the current instance's read or write tool catalog.
 
-## Data and verification
+## Data and artifacts
 
-Persistence uses module Markdown under `modules/`, layout JSON under `renders/`, `policy.yml`, `changes/` and the explicit delivery units, verification and external dependency strategies in `branch-plan.json`. Compiled artifacts are `tree.json`, `outline.md`, `api-index.json`, `receipt.json` and `normify.html`. The standalone HTML viewer supports drill-down, search and language switching.
+Persistence uses module Markdown under `modules/`, layout JSON under `renders/`, `policy.yml`, `changes/` and the explicit delivery units, verification and external dependency strategies in `branch-plan.json`. Compiled artifacts are `tree.json` (compiled structure, APIs, type contracts and layouts), `outline.md`, `api-index.json`, `receipt.json` (artifact hashes and verification receipt) and `normify.html`, a single-file viewer with drill-down, search and language switching.
 
-`graph_get` / `graph_put` reuse existing persistence. `tree.json` is compiled output, not a second writable source. See [the specification](./docs/SPEC.zh-CN.md) and [normify-gen](./skills/normify-gen/SKILL.md).
+```text
+normify-architecture/
+├── modules/       module Markdown with strict YAML frontmatter
+├── renders/       per-level layout JSON
+├── policy.yml     architecture policies
+├── changes/       development change records
+├── branch-plan.json explicit delivery units, verification and external dependency strategies
+├── tree.json      compiled structure, APIs, type contracts and layouts
+├── outline.md     derived outline
+├── api-index.json derived API index
+├── receipt.json   artifact hashes and verification receipt
+└── normify.html   single-file viewer with drill-down, search and language switching
+```
+
+`graph_get` / `graph_put` are the editing entry points and reuse existing module and layout files for persistence. `tree.json` is compiled output, not a second writable source. Policies cover dependency direction, forbidden dependencies, acyclicity, depth, cross-tree references and naming. See [the specification](./docs/SPEC.zh-CN.md) and [normify-gen](./skills/normify-gen/SKILL.md).
+
+## Development verification
 
 ```sh
 npm run check
@@ -266,8 +287,8 @@ npx playwright install chromium
 npm run test:render
 ```
 
-Checks cover engine regressions, named types and references, graph CAS, work packet file overlap, deletion change closure, real SDK stdio lifecycle, relative startup paths, read-only permissions, boundary rejection and cancellation. Browser checks cover type and API navigation, search, full schemas, language switching and narrow screens. Passing these checks does not establish that PromptManager application wiring is complete.
+Checks cover the existing engine regressions, named types and Schema references, complete graph CAS, work packet file conflicts, the deletion change closure, the real SDK stdio lifecycle, relative startup directories, read-only permissions, out-of-bound rejection and cancellation semantics. Browser checks cover type and API navigation, search, full schemas, bilingual and narrow-screen display. Passing these checks does not establish that PromptManager application wiring is complete.
 
 ## Attribution and license
 
-Derived from [yan-mc/dsh-normify](https://github.com/yan-mc/dsh-normify), preserving its architecture engine, viewer and MIT license. The derived repository is [wishbreeze/code-normify](https://github.com/wishbreeze/code-normify); 0.6.0 replaces the host entry with a PromptManager tool library and managed MCP, and 0.7.0 adds branch plans organized by independently verifiable delivery units. Original attribution **Copyright (c) 2026 yan-mc** remains in [LICENSE](./LICENSE).
+Derived from [yan-mc/dsh-normify](https://github.com/yan-mc/dsh-normify), preserving its architecture engine, viewer and MIT license. The derived repository is [wishbreeze/code-normify](https://github.com/wishbreeze/code-normify); 0.6.0 replaces the host entry with a PromptManager tool library and managed MCP, and 0.7.0 adds branch plans organized by independently verifiable delivery units, and 0.8.0 makes `execution` (host/standalone) a required `createPromptManagerTools` option and establishes the host execution contract. Original attribution **Copyright (c) 2026 yan-mc** remains in [LICENSE](./LICENSE).

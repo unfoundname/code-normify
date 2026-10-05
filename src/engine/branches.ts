@@ -1,7 +1,7 @@
-import { createHash } from 'node:crypto';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { checkExecution, readExecutionGit, standaloneExecution, type NormifyToolExecution } from '../execution.js';
+export type { BranchGitReader } from '../execution.js';
+import { createHash, randomUUID } from 'node:crypto';
+import { link, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { boundPath, canonicalPath, WorkspaceError } from '../workspace.js';
@@ -131,11 +131,6 @@ const checkPlan = ajv.compile<BranchPlan>(BRANCH_PLAN_SCHEMA);
 const checkSuggestion = ajv.compile<BranchSuggestionInput>({
     type: 'object', additionalProperties: false, required: Object.keys(sourceProperties), properties: sourceProperties,
 });
-const git = promisify(execFile);
-/** 宿主固定的只读 Git 边界；库不取得提交、分支或执行权限。 */
-export type BranchGitReader = (repoRoot: string, args: readonly string[]) => Promise<string>;
-const standaloneGit: BranchGitReader = async (repoRoot, args) => (await git('git', ['--no-replace-objects', ...args],
-    { cwd: repoRoot, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })).stdout;
 const sha = (bytes: Buffer | string) => createHash('sha256').update(bytes).digest('hex');
 const absentDigest = sha(Buffer.alloc(0));
 const sorted = (values: Iterable<string>) => [...new Set(values)].sort();
@@ -219,16 +214,16 @@ function externalModules(ctx: Context, modules: string[]): string[] {
 }
 
 /** 完整 OID 必须确实是绑定仓库的 commit；HEAD 可以继续变化。 */
-async function baseline(repoRoot: string, oid: string, errors: Diagnostic[], readGit: BranchGitReader): Promise<Map<string, { mode: string; size: number }> | null> {
+async function baseline(repoRoot: string, oid: string, errors: Diagnostic[], execution: NormifyToolExecution): Promise<Map<string, { mode: string; size: number }> | null> {
     try {
-        const root = await readGit(repoRoot, ['rev-parse', '--show-toplevel']);
+        const root = await readExecutionGit(execution, repoRoot, ['rev-parse', '--show-toplevel']);
         const actualRoot = await canonicalPath(root.trim());
         const expectedRoot = await canonicalPath(repoRoot);
         const sameRoot = process.platform === 'win32' ? actualRoot.toLowerCase() === expectedRoot.toLowerCase() : actualRoot === expectedRoot;
         if (!sameRoot) throw new Error('宿主绑定的源码根必须是该仓库或 worktree 的根目录');
-        const result = await readGit(repoRoot, ['cat-file', '-t', oid]);
+        const result = await readExecutionGit(execution, repoRoot, ['cat-file', '-t', oid]);
         if (result.trim() !== 'commit') throw new Error('OID 不是 commit 对象');
-        const tree = await readGit(repoRoot, ['ls-tree', '-r', '-l', '-z', oid]);
+        const tree = await readExecutionGit(execution, repoRoot, ['ls-tree', '-r', '-l', '-z', oid]);
         const files = new Map<string, { mode: string; size: number }>();
         for (const line of tree.split('\0')) {
             if (!line) continue;
@@ -238,6 +233,7 @@ async function baseline(repoRoot: string, oid: string, errors: Diagnostic[], rea
         }
         return files;
     } catch (error) {
+        checkExecution(execution);
         errors.push(diag('error', 'branch/base-commit-invalid', '固定基线不是绑定仓库中可读取的 commit', {}, { base_commit: oid, message: error instanceof Error ? error.message : String(error) }, ['填写该仓库已有的完整 commit OID']));
         return null;
     }
@@ -254,7 +250,8 @@ function uniqueIds(items: { id: string }[], errors: Diagnostic[], field: string,
     }
 }
 
-async function validateWithContext(plan: BranchPlan, ctx: Context, repoRoot: string, readGit: BranchGitReader = standaloneGit) {
+async function validateWithContext(plan: BranchPlan, ctx: Context, repoRoot: string, execution: NormifyToolExecution = standaloneExecution) {
+    checkExecution(execution);
     const errors = [...ctx.errors];
     const warnings = [...ctx.warnings];
     if (errors.length > 0) return { ok: false, errors, warnings, plan, graph_digest: ctx.graph_digest, units: [] };
@@ -321,7 +318,7 @@ async function validateWithContext(plan: BranchPlan, ctx: Context, repoRoot: str
         return dependencies;
     };
     for (const id of unitById.keys()) visit(id, []);
-    const baselineFiles = await baseline(repoRoot, plan.base_commit, errors, readGit);
+    const baselineFiles = await baseline(repoRoot, plan.base_commit, errors, execution);
     for (const unit of plan.units) {
         const validModules = unit.modules.filter(id => ctx.leaves.has(id) && ctx.leaves.get(id)!.state !== 'deprecated');
         const writePaths = sorted(validModules.flatMap(id => ctx.leaves.get(id)!.source.map(source => source.path)));
@@ -379,20 +376,27 @@ async function validateWithContext(plan: BranchPlan, ctx: Context, repoRoot: str
     return { ok: errors.length === 0, errors, warnings, plan, graph_digest: ctx.graph_digest, units };
 }
 
-export async function validateBranchPlan(dataDir: string, raw: unknown, repoRoot: string, requireBilingual: boolean) {
+export async function validateBranchPlan(dataDir: string, raw: unknown, repoRoot: string, requireBilingual: boolean, execution: NormifyToolExecution = standaloneExecution) {
+    checkExecution(execution);
     if (!checkPlan(raw)) return { ok: false, errors: shapeErrors(checkPlan), warnings: [], plan: null, graph_digest: await graphDigest(dataDir), units: [] };
-    return validateWithContext(raw, await context(dataDir, repoRoot, requireBilingual), repoRoot);
+    return validateWithContext(raw, await context(dataDir, repoRoot, requireBilingual), repoRoot, execution);
 }
 
-export async function putBranchPlan(dataDir: string, raw: unknown, repoRoot: string, requireBilingual: boolean, expected: string) {
+export async function putBranchPlan(dataDir: string, raw: unknown, repoRoot: string, requireBilingual: boolean, expected: string, execution: NormifyToolExecution = standaloneExecution) {
     const current = await readBranchPlan(dataDir);
     if (current.digest !== expected) return { ok: false, errors: [diag('error', 'branch/conflict', '分支计划已改变，请重新读取后提交', {}, { expected, actual: current.digest }, ['调用 normify_branch_plan_get'])], warnings: [], digest: current.digest, plan: null, graph_digest: await graphDigest(dataDir), units: [] };
-    const result = await validateBranchPlan(dataDir, raw, repoRoot, requireBilingual);
+    const result = await validateBranchPlan(dataDir, raw, repoRoot, requireBilingual, execution);
+    checkExecution(execution);
     if (!result.ok || !result.plan) return { ...result, digest: current.digest };
     const snapshot = await snapshotProject(dataDir, [BRANCH_PLAN_FILE]);
+    if ((await readBranchPlan(dataDir)).digest !== expected || await graphDigest(dataDir) !== result.graph_digest)
+        throw new WorkspaceError('branch/conflict', '发布前设计版本改变，不能保存旧计划');
+    checkExecution(execution, 'publish');
     try {
         await mkdir(dataDir, { recursive: true });
+        checkExecution(execution, 'publish');
         await writeFile(join(dataDir, BRANCH_PLAN_FILE), JSON.stringify(result.plan, null, 2) + '\n', 'utf8');
+        checkExecution(execution);
     } catch (error) {
         try { await restoreProject(dataDir, snapshot); }
         catch (rollbackError) { throw new AggregateError([error, rollbackError], '分支计划写入失败且回滚未确认'); }
@@ -401,17 +405,78 @@ export async function putBranchPlan(dataDir: string, raw: unknown, repoRoot: str
     return { ...result, digest: (await readBranchPlan(dataDir)).digest };
 }
 
-export async function deleteBranchPlan(dataDir: string, expected: string) {
+/** 同一函数内的 CAS 冲突必须同形：入口比对与捕获后的字节校验共用同一形态，仅证据取值不同。 */
+function deleteConflict(expected: string, actual: string) {
+    return { ok: false, errors: [diag('error', 'branch/conflict', '分支计划已改变，不能删除其他版本', {}, { expected, actual }, ['调用 normify_branch_plan_get'])], warnings: [], digest: actual, deleted: false };
+}
+
+/**
+ * 把捕获到的计划字节放回 branch-plan.json。
+ * 首选 link：目标名已被占用时 link 直接以 EEXIST 失败，因此捕获之后并发写入者又写进路径的新版本绝不会被覆盖
+ * （末次写入优先，我们只清掉手里那份已被取代的旧副本）。文件系统不支持硬链接时退化为同目录 rename。
+ * 回位失败绝不静默：抛出带临时文件绝对路径的错误，未删除的字节仍完整留在临时文件里。
+ */
+async function restoreCaptured(captured: string, planPath: string, cause?: unknown): Promise<void> {
+    const loud = (rollback: unknown) => new AggregateError(
+        cause === undefined ? [rollback] : [cause, rollback],
+        `删除分支计划失败，且捕获的计划字节无法放回 ${planPath}（${rollback instanceof Error ? rollback.message : String(rollback)}）；原始字节仍完整保存在 ${captured}，必须人工恢复`);
+    try {
+        try { await link(captured, planPath); }
+        catch (error) {
+            const code = (error as NodeJS.ErrnoException).code;
+            if (code === 'EEXIST') { await rm(captured, { force: true }); return; }
+            if (code !== 'EPERM' && code !== 'ENOTSUP' && code !== 'EOPNOTSUPP' && code !== 'EXDEV' && code !== 'EMLINK') throw error;
+            await rename(captured, planPath);
+        }
+    } catch (error) { throw loud(error); }
+    try { await rm(captured, { force: true }); }
+    catch (error) { throw loud(error); }
+}
+
+export async function deleteBranchPlan(dataDir: string, expected: string, execution: NormifyToolExecution = standaloneExecution) {
+    const planPath = join(dataDir, BRANCH_PLAN_FILE);
     const current = await readBranchPlan(dataDir);
-    if (current.digest !== expected) return { ok: false, errors: [diag('error', 'branch/conflict', '分支计划已改变，不能删除其他版本', {}, { expected, actual: current.digest }, [])], warnings: [], digest: current.digest, deleted: false };
-    await rm(join(dataDir, BRANCH_PLAN_FILE), { force: true });
-    return { ok: true, errors: [], warnings: [], digest: absentDigest, deleted: current.digest !== absentDigest };
+    if (current.digest !== expected) return deleteConflict(expected, current.digest);
+    /** 入口观测到的图摘要；与 putBranchPlan 保持同一判定口径。 */
+    const observed = await graphDigest(dataDir);
+    checkExecution(execution, 'publish');
+    // 授权之后先原子捕获：同目录 rename 不经过中间态，捕获名只有本次调用知道，
+    // 于是“按 expected 校验的字节”和“最终删除的字节”必然是同一批字节——复核与删除之间不再有窗口，
+    // 并发写入者在这之后写进 branch-plan.json 的任何新版本都落在另一个文件名下，不会被这次删除销毁。
+    const captured = join(dataDir, `.${BRANCH_PLAN_FILE}.delete-${randomUUID()}.tmp`);
+    try { await rename(planPath, captured); }
+    catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+        // 捕获时路径已空：只有 expected 本身就是“不存在”才是幂等空删除，否则是窗口期内的并发变化。
+        return expected === absentDigest
+            ? { ok: true, errors: [], warnings: [], digest: absentDigest, deleted: false }
+            : deleteConflict(expected, absentDigest);
+    }
+    let capturedDigest: string;
+    try { capturedDigest = sha(await readFile(captured)); }
+    catch (error) { await restoreCaptured(captured, planPath, error); throw error; }
+    if (capturedDigest !== expected) {
+        await restoreCaptured(captured, planPath);
+        return deleteConflict(expected, capturedDigest);
+    }
+    try {
+        if (await graphDigest(dataDir) !== observed) {
+            await restoreCaptured(captured, planPath);
+            return deleteConflict(expected, capturedDigest);
+        }
+    } catch (error) { await restoreCaptured(captured, planPath, error); throw error; }
+    // 删除的正是刚按 expected 校验过的这批字节：并发写入者此刻写进来的新版本都在别的文件名下，不受影响。
+    try { await rm(captured, { force: true }); }
+    catch (error) { throw new AggregateError([error], `分支计划已捕获但删除失败；原始字节仍完整保存在 ${captured}，必须人工恢复`); }
+    return { ok: true, errors: [], warnings: [], digest: absentDigest, deleted: true };
 }
 
 /** 基于真实共享文件及 together 的连通分量；不猜业务验收和依赖实现顺序。 */
-export async function suggestBranchPlan(dataDir: string, input: unknown, repoRoot: string, requireBilingual: boolean) {
+export async function suggestBranchPlan(dataDir: string, input: unknown, repoRoot: string, requireBilingual: boolean, execution: NormifyToolExecution = standaloneExecution) {
+    checkExecution(execution);
     if (!checkSuggestion(input)) return { ok: false, errors: shapeErrors(checkSuggestion), warnings: [], plan: null, graph_digest: await graphDigest(dataDir), units: [] };
     const ctx = await context(dataDir, repoRoot, requireBilingual);
+    checkExecution(execution);
     const selectionErrors: Diagnostic[] = [];
     const leaves = expand(ctx, input.scope, selectionErrors, 'scope');
     const selected = new Set(leaves);
@@ -447,7 +512,7 @@ export async function suggestBranchPlan(dataDir: string, input: unknown, repoRoo
         verification: { commands: [], cases: [], resources: [] },
     }));
     const plan: BranchPlan = { schema_version: 1, ...input, graph_digest: ctx.graph_digest, units };
-    const result = await validateWithContext(plan, ctx, repoRoot);
+    const result = await validateWithContext(plan, ctx, repoRoot, execution);
     const incompleteCodes = new Set(['branch/verification-empty', 'branch/requirement-uncovered', 'branch/dependency-unresolved', 'branch/unit-requirements-empty']);
     const structural = result.errors.filter(error => !incompleteCodes.has(error.code));
     const readiness = { ok: result.ok, errors: result.errors };
@@ -455,11 +520,12 @@ export async function suggestBranchPlan(dataDir: string, input: unknown, repoRoo
         warnings: structural.length === 0 && !result.ok ? [...result.warnings, diag('warning', 'branch/candidate-incomplete', '候选已生成；请补齐正式需求、外部依赖策略与独立验收后保存', {}, {}, [])] : result.warnings };
 }
 
-async function packetContext(dataDir: string, repoRoot: string, requireBilingual: boolean, readGit: BranchGitReader = standaloneGit) {
+async function packetContext(dataDir: string, repoRoot: string, requireBilingual: boolean, execution: NormifyToolExecution = standaloneExecution) {
     const current = await readBranchPlan(dataDir);
     if (!current.ok || !current.plan) return { ...current, ok: false, errors: current.ok ? [diag('error', 'branch/plan-not-found', '尚未保存分支计划', {}, {}, [])] : current.errors, graph_digest: await graphDigest(dataDir), units: [], ctx: null };
     const ctx = await context(dataDir, repoRoot, requireBilingual);
-    const checked = await validateWithContext(current.plan, ctx, repoRoot, readGit);
+    checkExecution(execution);
+    const checked = await validateWithContext(current.plan, ctx, repoRoot, execution);
     return { ...checked, digest: current.digest, ctx };
 }
 async function makePacket(ctx: Context, plan: BranchPlan, digest: string, unit: BranchUnit, repoRoot: string): Promise<BranchPacket> {
@@ -469,19 +535,24 @@ async function makePacket(ctx: Context, plan: BranchPlan, digest: string, unit: 
         modules: projected.modules, context: projected.context, dependencies: projected.dependencies,
         write_paths: projected.write_paths, acceptance: projected.acceptance };
 }
-export async function branchPacket(dataDir: string, unitId: string, repoRoot: string, requireBilingual: boolean) {
-    const checked = await packetContext(dataDir, repoRoot, requireBilingual);
+export async function branchPacket(dataDir: string, unitId: string, repoRoot: string, requireBilingual: boolean, execution: NormifyToolExecution = standaloneExecution) {
+    const checked = await packetContext(dataDir, repoRoot, requireBilingual, execution);
     const { ctx, ...result } = checked;
     if (!result.ok || !ctx || !result.plan) return { ...result, packet: null };
     const unit = result.plan.units.find(candidate => candidate.id === unitId);
     if (!unit) return { ...result, ok: false, errors: [diag('error', 'branch/unit-not-found', '分支交付单元不存在', { unit: unitId }, {}, [])], packet: null };
-    return { ...result, packet: await makePacket(ctx, result.plan, result.digest, unit, repoRoot) };
+    const packet = await makePacket(ctx, result.plan, result.digest, unit, repoRoot);
+    checkExecution(execution);
+    return { ...result, packet };
 }
-export async function branchPackets(dataDir: string, repoRoot: string, requireBilingual: boolean, readGit: BranchGitReader = standaloneGit) {
-    const checked = await packetContext(dataDir, repoRoot, requireBilingual, readGit);
+export async function branchPackets(dataDir: string, repoRoot: string, requireBilingual: boolean, execution: NormifyToolExecution = standaloneExecution) {
+    const checked = await packetContext(dataDir, repoRoot, requireBilingual, execution);
     const { ctx, ...result } = checked;
     if (!result.ok || !ctx || !result.plan) return { ...result, packets: [] };
     const packets: BranchPacket[] = [];
-    for (const unit of result.plan.units) packets.push(await makePacket(ctx, result.plan, result.digest, unit, repoRoot));
+    for (const unit of result.plan.units) {
+        packets.push(await makePacket(ctx, result.plan, result.digest, unit, repoRoot));
+        checkExecution(execution);
+    }
     return { ...result, packets };
 }

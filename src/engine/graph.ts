@@ -1,3 +1,4 @@
+import { checkExecution, standaloneExecution, type NormifyToolExecution } from '../execution.js';
 import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
@@ -45,7 +46,8 @@ export async function readGraph(dataDir: string) {
 }
 
 /** 所有写入先在候选目录完成 L1/L2/L3；受管 service 负责固定目录和项目锁。 */
-async function stageGraph(dataDir: string, graph: ArchitectureGraph, repoRoot: string, requireBilingual: boolean) {
+async function stageGraph(dataDir: string, graph: ArchitectureGraph, repoRoot: string, requireBilingual: boolean, execution: NormifyToolExecution = standaloneExecution) {
+    checkExecution(execution);
     const errors: Diagnostic[] = [];
     const warnings: Diagnostic[] = [];
     const modules: Module[] = [];
@@ -77,50 +79,66 @@ async function stageGraph(dataDir: string, graph: ArchitectureGraph, repoRoot: s
     if (errors.length) return { ok: false, stage: null, errors, warnings };
     const stageRoot = await mkdtemp(join(tmpdir(), 'normify-graph-'));
     const stage = join(stageRoot, basename(dataDir));
-    await mkdir(stage);
     try {
+        await mkdir(stage);
+        checkExecution(execution);
         const current = await loadAllModules(dataDir);
+        checkExecution(execution);
         const bodies = new Map(current.files.map(file => [file.module.uid, file.body]));
         for (const root of ['policy.yml', 'changes'])
             if (existsSync(join(dataDir, root))) await cp(join(dataDir, root), join(stage, root), { recursive: true });
+        checkExecution(execution);
         await installDefaultPolicy(stage);
+        checkExecution(execution);
         const context = { files: modules.map(module => ({ module, body: bodies.get(module.uid) ?? '', file: '' })) };
-        for (const module of modules.sort((a, b) => a.id.split('.').length - b.id.split('.').length))
+        for (const module of modules.sort((a, b) => a.id.split('.').length - b.id.split('.').length)) {
+            checkExecution(execution);
             await writeModuleFile(stage, module, bodies.get(module.uid) ?? '', context);
+        }
         for (const layout of graph.layouts) await writeLayoutFile(stage, layout);
         const checked = await validateProject(stage, { repoRoot, requireBilingual });
+        checkExecution(execution);
         if (!checked.ok) { await rm(stageRoot, { recursive: true }); return { ok: false, stage: null, errors: checked.errors, warnings: checked.warnings }; }
         return { ok: true, stage, errors: checked.errors, warnings: checked.warnings };
     } catch (error) { await rm(stageRoot, { recursive: true }); throw error; }
 }
 
-export async function validateGraph(dataDir: string, graph: ArchitectureGraph, repoRoot: string, requireBilingual: boolean) {
-    const result = await stageGraph(dataDir, graph, repoRoot, requireBilingual);
+export async function validateGraph(dataDir: string, graph: ArchitectureGraph, repoRoot: string, requireBilingual: boolean, execution: NormifyToolExecution = standaloneExecution) {
+    const result = await stageGraph(dataDir, graph, repoRoot, requireBilingual, execution);
     if (result.stage) await rm(dirname(result.stage), { recursive: true });
+    checkExecution(execution);
     return { ok: result.ok, errors: result.errors, warnings: result.warnings };
 }
 
-export async function putGraph(dataDir: string, graph: ArchitectureGraph, repoRoot: string, requireBilingual: boolean, expected: string) {
+export async function putGraph(dataDir: string, graph: ArchitectureGraph, repoRoot: string, requireBilingual: boolean, expected: string, execution: NormifyToolExecution = standaloneExecution) {
     const digest = await graphDigest(dataDir);
     if (expected !== digest) return {
         ok: false, errors: [diag('error', 'graph/conflict', '架构图已改变，请读取当前图后重新提交', {}, { expected, actual: digest }, ['重新调用 normify_graph_get'])], warnings: [], digest,
     };
-    const staged = await stageGraph(dataDir, graph, repoRoot, requireBilingual);
+    const staged = await stageGraph(dataDir, graph, repoRoot, requireBilingual, execution);
     if (!staged.ok || !staged.stage) return { ok: false, errors: staged.errors, warnings: staged.warnings, digest };
     const stage = staged.stage;
     try {
         const build = await buildProject(stage, { repoRoot, requireBilingual });
+        checkExecution(execution);
         if (!build.ok) return { ok: false, errors: build.errors, warnings: build.warnings, digest };
         const render = await renderProject(stage, {});
+        checkExecution(execution);
         if (!render.ok) return { ok: false, errors: render.errors, warnings: render.warnings, digest };
         const roots = ['modules', 'renders', 'policy.yml', ...ARTIFACTS];
         const snapshot = await snapshotProject(dataDir, roots);
+        if (await graphDigest(dataDir) !== expected) {
+            return { ok: false, errors: [diag('error', 'graph/conflict', '发布前架构图版本改变')], warnings: [], digest: await graphDigest(dataDir) };
+        }
+        checkExecution(execution, 'publish');
         try {
             await mkdir(dataDir, { recursive: true });
             for (const root of roots) {
+                checkExecution(execution, 'publish');
                 await rm(join(dataDir, root), { recursive: true, force: true });
                 if (existsSync(join(stage, root))) await cp(join(stage, root), join(dataDir, root), { recursive: true });
             }
+            checkExecution(execution);
         } catch (error) {
             try { await restoreProject(dataDir, snapshot); }
             catch (rollbackError) { throw new AggregateError([error, rollbackError], '架构图写入失败且回滚未确认'); }

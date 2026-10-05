@@ -1,6 +1,6 @@
 {
   "name": "@promptmanager/code-normify",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "PromptManager 本地架构设计工具：模块树、JSON Schema、接口与可独立验证的分支拆分契约，提供 CRUD、校验、交接包和受管 MCP。",
   "type": "module",
   "main": "./lib/index.js",
@@ -27,6 +27,7 @@
     "skills",
     "docs/SPEC.zh-CN.md",
     "README.md",
+    "README_EN.md",
     "LICENSE"
   ],
   "license": "MIT",
@@ -71,6 +72,13 @@
     "test:branches": "node tests/branch-e2e.mjs",
     "test:mcp": "node tests/mcp-e2e.mjs",
     "test:render": "node tests/render-contracts-e2e.mjs",
-    "check": "npm run typecheck && npm run build && npm test && node ci-contract-check.cjs"
+    "check:refs": "node scripts/check-references.cjs",
+    "check:docs": "node scripts/check-doc-snippets.cjs",
+    "check:libsync": "node scripts/check-lib-sync.cjs",
+    "check:examples": "node scripts/check-examples.cjs",
+    "check:ledger": "node scripts/check-file-ledger.cjs",
+    "check:ledger:gen": "node scripts/generate-file-ledger.cjs --check",
+    "ledger:gen": "node scripts/generate-file-ledger.cjs",
+    "check": "npm run typecheck && npm run build && npm test && node ci-contract-check.cjs && npm run check:refs && npm run check:docs && npm run check:libsync && npm run check:examples && npm run check:ledger:gen && npm run check:ledger"
   }
 }

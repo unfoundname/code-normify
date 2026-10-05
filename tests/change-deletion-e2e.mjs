@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -27,7 +28,7 @@ const ids = {
 
 async function project(slug, modules) {
   const dataDir = join(work, 'normify-' + slug)
-  const tools = new Map((await createPromptManagerTools({ repoRoot, dataDir, access: 'write' })).map(tool => [tool.name, tool]))
+  const tools = new Map((await createPromptManagerTools({ repoRoot, dataDir, access: 'write', execution: 'standalone' })).map(tool => [tool.name, tool]))
   const call = (name, args = {}) => tools.get(name).execute(args)
   const initial = await call('normify_graph_get')
   const result = await call('normify_graph_put', { graph: { schema_version: 1, modules, layouts: [] }, expect_digest: initial.digest })
@@ -108,6 +109,50 @@ async function main() {
   assert.equal((await validateProject(historical.dataDir, { repoRoot, requireBilingual: true })).ok, true)
   await writeChangeFile(historical.dataDir, { ...record, status: 'abandoned' })
   assert.equal((await validateProject(historical.dataDir, { repoRoot, requireBilingual: true })).ok, true)
+
+  // host 模式契约：close 的全部 Git 读取都必须经过宿主 readGit 端口，refresh 阶段不得自己 spawn git。
+  // 宿主对 rev-parse HEAD 返回伪造值；磁盘上的 revision 只能是这个伪造值。
+  const hostRepo = join(work, 'host-repo')
+  await mkdir(join(hostRepo, 'src'), { recursive: true })
+  await writeFile(join(hostRepo, 'src', 'leaf.ts'), 'export const leaf = true\n')
+  const hostGit = (...args) => execFileSync('git', ['-C', hostRepo, ...args], { encoding: 'utf8', windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] }).trim()
+  hostGit('init', '-q'); hostGit('config', 'user.email', 'e2e@example.com'); hostGit('config', 'user.name', 'e2e')
+  hostGit('add', '-A'); hostGit('commit', '-qm', 'init')
+  const hostPortHead = createHash('sha256').update('host-port-head').digest('hex').slice(0, 40)
+  assert.notEqual(hostPortHead, hostGit('rev-parse', 'HEAD'), '伪造 HEAD 必须与真实 HEAD 不同，否则无法证明 revision 来源')
+  const hostController = new AbortController()
+  const hostGitCalls = []
+  const hostExecution = {
+    signal: hostController.signal,
+    check: () => {},
+    readGit: async (root, argv, signal) => {
+      assert.equal(root, hostRepo, 'reader 收到的必须是宿主固定的仓库根')
+      assert.equal(signal, hostController.signal, '取消信号必须传达到每次 Git 读取')
+      hostGitCalls.push([...argv])
+      if (argv[0] === 'rev-parse' && argv[1] === 'HEAD') return hostPortHead + '\n'
+      throw new Error('未声明的宿主 Git 查询: ' + JSON.stringify([...argv]))
+    },
+  }
+  const hostDataDir = join(work, 'normify-host-close')
+  const hostTools = new Map((await createPromptManagerTools({ repoRoot: hostRepo, dataDir: hostDataDir, access: 'write', execution: 'host' })).map(tool => [tool.name, tool]))
+  const hostCall = (name, args = {}) => hostTools.get(name).execute(args, hostExecution)
+  const hostInitial = await hostCall('normify_graph_get')
+  const hostGraph = await hostCall('normify_graph_put', {
+    graph: { schema_version: 1, modules: [module('demo'), module('demo.leaf', { apis: [], source: [{ path: 'src/leaf.ts' }] })], layouts: [] },
+    expect_digest: hostInitial.digest,
+  })
+  assert.equal(hostGraph.ok, true, JSON.stringify(hostGraph.errors))
+  assert.equal((await hostCall('normify_change_open', changes('2026-10-03-host-close', { create: ['demo.leaf'] }))).ok, true)
+  assert.deepEqual(hostGitCalls, [], '建图与开变更不读 Git')
+  const hostClosed = await hostCall('normify_change_close', { id: '2026-10-03-host-close' })
+  assert.equal(hostClosed.ok, true, JSON.stringify(hostClosed.errors))
+  // refresh 阶段一次 + close 收尾一次，两次 rev-parse HEAD 都必须落在宿主端口上。
+  assert.deepEqual(hostGitCalls, [['rev-parse', 'HEAD'], ['rev-parse', 'HEAD']], 'close 的 Git 读取不得绕过宿主端口')
+  assert.equal(hostClosed.revision.after, hostPortHead)
+  const hostLeaf = await hostCall('normify_module_get', { id: 'demo.leaf' })
+  assert.equal(hostLeaf.module.state ?? 'active', 'active')
+  assert.equal(hostLeaf.module.revision, hostPortHead, 'host 模式刷新写入的 revision 必须是宿主端口返回值，而不是独立 git 的 HEAD')
+  assert.match(await readFile(join(hostDataDir, 'modules', hostLeaf.file), 'utf8'), new RegExp('^revision:[ \\t]*' + hostPortHead + '$', 'm'))
   console.log('change-deletion e2e PASS：真实删除闭环、接口增删落地、源码证据、关闭后渲染、历史演进')
 }
 

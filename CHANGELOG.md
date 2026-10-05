@@ -7,6 +7,40 @@
 > 《正式规范》《使用说明》重建源码；`[0.2.0]`–`[0.4.1]` 的条目系按上述记录**追述补写**，非原始文本。
 
 
+## [0.8.0] - 2026-10-05
+
+本版把**宿主执行契约**（`execution`）确立为库接入的前置条件：0.7.0 的调用方式会让工具在 host 与 standalone 之间"看不出来"，宿主撤权与取消无法贯穿队列、项目锁与 Git。`execution` 因此成为必填项，且 `check` 必须是同步抛错的授权门禁。工具总数不变（43）。
+
+### 不兼容变更
+
+- **必须显式声明 `execution`**：`createPromptManagerTools({ repoRoot, dataDir, access, execution })` 的 `execution` 取 `'host'` 或 `'standalone'`；缺失或取值非法直接以 `workspace/config` 拒绝，不再有默认值。stdio MCP（`lib/mcp.js`）固定以 `standalone` 构造。
+- **host 模式每次调用必须提供 `{ signal, check, readGit }`**：缺少任一能力以 `workspace/execution-required` 拒绝；`host` 模式下库**绝不**自行 spawn Git，不会退化成独立只读端口。宿主能力只经 `execute(args, execution)` 的第二个形参传入，不出现在工具 JSON Schema 或模型参数里。
+- **模型不能设置绑定身份**：模型参数出现 `repoRoot`、`dataDir`、`dir`、`project` 时以 `workspace/binding-fixed` 拒绝；`readGit` 被以绑定 `repoRoot` 之外的根调用时同样拒绝。
+
+### 破坏性收紧
+
+- **`check(phase)` 必须是同步抛错的授权门禁**：返回 Promise/thenable（含 `async` 函数）一律以 `workspace/execution-invalid` **显式拒绝**并按失败关闭，不再静默失败开放；被丢弃的拒绝不会变成未处理 Promise。`phase` 为 `'access'` 或 `'publish'`，一次 `access` 通过不能当作 `publish` 仍然有效的依据，取消贯穿串行队列、项目锁等待与 Git。
+
+### 修复
+
+- host 模式下 `normify_change_close` 的 refresh 阶段绕过宿主 Git 端口：刷新指纹/写入 `revision` 时走的是库内置 `standalone` Git 端口，宿主的撤权与取消管不到这一段；现在 `closeChange` 的 refresh 与收尾 `rev-parse HEAD` 都落在宿主提供的 `readGit` 上。
+- `normify_branch_plan_delete` 缺少**发布前 CAS 复核**：入口比对与真正删除之间存在窗口期，被并发替换进来的新版本会被这次删除销毁；现在在宿主 `publish` 授权之后、`rm` 之前按同一 CAS 口径复核计划摘要与图摘要，冲突报 `branch/conflict` 并保留新版本（`putBranchPlan` 的发布前复核同口径收紧）。
+- `normify_help` 的 `errors` 主题与真实校验码漂移：文案写的是不存在的 `structure/label-too-long`，且把三处长度上限合并成"单一 30"；现改为 `structure/name-too-long`（name 的 zh/en ≤ 60、description 的 zh/en ≤ 500、deps.label 的 zh/en ≤ 30），并声明以运行时诊断为准。
+
+### 新增
+
+- 公开 `readBranchPlanningHead(options, signal, check)`：发现当前分支计划版本（`plan` 可为 `null`）与 `plan_digest`、`graph_digest`，不要求 Git 端口、不执行接纳；等待项目锁可取消。`readBranchPlanningSnapshot` 同步增加 `check` 形参与同步门禁校验。
+- 引用完整性门禁 `npm run check:refs`（`scripts/check-references.cjs`）与文档示例门禁 `npm run check:docs`（`scripts/check-doc-snippets.cjs`）：前者查悬空引用、指向已删除文件的引用、版本字面量漂移、本地安装包文件名漂移、测试清单与锚点；后者把 README / SPEC 里声明可直接使用的 TS 用法示例用仓库自带 TypeScript 以 `--noEmit --strict` 编译，并核对工具数量、`createPromptManagerTools` 必填项与 `execute` 签名描述。两者已串入 `npm run check` 与 CI。
+- CI 改为完整克隆（`fetch-depth: 0`）：`check:refs` 的"指向已删除文件"检查依赖 `git log --diff-filter=D`，浅克隆下该检查形同虚设。
+
+### 文档
+
+- README / README_EN / SPEC 补齐「宿主执行契约（execution）」章节与分支计划读取用法，SPEC 6.4 工具表补上此前缺失的 7 行（`normify_project_init` / `normify_help` / `normify_schema_get` / `normify_graph_get` / `normify_graph_validate` / `normify_graph_put` / `normify_work_packet`），使「43 个工具」的断言与运行时一致。
+
+### 迁移
+
+存量宿主升级到 0.8.0 必须给 `createPromptManagerTools` 补 `execution`，并按 SPEC 的「宿主执行契约（execution）」提供 host 能力（`{ signal, check, readGit }`、两阶段同步 `check`）；只跑 stdio MCP 的接入方式不受影响（固定 `standalone`）。
+
 ## [0.7.0] - 2026-10-03
 
 - 将 DSH 插件转换为独立库与受管 MCP 服务，提供 PromptManager 适配与固定工作区权限边界。
@@ -14,6 +48,16 @@
 - 新增分支计划、独占写入范围、依赖策略、独立验收定义与 WorkerPlan 导出。
 - 补充结构、契约、分支、多进程 MCP 和浏览器渲染回归；保存完整视频网站需求的工具试用快照。
 - 不兼容变更：包名改为 `@promptmanager/code-normify`，移除 DSH 宿主入口与依赖；接入方式见 README 与正式规范。
+
+## [0.6.0] - 日期不可考
+
+> **该版本条目缺失，此处只能留下可追溯的部分**：本仓从未提交过 `0.6.0` 的 CHANGELOG 条目——
+> 提交 `1b2a3c6`（2026-10-03）把版本从 `0.5.4` 直接推到 `0.7.0`，并在 `0.5.4` 之上一次写入 `0.7.0` 条目，
+> 中间没有 `0.6.0` 标题；`git log -S "0.6.0"` 只命中该提交对 README「来源与许可」段的写入，
+> 全仓无 tag、无 `docs/RELEASE-0.6.0.md`、无 0.6.0 提交，悬空对象与 staging 日志中也没有该版本的改动清单。
+> README 沿革段称「0.6.0 将宿主入口迁移为 PromptManager 工具 library 与受管 MCP」，
+> 但同一批改动已被 `0.7.0` 条目一并描述（`1b2a3c6` 为单次压缩提交），无法据此逐条还原并区分归属。
+> 可确证的只有：磁盘上曾存在本地打包产物 `promptmanager-code-normify-0.6.0.tgz`（未发布到 npm，现已删除）。
 
 ## [0.5.4] - 2026-09-13
 

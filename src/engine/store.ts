@@ -1,11 +1,10 @@
+import { checkExecution, readExecutionGit, standaloneExecution, type NormifyToolExecution } from '../execution.js';
 import type { Diagnostic, Module, ModuleFile, SourceRef } from './types.js';
 import type { Dirent } from 'node:fs';
-import { readdir, readFile, writeFile, rename, rm, mkdir } from 'node:fs/promises';
+import { readdir, readFile, writeFile, rename, rm, mkdir, lstat, stat } from 'node:fs/promises';
 import { existsSync, readdirSync } from 'node:fs';
 import { join, dirname, resolve, relative, sep } from 'node:path';
 import { createHash } from 'node:crypto';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import { deriveParent, isValidId, moduleFilePath, slugify } from './ids.js';
 import { parseModuleText, serializeModule } from './frontmatter.js';
 import { deleteLayoutFile } from './layout.js';
@@ -281,15 +280,12 @@ export async function promoteModule(projectDir: string, id: string): Promise<{ f
     return { file: rel, warnings };
 }
 /** 仓库当前 HEAD（40 位 SHA）。 */
-const executeFile = promisify(execFile);
-async function runGit(repoRoot: string, args: string[]): Promise<{ stdout: string; error: string | null }> {
-    try {
-        const result = await executeFile('git', ['-C', repoRoot, ...args], { encoding: 'utf8', windowsHide: true, maxBuffer: 32 * 1024 * 1024, timeout: 15000 });
-        return { stdout: result.stdout, error: null };
-    } catch (error) { return { stdout: '', error: error instanceof Error ? error.message : String(error) }; }
+async function runGit(repoRoot: string, args: string[], execution: NormifyToolExecution): Promise<{ stdout: string; error: string | null }> {
+    try { return { stdout: await readExecutionGit(execution, repoRoot, args), error: null }; }
+    catch (error) { checkExecution(execution); return { stdout: '', error: error instanceof Error ? error.message : String(error) }; }
 }
-export async function gitHead(repoRoot: string): Promise<{ sha: string | null; error: string | null }> {
-    const result = await runGit(repoRoot, ['rev-parse', 'HEAD']);
+export async function gitHead(repoRoot: string, execution: NormifyToolExecution = standaloneExecution): Promise<{ sha: string | null; error: string | null }> {
+    const result = await runGit(repoRoot, ['rev-parse', 'HEAD'], execution);
     if (result.error !== null) return { sha: null, error: result.error };
     const sha = result.stdout.trim();
     if (!/^[a-f0-9]{40}$/.test(sha))
@@ -297,14 +293,14 @@ export async function gitHead(repoRoot: string): Promise<{ sha: string | null; e
     return { sha, error: null };
 }
 /** git 变更文件清单（增量再生成的输入）。 */
-export async function gitChangedFiles(repoRoot: string, diffSpec: string): Promise<{ files: string[] | null; error: string | null }> {
+export async function gitChangedFiles(repoRoot: string, diffSpec: string, execution: NormifyToolExecution = standaloneExecution): Promise<{ files: string[] | null; error: string | null }> {
     const spec = diffSpec.trim() === '' ? 'HEAD' : diffSpec.trim();
     if (spec.startsWith('-') || /[\x00-\x1f]/.test(spec)) return { files: null, error: 'diff 必须为 Git 版本引用，不能是命令选项' };
-    const result = await runGit(repoRoot, ['diff', '--name-only', spec]);
+    const result = await runGit(repoRoot, ['diff', '--name-only', spec], execution);
     if (result.error !== null) return { files: null, error: result.error };
     const changed = result.stdout.split(/\r?\n/).map(s => s.trim()).filter(s => s.length > 0);
     // 新增但未 add 的文件（AI 开发中最常见的“新文件”形态）也纳入同步建议
-    const untracked = await runGit(repoRoot, ['ls-files', '--others', '--exclude-standard']);
+    const untracked = await runGit(repoRoot, ['ls-files', '--others', '--exclude-standard'], execution);
     if (untracked.error !== null) return { files: null, error: untracked.error };
     {
         for (const f of String(untracked.stdout).split(/\r?\n/).map(s => s.trim())) {
@@ -314,25 +310,68 @@ export async function gitChangedFiles(repoRoot: string, diffSpec: string): Promi
     }
     return { files: changed, error: null };
 }
-/** source 文件集合的 SHA-256 指纹（全量哈希，v1 不做采样）。 */
-export async function fingerprintOf(repoRoot: string, sources: SourceRef[]): Promise<{ hash: string | null; missing: string[] }> {
+/** source 路径的落地形态：普通文件（含指向普通文件的符号链接）/ 路径不存在 / 存在但不是普通文件。 */
+export type SourcePathKind = 'file' | 'missing' | 'not-a-file';
+/**
+ * 判定 source 路径属于哪种落地形态。三态必须分开：existsSync 对目录同样返回 true，
+ * 用它判存在会把「目录」算成已落地的源码文件（历史上目录于是被报成「文件缺失」）。
+ *  · lstat ENOENT           → missing（路径确实不存在）；
+ *  · lstat 其它 io 错误     → not-a-file（EACCES/EPERM/ELOOP 等都不是「不存在」）；
+ *  · 普通文件               → file；
+ *  · 符号链接               → 按目标判定：指向普通文件仍算 file，断链或指向目录/设备算 not-a-file。
+ */
+export async function classifySourcePath(repoRoot: string, path: string): Promise<{ kind: SourcePathKind; abs: string }> {
+    const abs = await boundPath(repoRoot, path);
+    let info;
+    try {
+        info = await lstat(abs);
+    }
+    catch (error) {
+        return { kind: (error as NodeJS.ErrnoException).code === 'ENOENT' ? 'missing' : 'not-a-file', abs };
+    }
+    if (info.isFile())
+        return { kind: 'file', abs };
+    if (info.isSymbolicLink()) {
+        try {
+            return { kind: (await stat(abs)).isFile() ? 'file' : 'not-a-file', abs };
+        }
+        catch {
+            // 断链符号链接：lstat 命中、stat 落空，既不是普通文件也不是「路径不存在」
+            return { kind: 'not-a-file', abs };
+        }
+    }
+    return { kind: 'not-a-file', abs };
+}
+/** source 文件集合的 SHA-256 指纹（全量哈希，v1 不做采样）。missing 与 notFiles 都让 hash 为 null。 */
+export async function fingerprintOf(repoRoot: string, sources: SourceRef[]): Promise<{ hash: string | null; missing: string[]; notFiles: string[] }> {
     const paths = [...new Set(sources.map(s => s.path))].sort();
     const missing: string[] = [];
+    const notFiles: string[] = [];
     const hash = createHash('sha256');
     for (const p of paths) {
         try {
-            const safePath = await boundPath(repoRoot, p);
-            const buf = await readFile(safePath);
+            const { kind, abs } = await classifySourcePath(repoRoot, p);
+            if (kind === 'missing') {
+                missing.push(p);
+                continue;
+            }
+            if (kind === 'not-a-file') {
+                notFiles.push(p);
+                continue;
+            }
+            const buf = await readFile(abs);
             hash.update(p);
             hash.update('\0');
             hash.update(buf);
         }
         catch (error) {
             if ((error as { name?: string }).name === 'WorkspaceError') throw error;
-            missing.push(p);
+            // 分类后仍读失败（并发删除等）：只有 ENOENT 算缺失，其余是「不可作为普通文件读取」
+            if ((error as NodeJS.ErrnoException).code === 'ENOENT') missing.push(p);
+            else notFiles.push(p);
         }
     }
-    return { hash: missing.length > 0 ? null : hash.digest('hex'), missing };
+    return { hash: missing.length > 0 || notFiles.length > 0 ? null : hash.digest('hex'), missing, notFiles };
 }
 export function sha256Text(text: string): string {
     return createHash('sha256').update(text, 'utf8').digest('hex');

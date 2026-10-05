@@ -6,7 +6,7 @@ import { createPromptManagerTools } from './service.js';
 
 const usage = '用法：normify-mcp --repo-root <路径> --data-dir <路径> --access <read|write>；相对路径按宿主启动 cwd 解析';
 
-function parseOptions(argv: string[]): { repoRoot: string; dataDir: string; access: 'read' | 'write' } {
+function parseOptions(argv: string[]): { repoRoot: string; dataDir: string; access: 'read' | 'write'; execution: 'standalone' } {
     const allowed = new Set(['--repo-root', '--data-dir', '--access']);
     const options = new Map<string, string>();
     for (let i = 0; i < argv.length; i += 2) {
@@ -24,7 +24,7 @@ function parseOptions(argv: string[]): { repoRoot: string; dataDir: string; acce
     if (access !== 'read' && access !== 'write')
         throw new Error('access 必须是 read 或 write。\n' + usage);
     const launchCwd = process.cwd();
-    return { repoRoot: resolve(launchCwd, repoRoot), dataDir: resolve(launchCwd, dataDir), access };
+    return { repoRoot: resolve(launchCwd, repoRoot), dataDir: resolve(launchCwd, dataDir), access, execution: 'standalone' };
 }
 
 async function main(): Promise<void> {

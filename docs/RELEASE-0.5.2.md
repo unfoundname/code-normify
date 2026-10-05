@@ -63,7 +63,7 @@ curl -L -o dsh-external-dsh-normify-0.5.2.tgz \
   https://github.com/yan-mc/dsh-normify/releases/download/v0.5.2/dsh-external-dsh-normify-0.5.2.tgz
 ```
 
-然后按 [README「安装」](../README.md#5-安装) 把包登记进 profile 的 `dependencies` + `dsh.profile.bundles`，重启 DSH。
+然后按 [README「PromptManager 受管 MCP 接入」](../README.md#promptmanager-受管-mcp-接入) 把 tarball 安装进目标项目并登记 `mcp_servers`。
 
 ### 📚 文档
 

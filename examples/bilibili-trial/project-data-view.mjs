@@ -1,7 +1,63 @@
-import { readFile, writeFile } from 'node:fs/promises'
+/**
+ * examples/bilibili-trial/project-data-view.mjs
+ * 把 architecture.json 机械投影成 data 视图：模块树 + 原样 JSON Schema 类型 + 分层布局。
+ *
+ * 三种运行模式：
+ *   默认（不带参数）  影子目录模式：先把仓库内 normify-data 递归复制到系统临时目录下的影子副本，
+ *                     再在影子上重建；产物 data.json / diagrams.json 也写进影子目录（路径见运行输出）。
+ *                     仓库内被跟踪文件一字不改。
+ *   --check           只读模式：同样在影子副本上工作，但固定 access:'read'，只调用
+ *                     normify_validate / normify_graph_get / normify_graph_validate，报告仓库内
+ *                     normify-data 与 data.json 的投影是否仍然最新（比较前归一化 frontmatter
+ *                     序列化往返的固有差异，见下方 canonical 的注释）。不写仓库内任何文件，
+ *                     可被 CI / 文档安全调用；投影过期或校验不通过时退出码 1。
+ *   --in-place        显式写回仓库：直接在 examples/bilibili-trial/normify-data 上删除-重建，并覆写
+ *                     被跟踪的 data.json / diagrams.json。一次运行会重写数百个受跟踪文件，
+ *                     只在确实要刷新示例快照时使用。
+ *
+ * 为什么默认不写仓库：旧版本用 `process.cwd() + '/normify-data'` 拼数据目录 + access:'write'。
+ * 从仓库根运行时该路径解析成 <仓库根>/normify-data（根 .gitignore 不覆盖它）→ 凭空新建一个非忽略
+ * 目录；在 examples/bilibili-trial 下运行则直接删除-重建被跟踪的 normify-data。两者都不该是
+ * 「跑个示例」的默认副作用。这里路径一律以本脚本自身所在目录为基准推导，不再依赖 cwd。
+ */
+import { cp, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { createHash } from 'node:crypto'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { createPromptManagerTools } from '../../lib/index.js'
 import { collectSchemaRefs, typeRefUri } from '../../lib/engine/contracts.js'
+
+const trialDir = dirname(fileURLToPath(import.meta.url))
+const repoRoot = join(trialDir, 'project')
+const upstreamDataDir = join(trialDir, 'normify-data')
+const trackedArtifacts = ['data.json', 'diagrams.json']
+const usage = [
+  '用法：node examples/bilibili-trial/project-data-view.mjs [--check | --in-place]',
+  '',
+  '  默认        把 normify-data 复制到系统临时目录的影子副本上重建；仓库内被跟踪文件不改动',
+  '  --check     只读：报告 normify-data / data.json 的投影是否最新，不写仓库内任何文件（过期 → 退出码 1）',
+  '  --in-place  写回仓库：删除-重建 examples/bilibili-trial/normify-data，并覆写 data.json / diagrams.json',
+].join('\n')
+
+const argv = process.argv.slice(2)
+if (argv.includes('--help') || argv.includes('-h')) {
+  console.log(usage)
+  process.exit(0)
+}
+const unknown = argv.filter(arg => arg !== '--check' && arg !== '--in-place')
+if (unknown.length > 0) {
+  console.error('未知参数：' + unknown.join(' ') + '\n\n' + usage)
+  process.exit(2)
+}
+const checkOnly = argv.includes('--check')
+const inPlace = argv.includes('--in-place')
+if (checkOnly && inPlace) {
+  console.error('--check 与 --in-place 互斥：只读校验与写回仓库不能同时进行。\n\n' + usage)
+  process.exit(2)
+}
+const mode = checkOnly ? 'check' : inPlace ? 'in-place' : 'shadow'
 
 const architecture = JSON.parse(await readFile(new URL('./architecture.json', import.meta.url), 'utf8'))
 const timestamp = new Date().toISOString()
@@ -54,13 +110,85 @@ const layouts = [
   ...groups.map(group => ({ schema_version: 1, updated_at: timestamp, id: 'data.' + group, mode: 'grid', max_columns: 4, max_api_rows: 0, reading: text('点击结构查看字段、必填项、枚举与完整 JSON Schema。', 'Open a type to inspect fields, required values, enums and full JSON Schema.'), order: modules.filter(module => module.parent === 'data.' + group).map(module => module.id) })),
 ]
 const graph = { schema_version: 1, modules, layouts }
-const tools = new Map((await createPromptManagerTools({ repoRoot: process.cwd() + '/project', dataDir: process.cwd() + '/normify-data', access: 'write' })).map(tool => [tool.name, tool]))
-const current = await tools.get('normify_graph_get').execute()
-if (!current.ok) throw new Error(JSON.stringify(current.errors))
-const checked = await tools.get('normify_graph_validate').execute({ graph })
-if (!checked.ok) throw new Error(JSON.stringify(checked.errors))
-const result = await tools.get('normify_graph_put').execute({ graph, expect_digest: current.digest })
-if (!result.ok) throw new Error(JSON.stringify(result.errors))
-await writeFile(new URL('./data.json', import.meta.url), JSON.stringify(graph, null, 2) + '\n')
-await writeFile(new URL('./diagrams.json', import.meta.url), JSON.stringify({ runner: 'pi', model: 'deepseek-v4-flash', architecture_modules: architecture.modules.length, architecture_apis: architecture.modules.reduce((n, module) => n + (module.apis ?? []).length, 0), data_types: types.length, data_view: '机械投影原架构 JSON Schema；不是单独生成的数据库 ER 模型', data_digest: result.digest }, null, 2) + '\n')
-console.log(JSON.stringify({ ok: true, architecture_modules: architecture.modules.length, data_types: types.length, data_modules: modules.length, digest: result.digest }))
+
+// 数据目录：只有显式 --in-place 才落在仓库内；默认与 --check 都在系统临时目录的影子副本上工作，
+// 这样写工具（以及它旁边的 .normify-data.lock 项目锁）都不会碰到仓库里被跟踪的文件。
+if (!existsSync(upstreamDataDir)) {
+  throw new Error('影子副本的源数据目录不存在：' + upstreamDataDir + '（该目录受 git 跟踪；缺失说明工作区不完整）')
+}
+let artifactsDir = trialDir
+let dataDir = upstreamDataDir
+if (!inPlace) {
+  artifactsDir = await mkdtemp(join(tmpdir(), 'normify-bilibili-trial-'))
+  dataDir = join(artifactsDir, 'normify-data')
+  await cp(upstreamDataDir, dataDir, { recursive: true })
+}
+
+const tools = new Map((await createPromptManagerTools({ repoRoot, dataDir, access: checkOnly ? 'read' : 'write', execution: 'standalone' })).map(tool => [tool.name, tool]))
+
+/**
+ * 投影比较用归一化。只抹平「模块文件序列化往返必然改变、且与内容无关」的三类差异，
+ * 不掩盖真实漂移（src/engine/frontmatter.ts 的 serializeModule 行为为准）：
+ *   - updated_at：每次运行都会变，比较时整个丢掉；
+ *   - description（含 apis[].description）：frontmatter 用折叠块标量 `>` 写出，读回时尾部多一个 \n；
+ *   - deps / tags：长度为 0 时 serializeModule 直接省略该字段，读回即缺失 → 与 [] 等价。
+ * 对象键排序是因为 frontmatter 往返会重排键序；modules / layouts 在 graph_get 里按 id 排序，
+ * 投影按构造顺序，所以顶层先统一排序。
+ */
+const EMPTY_ARRAY_EQUIVALENT = new Set(['deps', 'tags'])
+const canonical = (value, trimTrailing = false) => {
+  if (Array.isArray(value)) return value.map(entry => canonical(entry, trimTrailing))
+  if (value === null || typeof value !== 'object') return trimTrailing && typeof value === 'string' ? value.replace(/\s+$/, '') : value
+  const keys = [...new Set([...Object.keys(value), ...EMPTY_ARRAY_EQUIVALENT])].filter(name => name !== 'updated_at').sort()
+  return Object.fromEntries(keys.map(name => {
+    const child = value[name]
+    if (EMPTY_ARRAY_EQUIVALENT.has(name) && (child === undefined || (Array.isArray(child) && child.length === 0))) return [name, []]
+    return [name, canonical(child, trimTrailing || name === 'description')]
+  }))
+}
+const comparable = graph => canonical({
+  schema_version: graph.schema_version,
+  modules: [...graph.modules].sort((a, b) => String(a.id).localeCompare(String(b.id))),
+  layouts: [...graph.layouts].sort((a, b) => String(a.id).localeCompare(String(b.id))),
+})
+const sameGraph = (a, b) => JSON.stringify(comparable(a)) === JSON.stringify(comparable(b))
+
+if (checkOnly) {
+  const validation = await tools.get('normify_validate').execute()
+  const current = await tools.get('normify_graph_get').execute()
+  if (!current.ok) throw new Error(JSON.stringify(current.errors))
+  const candidate = await tools.get('normify_graph_validate').execute({ graph })
+  const graphCurrent = sameGraph(current.graph, graph)
+  let dataJsonCurrent = false
+  let dataJsonError = null
+  try {
+    dataJsonCurrent = sameGraph(JSON.parse(await readFile(join(trialDir, 'data.json'), 'utf8')), graph)
+  } catch (error) {
+    dataJsonError = String(error instanceof Error ? error.message : error)
+  }
+  const projectionCurrent = graphCurrent && dataJsonCurrent
+  // 宁可红也不要假绿：投影最新但影子副本校验有 error（或候选投影本身不合法）同样按失败退出。
+  const passed = projectionCurrent && validation.ok && candidate.ok
+  console.log(JSON.stringify({
+    ok: passed, mode, upstream_data_dir: upstreamDataDir, shadow_data_dir: dataDir,
+    projection_current: projectionCurrent, graph_current: graphCurrent,
+    data_json_current: dataJsonCurrent, ...(dataJsonError === null ? {} : { data_json_error: dataJsonError }),
+    digest: current.digest, data_modules: modules.length, data_types: types.length,
+    validation: { ok: validation.ok, errors: validation.errors.length, warnings: validation.warnings.length },
+    candidate_graph: { ok: candidate.ok, errors: candidate.errors.length },
+    note: '--check 只读：未写仓库内任何文件；上游目录是 ' + upstreamDataDir + '，校验在影子副本上进行。'
+      + 'ok = 投影最新 且 normify_validate / normify_graph_validate 均 0 error。',
+  }, null, 2))
+  process.exitCode = passed ? 0 : 1
+} else {
+  if (inPlace) console.error('警告：--in-place 会删除-重建 ' + dataDir + '，并覆写受 git 跟踪的 ' + trackedArtifacts.join(' / ') + '。')
+  const current = await tools.get('normify_graph_get').execute()
+  if (!current.ok) throw new Error(JSON.stringify(current.errors))
+  const checked = await tools.get('normify_graph_validate').execute({ graph })
+  if (!checked.ok) throw new Error(JSON.stringify(checked.errors))
+  const result = await tools.get('normify_graph_put').execute({ graph, expect_digest: current.digest })
+  if (!result.ok) throw new Error(JSON.stringify(result.errors))
+  await writeFile(join(artifactsDir, 'data.json'), JSON.stringify(graph, null, 2) + '\n')
+  await writeFile(join(artifactsDir, 'diagrams.json'), JSON.stringify({ runner: 'pi', model: 'deepseek-v4-flash', architecture_modules: architecture.modules.length, architecture_apis: architecture.modules.reduce((n, module) => n + (module.apis ?? []).length, 0), data_types: types.length, data_view: '机械投影原架构 JSON Schema；不是单独生成的数据库 ER 模型', data_digest: result.digest }, null, 2) + '\n')
+  console.log(JSON.stringify({ ok: true, mode, data_dir: dataDir, artifacts_dir: artifactsDir, architecture_modules: architecture.modules.length, data_types: types.length, data_modules: modules.length, digest: result.digest }))
+}

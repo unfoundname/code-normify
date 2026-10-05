@@ -3,7 +3,7 @@ import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError } fr
 import type { CallToolResult, Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { NormifyTool } from '../tools.js';
 
-export interface NormifyMcpAdapter {
+interface NormifyMcpAdapter {
     server: Server;
     /** 等待已经进入内核的操作完成，避免关闭传输时中断落盘。 */
     drain: () => Promise<void>;
@@ -11,7 +11,7 @@ export interface NormifyMcpAdapter {
 
 /** MCP 只负责协议转换；工作区、权限、校验和锁由受管服务统一处理。 */
 export function createNormifyMcpAdapter(tools: readonly NormifyTool[]): NormifyMcpAdapter {
-    const server = new Server({ name: 'normify', version: '0.7.0' }, {
+    const server = new Server({ name: 'normify', version: '0.8.0' }, {
         capabilities: { tools: {} },
     });
     const byName = new Map(tools.map(tool => [tool.name, tool]));

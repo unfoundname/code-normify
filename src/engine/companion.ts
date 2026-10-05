@@ -1,3 +1,4 @@
+import { standaloneExecution, type NormifyToolExecution } from '../execution.js';
 import { diag } from './diag.js';
 import { gitHead, loadAllModules as loadAllModulesForClose } from './store.js';
 import { refreshModules } from './edit.js';
@@ -38,7 +39,7 @@ interface LandingRef {
  * 关闭开发变更（伴随开发收尾）：刷新指纹/激活 planned → validate（0 error 强制）→ build（可选 render）
  * → 标记 verified 并记录 revision.after。任何一步失败都不关闭，变更保持原状态。
  */
-export async function closeChange(projectDir: string, id: string, opts: CloseOptions): Promise<CloseResult> {
+export async function closeChange(projectDir: string, id: string, opts: CloseOptions, execution: NormifyToolExecution = standaloneExecution): Promise<CloseResult> {
     const { change, error }: { change: ChangeData | null; error: Diagnostic | null } = await loadChangeFile(projectDir, id);
     if (error !== null)
         return { ok: false, phase: 'load', errors: [error], warnings: [] };
@@ -73,7 +74,7 @@ export async function closeChange(projectDir: string, id: string, opts: CloseOpt
     if (repoRoot !== undefined) {
         const targets = [...new Set([...(change.modules.create ?? []), ...(change.modules.modify ?? []), ...(change.modules.api_add ?? []).map(ref => ref.module)])];
         if (targets.length > 0) {
-            const rr = await refreshModules(projectDir, { ids: targets, repoRoot, activate: opts.activate !== false });
+            const rr = await refreshModules(projectDir, { ids: targets, repoRoot, activate: opts.activate !== false }, execution);
             if (!rr.ok) {
                 return { ok: false, phase: 'refresh', errors: rr.errors, warnings: rr.warnings, change, hint: '先修正 refresh 报错（源码落地/路径/指纹），再关闭变更。' };
             }
@@ -119,7 +120,7 @@ export async function closeChange(projectDir: string, id: string, opts: CloseOpt
         return { ok: false, phase: 'build', errors: b.errors, warnings: v.warnings, change };
     let render: Record<string, unknown> | null = null;
     const now = new Date().toISOString();
-    const head = repoRoot !== undefined ? await gitHead(repoRoot) : { sha: null };
+    const head = repoRoot !== undefined ? await gitHead(repoRoot, execution) : { sha: null };
     const updated = {
         ...change,
         status: 'verified',

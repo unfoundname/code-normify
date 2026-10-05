@@ -1,3 +1,4 @@
+import { type NormifyToolExecution } from '../execution.js';
 import type { Diagnostic, LayoutData, Module, ModuleFile } from './types.js';
 import type { ValidateOutput } from './validate.js';
 /** 可编辑 JSON 图；树边、接口索引和类型关系都由 modules 派生，不再存第二份。 */
@@ -14,12 +15,12 @@ export declare function readGraph(dataDir: string): Promise<{
     errors: Diagnostic[];
     warnings: Diagnostic[];
 }>;
-export declare function validateGraph(dataDir: string, graph: ArchitectureGraph, repoRoot: string, requireBilingual: boolean): Promise<{
+export declare function validateGraph(dataDir: string, graph: ArchitectureGraph, repoRoot: string, requireBilingual: boolean, execution?: NormifyToolExecution): Promise<{
     ok: boolean;
     errors: Diagnostic[];
     warnings: Diagnostic[];
 }>;
-export declare function putGraph(dataDir: string, graph: ArchitectureGraph, repoRoot: string, requireBilingual: boolean, expected: string): Promise<{
+export declare function putGraph(dataDir: string, graph: ArchitectureGraph, repoRoot: string, requireBilingual: boolean, expected: string, execution?: NormifyToolExecution): Promise<{
     ok: boolean;
     errors: Diagnostic[];
     warnings: Diagnostic[];

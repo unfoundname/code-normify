@@ -8,7 +8,7 @@ export class WorkspaceError extends Error {
     constructor(public code: string, message: string) { super(message); this.name = 'WorkspaceError'; }
 }
 
-export function relativePath(value: string): string {
+function relativePath(value: string): string {
     if (!value || isAbsolute(value) || /[\\:\x00-\x1f]/.test(value) || value.split('/').some(part => part === '' || part === '.' || part === '..'))
         throw new WorkspaceError('workspace/path-invalid', '必须使用无盘符、反斜杠或 .. 的工作区相对路径：' + value);
     return value;
@@ -50,14 +50,16 @@ export async function assertDataDirectory(path: string): Promise<void> {
 }
 
 /** 多个受管 MCP 进程共享同一个文件锁，时间经过不代表所有权已经释放。 */
-export async function withProjectLock<T>(dataDir: string, operation: () => Promise<T>, signal?: AbortSignal): Promise<T> {
+export async function withProjectLock<T>(dataDir: string, operation: () => Promise<T>, signal?: AbortSignal, check: () => void = () => {}): Promise<T> {
     signal?.throwIfAborted();
+    check();
     const lockDir = join(dirname(dataDir), '.' + dataDir.split(/[\\/]/).pop() + '.lock');
     const token = randomUUID();
     const deadline = Date.now() + 60_000;
     await mkdir(dirname(dataDir), { recursive: true });
     for (;;) {
         signal?.throwIfAborted();
+        check();
         try { await mkdir(lockDir); break; }
         catch (error) {
             if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
@@ -85,6 +87,7 @@ export async function withProjectLock<T>(dataDir: string, operation: () => Promi
         try { await ownerFile.writeFile(JSON.stringify({ pid: process.pid, token }), 'utf8'); }
         finally { await ownerFile.close(); }
         signal?.throwIfAborted();
+        check();
         return await operation();
     } finally {
         const owner = JSON.parse(await readFile(join(lockDir, 'owner.json'), 'utf8')) as { token: string };

@@ -1,3 +1,4 @@
+import { type NormifyToolExecution } from './execution.js';
 import type { ToolCatalogEntry } from './engine/reference.js';
 import type { Diagnostic } from './engine/types.js';
 export interface ToolEnv {
@@ -40,13 +41,13 @@ export interface NormifyTool {
     description: string;
     behavior: ToolBehavior;
     parameters: ObjectSchema;
-    execute: (args?: Record<string, unknown>) => Promise<NormifyToolResult>;
+    execute: (args?: Record<string, unknown>, execution?: NormifyToolExecution) => Promise<NormifyToolResult>;
 }
 export type NormifyToolRegistration = (tool: NormifyTool) => void;
 /** 新能力复用同一参数校验、错误契约与进程内串行调度边界。 */
 export declare function defineNormifyTool<A>(env: ToolEnv, definition: ToolDef & {
     name: string;
-}, execute: (args: A) => Promise<{
+}, execute: (args: A, execution: NormifyToolExecution) => Promise<{
     ok: boolean;
 }>): NormifyTool;
 export declare function createNormifyTools(env: ToolEnv, getHelpCatalog?: () => readonly ToolCatalogEntry[]): NormifyTool[];

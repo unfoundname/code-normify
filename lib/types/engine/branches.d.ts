@@ -1,3 +1,5 @@
+import { type NormifyToolExecution } from '../execution.js';
+export type { BranchGitReader } from '../execution.js';
 import type { Diagnostic, LocalizedText, Module } from './types.js';
 export declare const BRANCH_PLAN_FILE = "branch-plan.json";
 export interface BranchExternalDependency {
@@ -336,8 +338,6 @@ export declare const BRANCH_PLAN_SCHEMA: {
         };
     };
 };
-/** 宿主固定的只读 Git 边界；库不取得提交、分支或执行权限。 */
-export type BranchGitReader = (repoRoot: string, args: readonly string[]) => Promise<string>;
 export declare function readBranchPlan(dataDir: string): Promise<{
     ok: boolean;
     errors: Diagnostic[];
@@ -351,7 +351,7 @@ export declare function readBranchPlan(dataDir: string): Promise<{
     plan: BranchPlan;
     digest: string;
 }>;
-export declare function validateBranchPlan(dataDir: string, raw: unknown, repoRoot: string, requireBilingual: boolean): Promise<{
+export declare function validateBranchPlan(dataDir: string, raw: unknown, repoRoot: string, requireBilingual: boolean, execution?: NormifyToolExecution): Promise<{
     ok: boolean;
     errors: Diagnostic[];
     warnings: Diagnostic[];
@@ -366,7 +366,7 @@ export declare function validateBranchPlan(dataDir: string, raw: unknown, repoRo
     graph_digest: string;
     units: never[];
 }>;
-export declare function putBranchPlan(dataDir: string, raw: unknown, repoRoot: string, requireBilingual: boolean, expected: string): Promise<{
+export declare function putBranchPlan(dataDir: string, raw: unknown, repoRoot: string, requireBilingual: boolean, expected: string, execution?: NormifyToolExecution): Promise<{
     ok: boolean;
     errors: Diagnostic[];
     warnings: never[];
@@ -383,7 +383,7 @@ export declare function putBranchPlan(dataDir: string, raw: unknown, repoRoot: s
     graph_digest: string;
     units: DerivedBranchUnit[];
 }>;
-export declare function deleteBranchPlan(dataDir: string, expected: string): Promise<{
+export declare function deleteBranchPlan(dataDir: string, expected: string, execution?: NormifyToolExecution): Promise<{
     ok: boolean;
     errors: Diagnostic[];
     warnings: never[];
@@ -391,7 +391,7 @@ export declare function deleteBranchPlan(dataDir: string, expected: string): Pro
     deleted: boolean;
 }>;
 /** 基于真实共享文件及 together 的连通分量；不猜业务验收和依赖实现顺序。 */
-export declare function suggestBranchPlan(dataDir: string, input: unknown, repoRoot: string, requireBilingual: boolean): Promise<{
+export declare function suggestBranchPlan(dataDir: string, input: unknown, repoRoot: string, requireBilingual: boolean, execution?: NormifyToolExecution): Promise<{
     ok: boolean;
     errors: Diagnostic[];
     warnings: Diagnostic[];
@@ -411,7 +411,7 @@ export declare function suggestBranchPlan(dataDir: string, input: unknown, repoR
     graph_digest: string;
     units: DerivedBranchUnit[];
 }>;
-export declare function branchPacket(dataDir: string, unitId: string, repoRoot: string, requireBilingual: boolean): Promise<{
+export declare function branchPacket(dataDir: string, unitId: string, repoRoot: string, requireBilingual: boolean, execution?: NormifyToolExecution): Promise<{
     packet: null;
     ok: boolean;
     errors: Diagnostic[];
@@ -439,7 +439,7 @@ export declare function branchPacket(dataDir: string, unitId: string, repoRoot: 
     graph_digest: string;
     units: DerivedBranchUnit[];
 }>;
-export declare function branchPackets(dataDir: string, repoRoot: string, requireBilingual: boolean, readGit?: BranchGitReader): Promise<{
+export declare function branchPackets(dataDir: string, repoRoot: string, requireBilingual: boolean, execution?: NormifyToolExecution): Promise<{
     packets: never[];
     ok: boolean;
     errors: Diagnostic[];

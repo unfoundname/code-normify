@@ -5,7 +5,7 @@ import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
-import { createPromptManagerTools } from '@promptmanager/code-normify/service'
+import { createPromptManagerTools } from '../../lib/service.js'
 
 // Run from this repository after npm run build. Artifacts are preserved for inspection.
 // 先 npm run build，再运行本文件；保留临时产物供审阅，不创建 PromptManager 执行组。
@@ -96,7 +96,7 @@ const graph = {
   layouts: []
 }
 
-const catalog = await createPromptManagerTools({ repoRoot, dataDir, access: 'write' })
+const catalog = await createPromptManagerTools({ repoRoot, dataDir, access: 'write', execution: 'standalone' })
 const tools = new Map(catalog.map(tool => [tool.name, tool]))
 const call = async (name, args = {}) => {
   const result = await tools.get(name).execute(args)

@@ -2,7 +2,7 @@
 
 [English](./README_EN.md) · 简体中文
 
-`@promptmanager/code-normify` 0.7.0 是 PromptManager 的本地架构与分支规划工具。先设计模块树、数据类型和接口输入输出，校验后生成可下钻的架构图，再按可独立验证的交付单元划分开发组，为实现 Worker 提供固定版本的契约与目标文件。提供 **43 个工具**、Node.js ESM library 和受管 stdio MCP，运行环境为 **Node.js 20+**。
+`@promptmanager/code-normify` 0.8.0 是 PromptManager 的本地架构与分支规划工具。先设计模块树、数据类型和接口输入输出，校验后生成可下钻的架构图，再按可独立验证的交付单元划分开发组，为实现 Worker 提供固定版本的契约与目标文件。提供 **43 个工具**、Node.js ESM library 和受管 stdio MCP，运行环境为 **Node.js 20+**。
 
 Normify 负责结构数据、诊断、编译、渲染与静态分支计划；PromptManager 负责真实组身份、角色权限、执行组分支与工作区、原生进程租约、Worker 派工、审查、集成和任务状态。本仓库提供工具边界和接入示例，未修改 PromptManager 或注册新的宿主 IPC 通道。
 
@@ -163,9 +163,9 @@ await call('normify_branch_plan_put', {
 
 `normify_branch_packet({ unit_id })` 返回该单元的模块正文、完整数据/API 契约、组外依赖、`write_paths`、验收声明以及 `base_commit`、`graph_digest`、`plan_digest` 三个固定版本。`normify_branch_plan_export({ lead_ref })` 返回 `worker_plan`，每个单元对应一项 `role: "lead"`；`spec` 为冻结交接包 JSON，`requirementIds` 与 `needs` 对接宿主原有组计划结构。计划标识同时包含逻辑计划 ID 与计划摘要，区分不同版本。
 
-`lead_ref` 只引用宿主的 leader 模板，不代表真实组身份或授权。PromptManager 须核对正式 `WorkerConfiguration`，复用现有分支、worktree、角色、Worker 状态、审查与集成服务。本次提供静态导出适配器；应用内端到端接线仍需宿主完成。`validate`、`packet` 和 `export` 的 0 error 只证明声明满足静态契约，工具不会执行验收命令，也不会证明资源隔离或真实集成已通过。
+`lead_ref` 只引用宿主的 leader 模板，不代表真实组身份或授权。PromptManager 须核对正式 `WorkerConfiguration`，复用现有分支、worktree、角色、Worker 状态、审查与集成服务。库提供固定设计读取和纯计划投影，不持有运行权限。`validate`、`packet` 和 `export` 的 0 error 只证明声明满足静态契约，工具不会执行验收命令，也不会证明资源隔离或真实集成已通过。
 
-宿主接线时须按包内 `base_commit` 创建工作树，并为 `after` 策略解析、固定和物化前置单元的交付提交。当前 PromptManager 的普通 lead 工作树从 `main` 取得基线，`needs` 只等待任务完成；这些行为尚未消费上述分支契约，不能据静态导出宣称执行流程已经接通。
+宿主接线时须按包内 `base_commit` 创建工作树，并为 `after` 策略解析、固定和物化前置单元的交付提交。PromptManager 当前已增加 SQL 设计快照、结构化单元引用、固定 Git 输入/候选证明物化和 argv 验收接线；普通人工分工仍使用其原有契约。数据库、服务与命名端口声明的专属绑定和新版原生整链验收仍未完成，不能据静态导出宣称交付通过。
 
 可运行例子位于[源码仓库](https://github.com/wishbreeze/code-normify)的 `examples/branch-development/example.mjs`。请在源码仓库中运行，需 Git 与 Node.js 20+；npm 发布包不包含 `examples/` 目录：
 
@@ -174,7 +174,7 @@ npm run build
 node examples/branch-development/example.mjs
 ```
 
-例子创建临时 Git 基线与计划态图，补全两个独立交付单元并读取组包、导出组计划；打印摘要与保留产物路径。示例中的业务验收命令仅作声明。
+例子创建临时 Git 基线与计划态图，补全两个独立交付单元并读取组包、导出组计划；打印摘要与保留产物路径。示例以相对路径 `../../lib/service.js` 直接消费本仓库构建产物，无需安装包或建立 `node_modules` 链接，`npm run build` 之后即可从仓库根直接运行。示例中的业务验收命令仅作声明。
 
 ## PromptManager 受管 MCP 接入
 
@@ -185,7 +185,7 @@ npm ci
 npm run build
 npm pack
 # 在目标项目安装上一步生成的包，路径按实际文件填写
-npm install --save-dev /absolute/path/promptmanager-code-normify-0.7.0.tgz
+npm install --save-dev /absolute/path/promptmanager-code-normify-0.8.0.tgz
 ```
 
 本示例使用本地构建包，不假定包已经发布到 npm。各执行组须通过 PromptManager 既有依赖准备流程获得该包。
@@ -260,15 +260,18 @@ export async function openArchitectureTools(groupWorkspace: string) {
     repoRoot: groupWorkspace,
     dataDir: join(groupWorkspace, 'normify-architecture'),
     access: 'write',
+    execution: 'host',
     requireBilingual: true
   })
   return new Map(tools.map(tool => [tool.name, tool]))
 }
 ```
 
-`groupWorkspace` 必须来自宿主已授权的执行组绝对路径。工具提供 `name`、`description`、`behavior`、标准 JSON Schema `parameters` 和 `execute(args)`；结果统一为对象，包含 `ok`、`errors` 和 `warnings`。
+`groupWorkspace` 必须来自宿主已授权的执行组绝对路径。 `execution` 模式必须明确选择 `host` 或 `standalone`；MCP CLI 显式使用 standalone。host 模式的每次调用必须提供 `{ signal, check, readGit }`，缺失任何能力都会拒绝，绝不调用独立 Git。`check(phase)` 的阶段为 `access` 或 `publish`：宿主核对固定 Worker/尝试/需求身份，并在 publish 核对草稿 CAS。取消信号贯穿队列、项目锁等待和 Git，关键 await 后重新检查身份。模型 JSON 不接受这些能力，也不能设置 `repoRoot`、`dataDir`、`dir` 或 `project`。工具提供 `name`、`description`、`behavior`、标准 JSON Schema `parameters` 和 `execute(args, execution)`；结果统一为对象，包含 `ok`、`errors` 和 `warnings`。
 
-宿主接纳固定设计可调用 `readBranchPlanningSnapshot(options, {plan_digest, graph_digest}, readGit, signal)`。调用方必须提供绑定仓库的只读 Git 端口；该入口复用项目锁，在读取前后核对完整图和计划版本，返回统一 `BranchPlanningSnapshot`（plan、packets 与两个 digest）。等待锁可取消。PromptManager 将接纳结果保存为不可变 SQL 快照；此读取入口不创建 Worker，也不证明固定基线、after 提交物化或真实验收已经接通。
+宿主可先调用 `readBranchPlanningHead(options, signal, check)` 发现当前计划和两个 digest；接纳时调用 `readBranchPlanningSnapshot(options, {plan_digest, graph_digest}, readGit, signal, check)`。调用方必须提供绑定仓库的只读 Git 端口；读取复用项目锁，在前后核对完整图和计划版本，返回统一 `BranchPlanningSnapshot`（plan、packets 与两个 digest）。等待锁可取消。`projectBranchWorkerPlan(snapshot, leadRef)` 只投影已固定的快照，不重新读文件。PromptManager 将接纳结果保存为不可变 SQL 快照；这些库入口不创建 Worker，也不证明实际交付或验收完成。
+
+图发布仍逐文件替换并在失败时回滚，并非多文件原子提交。宿主编辑应绑定唯一候选目录，成功后由宿主原子 CAS 切换 SQL 草稿头；已接纳的 SQL 设计快照不随候选目录修改而改变。库不持有 SQL 草稿头或正式需求权威。
 
 React 通过 PromptManager 现有主进程 IPC 边界取得只读图数据或预览结果；不要在渲染进程导入本 package、`node:fs` 或自行扫描仓库。宿主接线应复用现有 IPC、角色和任务资源授权机制；本示例没有新增 IPC channel。
 
@@ -317,4 +320,4 @@ npm run test:render
 
 ## 来源与许可
 
-本项目由 [yan-mc/dsh-normify](https://github.com/yan-mc/dsh-normify) 派生，保留原有结构引擎、查看器及 MIT 许可。当前派生仓库为 [wishbreeze/code-normify](https://github.com/wishbreeze/code-normify)，0.6.0 将宿主入口迁移为 PromptManager 工具 library 与受管 MCP，0.7.0 增加按可独立验证交付单元划分的分支计划。原作者归属 **Copyright (c) 2026 yan-mc** 见 [LICENSE](./LICENSE)。
+本项目由 [yan-mc/dsh-normify](https://github.com/yan-mc/dsh-normify) 派生，保留原有结构引擎、查看器及 MIT 许可。当前派生仓库为 [wishbreeze/code-normify](https://github.com/wishbreeze/code-normify)，0.6.0 将宿主入口迁移为 PromptManager 工具 library 与受管 MCP，0.7.0 增加按可独立验证交付单元划分的分支计划，0.8.0 把 `execution`（host/standalone）变成 `createPromptManagerTools` 的必填项并确立宿主执行契约。原作者归属 **Copyright (c) 2026 yan-mc** 见 [LICENSE](./LICENSE)。

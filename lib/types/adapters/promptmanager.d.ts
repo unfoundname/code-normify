@@ -1,3 +1,4 @@
+import { type NormifyToolExecution } from '../execution.js';
 import type { BranchPlanningSnapshot } from '../planning.js';
 /** 固定快照的纯投影：宿主落库后不再读可变的设计文件。 */
 export declare function projectBranchWorkerPlan(snapshot: BranchPlanningSnapshot, leadRef: string): {
@@ -13,7 +14,7 @@ export declare function projectBranchWorkerPlan(snapshot: BranchPlanningSnapshot
     }[];
 };
 /** 固定设计投影到宿主已有 WorkerPlan；不持有 Worker 身份、状态、权限或 Git 句柄。 */
-export declare function exportBranchWorkerPlan(dataDir: string, repoRoot: string, requireBilingual: boolean, leadRef: string): Promise<{
+export declare function exportBranchWorkerPlan(dataDir: string, repoRoot: string, requireBilingual: boolean, leadRef: string, execution?: NormifyToolExecution): Promise<{
     packets: never[];
     ok: boolean;
     errors: import("../index.js").Diagnostic[];

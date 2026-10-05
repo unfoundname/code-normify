@@ -85,6 +85,11 @@ const tu = await call('normify_help', { topic: 'tool:nope' })
 ok('④d 未知工具报 args/unknown-tool', tu.ok === false && tu.errors.some(d => d.code === 'args/unknown-tool'), JSON.stringify(tu.errors).slice(0, 120))
 const tl = await call('normify_help', { topic: 'tools' })
 ok('④e tools 主题带"必填/可选"摘要', /必填:/.test(tl.reference) && /可选:/.test(tl.reference))
+const te = await call('normify_help', { topic: 'errors' })
+ok('④e2 errors 主题的长度上限与源码一致（name 60 / description 500 / label 30，非旧文案的单一 30）',
+  /name 的 zh\/en ≤ 60/.test(te.reference) && /description 的 zh\/en ≤ 500/.test(te.reference) && /label 的 zh\/en ≤ 30/.test(te.reference),
+  te.reference.split('\n').find(l => /too-long/.test(l)) ?? '(未找到 too-long 行)')
+ok('④e3 errors 主题不再引用不存在的 structure/label-too-long 代码名', !/structure\/label-too-long/.test(te.reference))
 const NEW = join(work, 'normify-chg').replace(/\\/g, '/')
 const badChg = await call('normify_change_open', { dir: NEW, title: L('测试', 'Test'), intent: L('验收标准写错类型', 'wrong acceptance type'), modules: {}, acceptance: [L('双语对象', 'l10n object')] })
 ok('④f acceptance 传双语对象报 args/invalid 并点明第几条', badChg.ok === false && badChg.errors.some(d => d.code === 'args/invalid' && d.subject.parameter === '/acceptance/0' && /第 1 条/.test(d.message) && /纯字符串/.test(d.message)), JSON.stringify(badChg.errors).slice(0, 170))

@@ -1,8 +1,6 @@
-import { join } from 'node:path';
-import { existsSync } from 'node:fs';
 import type { ChangeData, Diagnostic, LayoutData, ModuleFile, PolicyData } from './types.js';
 import { apiKey, depthOf, deriveParent, idFromFilePath, treeOf } from './ids.js';
-import { fingerprintOf, loadAllModules } from './store.js';
+import { classifySourcePath, fingerprintOf, loadAllModules } from './store.js';
 import { edgeKey, validateLayouts } from './layout.js';
 import { evaluatePolicy, loadPolicyFile } from './policy.js';
 import { validateChanges } from './changes.js';
@@ -308,16 +306,29 @@ export async function validateProject(projectDir: string, opts: ValidateOptions)
                     warnings.push(diag('warning', 'evidence/root-no-source', '根模块无 source（纯文档根）', { module: m.id }, {}, []));
                 continue;
             }
-            const missing = m.source.filter(s => !existsSync(join(repoRoot, s.path)));
-            if (missing.length > 0) {
+            // 三态判定（路径不存在 / 存在但不是普通文件 / 普通文件）：existsSync 对目录也返回 true，
+            // 会把「目录」算成已落地源码，于是目录被报成「文件缺失」。
+            const absent: string[] = [];
+            const notFiles: string[] = [];
+            for (const s of m.source) {
+                const kind = (await classifySourcePath(repoRoot, s.path)).kind;
+                if (kind === 'missing') absent.push(s.path);
+                else if (kind === 'not-a-file') notFiles.push(s.path);
+            }
+            if (notFiles.length > 0) {
+                // 目录/设备文件是「已落地但不是文件」=实现错误，不是「尚未落地」：
+                // planned 也照报（降级会把一个永远不会自愈的结构错误藏起来）。
+                errors.push(diag('error', 'evidence/source-not-a-file', 'source 指向的路径存在但不是普通文件（目录或设备文件），无法作为源码文件', { module: m.id }, { not_files: notFiles }, ['把 source.path 改为具体源码文件，或删除占位的目录路径']));
+            }
+            if (absent.length > 0) {
                 if (planned) {
-                    warnings.push(diag('warning', 'structure/planned-source-missing', '计划态模块的 source 尚未落地（实现后刷新即可）', { module: m.id }, { missing: missing.map(s => s.path) }, ['实现对应文件后调用 normify_module_refresh({ ids: ["' + m.id + '"], activate: true })']));
+                    warnings.push(diag('warning', 'structure/planned-source-missing', '计划态模块的 source 尚未落地（实现后刷新即可）', { module: m.id }, { missing: absent }, ['实现对应文件后调用 normify_module_refresh({ ids: ["' + m.id + '"], activate: true })']));
                 }
                 else {
-                    errors.push(diag('error', 'evidence/source-missing', 'source 指向的文件在仓库中不存在', { module: m.id }, { missing: missing.map(s => s.path) }, ['修正 source.path 或运行 normify_sync 增量重建']));
+                    errors.push(diag('error', 'evidence/source-missing', 'source 指向的文件在仓库中不存在', { module: m.id }, { missing: absent }, ['修正 source.path 或运行 normify_sync 增量重建']));
                 }
-                continue;
             }
+            if (absent.length > 0 || notFiles.length > 0) continue;
             if (m.fingerprint === 'pending') {
                 if (!planned)
                     errors.push(diag('error', 'evidence/fingerprint-pending', '只有 planned 模块可以使用 fingerprint: pending', { module: m.id }, {}, ['用 normify_fingerprint 重算或把 state 改为 planned']));
@@ -325,7 +336,11 @@ export async function validateProject(projectDir: string, opts: ValidateOptions)
             }
             const fp = await fingerprintOf(repoRoot, m.source);
             if (fp.hash === null) {
-                errors.push(diag('error', 'evidence/fingerprint-unavailable', '无法计算 fingerprint（文件缺失）', { module: m.id }, { missing: fp.missing }, []));
+                // 走到这里只剩竞态（上面已按三态分流），文案必须区分「不存在」与「不是文件」
+                const reason = fp.notFiles.length > 0
+                    ? 'source 路径存在但不是普通文件（目录或设备文件）'
+                    : fp.missing.length > 0 ? 'source 路径不存在' : 'source 文件不可读';
+                errors.push(diag('error', 'evidence/fingerprint-unavailable', '无法计算 fingerprint（' + reason + '）', { module: m.id }, { missing: fp.missing, not_files: fp.notFiles }, []));
             }
             else if (fp.hash !== m.fingerprint) {
                 errors.push(diag('error', 'evidence/fingerprint-drift', 'fingerprint 与仓库当前内容不一致（结构数据已过期）', { module: m.id }, { authored: m.fingerprint, actual: fp.hash }, ['运行 normify_sync 计划增量重建，或更新 fingerprint']));

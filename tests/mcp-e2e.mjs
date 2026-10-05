@@ -41,7 +41,10 @@ async function connect(access, launch) {
     clients.add(connection);
     await client.connect(transport);
     assert.equal(client.getServerVersion().name, 'normify');
-    assert.equal(client.getServerVersion().version, '0.7.0');
+    // MCP server version 与 package.json 同源：写死字面量 + 与 package.json 逐一比对，
+    // 双保险拦住「0.7.0 tarball 与源码共用同一版本号」那类发布漂移（脚本侧另有 check:refs 的版本字面量清单）。
+    assert.equal(client.getServerVersion().version, '0.8.0');
+    assert.equal(client.getServerVersion().version, JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version);
     return connection;
 }
 
@@ -287,7 +290,37 @@ async function main() {
     await assert.rejects(reader.client.callTool({ name: 'normify_branch_plan_delete', arguments: { expect_digest: readPlan.digest } }), /未知.*Normify/);
     await assert.rejects(reader.client.callTool({ name: 'normify_module_delete', arguments: { id: 'demo.worker' } }), /未知.*Normify/);
     await close(reader);
+    verifyReferencesRootGuard();
     console.log('MCP e2e PASS：initialize/listTools/callTool、受管写入闭环、只读权限、取消与异常映射、越界拒绝与进程关闭。');
+}
+
+// check-references 的 --root 必须 fail-closed：显式传了 --root 就绝不回退到「本脚本所在仓库」。
+// 历史缺陷：--root 指向不存在目录时回退扫描本仓库；--root 指向仓库子目录时 git 会向上发现父仓库，
+// 于是「仓库根:」打印的是子目录、判定基准却落在父仓库上，两种都是同一类假绿。
+function verifyReferencesRootGuard() {
+    const script = 'scripts/check-references.cjs';
+    const missingRoot = join(work, 'no-such-root-' + Date.now(), 'nested');
+    const run = (args) => spawnSync(process.execPath, [script, ...args], { cwd: root, encoding: 'utf8', windowsHide: true });
+
+    const missing = run(['--root', missingRoot]);
+    assert.equal(missing.status, 1, '--root 指向不存在的目录必须 fail-closed（exit 1），不得回退扫描本仓库');
+    assert.match(missing.stdout, /--root 指向的目录不存在/, '必须说明 --root 指向的目录不存在');
+    assert.match(missing.stdout, /仓库根: null/, '不得报出任何被扫描的仓库根（回退即假绿）');
+    assert.ok(!/git 跟踪文件: \d/.test(missing.stdout), '--root 非法时不得扫描任何仓库：' + missing.stdout);
+
+    const subdir = run(['--root', 'scripts']);
+    assert.equal(subdir.status, 1, '--root 指向仓库子目录必须报错：git 会向上发现父仓库');
+    assert.match(subdir.stdout, /不是 git 仓库根/, '必须把「不是 git 仓库根」讲清楚');
+    assert.match(subdir.stdout, /仓库根: null/, '不得报出任何被扫描的仓库根');
+
+    // 回归：不传 --root 时保持原行为。退出码取决于仓库自身状态（本地未 add 的残留会让它变红），
+    // 所以这里只断言「仍然扫到了正确的仓库根」，不以 exit 0 作为断言（工作区有外部改动时不稳）。
+    const plain = run([]);
+    assert.ok(
+        plain.stdout.includes('仓库根: ' + root),
+        '不传 --root 时必须仍落在本仓库根 ' + root + '（实际输出：' + plain.stdout.slice(0, 200) + '）',
+    );
+    console.log('check-references --root guard e2e PASS：不存在的目录 / 仓库子目录均 fail-closed，默认根不回归。');
 }
 
 try {

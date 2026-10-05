@@ -18,3 +18,7 @@ project/
 *review*.md
 review-request.md
 continue.md
+
+# modules/ 下的 .md 是正式模块定义（不受上行审阅规则约束）。
+# 注意 "preview" 含子串 "review"，会被 *review*.md 误伤，故显式反选。
+!**/modules/**/*.md

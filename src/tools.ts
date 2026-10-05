@@ -1,3 +1,5 @@
+import { checkExecution, waitForExecution, standaloneExecution, type NormifyToolExecution } from './execution.js';
+import { WorkspaceError } from './workspace.js';
 import { readFile } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
@@ -68,7 +70,7 @@ export interface NormifyTool {
     description: string;
     behavior: ToolBehavior;
     parameters: ObjectSchema;
-    execute: (args?: Record<string, unknown>) => Promise<NormifyToolResult>;
+    execute: (args?: Record<string, unknown>, execution?: NormifyToolExecution) => Promise<NormifyToolResult>;
 }
 
 export type NormifyToolRegistration = (tool: NormifyTool) => void;
@@ -580,7 +582,7 @@ function projectParams(_required = false): { project: SchemaNode; dir: SchemaNod
     };
 }
 function toErrorPayload(error: unknown): NormifyToolResult {
-    if (error instanceof NormifyError) {
+    if (error instanceof NormifyError || error instanceof WorkspaceError) {
         return { ok: false, errors: [diag('error', error.code, error.message)], warnings: [] };
     }
     if (error instanceof Error) {
@@ -600,21 +602,25 @@ const argumentValidator = new Ajv2020({ allErrors: true, strict: true, strictTup
 const toolQueues = new Map<string, Promise<void>>();
 
 /** 同一目录的完整工具操作顺序执行，读取也等待此前写入结束。 */
-async function enqueueTool<T>(rootDir: string, operation: () => Promise<T>): Promise<T> {
+async function enqueueTool<T>(rootDir: string, operation: () => Promise<T>, execution: NormifyToolExecution): Promise<T> {
     const absolute = resolvePath(rootDir);
     const key = process.platform === 'win32' ? absolute.toLowerCase() : absolute;
     const previous = toolQueues.get(key) ?? Promise.resolve();
     let release!: () => void;
-    const pending = new Promise<void>(resolve => { release = resolve; });
+    const completion = new Promise<void>(resolve => { release = resolve; });
+    const pending = previous.then(() => completion);
     toolQueues.set(key, pending);
-    await previous;
+    // Keep ownership of the queue barrier until the preceding operation settles.
     try {
+        await waitForExecution(previous, execution);
+        checkExecution(execution);
         return await operation();
     }
     finally {
         release();
-        if (toolQueues.get(key) === pending)
-            toolQueues.delete(key);
+        void pending.then(() => {
+            if (toolQueues.get(key) === pending) toolQueues.delete(key);
+        });
     }
 }
 
@@ -645,13 +651,14 @@ function normalizeToolResult(result: { ok: boolean }): NormifyToolResult {
 export function defineNormifyTool<A>(
     env: ToolEnv,
     definition: ToolDef & { name: string },
-    execute: (args: A) => Promise<{ ok: boolean }>,
+    execute: (args: A, execution: NormifyToolExecution) => Promise<{ ok: boolean }>,
 ): NormifyTool {
     const validate = argumentValidator.compile(definition.parameters);
     return {
         ...definition,
-        execute: async (args = {}) => {
+        execute: async (args = {}, execution = standaloneExecution) => {
             try {
+                checkExecution(execution);
                 const missing = args !== null && typeof args === 'object' && !Array.isArray(args)
                     ? (definition.parameters.required ?? []).filter(key => args[key] === undefined)
                     : [];
@@ -661,7 +668,10 @@ export function defineNormifyTool<A>(
                     const errors = (validate.errors ?? []).map(argumentDiagnostic);
                     return { ok: false, errors, warnings: [] };
                 }
-                return await enqueueTool(env.rootDir, async () => normalizeToolResult(await execute(args as A)));
+                return await enqueueTool(env.rootDir, async () => {
+                    checkExecution(execution);
+                    return normalizeToolResult(await execute(args as A, execution));
+                }, execution);
             }
             catch (error) {
                 return toErrorPayload(error);
@@ -673,7 +683,7 @@ export function defineNormifyTool<A>(
 export function createNormifyTools(env: ToolEnv, getHelpCatalog?: () => readonly ToolCatalogEntry[]): NormifyTool[] {
     const tools: NormifyTool[] = [];
     const toolCatalog: ToolCatalogEntry[] = [];
-    const register = <A>(key: string, def: ToolDef, execute: (args: A) => Promise<{ ok: boolean }>): void => {
+    const register = <A>(key: string, def: ToolDef, execute: (args: A, execution: NormifyToolExecution) => Promise<{ ok: boolean }>): void => {
         toolCatalog.push({ name: key, description: def.description, behavior: def.behavior, parameters: def.parameters });
         tools.push(defineNormifyTool(env, { name: key, ...def }, execute));
     };
@@ -946,11 +956,11 @@ export function createNormifyTools(env: ToolEnv, getHelpCatalog?: () => readonly
             diff: strOpt('git diff 范围（默认 HEAD）'),
             ...projectParams(true),
         }, ['repoRoot']),
-    }, async (args: SyncArgs) => {
+    }, async (args: SyncArgs, execution) => {
         const proj = await resolve(args);
         const repoRoot = String(args.repoRoot);
         const diff = args.diff;
-        const changed = await gitChangedFiles(repoRoot, diff ?? '');
+        const changed = await gitChangedFiles(repoRoot, diff ?? '', execution);
         if (changed.files === null) {
             return { ok: false, error: { code: 'sync/git-failed', message: changed.error ?? 'git 不可用' } };
         }
@@ -1256,10 +1266,11 @@ export function createNormifyTools(env: ToolEnv, getHelpCatalog?: () => readonly
         const sources = Array.isArray(args.source) ? args.source : [];
         const fp = await fingerprintOf(repoRoot, sources);
         return {
-            ok: fp.missing.length === 0,
+            ok: fp.missing.length === 0 && fp.notFiles.length === 0,
             fingerprint: fp.hash,
             files: sources.map(s => s.path),
             missing: fp.missing,
+            not_files: fp.notFiles,
             algorithm: 'sha256: 按 path 升序，逐个 update(UTF-8(path)) + update(0x00) + update(file bytes)',
         };
     });
@@ -1555,7 +1566,7 @@ export function createNormifyTools(env: ToolEnv, getHelpCatalog?: () => readonly
             dry_run: boolOpt('仅计算并返回结果，不写磁盘'),
             ...projectParams(true),
         }, ['repoRoot']),
-    }, async (args: ModuleRefreshArgs) => {
+    }, async (args: ModuleRefreshArgs, execution) => {
         const proj = await resolve(args);
         const ids = Array.isArray(args.ids) ? args.ids.map(String) : undefined;
         if ((ids === undefined || ids.length === 0) && args.all !== true) {
@@ -1567,7 +1578,7 @@ export function createNormifyTools(env: ToolEnv, getHelpCatalog?: () => readonly
             repoRoot: String(args.repoRoot),
             activate: args.activate === true,
             dryRun: args.dry_run === true,
-        });
+        }, execution);
         if (!r.ok)
             return { ok: false, dry_run: r.dryRun, errors: r.errors, warnings: r.warnings, missing: r.missing };
         return {
@@ -1720,7 +1731,7 @@ export function createNormifyTools(env: ToolEnv, getHelpCatalog?: () => readonly
             note: strOpt('关闭备注（可选）'),
             ...projectParams(true),
         }, ['id']),
-    }, async (args: ChangeCloseArgs) => {
+    }, async (args: ChangeCloseArgs, execution) => {
         const proj = await resolve(args);
         const r = await closeChange(proj.dir, String(args.id), {
             repoRoot: typeof args.repoRoot === 'string' ? args.repoRoot : undefined,
@@ -1728,7 +1739,7 @@ export function createNormifyTools(env: ToolEnv, getHelpCatalog?: () => readonly
             render: args.render === true,
             note: typeof args.note === 'string' ? args.note : undefined,
             requireBilingual: env.requireBilingual,
-        });
+        }, execution);
         return {
             ok: r.ok,
             phase: r.phase,

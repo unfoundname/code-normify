@@ -1,3 +1,4 @@
+import { standaloneExecution, type NormifyToolExecution } from '../execution.js';
 import { branchPackets } from '../engine/branches.js';
 import { diag } from '../engine/diag.js';
 import type { BranchPlanningSnapshot } from '../planning.js';
@@ -12,9 +13,9 @@ export function projectBranchWorkerPlan(snapshot: BranchPlanningSnapshot, leadRe
 }
 
 /** 固定设计投影到宿主已有 WorkerPlan；不持有 Worker 身份、状态、权限或 Git 句柄。 */
-export async function exportBranchWorkerPlan(dataDir: string, repoRoot: string, requireBilingual: boolean, leadRef: string) {
+export async function exportBranchWorkerPlan(dataDir: string, repoRoot: string, requireBilingual: boolean, leadRef: string, execution: NormifyToolExecution = standaloneExecution) {
     if (!leadRef.trim()) return { ok: false, errors: [diag('error', 'branch/template-ref', '必须明确指定编排组 lead 模板引用')], warnings: [] };
-    const result = await branchPackets(dataDir, repoRoot, requireBilingual);
+    const result = await branchPackets(dataDir, repoRoot, requireBilingual, execution);
     if (!result.ok || !result.plan || !result.packets) return result;
     const workerPlan = projectBranchWorkerPlan({ plan: result.plan, packets: result.packets,
         plan_digest: result.digest, graph_digest: result.graph_digest }, leadRef);

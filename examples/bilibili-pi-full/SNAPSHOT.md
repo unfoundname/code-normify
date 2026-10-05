@@ -10,4 +10,4 @@
 git clone frozen-project.bundle project
 ```
 
-`pi-mcp.ts`、`run-pi.mjs` 及示例仓库脚本中的绝对路径是本次 Windows 试用环境配置。换环境时应显式配置仓库、Node、pi 与 MCP adapter 路径。原始运行日志和会话继续保留在本机。
+`pi-mcp.ts`、`run-pi.mjs` 及示例仓库脚本中的绝对路径是本次 Windows 试用环境配置。换环境时应显式配置仓库、Node、pi 与 MCP adapter 路径。原始运行日志和会话继续保留在本机。运行前需自备 `pi-mcp-adapter`（该包不是本仓库依赖，未列入 `package.json`、锁文件或 `node_modules`），并按实际安装位置修改 `pi-mcp.ts` 第 1 行的 import 路径。

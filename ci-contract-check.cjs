@@ -29,7 +29,7 @@ async function check() {
   const promptManagerTools = await library.createPromptManagerTools({
     repoRoot,
     dataDir: join(dirname(repoRoot), 'normify-ci-fixture'),
-    access: 'write',
+    access: 'write', execution: 'standalone',
   });
   checkCatalog(promptManagerTools, ['normify_schema_get', 'normify_graph_get', 'normify_work_packet', 'normify_branch_plan_suggest', 'normify_branch_plan_get', 'normify_branch_plan_validate', 'normify_branch_plan_put', 'normify_branch_plan_delete', 'normify_branch_packet', 'normify_branch_plan_export']);
   if ('apply' in library || 'inject' in library)

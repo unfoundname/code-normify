@@ -10,6 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # 必须完整历史（默认 fetch-depth: 1 是浅克隆）：
+          # scripts/check-references.cjs 用 `git log --diff-filter=D --name-only` 取历史删除清单来
+          # 检测「指向已删除文件的引用」；浅克隆拿不到删除历史，那项检查会形同虚设（脚本只能发
+          # shallow-clone 警告）。fetch-depth: 0 才能让该门禁在 CI 里完整生效。
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -23,6 +29,112 @@ jobs:
         run: npm test
       - name: Library + MCP tool contract
         run: node ci-contract-check.cjs
+      - name: Reference integrity guard
+        # 引用完整性门禁（scripts/check-references.cjs v1.3.0）九类检查，编号与脚本 `--help` 一致
+        # （`--help` 的编号列表 = 人类报告的分组顺序 = `--json` 的 summary.checks 顺序，三者同源于脚本
+        # 内 CHECK_TITLES，自 v1.3.0 起不再有两份顺序）：
+        # ① 悬空路径引用（dangling-reference）— Markdown 相对链接/图片；package.json 的
+        #    main/types/exports/bin/files 字段；package.json 各 script 与 CI run: 里的 `node <路径>`
+        #    与 `npm run <script>` 目标；大小写不一致同按 error（Windows 能过、Linux CI 会挂）。
+        # ② 相对说明符指向不存在的文件（dangling-module-specifier）— 相对 import/export … from /
+        #    import(…) / require(…) 的说明符指向「磁盘上根本不存在」的文件即 error；优先用仓库自带
+        #    typescript 的编译器 API 解析语法树，拿不到 typescript 时降级为正则并在报告里标注。
+        #    与第 3 项互斥：「根本不存在」归本项，「存在但不在索引」归第 3 项，不重复报。
+        # ③ 未纳入 git 索引的引用目标（untracked-reference）— 目标是否合法以 git 索引
+        #    `git ls-files` 为权威，而不是磁盘存在性：已跟踪文件引用了「磁盘上有、索引里没有、
+        #    又不被忽略规则覆盖」的路径即 error，本该 git add。覆盖相对 import/export 说明符、
+        #    package.json 的 main/types/module/browser/bin/exports/files 与 script、CI run: 里的
+        #    `node <路径>`、Markdown 仓库内相对链接（被忽略规则覆盖的目标跳过并计数）。
+        # ④ 指向已删除文件的引用（deleted-reference）— 靠 `git log --diff-filter=D --name-only` 取
+        #    历史删除清单，依赖上面 checkout 的 fetch-depth: 0；历史文体（CHANGELOG.md）走脚本内豁免。
+        # ⑤ 版本字面量漂移（version-drift）— 清单见脚本 VERSION_SYNC_LITERALS（快照见下）。
+        # ⑥ 本地安装包文件名漂移（tarball-version-drift）— 文档里的 `…-<版本>.tgz` 必须等于本次
+        #    `npm pack` 的产物名；CHANGELOG.md 与 docs/RELEASE-*.md 属历史文体，不做断言。
+        # ⑦ 测试脚本清单一致性（test-inventory）— script 里的 `node tests/xxx.mjs` 必须真实存在。
+        # ⑧ 锚点未命中真实标题（dead-anchor）— 相对链接的 #fragment 必须命中目标 Markdown 的真实标题。
+        # ⑨ 门禁自身不可用（guard-unavailable）— 读不到就必须红：在 git 索引里的文本文件读失败
+        #    （EISDIR 被同名目录顶替 / EPERM·EACCES ACL 拒绝 / ENOENT 索引里有磁盘上没有）即 error，
+        #    编码不可信（UTF-16 BOM、高比例 NUL、非法 UTF-8）同样 error，绝不按 utf8 静默硬解码；
+        #    拿不到 git 跟踪清单或历史删除清单也是 error（浅克隆除外，那种情况为 warning）。
+        # 快照（2026-10-05）：以上「九类」以当时 scripts/check-references.cjs 的 CHECK_TITLES（9 项）
+        # 与 VERSION_SYNC_LITERALS（8 条：src/adapters/mcp.ts、package-lock.json ×2、tests/mcp-e2e.mjs、
+        # README.md、README_EN.md、docs/SPEC.zh-CN.md 为 error，lib/adapters/mcp.js 编译产物为 warning）
+        # 为准。该脚本仍在扩充，**新增检查项或同步字面量时必须同步改本注释与 CONTRIBUTING.md**。
+        # 已列进 `npm run check`（在 ci-contract-check.cjs 之后），这里保留独立步骤是为了在 CI 日志里
+        # 一眼看出是哪道门禁红。
+        run: npm run check:refs
+      - name: Doc snippet compile + consistency guard
+        # 文档示例编译 / 一致性门禁（scripts/check-doc-snippets.cjs v1.0.0，4 项检查）：把 README /
+        # README_EN / docs/** / skills/**（含 docs/RELEASE-*.md）里声称可直接使用的 ```ts 用法示例
+        # 还原成 .ts，用仓库自带 typescript 以 --noEmit --strict 编译（paths 映射到 lib/types/*.d.ts）；
+        # 并核对文档里的工具数量断言、createPromptManagerTools 必填选项与 execute 签名描述。
+        # **warning 升 error 后的新语义**：js/cjs/mjs 等「代码语言」块里出现包 import/require 却
+        # 未被编译（uncompiled-package-example）直接红（历史上把语言标记写成 js 就能绕过编译），
+        # 且运行时工具数量取不到（lib/ 未 build、入口不导出工厂、调用失败）同样是 error 而不是
+        # warning——本步骤因此依赖前面的 Build 步骤提供 lib/ 与运行时数量，缺了是红，不是黄。
+        # 也正因如此，取数失败绝不静默降级：宁可红也不要假绿；本脚本同样已列进 `npm run check`。
+        # 路径引用类检查（含未跟踪引用 / 悬空引用 / 相对说明符）由上一道 Reference integrity guard
+        # 负责，本脚本不重复它的职责：只读文档，全部中间产物写进 os.tmpdir()。
+        run: npm run check:docs
+      - name: Compiled lib/ sync guard (git index vs fresh compile)
+        # 构建产物同步门禁（scripts/check-lib-sync.cjs）：把 **git 索引里的 lib/**（`git ls-files -s`
+        # 给出的条目与 blob，内容用 `git cat-file --batch` 读）与「用索引版 src/ 在 os.tmpdir() 临时
+        # 工程里全新编译」的产物**逐字节**比对，零归一化（不做 CRLF/BOM/尾随空白/sourcemap sources
+        # 归一，比不出差异才算过）。判定基准刻意取 git 索引而不是工作区：本 workflow 上面已经跑过
+        # `npm run build`，若比工作区就永远绿，恰好放过它唯一要抓的那种提交——「src/ 改了、lib/ 没
+        # 重建就提交」（索引里的 lib/ 才是用户 clone/装包拿到的那份）。
+        # 运行期被检查仓库只读（不写 lib/、临时工程在 finally 清理），代价是一次全量 tsc 编译。
+        run: npm run check:libsync
+      - name: Examples runnable + self-cleaning guard
+        # 示例可执行 + 自净性门禁（scripts/check-examples.cjs）：逐条执行写死在 INCLUDE 清单里的示例
+        # （当前 3 条：examples/branch-development/example.mjs、examples/bilibili-trial/
+        # project-data-view.mjs 的 --check 与默认影子模式），要求退出 0；并在每条示例运行前后各取一次
+        # git 快照（`git status --porcelain -z`，含 --ignored 条目）求差，任何新增/修改/删除——**包括
+        # 被忽略路径的变化**——都算 error（example-mutated-repo）。拦的是两类历史事故：「文档/示例
+        # 声称能用、实际早崩」（CI 从不执行示例）与「跑个示例顺手改坏工作区」。
+        # 依赖上面 Build 步骤的 lib/ 产物，故排在这里；耗时约 30–60 秒（3 条示例实测合计 ~32 秒），
+        # 单列一步是为了红了能一眼看出是「示例」还是「单测」。
+        run: npm run check:examples
+      - name: File ledger generator check (ratchet — no auto-add, no rot)
+        # 生成器 --check（scripts/generate-file-ledger.cjs v1.1.0，只比较不写盘）：台账必须与「重新生成的结果」
+        # 逐字节一致，否则 exit 1。它把「台账还是不是机器可算出来的那一份」变成链上的硬失败，拦两类：
+        #   ① 索引清单变了（新增/删除/改名）而台账没重跑 → tracked_total / universe_hash 漂移；
+        #   ② 祖父清单腐烂没清（条目已 bound / 已命中豁免 / 已从索引消失）→ 门禁只给 warning，本步直接红。
+        # 它**不是**棘轮的牙齿本身：新增的未归属文件不会被生成器写进 grandfathered（只减不增），
+        # 所以「跑一次 ledger:gen 就把 unowned 洗白」已不成立；手工往 grandfathered 里加条目本步也抓不到
+        # （keep-only 会把原清单里的条目保留），该缺口写在 CONTRIBUTING.md 的「已知缺口」里。
+        # 与 File ledger guard 的分工：本步查「台账还是不是机器可算出来的那一份」，guard 查「四态归属是否成立」。
+        run: npm run check:ledger:gen
+      - name: File ledger guard (four-state ownership ratchet)
+        # 全仓文件台账门禁（scripts/check-file-ledger.cjs v1.1.0，10 项检查）：把「这个文件有没有人管」
+        # 变成可断言的机器事实。台账数据文件 = ledger/file-ledger.json（豁免模式清单 + 祖父清单 + 元信息）。
+        # 四态归属（计数之和必须等于 `git ls-files` 条数，逐条对账；等式本身是门禁的内部不变量断言，破了即 error）：
+        #   ① bound            被模块 source.path 精确声明，且目标是真实存在的**已跟踪普通文件**（目录不算文件）；
+        #   ② exempt-pattern   命中台账 exempt_patterns 的某条模式（每条必带 reason；缺 reason 是 error）；
+        #   ③ grandfathered    台账 grandfathered 清单里的存量未归属文件——**只减不增**：已 bound / 已豁免 /
+        #                       已从索引消失 / 重复的条目都会报 warning，报告回显「祖父清单还可再减 N 条」；
+        #   ④ unowned          三类之外 → **error**（新增文件必须归属或显式豁免；用新增未归属文件稀释覆盖率
+        #                       正是本项要拦的事，且**不允许**往 grandfathered 里加来绕过）。
+        # planned 与 bound 严格分离（否则覆盖率假绿）：声明存在 ≠ 已覆盖。当前仓库的 1924 条声明全部指向
+        # **不存在的目标路径**（计划态），所以 bound = 0、覆盖率必须报 0.00%；报告把 planned / bound /
+        # existing-file / existing-dir / declared-untracked 分开回显，绝不合并成一个「覆盖率」。
+        # 判定基准是 **git 索引**（`git ls-files`）而不是工作区磁盘列举；被忽略文件不在台账宇宙内，理由写在
+        # 台账 meta.known_divergences 里。台账**内容**同样取索引 blob（`git show :ledger/file-ledger.json`）：
+        # 工作区与索引不一致、或台账不在索引里（没 git add）→ ledger-index-drift（error）。
+        # --root 非仓库根一律 error（fail-closed，不回退到别的仓库）。
+        # 豁免「过宽」判据（exempt-too-broad，error）：一条 `**` 式的模式会让整个宇宙变成 exempt-pattern 而门禁
+        # 仍然报绿（实测假绿），故 ① 归一化后无字面量字符（`**` / `*` / `**` 后接 `/*`）② 通配占比 > 50%
+        # 一律拒（不可豁免）；③ 单条命中率 > 50% 宇宙需要条目上显式写 "broad_confirmed": true 人工确认。
+        # 豁免语义与标准 glob 的差异：`**` 至少匹配一层，`**` 后接 `/*.md` **不**匹配根级 c.md。
+        # 另含：台账元信息与索引不一致（universe_hash / tracked_total 漂移）→ error；台账缺失/不可解析/结构非法
+        # → ledger-missing（error，不再借用 guard-unavailable）；git / yaml 不可用 → guard-unavailable（error）。
+        # 红了先看是不是「仓库里新加了文件但没归属」「台账已过期」或「台账改了没 git add」，
+        # 前者只能加归属或加带 reason 的豁免，后者重跑 `npm run ledger:gen`（它只减不增，**绝不**新增豁免与祖父条目）。
+        # 快照（2026-10-05）：台账宇宙 1399 个已跟踪文件 = bound 0 + exempt-pattern 1370 + grandfathered 29 + unowned 0；
+        # 豁免模式 19 条（其中 examples/** 命中 89.3%，带 broad_confirmed 人工确认）、祖父清单 29 条、
+        # 归属覆盖率 0.00%（bound 0）。该脚本仍在扩充，**新增检查项或改动豁免模式/元信息口径时必须同步改
+        # 本注释与 CONTRIBUTING.md**（数量、编号、覆盖范围三处）。
+        run: npm run check:ledger
       - name: Portability guard (no Windows-only path juggling)
         # 教训：tests 里曾用 pathname.replace(/^\//,'') 拼 file URL —— Windows 正常（/F:/…），
         # Linux 上 pathname 以 / 开头、去掉后变成相对路径，被解析成 <cwd>/home/runner/… 而 ERR_MODULE_NOT_FOUND。
