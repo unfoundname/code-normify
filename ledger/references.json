@@ -214,7 +214,7 @@
       "id": "docs/DESIGN-code-graph.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 175600,
+      "bytes": 176989,
       "lines": 1325,
       "edge_out": 0,
       "edge_in": 0
@@ -12427,8 +12427,8 @@
       "id": "scripts/reference-graph-core.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 95948,
-      "lines": 2122,
+      "bytes": 95972,
+      "lines": 2123,
       "edge_out": 3,
       "edge_in": 2
     },
@@ -12778,8 +12778,8 @@
       "id": "tests/reference-graph-e2e.mjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 31999,
-      "lines": 464,
+      "bytes": 38148,
+      "lines": 556,
       "edge_out": 6,
       "edge_in": 2
     },
@@ -22797,11 +22797,11 @@
       "type_only": false
     },
     {
-      "id": "tests/reference-graph-e2e.mjs:40:16:import:node:fs",
+      "id": "tests/reference-graph-e2e.mjs:46:16:import:node:fs",
       "kind": "import",
       "from": {
         "file": "tests/reference-graph-e2e.mjs",
-        "line": 40,
+        "line": 46,
         "column": 16
       },
       "to": {
@@ -22819,11 +22819,11 @@
       "type_only": false
     },
     {
-      "id": "tests/reference-graph-e2e.mjs:41:16:import:node:os",
+      "id": "tests/reference-graph-e2e.mjs:47:16:import:node:os",
       "kind": "import",
       "from": {
         "file": "tests/reference-graph-e2e.mjs",
-        "line": 41,
+        "line": 47,
         "column": 16
       },
       "to": {
@@ -22841,11 +22841,11 @@
       "type_only": false
     },
     {
-      "id": "tests/reference-graph-e2e.mjs:42:18:import:node:path",
+      "id": "tests/reference-graph-e2e.mjs:48:18:import:node:path",
       "kind": "import",
       "from": {
         "file": "tests/reference-graph-e2e.mjs",
-        "line": 42,
+        "line": 48,
         "column": 18
       },
       "to": {
@@ -22863,11 +22863,11 @@
       "type_only": false
     },
     {
-      "id": "tests/reference-graph-e2e.mjs:43:20:import:node:crypto",
+      "id": "tests/reference-graph-e2e.mjs:49:20:import:node:crypto",
       "kind": "import",
       "from": {
         "file": "tests/reference-graph-e2e.mjs",
-        "line": 43,
+        "line": 49,
         "column": 20
       },
       "to": {
@@ -22885,11 +22885,11 @@
       "type_only": false
     },
     {
-      "id": "tests/reference-graph-e2e.mjs:44:27:import:node:child_process",
+      "id": "tests/reference-graph-e2e.mjs:50:27:import:node:child_process",
       "kind": "import",
       "from": {
         "file": "tests/reference-graph-e2e.mjs",
-        "line": 44,
+        "line": 50,
         "column": 27
       },
       "to": {
@@ -22907,11 +22907,11 @@
       "type_only": false
     },
     {
-      "id": "tests/reference-graph-e2e.mjs:45:31:import:node:url",
+      "id": "tests/reference-graph-e2e.mjs:51:31:import:node:url",
       "kind": "import",
       "from": {
         "file": "tests/reference-graph-e2e.mjs",
-        "line": 45,
+        "line": 51,
         "column": 31
       },
       "to": {

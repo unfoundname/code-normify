@@ -27,6 +27,12 @@
  *      Program 自证（仓库外文件 0、noLib + types 空 ⇒ 不拉 node_modules 类型）、排序确定性。
  *  14. **版本 fail-closed**：索引里的图 `schema_version` 与生成器不一致 → `--check` exit 1 且点名
  *      `graph-index-schema-version`；工作区那份是未知 / 更高版本 → 写盘模式**拒绝覆盖**（exit 1）。
+ *  15. **根级仓库**（`--root` 指向的仓库把 `.ts` 直接放在仓库根）：符号级层必须同样**全 resolved**、
+ *      未解析 = 0，且 `export *` 同样**穿透**到真实声明；同一套内容放在 `src/` 下的那一份是**对照**
+ *      （证明红/绿只由「根分支」这一个变量决定）。为什么必须有这组：本仓 28 个符号面文件**全在
+ *      `src/` 下**，第 13 组的探针也建在 `src/` 下，于是「仓库根自身」这条分支**从来没有门禁覆盖**——
+ *      根级仓库里 `directoryExists(root)` 恒 false、`getDirectories(root)` 恒 []，符号级层整体退化成
+ *      「全部 unresolved」，而**退出码仍是 0、零诊断**（静默降级），既有门禁全绿也照样漏。
  *
  * 夹具：把本仓库索引里的全部已跟踪文件用 `git checkout-index -a --prefix=<tmp>/` 物化到系统 temp，
  * 在夹具里 `git init` + 一次基线提交，再按用例造探针文件。**绝不在真仓库里造测试文件**，跑完删掉整个 temp 目录。
@@ -446,6 +452,92 @@ function main() {
   git(['add', GRAPH_REL]);
   r = runGen(['--root', FIX, '--check']);
   expect('14c 恢复 v2：--check exit 0', r.status, 0, r.out.trim().split('\n')[0]);
+
+  // ---- 15. 根级仓库（`--root` 指向的仓库把 .ts 直接放在仓库根）：符号级层的静默降级红线 ----
+  // 为什么单列一组：本仓 28 个符号面文件**全在 `src/` 下**，第 13 组的探针也建在 `src/` 下，于是
+  // 「仓库根自身」这条分支从来没有门禁覆盖——根级仓库里 `directoryExists(root)` 恒 false、
+  // `getDirectories(root)` 恒 []，符号级层整体退化成「全部 unresolved」，而**退出码仍是 0、零诊断**
+  // （静默降级：门禁看不见，只能靠人肉比对）。本组把**同一套探针同时**建在两个夹具上：
+  // `rootfix-root/`（.ts 直接在仓库根）与 `rootfix-src/`（.ts 在 src/ 下）——后者是**对照**，
+  // 证明这批断言的红/绿只由「根分支」这一个变量决定，而不是夹具内容差异。
+  const rootFixDir = path.join(ROOT, 'rootfix-root');
+  const srcFixDir = path.join(ROOT, 'rootfix-src');
+  const buildRootLevelFixture = (dir, underSrc) => {
+    fs.rmSync(dir, { recursive: true, force: true });
+    const at = (rel, text) => {
+      const abs = path.join(dir, underSrc ? path.join('src', rel) : rel);
+      fs.mkdirSync(path.dirname(abs), { recursive: true });
+      fs.writeFileSync(abs, text, 'utf8');
+    };
+    // 与最小复现同构：`export *` 再导出链 + 类型引用，三条符号边都必须落到 a.ts 的 `Alpha`。
+    at('package.json', '{"name":"f","type":"module"}\n');
+    at('a.ts', 'export interface Alpha { x: number }\n');
+    at('b.ts', "export * from './a.js';\n");
+    at('c.ts', "import type { Alpha } from './b.js';\nexport type Beta = Alpha;\n");
+    const g = (args) => sh('git', args, dir);
+    g(['init', '-q', '-b', 'main']);
+    g(['config', 'user.email', 'refgraph-e2e@example.invalid']);
+    g(['config', 'user.name', 'refgraph-e2e']);
+    g(['config', 'core.autocrlf', 'false']);
+    g(['add', '-A']);
+    g(['commit', '-q', '-m', 'root-level fixture baseline']);
+  };
+  const readGraphAt = (dir) => JSON.parse(fs.readFileSync(path.join(dir, GRAPH_REL), 'utf8'));
+  buildRootLevelFixture(rootFixDir, false);
+  buildRootLevelFixture(srcFixDir, true);
+  expect(
+    '15 夹具自证：.ts 确实在夹具仓库根（不在 src/ 下）',
+    fs.existsSync(path.join(rootFixDir, 'a.ts')) && !fs.existsSync(path.join(rootFixDir, 'src', 'a.ts')),
+    true,
+  );
+  const rootRun = runGen(['--root', rootFixDir]);
+  expect('15 根级：生成 exit 0', rootRun.status, 0, rootRun.out.trim().split('\n')[0]);
+  const rootGraph = readGraphAt(rootFixDir);
+  const rootSym = rootGraph.symbol_edges;
+  expect('15 根级：符号边条数 = 3', rootSym.length, 3, rootSym.map((e) => e.id).join(' / '));
+  // **本组的核心断言**：exit 0 + 零诊断**不等于**解析成功——静默降级必须在门禁里变红。
+  expect(
+    '15 静默降级护栏：未解析符号边 = 0（exit 0 且零诊断时同样不许有未解析）',
+    rootSym.filter((e) => e.status === 'unresolved').length,
+    0,
+    `未解析原因 = ${JSON.stringify(rootGraph.meta.symbol_graph.unresolved_reasons)}`,
+  );
+  expect(
+    '15 静默降级护栏：meta.edge_status 里没有 unresolved 计数',
+    'unresolved' in rootGraph.meta.symbol_graph.edge_status,
+    false,
+    JSON.stringify(rootGraph.meta.symbol_graph.edge_status),
+  );
+  expect('15 静默降级护栏：未解析原因码表为空', Object.keys(rootGraph.meta.symbol_graph.unresolved_reasons).length, 0);
+  const rootStar = rootSym.find((e) => e.from.file === 'b.ts' && e.kind === 'export-from');
+  expect('15 根级 export* 穿透：to.file = a.ts（不许停在 b.ts）', rootStar && rootStar.to.file, 'a.ts');
+  expect('15 根级 export* 穿透：to.sym = a.ts#Alpha@1:18', rootStar && rootStar.to.sym, 'a.ts#Alpha@1:18');
+  const rootTypeRef = rootSym.find((e) => e.from.file === 'c.ts' && e.kind === 'type-reference');
+  expect('15 根级：c.ts 的类型引用落到 a.ts 的真实声明', rootTypeRef && rootTypeRef.to.sym, 'a.ts#Alpha@1:18');
+  const rootImport = rootSym.find((e) => e.from.file === 'c.ts' && e.kind === 'import');
+  expect('15 根级：c.ts 的 import 边穿透 export* 落到 a.ts', rootImport && rootImport.to.sym, 'a.ts#Alpha@1:18');
+  expect(
+    '15 根级：Program 自证（3 个源文件 / 仓库外 0 个）',
+    rootGraph.meta.symbol_graph.program_source_files === 3 && rootGraph.meta.symbol_graph.program_outside_repo_files === 0,
+    true,
+  );
+  // 对照：同一套内容放在 `src/` 下。既要自证 resolved，也要与根级那份**逐条等价**（剥掉 `src/` 前缀后）。
+  const srcRun = runGen(['--root', srcFixDir]);
+  expect('15 对照（src/ 下）：生成 exit 0', srcRun.status, 0, srcRun.out.trim().split('\n')[0]);
+  const srcSym = readGraphAt(srcFixDir).symbol_edges;
+  expect('15 对照（src/ 下）：未解析符号边 = 0', srcSym.filter((e) => e.status === 'unresolved').length, 0);
+  const normalizeSymEdge = (e) =>
+    [
+      e.from.file.replace(/^src\//, ''),
+      e.kind,
+      (e.to.file || '').replace(/^src\//, ''),
+      e.to.sym === null ? '（空）' : e.to.sym.replace(/^src\//, ''),
+    ].join('|');
+  expect(
+    '15 对照：根级与 src/ 级的符号边（剥掉 src/ 前缀后）逐条相同',
+    rootSym.map(normalizeSymEdge).sort(utf8).join('\n'),
+    srcSym.map(normalizeSymEdge).sort(utf8).join('\n'),
+  );
 
   console.log(`\n${failed === 0 ? '✔' : '✖'} ${checked - failed}/${checked} 条断言通过`);
   process.exitCode = failed === 0 ? 0 : 1;

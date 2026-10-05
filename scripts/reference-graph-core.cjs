@@ -1392,7 +1392,8 @@ function createIndexCompilerHost(ts, options) {
   const base = ts.createCompilerHost(compilerOptions);
   const relOfAbs = (fileName) => {
     const rel = path.relative(root, fileName).split(path.sep).join('/');
-    return !rel || rel.startsWith('..') ? null : rel;
+    if (rel.startsWith('..')) return null;
+    return rel === '' ? '.' : rel;
   };
   return {
     ...base,
