@@ -30,7 +30,7 @@ jobs:
       - name: Library + MCP tool contract
         run: node ci-contract-check.cjs
       - name: Reference integrity guard
-        # 引用完整性门禁（scripts/check-references.cjs v1.3.0）九类检查，编号与脚本 `--help` 一致
+        # 引用完整性门禁（scripts/check-references.cjs v1.3.0）9 类检查，编号与脚本 `--help` 一致
         # （`--help` 的编号列表 = 人类报告的分组顺序 = `--json` 的 summary.checks 顺序，三者同源于脚本
         # 内 CHECK_TITLES，自 v1.3.0 起不再有两份顺序）：
         # ① 悬空路径引用（dangling-reference）— Markdown 相对链接/图片；package.json 的
@@ -47,7 +47,7 @@ jobs:
         #    `node <路径>`、Markdown 仓库内相对链接（被忽略规则覆盖的目标跳过并计数）。
         # ④ 指向已删除文件的引用（deleted-reference）— 靠 `git log --diff-filter=D --name-only` 取
         #    历史删除清单，依赖上面 checkout 的 fetch-depth: 0；历史文体（CHANGELOG.md）走脚本内豁免。
-        # ⑤ 版本字面量漂移（version-drift）— 清单见脚本 VERSION_SYNC_LITERALS（快照见下）。
+        # ⑤ 版本字面量漂移（version-drift）— 两族：跟 package.json 走的 VERSION_SYNC_LITERALS（快照见下）；跟「被引用脚本自身 TOOL_VERSION」走的 SCRIPT_VERSION_CITATIONS（即本文件步骤注释里那 4 处 `scripts/*.cjs v1.2.3`，比较基准不是包版本）。
         # ⑥ 本地安装包文件名漂移（tarball-version-drift）— 文档里的 `…-<版本>.tgz` 必须等于本次
         #    `npm pack` 的产物名；CHANGELOG.md 与 docs/RELEASE-*.md 属历史文体，不做断言。
         # ⑦ 测试脚本清单一致性（test-inventory）— script 里的 `node tests/xxx.mjs` 必须真实存在。
@@ -56,7 +56,7 @@ jobs:
         #    （EISDIR 被同名目录顶替 / EPERM·EACCES ACL 拒绝 / ENOENT 索引里有磁盘上没有）即 error，
         #    编码不可信（UTF-16 BOM、高比例 NUL、非法 UTF-8）同样 error，绝不按 utf8 静默硬解码；
         #    拿不到 git 跟踪清单或历史删除清单也是 error（浅克隆除外，那种情况为 warning）。
-        # 快照（2026-10-05）：以上「九类」以当时 scripts/check-references.cjs 的 CHECK_TITLES（9 项）
+        # 快照（2026-10-05）：以上「9 类」以当时 scripts/check-references.cjs 的 CHECK_TITLES（9 项）
         # 与 VERSION_SYNC_LITERALS（8 条：src/adapters/mcp.ts、package-lock.json ×2、tests/mcp-e2e.mjs、
         # README.md、README_EN.md、docs/SPEC.zh-CN.md 为 error，lib/adapters/mcp.js 编译产物为 warning）
         # 为准。该脚本仍在扩充，**新增检查项或同步字面量时必须同步改本注释与 CONTRIBUTING.md**。

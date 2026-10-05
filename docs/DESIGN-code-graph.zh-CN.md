@@ -3,7 +3,7 @@
 > 状态：设计稿（**方向变更版**）。本文档取代同目录下原「行级溯源 + 全仓文件台账」设计稿，原稿已删除、旧路径不留悬空引用（核实方式见附录 A 第 1 条）。
 > 方向依据（用户原话，逐字引用）：①「其实我们只需要知道删了某个夹具后相互之间的引用，引用和被引用之间的关系就好了」；②「最小的变量也要，就是每做一个改动都有」；③ 观测点确认为「每次提交 / 每次 CAS 写入」（**不是**每次保存）。
 > 取证基线：`git status --porcelain` 无未跟踪（`??`）残留；`git config --get core.ignoreCase` → `true`；`git ls-files` 共 1,399 条；`package.json` 版本 0.8.0；仓库自带 TypeScript 5.9.3。
-> 数字口径：标「实测」的数字一律给出命令与原始输出（附录 A）；**未实测的一律标「待实测」并写出测量方法**，不写推测值。凡标「外推」的数字都由两个实测值相乘/相加得到，并写明是哪两个。
+> 数字口径：标「实测」的数字一律给出命令与原始输出（附录 A）；**未实测的一律标「待实测」并写出测量方法**，不写推测值。凡标「外推」的数字都由两个实测值相乘/相加得到，并写明是哪两个。**「实测」是带时点的快照，不是恒真式**——`git ls-files` 条数、各文件行数/字节数都会随后续提交变化，复核时请按同一条命令重测；本轮（补版本字面量门禁）复核到 `git ls-files` = **1,402**（原写 1,399），各文件的现行行数/字节数见 §7.6 数据行。
 > 边界：本文档只写设计与验收标准。**不新增 MCP 工具契约**；图与改动记录的生成器放在 `scripts/`（与增量 1 一致），因此**不改 `src/` 行为、不需要重建 `lib/`**；门禁是否新增由第 11 节 P1 拍板。
 
 ---
@@ -57,7 +57,7 @@
 
 | 层 | 节点/边的种类 | 回答什么 | 粒度锚点 |
 | --- | --- | --- | --- |
-| **L0 文件层** | 节点 `kind: "file"` | 哪些文件参与引用面；跨文件边的两端 | `git ls-files` 的 1,399 条（实测） |
+| **L0 文件层** | 节点 `kind: "file"` | 哪些文件参与引用面；跨文件边的两端 | `git ls-files` 的 **1,402** 条（本轮实测；原稿记的 1,399 是改造前快照） |
 | **L1 声明层** | 节点 `kind: "declaration"` | 导出的 / 顶层的 / **函数内的局部变量与参数**，各自被谁引用 | 声明名 + `文件:行:列` |
 | **L2 边层** | 边 `kind ∈ {import, export-from, require, dynamic-import, type-reference, markdown-link, package-field, ci-target, anchor, module-id-reference}` | Q1 / Q2 / Q3 | `文件:行:列`（源端）→ 目标 |
 
@@ -243,7 +243,7 @@
 
 | 层 | 落盘内容 | 规模（`src/` 实测锚点） | 为什么这么切 |
 | --- | --- | --- | --- |
-| **① 文件表** | 每个已跟踪文件一行：`id` / `lang` / `bytes` / `decl_count` / `edge_out` / `edge_in` | 28（全仓 1,399） | 极小、可全量重算、是分片与失效判定的索引 |
+| **① 文件表** | 每个已跟踪文件一行：`id` / `lang` / `bytes` / `decl_count` / `edge_out` / `edge_in` | 28（全仓 1,402） | 极小、可全量重算、是分片与失效判定的索引 |
 | **② 符号表** | 每条**声明**一条（含函数内局部变量与参数） | 2,624 | 用户要求的最小单位，必须落盘；体量只有引用的 1/4 |
 | **③ 跨文件边表** | 只落 `cross_file=true` 的边 | **≥ 220**（模块说明符边），精确值待实测（见 9.7） | 这类边**必须** `ts.createProgram` + 类型解析才能算出，是最贵、最不可重算的信息 |
 | **④ 文件内边（按需展开）** | **不落盘**。查询时对单个文件重新解析（`createSourceFile`，不需要 program）即可得到 | 其余 10,116 条（外推：10,336 − 220） | 函数内引用的解析范围天然局限在**本文件 + 本函数作用域**；"删了局部变量谁引用它"只需单文件展开，答案完整且成本 O(一个文件) |
@@ -318,7 +318,7 @@
 
 该脚本**已经**在算文件级的 import / markdown / package.json / CI / 锚点边，必须复用而不是重写。现状约束（实测）：
 
-- 它是一个 **CLI-only 的 3,089 行（136,739 B）脚本**，文件末尾直接 `main(process.argv.slice(2));`，**全仓 `git grep "module.exports" scripts/` 无命中** ⇒ 现在**无法被 require 复用**。
+- 它是一个 **CLI-only 的 3,384 行（151,442 B）脚本**，文件末尾直接 `main(process.argv.slice(2));`，**全仓 `git grep "module.exports" scripts/` 无命中** ⇒ 现在**无法被 require 复用**。
 - 它的解析器是**闭包内函数**，依赖 `ctx`（`createContext` 的产物）与模块级可变状态（如 `SPECIFIER_ANALYSIS`、`TYPESCRIPT_CANDIDATE_ROOTS`）。
 
 **复用方案（唯一改动面）**：把纯函数解析器抽到一个共享模块（例如 `scripts/lib/reference-parsers.cjs`），由 `check-references.cjs` 与新的图生成器**同时** require。抽取清单（含行号，均为实测）：
@@ -574,10 +574,10 @@
 
 | 门禁 | 脚本 | 它管什么 | 与图/改动记录的边界（**不重复的判据**） |
 | --- | --- | --- | --- |
-| `check:refs` | `scripts/check-references.cjs`（3,089 行，`CHECK_TITLES` 9 项） | 引用**完整性**：悬空、未跟踪、已删除、版本字面量、测试清单、锚点 | 图**复用**它的解析器（3.5）；图的悬空状态是它的诊断码的投影（6.1）。图**不**做版本字面量与测试清单 |
+| `check:refs` | `scripts/check-references.cjs`（3,384 行，`CHECK_TITLES` 9 项） | 引用**完整性**：悬空、未跟踪、已删除、版本字面量、测试清单、锚点 | 图**复用**它的解析器（3.5）；图的悬空状态是它的诊断码的投影（6.1）。图**不**做版本字面量与测试清单 |
 | `check:docs` | `scripts/check-doc-snippets.cjs`（1,629 行，4 项检查） | 文档代码块能否编译、必填选项、工具数量断言、`execute` 签名描述 | 图**不解析文档代码块**；本文档落在 `docs/` 下会被它扫描（约束见附录 C） |
-| `check:libsync` | `scripts/check-lib-sync.cjs`（1,439 行） | **git 索引里的 `lib/`** 与"索引版 `src/` 全新编译产物"逐字节一致 | 图生成器放 `scripts/` ⇒ 与它零交互（9.5）。若将来把生成器移进 `src/`，则必须同提交重建 `lib/` |
-| `check:examples` | `scripts/check-examples.cjs`（974 行） | 示例可执行 + 运行前后 git 快照**零变化**（含 `--ignored`） | 图生成器**不得**在示例运行期间写工作区；生成器只写 `ledger/`，且 `ledger/**` 已在台账豁免模式内 |
+| `check:libsync` | `scripts/check-lib-sync.cjs`（1,573 行） | **git 索引里的 `lib/`** 与"索引版 `src/` 全新编译产物"逐字节一致 | 图生成器放 `scripts/` ⇒ 与它零交互（9.5）。若将来把生成器移进 `src/`，则必须同提交重建 `lib/` |
+| `check:examples` | `scripts/check-examples.cjs`（1,051 行） | 示例可执行 + 运行前后 git 快照**零变化**（含 `--ignored`） | 图生成器**不得**在示例运行期间写工作区；生成器只写 `ledger/`，且 `ledger/**` 已在台账豁免模式内 |
 | `check:ledger` | `scripts/check-file-ledger.cjs`（1997 行，`CHECK_TITLES` 13 项）+ 共享内核 `scripts/file-ledger-core.cjs`（462 行） | **文件级**台账：每个已跟踪文件落到四态之一（`owned` / `exempt` / `accounted` / `unowned`），并与真 `.gitignore` 交叉校验（交集 / 折叠误伤 / 放行本该 `git add` 的普通文件） | 图是**符号级**、与文件归属无关；两者共用 `ledger/` 目录但**不共用判定**。第 7 节的用户口径**已于 2026-10-05 落地** |
 | （建议新增）`check:impact` | `scripts/check-change-impact.cjs` | 6.2 的未处理引用影响 | 只在有改动记录时触发；不重做 6.1 的任何判定 |
 
@@ -748,6 +748,7 @@
 
 | 量 | 实测值 |
 | --- | --- |
+| **同步义务（先说清）** | 下表的「行数 / 字节数」是**当时实测的快照**——**数据随实现变化，改实现要同步这里**。涉及的文件：门禁 `scripts/check-file-ledger.cjs`（1997 行）、生成器 `scripts/generate-file-ledger.cjs`（732 行）、共享内核 `scripts/file-ledger-core.cjs`（462 行）、台账 `ledger/file-ledger.json`（168 行 / 10131 B）、豁免清单 `ledger/exempt.gitignore`（56 行 / 7226 B）；另有 `scripts/check-references.cjs`（3384 行 / 151442 B）等既有门禁脚本，**这四个文件只被引用、不被本节定义**。 |
 | `src/**/*.ts` 文件数 / 行数 / 字节数 | 28 / 9,782 / 521,118 |
 | `src/` 声明名（含函数内 2,417） | 2,624 |
 | `src/` 标识符引用 | 10,336 |
@@ -756,7 +757,7 @@
 | 单条节点记录字节（示例字段，`JSON.stringify` + UTF-8） | 199–243 B（n=13，均值 221.3） |
 | 单条边记录字节（同上） | 234–270 B（n=20，均值 253.2） |
 | 工作区总行数（排除 `node_modules/` 与 `.git/`） | 约 993,000 |
-| 已跟踪文件数 / `.git` 目录字节 | 1,399 / 43,479,139 |
+| 已跟踪文件数 / `.git` 目录字节 | 1,402 / 44,307,366（本轮实测；原记的 1,399 / 43,479,139 是改造前快照） |
 
 **外推（记录数实测 × 单条字节实测，非实测总量）**：`src/` 全量落盘 ≈ 3.1 MiB；采用 2.5 的分层后落盘 ≈ 0.7 MiB。
 
@@ -797,15 +798,17 @@
 
 | # | 偏差内容（实测） | 原文档的说法（承接自旧稿的同一命题） | 为何按用户指令实现 | 影响面 |
 | --- | --- | --- | --- | --- |
-| **1** | **新增了第 5 道门禁**：`scripts/check-file-ledger.cjs`（`npm run check:ledger`）+ 配套写入侧 `scripts/generate-file-ledger.cjs`（`npm run ledger:gen` / `check:ledger:gen`），并把 `ledger/file-ledger.json` 作为唯一新增数据文件 | 旧稿的分工假设是"门禁数量不变、复用既有解析器"；该假设在本文档里已被改写为**既定事实**——§6.3 标题即"与五道既有门禁的分工"（`docs/DESIGN-code-graph.zh-CN.md:547`），第 11 节 P1 也记着"增量 1 已经把门禁从 4 道推到 5 道"（`:843`、`:545`） | 用户的增量 1 目标就是"让『这个文件有没有人管』变成可断言的机器事实"。既有四道门禁没有一道管**文件归属**：`check-references` 管引用完整性、`check-doc-snippets` 管文档示例、`check-lib-sync` 管产物逐字节、`check-examples` 管示例可执行。不新增门禁就只能"描述"归属而不能"断言"它 | 门禁计数 4 → 5；`package.json`（`check:ledger`/`check:ledger:gen`/`ledger:gen`/`check` 链）、`.github/workflows/ci.yml`（两个独立 step）、`CONTRIBUTING.md:22-34` 三处同步；后续增量新增门禁时**必须**按这套三处同步走（§6.3 末段 `:558` 已写成约束） |
+| **1** | **新增了第 5 道门禁**：`scripts/check-file-ledger.cjs`（`npm run check:ledger`）+ 配套写入侧 `scripts/generate-file-ledger.cjs`（`npm run ledger:gen` / `check:ledger:gen`），并把 `ledger/file-ledger.json` 作为唯一新增数据文件 | 旧稿的分工假设是"门禁数量不变、复用既有解析器"；该假设在本文档里已被改写为**既定事实**——§6.3 标题即"与五道既有门禁的分工"（节标题现行位置 `docs/DESIGN-code-graph.zh-CN.md:573`；本文档本行以下又新增了内容，全部自引用锚点都会随之漂移，按内容搜而不是按行号数；§6.3 里的 "CHECK_TITLES（84-94）" 这类**指向脚本**的行号同样会随脚本改动漂移），第 11 节 P1 也记着"增量 1 已经把门禁从 4 道推到 5 道"（§10.2 建议段 `docs/DESIGN-code-graph.zh-CN.md:571`、P1 行 `:905`） | 用户的增量 1 目标就是"让『这个文件有没有人管』变成可断言的机器事实"。既有四道门禁没有一道管**文件归属**：`check-references` 管引用完整性、`check-doc-snippets` 管文档示例、`check-lib-sync` 管产物逐字节、`check-examples` 管示例可执行。不新增门禁就只能"描述"归属而不能"断言"它 | 门禁计数 4 → 5；`package.json`（`check:ledger`/`check:ledger:gen`/`ledger:gen`/`check` 链）、`.github/workflows/ci.yml`（两个独立 step）、`CONTRIBUTING.md:22-34` 三处同步；后续增量新增门禁时**必须**按这套三处同步走（§6.3 末段 `:558` 已写成约束） |
 | **2** | **改动了 `src/` 行为**：索引里 `src/*.ts` 的改动面是 18 个文件（`git status --porcelain -- src` 有 18 条，含新增的 `src/execution.ts`） | 本文档两处写"不改 `src/` 行为、不需要重建 `lib/`"（文档头边界声明 `docs/DESIGN-code-graph.zh-CN.md:7`、§9.5 `:706`）。但这两句的**主语是"图与改动记录的生成器"（第 2–6 节的新方向）**，不是增量 1：增量 1 的门禁脚本本身只读、确实不碰 `src/`；改动 `src/` 的是同一工作区里**另一批已暂存的引擎改造**（`git diff --cached --stat -- src`：17 个文件的差异统计为 524 插入 / 157 删除，另加新增的 `src/execution.ts`，合计 18 条） | 该批 `src/` 改动早于本轮、已 `git add` 进索引在本轮之前，不是增量 1 的产物；本轮（R4 + 文档对齐）**一个字都没有改 `src/`**（改动前后 `git status --porcelain -- src` 输出逐字节相同） | ⚠ **必须区分两个命题，否则会把"增量 2 不改 `src/`"误推成"增量 1 没改 `src/`"**：① 增量 2 的落点选择（生成器放 `scripts/`）⇒ 与 `check:libsync` 零交互；② 增量 1 落地时的 `src/` 改动面 = 索引里那 18 个文件。二者都真，但说的不是同一件事。本轮只**记录**这张改动面，不动它（触碰它会牵连 `lib/` 重建与 `check:libsync`，超出本轮范围） |
-| **3** | **跨文档引用的行号与命中范围更正**：脚本内枚举（`CHECK_TITLES`）、`--help`、人类报告、`--json` 的 `summary.checks` 曾各自演进，文档里引用的"行号 / 命中范围"随之失效，必须按当前实测值写 | 旧稿与本轮的早期引用给过已失效的锚点，例如"台账豁免模式的 2-115 行"；按**当时**文件实测，`exempt_patterns` 数组的范围是 **18-115 行**（`:18` 是数组起点、`:116` 是 `grandfathered` 起点）——**该内嵌数组已在 v2 迁到 `ledger/exempt.gitignore`，这两个行号只是改造前的历史锚点，现状不再适用**；旧的 `tracked-mismatch / unlisted` 检查名现已不存在，被拆成 `tracked-mismatch`（`:120`）、`ledger-index-drift`（`:119`）、`ledger-missing`（`:118`）三项 | 用户要求"结论必须带文件:行号"，行号写了就得能复核；引用一个已改名或已删的入口，等于制造第二份真相互相矛盾 | 只动**引用与措辞**，不动任何判定与数字。本轮（v2 语义校准）复核后的实测值：门禁 `scripts/check-file-ledger.cjs` **1997 行**、生成器 `scripts/generate-file-ledger.cjs` **732 行**、共享内核 `scripts/file-ledger-core.cjs` **462 行**、台账 `ledger/file-ledger.json` **168 行 / 10131 B**、豁免清单 `ledger/exempt.gitignore` **56 行**、`CONTRIBUTING.md` **88 行**（上一轮的 1,426 行 / 403 行 / 147 行 / 82 行已被本次语义校准取代，本节按新值更正） |
+| **3** | **跨文档引用的行号与命中范围更正**：脚本内枚举（`CHECK_TITLES`）、`--help`、人类报告、`--json` 的 `summary.checks` 曾各自演进，文档里引用的"行号 / 命中范围"随之失效，必须按当前实测值写 | 旧稿与本轮的早期引用给过已失效的锚点，例如"台账豁免模式的 2-115 行"；按**当时**文件实测，`exempt_patterns` 数组的范围是 **18-115 行**（`:18` 是数组起点、`:116` 是 `grandfathered` 起点）——**该内嵌数组已在 v2 迁到 `ledger/exempt.gitignore`，这两个行号只是改造前的历史锚点，现状不再适用**；旧的 `tracked-mismatch / unlisted` 检查名现已不存在，被拆成 `tracked-mismatch`（`:120`）、`ledger-index-drift`（`:119`）、`ledger-missing`（`:118`）三项 | 用户要求"结论必须带文件:行号"，行号写了就得能复核；引用一个已改名或已删的入口，等于制造第二份真相互相矛盾 | 只动**引用与措辞**，不动任何判定与数字。**数据随实现变化，改实现要同步这里**：每次改门禁 / 生成器 / 内核 / 台账 / 豁免清单，都要按下面的实测值回改本行。本轮（v2 语义校准）复核后的实测值：门禁 `scripts/check-file-ledger.cjs` **1997 行**、生成器 `scripts/generate-file-ledger.cjs` **732 行**、共享内核 `scripts/file-ledger-core.cjs` **462 行**、台账 `ledger/file-ledger.json` **168 行 / 10131 B**、豁免清单 `ledger/exempt.gitignore` **56 行 / 7226 B**、`CONTRIBUTING.md` **95 行**（上一轮的 1,426 行 / 403 行 / 147 行 / 82 行已被本次语义校准取代，本节按新值更正；`CONTRIBUTING.md` 的 88 行是本轮补文档前的值）。**补测（v3 版本字面量门禁轮次）**：`scripts/check-references.cjs` **3384 行 / 151442 B**（原写 3,089 行 / 136,739 B）、`scripts/check-doc-snippets.cjs` **1630 行**、`scripts/check-lib-sync.cjs` **1573 行**（原写 1,439 行）、`scripts/check-examples.cjs` **1051 行**（原写 974 行）。**行数口径**：等于「显式行数」= `([IO.File]::ReadAllText(f) -split "\`n").Length`，等价于编辑器 / `Set-Content` 的**末行号**（文件末尾无换行时少 1），等价于 Linux `wc -l` 的**换行符数 + 1**；`ledger/file-ledger.json` 的 168 行可由数据自证（`meta.tracked_total` 之外，其 `git ls-files` 计数与本文件行数同口径）。字面量数量口径见下方「字面量清单规模」小节 |
 
-**本轮顺带修正的 3 处已失效交叉引用**（与上表第 3 条同源，只改引用、不改判定）：
+**本轮顺带修正的 3 处已失效交叉引用**（与上表第 3 条同源，只改引用、不改判定）。
 
-1. `docs/DESIGN-code-graph.zh-CN.md:14` 原写 "由本门禁的 tracked-mismatch / **unlisted** 检查报出" —— `unlisted` 在本门禁里**不存在**，已改为 `tracked-mismatch` / `ledger-index-drift` / `ledger-missing` 三项（它们负责台账与索引不一致这一族）。
-2. §7.6 表（`docs/DESIGN-code-graph.zh-CN.md:621`）里的 "147 行里的 18-115 行" 已标注为**实测**范围，并写明两条边界分别落在 `:18` 与 `:116`。
-3. §6.3 的 "**五道**既有门禁"（`docs/DESIGN-code-graph.zh-CN.md:547`）与第 11 节 P1（`:873`）的计数口径统一：门禁总数 = **5**（含增量 1 新增的 `check:ledger`），`check:ledger:gen` 是同一道门禁的写入侧校验，不另计一道。
+> **这些行号是"当时实测"，改本文档本身就会让它们漂移**（本轮补版本字面量门禁时，本文档在 `:33` 附近新增了几行，下面三个锚点就整体后移了 1–2 行）。所以每个锚点都同时给出**它当时指向的内容**，复核时按内容搜、别只按行号数；数据随实现变化，改实现要同步这里。
+
+1. 文档头 `docs/DESIGN-code-graph.zh-CN.md:14` 原写 "由本门禁的 tracked-mismatch / **unlisted** 检查报出" —— `unlisted` 在本门禁里**不存在**，已被替换为 `tracked-mismatch` / `ledger-index-drift` / `ledger-missing` 三项（它们负责台账与索引不一致这一族）。**锚点状态：已失效**——`:14` 现在是空白行，而按内容搜 `tracked-mismatch` 在文档里只命中本偏差表的三行（`:803` / `:809` / `:956`，全是"事后叙述"而非那句原文），**无法判定该句现在落在哪一行**（原文已在后续改写中被替换掉）。标 **待实测**：复核时请直接搜 `tracked-mismatch` 看这三处叙述，不要按 `:14` 数。
+2. §7.6 表（**当时实测**的锚点 `docs/DESIGN-code-graph.zh-CN.md:621`）里的 "147 行里的 18-115 行"：**锚点已漂移**，该句现落在 `:810`；`:621` 现在是 `accounted` 相关的另一句。内容本身也已改变——那句话已标注为**改造前的历史锚点**：`exempt_patterns` 内嵌数组**已迁到** `ledger/exempt.gitignore`，两条边界（`:18` 数组起点 / `:116` `grandfathered` 起点）指的是**改造前**的 `ledger/file-ledger.json`，现状不再适用。
+3. §6.3 的 "**五道**既有门禁"：节标题现落在 `docs/DESIGN-code-graph.zh-CN.md:573`（**当时实测**的锚点写的是 `:547`，该行现在是 §6.1 表里的 `dead-anchor` 行）；第 11 节 P1 行现落在 `docs/DESIGN-code-graph.zh-CN.md:905`（**当时实测**的锚点写的是 `:873`，该行现为空白行）。两者计数口径统一：门禁总数 = **5**（含增量 1 新增的 `check:ledger`），`check:ledger:gen` 是同一道门禁的写入侧校验，不另计一道。
 
 **§7.6 承诺的「台账语义校准」已落地（2026-10-05，后续增量）**：`owned` / `exempt` / `accounted`、豁免抽成独立文件（`ledger/exempt.gitignore`）、`accounted` 补清点日期与依据、`.gitignore` 交叉校验、`schema_version` 1 → 2 **全部实现**，与上表的缺陷修复（R1/R2/R3/R4/R6/R7/R8）分两批进行：上表是本轮（R 系列）的偏差记录，语义校准是随后一轮的落地，两者都在本节的"增量 1"里留了实测锚点。改造前的状态**不再代表现状**，现状以第 7 节的状态行与下面的 v2 小节为准。
 
@@ -920,7 +923,7 @@
 | 3 | `src/` 图元素普查 | `node <临时只读脚本>`：`ts.createSourceFile` 逐文件遍历（`declaration_names` / `identifier_references` / `ImportSpecifier` / `TypeReferenceNode` / `ImportDeclaration` / `ExportDeclaration`）；TypeScript **5.9.3**（仓库自带 `node_modules/typescript`） | `ts_files=28`、`declaration_names=2624`（顶层 207 / **函数内 2417**）、`identifier_references=10336`、`import_declarations=201`、`export_from_declarations=19`、`import_specifiers=672`、`type_reference_nodes=805`、`dynamic_imports=0`、`require_calls=0`；逐文件最大 `src/tools.ts` 2371 条、均值 462.6、最小 `src/index.ts` 0 条 |
 | 4 | 规模 | `Get-ChildItem -Recurse src -Filter *.ts` 逐文件统计 `\n` 数与字节；工作区同法（排除 `node_modules/`、`.git/`） | `src/**.ts`：9,782 行 / 521,118 B；工作区：约 992,790 行（部分二进制/空文件读取报错，不影响量级） |
 | 5 | 单条记录字节 | 用本文档 2.2/2.3 的字段构造**真实**记录（真实文件、真实行列）后 `JSON.stringify` + `Buffer.byteLength` | 节点记录 199–243 B（n=13，均值 221.3）；边记录 234–270 B（n=20，均值 253.2） |
-| 6 | 索引与目录规模 | `git ls-files` / `git ls-files 'src/*.ts'` / `git ls-files 'lib/*'`；`Get-ChildItem .git -Recurse \| Measure-Object Length -Sum` | 已跟踪 **1,399**；`src/*.ts` **28**；`lib/*` **84**；`.git` **43,479,139 B** |
+| 6 | 索引与目录规模 | `git ls-files` / `git ls-files 'src/*.ts'` / `git ls-files 'lib/*'`；`Get-ChildItem .git -Recurse \| Measure-Object Length -Sum` | **当时实测**（改造前快照）：已跟踪 **1,399**；`src/*.ts` **28**；`lib/*` **84**；`.git` **43,479,139 B**。**本轮复测已变**：已跟踪 **1,402**、`.git` **44,307,366 B**（`src/*.ts` 28 与 `lib/*` 84 未变）——见 §7.6 与本表的时点说明 |
 | 7 | `changes/` 是否存在 | `git ls-files \| Select-String 'changes/'`；`Get-ChildItem -Recurse -Directory -Filter changes` | **两处均无命中** ⇒ 本仓库没有 `changes/` 目录；`changes` 只是目标工程数据目录的源根名（`src/engine/manifest.ts:5`） |
 | 8 | 豁免误伤事故的现场 | `Get-Content examples/bilibili-pi-full/.gitignore`；`git check-ignore -v <preview.md>`；读 `ledger/file-ledger.json` 的 `meta.known_divergences` | `.gitignore` 含 `*review*.md` 与注释「注意 "preview" 含子串 "review"，会被 `*review*.md` 误伤，故显式反选」+ 反选规则 `!**/modules/**/*.md`；当前 `git check-ignore -v` 对那两个文件**无输出**；台账 `known_divergences[0]` 记录了该历史 |
 | 9 | 门禁基线（改稿前） | `node scripts/check-references.cjs`；`node scripts/check-doc-snippets.cjs` | 两者均 **EXIT 0** |

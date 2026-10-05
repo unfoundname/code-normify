@@ -134,6 +134,8 @@ const CHECK_HELP_DETAILS = {
     '· 当前清单：src/adapters/mcp.ts 的 MCP server version（error）、lib/adapters/mcp.js 编译产物（warning）、',
     '  package-lock.json 两处 version（error）、tests/mcp-e2e.mjs 的 server version 断言（error）、',
     '  README.md / README_EN.md 首段版本宣言（error）、docs/SPEC.zh-CN.md「当前实现」版本（error）。',
+    '· 另有 SCRIPT_VERSION_CITATIONS：文档 / CI 注释里写的**脚本自身版本**（`scripts/x.cjs v1.2.3`）',
+    '  必须等于该脚本内的 TOOL_VERSION（比较基准不是 package.json！）；见本项下方实现说明。',
   ],
   'tarball-version-drift': [
     '· 文档里的 `promptmanager-code-normify-<版本>.tgz` 必须等于本次 `npm pack` 的产物名（error）；',
@@ -291,6 +293,99 @@ const VERSION_SYNC_LITERALS = [
     label: 'docs/SPEC.zh-CN.md 「当前实现」版本',
     regex: /(当前实现：`@promptmanager\/code-normify`\s*\*\*)(\d+\.\d+\.\d+)\*\*/,
     severity: 'error',
+  },
+];
+
+// ---------------------------------------------------------------------------
+// 配置：文档 / CI 注释里的「脚本自身版本」引用
+// ---------------------------------------------------------------------------
+/**
+ * 每一条 = 「某处文字里引用的脚本版本号」必须等于「该脚本内的 TOOL_VERSION」。
+ *
+ * 为什么单列一份、不复用 VERSION_SYNC_LITERALS：
+ *   VERSION_SYNC_LITERALS 的比较基准是 **package.json > version**（0.8.2），而脚本版本号是
+ *   脚本自己的 TOOL_VERSION（1.3.0 / 1.0.0）——不是同一个数，塞进那份清单只会互相打架。
+ *
+ * 为什么不能复用 checkOneVersionLiteral（历史坑，务必保留这段说明）：
+ *   那个函数逐行 `if (isCommentLine(rawLine)) continue;` **刻意排除注释行**——因为历史上
+ *   「一行注释里的正确版本」能让真实漂移判绿。而本清单要检查的目标**本身就是注释**
+ *   （`.github/workflows/ci.yml` 的步骤注释）。所以这里必须自己逐行匹配，且**只认注释行**，
+ *   不复用那个函数。
+ *
+ *   file       被检查的「引用方」文件（通常含注释）
+ *   from       被引用的脚本：版本值取自它内部的 `TOOL_VERSION = '<x>'`
+ *   regex      在 file 里定位引用的正则；捕获组 1（= m[1]）为版本值（可含 `v` 前缀）
+ *   label      报告里的人类可读名称
+ *
+ * 扩展方式：往数组里追加一条即可，不要写死行号。新增一条后：
+ *   ① 跑 `node scripts/check-references.cjs` 确认 exit 0；
+ *   ② 同步 CONTRIBUTING.md 的本清单条数（该文件写明「数字随实现变化，改实现要同步」）。
+ */
+const SCRIPT_VERSION_CITATIONS = [
+  {
+    kind: 'version',
+    file: '.github/workflows/ci.yml',
+    from: 'scripts/check-references.cjs',
+    // 组 1 = 版本值**含 `v` 前缀**；行内必须同时出现 `check-references.cjs`（避免与下面几条互相误吃），
+    // 末尾的 lookahead `(?=）)` 钉住右括号，防止将来写成 v1.3.0.x 时只匹配到前缀。
+    regex: /check-references\.cjs\s+(v\d+\.\d+\.\d+)(?=）)/,
+    label: 'ci.yml 的 Reference integrity guard 注释里引用的 check-references.cjs 版本',
+  },
+  {
+    kind: 'version',
+    file: '.github/workflows/ci.yml',
+    from: 'scripts/generate-file-ledger.cjs',
+    regex: /generate-file-ledger\.cjs\s+(v\d+\.\d+\.\d+)/,
+    label: 'ci.yml 的 File ledger generator check 注释里引用的 generate-file-ledger.cjs 版本',
+  },
+  {
+    kind: 'version',
+    file: '.github/workflows/ci.yml',
+    from: 'scripts/check-file-ledger.cjs',
+    regex: /check-file-ledger\.cjs\s+(v\d+\.\d+\.\d+)/,
+    label: 'ci.yml 的 File ledger guard 注释里引用的 check-file-ledger.cjs 版本',
+  },
+  {
+    kind: 'version',
+    file: '.github/workflows/ci.yml',
+    from: 'scripts/check-doc-snippets.cjs',
+    regex: /check-doc-snippets\.cjs\s+(v\d+\.\d+\.\d+)/,
+    label: 'ci.yml 的 Doc snippets guard 注释里引用的 check-doc-snippets.cjs 版本',
+  },
+  // ── 检查项计数：同一份「文档/CI 注释 vs 实现」的口径，只是期望值来自 CHECK_TITLES.length ──
+  // 为什么需要：CONTRIBUTING.md 自己要求「若脚本新增检查项，本清单与 ci.yml 注释都要同步改
+  // （数量、编号、覆盖范围三处）」，但此前**这三处数量没有任何门禁**。本清单把其中两处变成断言。
+  // 注意「类数」（顶层 key 数）与「某类下的覆盖范围条数」是两件事：见下一条的说明。
+  {
+    kind: 'count',
+    file: '.github/workflows/ci.yml',
+    from: 'scripts/check-references.cjs',
+    regex: /# 引用完整性门禁（[^）]*）(\d+) 类检查/,
+    label: 'ci.yml 的 Reference integrity guard 注释里写明的检查项数',
+  },
+  {
+    kind: 'count',
+    file: 'CONTRIBUTING.md',
+    from: 'scripts/check-references.cjs',
+    // 锚定到整条 bullet 的开头（`- 引用完整性门禁：… 共 N 类检查`）：不锚定就会串味——
+    // 实测踩过：松正则 /共 \*\*(\d+) 类\*\*检查/ 在 CONTRIBUTING 里同时命中台账那一条。
+    regex: /^- 引用完整性门禁：[\s\S]{0,200}?共 \*\*(\d+) 类\*\*检查/,
+    label: 'CONTRIBUTING.md 里写明的 check-references.cjs 检查项数',
+  },
+  {
+    kind: 'count',
+    file: '.github/workflows/ci.yml',
+    from: 'scripts/check-file-ledger.cjs',
+    // 注意实际写法是 `（…，13 项检查）`——数字在括号**内**、且在前（`，13 项检查）：`）。
+    regex: /全仓文件台账门禁（[^）]*，(\d+) 项检查）/,
+    label: 'ci.yml 的 File ledger guard 注释里写明的检查项数',
+  },
+  {
+    kind: 'count',
+    file: 'CONTRIBUTING.md',
+    from: 'scripts/check-file-ledger.cjs',
+    regex: /^- 全仓文件台账门禁：[\s\S]{0,200}?共 \*\*(\d+) 类\*\*检查/,
+    label: 'CONTRIBUTING.md 里写明的 check-file-ledger.cjs 检查项数',
   },
 ];
 
@@ -462,9 +557,16 @@ function stripClosedBlockComments(line) {
  * 这样 `// version: '0.8.0'` 这类说明注释不会把真实漂移掩盖掉——历史教训：
  * 旧实现 regex.exec 只取首个匹配，一行注释就能让门禁判绿。
  * 先剥掉已闭合的块注释，避免「块注释 + 代码」写在同一行时被整行跳过。
+ *
+ * `relFile` 决定要不要做块注释剥离（默认做，保持旧行为）。**YAML/其它非 JS 文件必须传**：
+ * 实测踩过——`# 全仓文件台账门禁（scripts/check-file-ledger.cjs v1.3.0…` 这行里
+ * `check-file-ledger.cjs` 含 `/*`，会被 `stripClosedBlockComments` 当成块注释起点，
+ * 把该行从 `scripts` 起全部抹掉，导致行首的 `#` 也一起消失、整行不再被认成注释（假阴性）。
  */
-function isCommentLine(rawLine) {
-  const stripped = stripClosedBlockComments(rawLine).replace(/^[ \t]+/, '');
+function isCommentLine(rawLine, relFile) {
+  const jsLike = !relFile || /\.(cjs|mjs|js|jsx|ts|tsx|mts|cts)$/i.test(relFile);
+  const base = jsLike ? stripClosedBlockComments(rawLine) : rawLine;
+  const stripped = base.replace(/^[ \t]+/, '');
   if (!stripped.trim()) return false;
   return COMMENT_LINE_PREFIX.test(stripped);
 }
@@ -511,6 +613,7 @@ function main(argv) {
     checkWorkflowRuns(ctx);
     const resolvedSpecifiers = checkDanglingModuleSpecifiers(ctx);
     checkVersionLiterals(ctx);
+    checkScriptVersionCitations(ctx);
     checkTarballNames(ctx);
     checkTestInventory(ctx);
     checkDeletedReferences(ctx);
@@ -1690,6 +1793,197 @@ function literalSeverity(entry) {
 }
 
 /**
+ * 从被引用脚本的**源码文本**里取「期望值」：
+ *   kind='version'（默认）→ 该脚本的 TOOL_VERSION（带 `v` 前缀，与文档里的写法一致）
+ *   kind='count'          → 该脚本 CHECK_TITLES 的顶层条目数（即 --help 的编号项数）
+ * 取不到 → 返回 { error }，调用方必须报 error：拿不到期望值就不能说「没问题」。
+ *
+ * 为什么解析源码而不是 `require()` 那个脚本（实测教训，别改回去）：
+ *   这些脚本文件末尾直接顶层调用 `main(...)`，**require 会真的把它跑起来**——实测一次
+ *   `require('./scripts/check-file-ledger.cjs')` 触发了整轮引用完整性扫描并把报告打到 stdout；
+ *   而且它们并未 `module.exports` 出 CHECK_TITLES。所以这里只读源码文本，
+ *   数 `CHECK_TITLES` 的顶层 `'<id>':` 行。
+ * 代价（写在这里，别让读者误以为它万能）：它假定 CHECK_TITLES 是「两个空格缩进 + `'<id>':`
+ *   开头、一个一行」的写法——本仓库两个脚本都是这个风格；若哪天改成一行式或换缩进，
+ *   这里会数出 0 并**报 error**（fail-closed，不会静默变绿）。
+ */
+function expectedCitationValue(fromRel, kind, source) {
+  if (kind === 'count') {
+    const start = source.indexOf('const CHECK_TITLES = {');
+    if (start === -1) {
+      return { error: `${fromRel} 里找不到 \`const CHECK_TITLES = {\`，无法数出检查项数。` };
+    }
+    const end = source.indexOf('\n};', start);
+    if (end === -1) {
+      return { error: `${fromRel} 里 CHECK_TITLES 的结尾（换行 + \`};\`）找不到，无法数出检查项数。` };
+    }
+    const body = source.slice(start, end);
+    const count = (body.match(/^ {2}'[a-z0-9-]+':/gm) || []).length;
+    if (count === 0) {
+      return { error: `${fromRel} 的 CHECK_TITLES 里没数到任何条目，无法得出检查项数。` };
+    }
+    return { value: String(count) };
+  }
+  const m = /TOOL_VERSION\s*=\s*'([^']+)'/.exec(source);
+  if (!m) {
+    return { error: `${fromRel} 里找不到 \`TOOL_VERSION = '<x>'\`，无法得出脚本版本。` };
+  }
+  return { value: `v${m[1]}` };
+}
+
+/**
+ * 文档 / CI 注释里引用的「脚本自身版本」或「脚本检查项数」必须等于实现里的真值。
+ * 归入既有 check id `version-drift`（同为「需要保持同步的字面量」一族），因此不新增检查项、
+ * 也不改变 CHECK_TITLES 的规模（--help 编号 / summary.checks 顺序保持不变）。
+ *
+ * fail-closed 三连（与 checkVersionLiterals 同构，任一不成立都报 error，绝不静默跳过）：
+ *   ① 被引用的脚本不在 git 索引（被删/改名）或读不到 → error；
+ *   ② 从脚本里取不到期望值（没有 TOOL_VERSION / 数不出 CHECK_TITLES）→ error；
+ *   ③ 引用正则一处都没命中 → error（正则失效或那句引用被删；「找不到」≠「一致」）。
+ * 另：同一文案里出现多处引用时**每一处都要查**（total 计数），只取首个匹配会被
+ * 「前面写对、后面写错」绕过——这正是 checkOneVersionLiteral 当年踩过的坑。
+ *
+ * **计数条目的已知边界（写在实现里，别让读者误以为它万能）**：
+ *   它断言的是「顶层**类数**」，即 `CHECK_TITLES` 的 key 数（= `--help` 的编号项数）。
+ *   它**管不到**「某一类内部的覆盖范围条数」（例如 version-drift 里 `VERSION_SYNC_LITERALS`
+ *   的 8 条、`SCRIPT_VERSION_CITATIONS` 的 8 条）。那些条数散落在 CONTRIBUTING.md 的散文里，
+ *   **目前仍靠人工同步**——CONTRIBUTING 已就此写明。
+ */
+function checkScriptVersionCitations(ctx) {
+  for (const entry of SCRIPT_VERSION_CITATIONS) {
+    if (!ctx.trackedSet.has(entry.from)) {
+      ctx.report({
+        check: 'version-drift',
+        severity: 'error',
+        type: 'version-citation-source-missing',
+        file: entry.from,
+        line: 1,
+        target: entry.label,
+        message: `脚本字面量引用「${entry.label}」的被引用脚本不在 git 索引里（被删除/改名/从未 add？）：${entry.from}`,
+        hint: '脚本改名后请同步更新 SCRIPT_VERSION_CITATIONS 的 from 字段。',
+      });
+      continue;
+    }
+    const source = readText(ctx, entry.from);
+    if (source === null) {
+      const failure = readFailure(ctx, entry.from);
+      if (failure) reportReadFailure(ctx, entry.from, failure, 'error');
+      else {
+        ctx.report({
+          check: 'guard-unavailable',
+          severity: 'error',
+          type: 'guard-unavailable',
+          file: entry.from,
+          line: 1,
+          target: entry.label,
+          message: `脚本字面量引用「${entry.label}」的被引用脚本读不到，无法取得期望值：${entry.from}`,
+        });
+      }
+      continue;
+    }
+    const expectedResult = expectedCitationValue(entry.from, entry.kind, source);
+    if (expectedResult.error) {
+      ctx.report({
+        check: 'version-drift',
+        severity: 'error',
+        type: 'version-citation-source-missing',
+        file: entry.from,
+        line: 1,
+        target: entry.label,
+        message: `${expectedResult.error}脚本字面量引用「${entry.label}」无从校验。`,
+        hint: '期望值必须来自实现本身：版本取 TOOL_VERSION，计数取 CHECK_TITLES 的顶层条目数。',
+      });
+      continue;
+    }
+    const expected = expectedResult.value;
+
+    if (!ctx.trackedSet.has(entry.file)) {
+      ctx.report({
+        check: 'version-drift',
+        severity: 'error',
+        type: 'version-citation-target-missing',
+        file: entry.file,
+        line: 1,
+        target: entry.label,
+        message: `脚本字面量引用「${entry.label}」所在的文件不在 git 索引里：${entry.file}`,
+      });
+      continue;
+    }
+    const text = readText(ctx, entry.file);
+    if (text === null) {
+      const failure = readFailure(ctx, entry.file);
+      if (failure) reportReadFailure(ctx, entry.file, failure, 'error');
+      else {
+        ctx.report({
+          check: 'guard-unavailable',
+          severity: 'error',
+          type: 'guard-unavailable',
+          file: entry.file,
+          line: 1,
+          target: entry.label,
+          message: `脚本字面量引用「${entry.label}」所在的文件读不到：${entry.file}`,
+        });
+      }
+      continue;
+    }
+
+    // 行迭代：lineStart 是原文里的精确偏移（CRLF 也不会让列号漂移）。
+    const lineRe = /.*(?:\r\n|\n|\r|$)/g;
+    const drifts = [];
+    let total = 0;
+    let lm;
+    while ((lm = lineRe.exec(text)) !== null) {
+      if (lm[0] === '') break; // 末尾空匹配
+      const lineStart = lm.index;
+      const rawLine = lm[0].replace(/\r?\n$|\r$/, '');
+      // 与 checkOneVersionLiteral 相反的取舍：本机制**只认注释行**（引用就写在注释里）。
+      // 例外：CONTRIBUTING.md 不是代码，整行都是正文，没有「注释行」概念，按普通行匹配。
+      if (entry.file.endsWith('.yml') && !isCommentLine(rawLine, entry.file)) continue;
+      const flags = entry.regex.flags.includes('g') ? entry.regex.flags : `${entry.regex.flags}g`;
+      const re = new RegExp(entry.regex.source, flags);
+      let m;
+      while ((m = re.exec(rawLine)) !== null) {
+        if (m[0] === '') {
+          re.lastIndex += 1;
+          continue;
+        }
+        total += 1;
+        if (m[1] !== expected) drifts.push({ value: m[1], index: lineStart + m.index });
+      }
+    }
+
+    if (total === 0) {
+      ctx.report({
+        check: 'version-drift',
+        severity: 'error',
+        type: 'version-citation-not-found',
+        file: entry.file,
+        line: 1,
+        target: entry.label,
+        message: `脚本字面量引用「${entry.label}」在 ${entry.file} 里定位不到（正则失效，或这句引用被删/改写了）。`,
+        hint: `期望值 = ${entry.from} 的${entry.kind === 'count' ? ' `CHECK_TITLES` 条目数' : ' `TOOL_VERSION`'}（唯一事实来源）；改实现时要同步改这里。`,
+      });
+      continue;
+    }
+
+    for (const drift of drifts) {
+      const pos = positionAt(ctx, entry.file, text, drift.index);
+      ctx.report({
+        check: 'version-drift',
+        severity: 'error',
+        type: 'version-drift',
+        file: entry.file,
+        line: pos.line,
+        column: pos.column,
+        target: drift.value,
+        message: `${entry.label} = ${drift.value}，但 ${entry.from} 的${entry.kind === 'count' ? ' `CHECK_TITLES` 条目数' : ' `TOOL_VERSION`'} = ${expected} 不一致（应为 ${expected}）。`,
+        hint: '脚本版本号 / 检查项数与其在文档、CI 注释里的引用必须同步（数量、编号、覆盖范围三处）。',
+      });
+    }
+  }
+}
+
+/**
  * 校验一条「正则型」版本同步条目：**收集全部匹配**，要求每一个都等于 package.json > version。
  * 历史教训：旧实现用 regex.exec 只取首个匹配，于是一行注释（`// version: '0.8.0'`）或任意
  * 靠前的正确字面量就能让真实漂移判绿——一行注释即可绕过门禁。
@@ -1707,7 +2001,7 @@ function checkOneVersionLiteral(ctx, entry, text, expected) {
     if (lm[0] === '') break; // 末尾空匹配
     const lineStart = lm.index;
     const rawLine = lm[0].replace(/\r?\n$|\r$/, '');
-    if (isCommentLine(rawLine)) continue;
+    if (isCommentLine(rawLine, entry.file)) continue;
     // 每条目自带正则、可能带 g：复制一份避免 lastIndex 在多次调用间泄漏。
     const flags = entry.regex.flags.includes('g') ? entry.regex.flags : `${entry.regex.flags}g`;
     const re = new RegExp(entry.regex.source, flags);
