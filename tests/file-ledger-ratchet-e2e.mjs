@@ -18,7 +18,11 @@
  *      在 core.ignoreCase=true 下命中 preview 系文件 → 门禁 **exit 1**，同时报出
  *      ① 交集（豁免清单放行的路径被真 .gitignore 覆盖）与 ② 大小写折叠误伤；
  *   7. 正向例：合法**删掉**一条已可移除（已命中豁免）的 accounted 条目 + `git add` → **exit 0**（只减不增）；
- *   8. 首次引入：HEAD 里没有该台账（索引里有）→ **exit 0** 并回显「基线由本次提交建立」。
+ *   8. 首次引入：HEAD 里没有该台账（索引里有）→ **exit 0** 并回显「基线由本次提交建立」；
+ *   9. 新增已跟踪文件的**两条合法路 vs 走不通的路**（诚实性修复的负例）：把它加进 accounted（旧指引）
+ *      → 门禁 **exit 1**（accounted-added-vs-head）、生成器 `--check` **exit 1**、生成器**写盘模式**
+ *      **exit 1 + 点名 + 拒绝写盘**（修复前是「静默剔除 + exit 0」）；标签「索引版 ∪ 工作区版」都拦；
+ *      改成豁免清单里一条带 reason 的模式（新指引）→ 门禁与生成器都 **exit 0**。
  *
  * 夹具：把本仓库索引里的全部已跟踪文件用 `git checkout-index -a --prefix=<tmp>/` 物化到系统 temp，
  * 在夹具里 `git init` + 一次提交（台账与豁免清单随第一次提交进入 HEAD，基线由此建立）。
@@ -367,6 +371,76 @@ function main() {
   gen = runTool(GEN, ['--root', FIX, '--check']);
   expect('8 首次引入：生成器 --check exit 0', gen.status, 0);
   expectContains('8 首次引入：生成器回显基线来源', gen.out, '棘轮基线 = 索引版台账');
+
+  // ---- 9. 新增已跟踪文件的两条合法路 vs 「加进 accounted」这条走不通的路（诚实性修复的负例） ----
+  // 旧指引（把新文件加进 accounted 转绿）必须红，且要红在**三处**：门禁 accounted-added-vs-head、
+  // 生成器 --check、生成器**写盘模式**（拒绝写盘 + 点名，不再静默自愈）；新指引（豁免清单加一条带 reason
+  // 的模式 / 模块 source.path 声明）必须绿。两个方向都断言，缺一个就证明不了「指引是对的」。
+  writeFileInFix(UNOWNED_PROBE, '// e2e 第 9 组：新增的已跟踪文件（两条合法路 vs 走不通的路）\n');
+  git(['add', UNOWNED_PROBE]);
+  git(['commit', '-q', '-m', 'fixture: add a tracked file for the guidance assertions']);
+  gen = runTool(GEN, ['--root', FIX]); // 先刷新 meta（生成器不会把这条路径写进 accounted）
+  expect('9 前置：生成器重算 exit 0', gen.status, 0, gen.out.trim().split('\n')[0]);
+  git(['add', LEDGER_REL]);
+  r = runTool(GATE, ['--root', FIX]);
+  expect('9 前置：新文件无条目 → 门禁 exit 1', r.status, 1);
+  expectContains('9 前置：报 unowned-file 并点名', r.out, `已跟踪文件在台账里查不到条目（既无模块归属、也不命中豁免、也不在 accounted 清单）：${UNOWNED_PROBE}`);
+  expectContains('9 指引：门禁 hint 写明新增文件只有两条路', r.out, '新增文件只有这两条路');
+  expectContains('9 指引：门禁 hint 否掉「加进 accounted」', r.out, 'accounted 是存量正账');
+
+  // 9a 旧指引：手工把它加进 accounted（并且 git add）→ 门禁红、--check 红、写盘模式**拒绝写盘**
+  mutateLedger((j) =>
+    j.accounted.push({
+      path: UNOWNED_PROBE,
+      accounted_at: '2026-10-05',
+      basis: 'e2e 第 9 组：旧指引（把新增文件加进 accounted）——这条路走不通，必须被拦',
+    }),
+  );
+  git(['add', LEDGER_REL]);
+  const ledgerBeforeRefusal = fs.readFileSync(ledgerAbs, 'utf8');
+  r = runTool(GATE, ['--root', FIX]);
+  expect('9a 旧指引：门禁 exit 1', r.status, 1);
+  expectContains('9a 旧指引：报 accounted-added-vs-head', r.out, '[accounted-added-vs-head]');
+  expectContains('9a 旧指引：逐条点名被加进来的路径', r.out, `accounted 新增条目（HEAD 版台账里没有它）：${UNOWNED_PROBE}`);
+  gen = runTool(GEN, ['--root', FIX, '--check']);
+  expect('9a 旧指引：生成器 --check exit 1', gen.status, 1);
+  gen = runTool(GEN, ['--root', FIX]); // 写盘模式：修复前是「静默剔除 + exit 0」，必须变成点名 + exit 1
+  expect('9a 旧指引：生成器**写盘模式** exit 1（不再静默自愈）', gen.status, 1);
+  expectContains('9a 旧指引：写盘模式点名该条目', gen.out, `+ ${UNOWNED_PROBE}`);
+  expectContains('9a 旧指引：写盘模式说明拒绝写盘', gen.out, '**拒绝写盘**');
+  expectContains('9a 旧指引：写盘模式说明危害（静默自愈会把洗白固化）', gen.out, '静默自愈会把洗白固化');
+  expectContains('9a 旧指引：给出两条合法修法', gen.out, '合法修法只有两条');
+  expect(
+    '9a 旧指引：台账文件**未被改写**（拒绝写盘，条目还在）',
+    fs.readFileSync(ledgerAbs, 'utf8') === ledgerBeforeRefusal,
+    true,
+  );
+
+  // 9a-2 只改工作区（不 git add）同样要拦：判定用「索引版 ∪ 工作区版」的并集，只看一份会漏
+  git(['reset', '-q', LEDGER_REL]);
+  gen = runTool(GEN, ['--root', FIX]);
+  expect('9a-2 仅工作区：生成器写盘模式仍 exit 1', gen.status, 1);
+  expectContains('9a-2 仅工作区：仍然点名该条目', gen.out, `+ ${UNOWNED_PROBE}`);
+  expect(
+    '9a-2 仅工作区：台账文件仍未改写',
+    fs.readFileSync(ledgerAbs, 'utf8') === ledgerBeforeRefusal,
+    true,
+  );
+
+  // 9b 新指引：把条目删掉，改成在独立豁免清单里加一条**带 reason** 的模式 → 门禁与生成器都绿
+  mutateLedger((j) => {
+    j.accounted = j.accounted.filter((e) => e.path !== UNOWNED_PROBE);
+  });
+  mutateExempt((text) => `${text}${UNOWNED_PROBE} ## reason=e2e 第 9 组：新增已跟踪文件的合法通道（owned 或 exempt）\n`);
+  git(['add', LEDGER_REL, EXEMPT_REL]);
+  r = runTool(GATE, ['--root', FIX]);
+  expect('9b 新指引：豁免一条带 reason 的模式 → 门禁 exit 0', r.status, 0, r.out.trim().split('\n').slice(-1)[0]);
+  expectNotContains('9b 新指引：不再有 error 级违规', r.out, '✖');
+  gen = runTool(GEN, ['--root', FIX, '--check']);
+  expect('9b 新指引：生成器 --check exit 0', gen.status, 0);
+  gen = runTool(GEN, ['--root', FIX]);
+  expect('9b 新指引：生成器写盘模式 exit 0（不需要自愈）', gen.status, 0);
+  resetFixture();
 
   console.log(`\n${failed === 0 ? '✔' : '✖'} ${checked - failed}/${checked} 条断言通过`);
   process.exitCode = failed === 0 ? 0 : 1;

@@ -169,8 +169,10 @@ const CHECK_HELP_DETAILS = {
   'unowned-file': [
     '· 判据：已跟踪 − owned − exempt − accounted ≠ ∅ → 逐条 error（不是计数）。',
     '· 「已跟踪但无条目即 error」没有例外：**刚提交的文件同样不豁免**（「它刚进 HEAD」不是条目）。',
-    `· 修法二选一：让某个模块用 source.path 精确声明它（→ owned）；或在 ${EXEMPT_REL} 里加一条`,
-    '  **带 reason** 的模式豁免（→ exempt）；**不允许**往 accounted 里加（清单只减不增，加进去即 accounted-growth/error）。',
+    `· **新增一个已跟踪文件时只有两条路**：让某个模块用 source.path 精确声明它（→ owned）；或在 ${EXEMPT_REL} 里`,
+    '  加一条**带 reason** 的模式豁免（→ exempt）。**「把新文件加进 accounted 转绿」这条路不存在**：',
+    '  accounted 是**存量正账**，任何新增条目 → accounted-growth/error（生成器 --check 同样 exit 1，',
+    '  写盘模式的生成器还会拒绝写盘并逐条点名）——判据是与 HEAD 版台账比集合包含，不是条数。',
   ],
   'accounted-removable': [
     '· 清单里的路径若已经 owned、已经命中豁免、或已经从 git 索引消失、或清单内重复 → warning 提示删除。',
@@ -331,6 +333,9 @@ function printHelp() {
     '',
     '绿灯依据只有一条：**台账里有条目**（三条来路）——owned / exempt / accounted。',
     '  已跟踪但**没有任何条目** → error，**包括刚提交的文件**。',
+    '  **新增一个已跟踪文件时只有两条路**：模块 source.path 精确声明（→ owned）、或豁免清单里加一条',
+    '  带 reason 的模式（→ exempt）；**「把新文件加进 accounted 转绿」走不通**（新增条目即 accounted-growth/error，',
+    '  生成器 --check 同样红、写盘模式还会拒绝写盘）。',
     '  ① 「在 HEAD 里即绿」**不成立**：git 索引只定义**待清点的全集**，文件旧 ≠ 已记账；',
     '  ② accounted **不是欠账**：那 29 条是**已清点记账的正账**（每条带 accounted_at 与 basis），',
     '     只是这条清单**不再增长**（相对 HEAD 的任何新增 → accounted-growth/error）。',
@@ -1445,7 +1450,8 @@ function emitViolations(ctx) {
       hint:
         '修法二选一：① 让某个模块用 source.path 精确声明它（→ owned，并在文件真实存在后刷新 fingerprint）；' +
         `② 在 ${exemptRel} 里加一条带 reason 的模式豁免（→ exempt）。` +
-        '**不允许**往 accounted 里加：清单只减不增（用新增无条目文件稀释覆盖率正是本项要拦的事）。',
+        '**新增文件只有这两条路**：**不允许**往 accounted 里加——accounted 是存量正账，任何新增条目都是 ' +
+        'accounted-growth/error（生成器 --check 同样红，写盘模式的生成器还会拒绝写盘并逐条点名）。',
     });
   }
   if (ctx.states.unowned.length > EVIDENCE_LIMIT) {

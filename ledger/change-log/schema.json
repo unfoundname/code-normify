@@ -1,0 +1,269 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wishbreeze/code-normify/schemas/change-log/v1.json",
+  "title": "Normify 改动记录 v1（增量 2 骨架：文件级引用图两份快照之差）",
+  "description": "一条记录 = 引用图两份快照之差 + 受影响的引用方 + 处理状态。观测点 = 每次提交（设计稿 §4.1）。本 Schema 是 --check 的机器判据（scripts/generate-change-log.cjs 用 ajv 校验每一条记录），不是文档里的建议。本批只到**文件层**：declarations（符号级）与 type-reference 边属增量 3，传递闭包与查询接口属增量 5，cas-write 观测点本批不实现——这几条都写在记录自己的 omitted 字段里自证。",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "kind",
+    "commit",
+    "commit_parent",
+    "cas_digest",
+    "change_id",
+    "created_at",
+    "generator",
+    "generator_version",
+    "graph_schema_version",
+    "from_snapshot",
+    "to_snapshot",
+    "degradation",
+    "files",
+    "edges",
+    "affected_referrers",
+    "counts",
+    "handling",
+    "summary",
+    "omitted"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "记录结构版本。结构变了必须显式升版，不做静默兼容（与台账 / 图同一条纪律）。"
+    },
+    "kind": {
+      "enum": ["commit", "index"],
+      "description": "观测点种类。commit = 一次已落定的提交（基准不可变，可复核）；index = 当前暂存态（未落定的观测点，基准一变即为 stale）。设计稿 §4.5 的第三个取值 cas-write 本批**不落地**：引擎的 CAS 写入不落在本仓库的数据面里；它落地时 schema_version 升到 2。"
+    },
+    "commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$",
+      "description": "本次记录的**基准提交**：kind=commit 时是 to 侧提交；kind=index 时是 from 侧的 HEAD。"
+    },
+    "commit_parent": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{40}$",
+      "description": "kind=commit 时是 from 侧提交（根提交 / from 为空树时为 null）；kind=index 时恒为 null。"
+    },
+    "cas_digest": {
+      "const": null,
+      "description": "CAS 写入摘要。本批不实现 cas-write 观测点，故恒为 null——用 const 钉死，不假装支持。"
+    },
+    "change_id": {
+      "type": ["string", "null"],
+      "description": "**可选外键**：指向目标工程的 changes/<id>.json（设计稿 §4.3）。本仓库**没有** changes/ 目录（实测 git ls-files 无任何条目），故本仓库的记录恒为 null；生成器只在 --change-id 指向的文件真的存在时才写它（fail-closed：外键不得凭空写）。"
+    },
+    "created_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+      "description": "记录**写入**时刻（UTC ISO-8601，秒级）。这是事实（这条记录何时写下），不是幂等产物；--check **不比对**它（与 handling 同属人类字段）。"
+    },
+    "generator": { "const": "scripts/generate-change-log.cjs" },
+    "generator_version": { "type": "string" },
+    "graph_schema_version": {
+      "const": 2,
+      "description": "快照来自哪一版引用图（ledger/references.json 的 schema_version）。图升版后旧记录**必须同步这一栏**：--check 会用当前生成器重建两侧快照并把这一栏纳入逐字段比对，对不上就是「重算结果与记录不一致」。增量 3 把图从 v1 升到 v2（新增 declarations / symbol_edges），已落盘的两条记录随之从 1 改为 2——它们的 files / edges 差一个字节都没变（图生成器的改动面证明：v1 与 v2 的 files / edges 两个数组逐字节相同），改的只是「这份差是哪一版结构算出来的」这个标签。"
+    },
+    "from_snapshot": { "$ref": "#/$defs/snapshot" },
+    "to_snapshot": { "$ref": "#/$defs/snapshot" },
+    "degradation": {
+      "type": "object",
+      "required": ["status", "reasons", "note"],
+      "additionalProperties": false,
+      "description": "**降级契约**：判定基准不可用时，记录必须能表达「不可判定」，且**不得把「不知道」读成「没有引用」**。铁律：files / edges 的数组为空**只在 status = complete 时才等于「没有差异」**。",
+      "properties": {
+        "status": {
+          "enum": ["complete", "partial", "unknown", "stale"],
+          "description": "complete = 两侧快照完整重建，差在文件层完整（数组为空 = 真的没有差异）；partial = 差已算出但有已知缺口（reasons 逐条），缺口内的引用可能没计入，不得当完整清单；unknown = 差额不可判定（基准不可用 / 结构不合规 / 重算不一致），数组为空**不代表**没有差异，--check 遇此不判绿；stale = 记录描述的那个状态已经不存在（HEAD 移动 / 索引变化 / 提交被重写），记录未被证伪但已失效，不得拿它回答今天的问题。"
+        },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "机器可读的原因码。已知取值：specifier-analysis-regex-fallback（任一侧快照拿不到 typescript，说明符边只按正则解析，可能不全）；history-unavailable（浅克隆，历史删除清单拿不全，deleted 态不可判）；index-basis-moved（kind=index 的记录所描述的暂存态已被后续 git add / 提交改掉）。"
+        },
+        "note": {
+          "type": "string",
+          "description": "status 的确定性自证说明（同一个 status 永远同一句话，因此可参与复核）。"
+        }
+      }
+    },
+    "files": {
+      "type": "object",
+      "required": ["added", "removed", "state_changed"],
+      "additionalProperties": false,
+      "description": "文件层（节点）差：新增 / 消失 / **状态变化**，id = 仓库相对 posix 路径，按 UTF-8 字节序升序、去重。节点 = 全量已跟踪文件 + 被引用到的索引外目标。**state_changed 不是装饰**：一个被删除、但仍有人引用的文件在 to 快照里仍是节点（state: indexed → deleted），只比 id 会得到一张空表。",
+      "properties": {
+        "added": { "$ref": "#/$defs/idList" },
+        "removed": { "$ref": "#/$defs/idList" },
+        "state_changed": {
+          "type": "array",
+          "description": "两侧都在、状态变了。典型：indexed → deleted（文件被删了，但仍有人引用它，所以它还是节点）。",
+          "items": { "$ref": "#/$defs/fileStateChange" }
+        }
+      }
+    },
+    "edges": {
+      "type": "object",
+      "required": ["added", "removed", "status_changed"],
+      "additionalProperties": false,
+      "description": "边差：新增 / 消失 / **解析状态变化**（均为 id 级）。边 id = <from.file>:<line>:<column>:<kind>[:<field|specifier>]，**含行列**，所以「同一个引用只是行号挪了」会表现为一条 removed + 一条 added——这是 id 级判定的已知 churn，如实落盘。status_changed 同样必需：目标被删时边 id 不变，变的只是 status（resolved → dangling）。",
+      "properties": {
+        "added": { "$ref": "#/$defs/idList" },
+        "removed": { "$ref": "#/$defs/idList" },
+        "status_changed": {
+          "type": "array",
+          "description": "两侧都在、解析状态或目标状态变了。典型：resolved → dangling（引用的文件被删了）。",
+          "items": { "$ref": "#/$defs/edgeStatusChange" }
+        }
+      }
+    },
+    "affected_referrers": {
+      "type": "array",
+      "description": "受影响的引用方（Q1/Q3 的落地形态，**只到直接引用方**，没有传递闭包）。三类：dangling-target（这条边在 to 快照里目标不可用——目标被整个删掉，或目标被删但仍有人引用；而本次改动之前它不是这样 → needs_change = true，这就是「删了某个东西之后谁还在引用它」）；edge-removed（这条引用在本次改动里消失）；edge-added（本次新增的引用）。顺序 = (file, line, column, kind, target, classification) 升序。",
+      "items": { "$ref": "#/$defs/referrer" }
+    },
+    "counts": {
+      "type": "object",
+      "required": [
+        "files_added",
+        "files_removed",
+        "files_state_changed",
+        "edges_added",
+        "edges_removed",
+        "edges_status_changed",
+        "affected_referrers",
+        "needs_change"
+      ],
+      "additionalProperties": false,
+      "description": "真实计数（截断前）。数组长度可能小于计数（上限见生成器的 MAX_LIST）——**判据是 counts，不是数组长度**：数组短了不等于差小了。",
+      "properties": {
+        "files_added": { "type": "integer", "minimum": 0 },
+        "files_removed": { "type": "integer", "minimum": 0 },
+        "files_state_changed": { "type": "integer", "minimum": 0 },
+        "edges_added": { "type": "integer", "minimum": 0 },
+        "edges_removed": { "type": "integer", "minimum": 0 },
+        "edges_status_changed": { "type": "integer", "minimum": 0 },
+        "affected_referrers": { "type": "integer", "minimum": 0 },
+        "needs_change": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "handling": {
+      "type": "object",
+      "required": ["status", "by", "at", "note"],
+      "additionalProperties": false,
+      "description": "处理状态，**粒度 = 整条记录**（设计稿 §4.5）。逐条引用方勾选需要一个可写源，本批不做（见 omitted）。生成器恒写 pending；人工可改成 handled / waived——改它**不影响**复核（--check 不比对 handling）。",
+      "properties": {
+        "status": { "enum": ["pending", "handled", "waived"] },
+        "by": { "type": ["string", "null"] },
+        "at": { "type": ["string", "null"] },
+        "note": { "type": ["string", "null"], "description": "waived 必须写明理由（见本文件的 allOf 约束）。" }
+      }
+    },
+    "summary": {
+      "type": "string",
+      "description": "人类可读一行（机器生成、确定性：含提交主题、文件/边增减、受影响引用方条数）。"
+    },
+    "omitted": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "本批明示不做的东西（自证范围边界，免得被读成「符号级记录」）。"
+    }
+  },
+  "allOf": [
+    {
+      "description": "waived 必须带理由：豁免一条已发生的引用影响而不写理由，等于把它藏起来。",
+      "if": { "properties": { "handling": { "properties": { "status": { "const": "waived" } }, "required": ["status"] } }, "required": ["handling"] },
+      "then": { "properties": { "handling": { "properties": { "note": { "type": "string", "minLength": 1 } }, "required": ["note"] } } }
+    },
+    {
+      "description": "kind=commit 时 commit_parent 可以为 null（根提交 / from 为空树），kind=index 时必须为 null。",
+      "if": { "properties": { "kind": { "const": "index" } }, "required": ["kind"] },
+      "then": { "properties": { "commit_parent": { "const": null } } }
+    }
+  ],
+  "$defs": {
+    "idList": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "按 UTF-8 字节序升序、去重的 id 列表（生成器恒如此；手改破坏顺序会让记录不可比对）。"
+    },
+    "fileStateChange": {
+      "type": "object",
+      "required": ["file", "from", "to"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string" },
+        "from": { "enum": ["indexed", "ignored", "untracked", "deleted"] },
+        "to": { "enum": ["indexed", "ignored", "untracked", "deleted"] }
+      }
+    },
+    "edgeStatusChange": {
+      "type": "object",
+      "required": ["edge", "from_status", "to_status", "from_target_state", "to_target_state"],
+      "additionalProperties": false,
+      "properties": {
+        "edge": { "type": "string" },
+        "from_status": { "enum": ["resolved", "dangling", "untracked", "ignored", "case-mismatch", "ambiguous", "external", "unresolved"] },
+        "to_status": { "enum": ["resolved", "dangling", "untracked", "ignored", "case-mismatch", "ambiguous", "external", "unresolved"] },
+        "from_target_state": { "enum": ["indexed", "ignored", "untracked", "deleted", "missing", "outside", null] },
+        "to_target_state": { "enum": ["indexed", "ignored", "untracked", "deleted", "missing", "outside", null] }
+      }
+    },
+    "snapshot": {
+      "type": "object",
+      "required": ["basis", "rev", "tree", "universe_hash", "tracked_total", "files", "edges", "analysis_mode"],
+      "additionalProperties": false,
+      "description": "快照的身份信息（**不含**全量图：图在 ledger/references.json 里；记录只留可定位、可比对的那几个量）。",
+      "properties": {
+        "basis": {
+          "enum": ["commit", "index", "empty-tree"],
+          "description": "快照基准：commit = 某个提交的树；index = 当前暂存态（判定基准 = git 索引）；empty-tree = 根提交的 from 侧（空树）。"
+        },
+        "rev": { "type": ["string", "null"], "description": "提交哈希；basis=index / empty-tree 时为 null。" },
+        "tree": {
+          "type": ["string", "null"],
+          "description": "树对象 id（内容寻址 ⇒ 不可变 ⇒ 可复核）；basis=index 时为 null——算索引的树要 git write-tree，那会往对象库写东西，记录生成不该有写副作用。"
+        },
+        "universe_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "sha256(sort(git ls-files, 码点升序).join('\\n') + '\\n')——与 ledger/file-ledger.json 和 ledger/references.json 的算法逐字相同，三份数据因此可以互相对账。"
+        },
+        "tracked_total": { "type": "integer", "minimum": 0 },
+        "files": { "type": "integer", "minimum": 0, "description": "节点条数（含被引用到的索引外目标）。" },
+        "edges": { "type": "integer", "minimum": 0, "description": "边条数。" },
+        "analysis_mode": {
+          "enum": ["typescript", "regex-fallback"],
+          "description": "该快照的说明符解析模式。regex-fallback ⇒ 说明符边可能不全 ⇒ 记录标 partial。"
+        }
+      }
+    },
+    "referrer": {
+      "type": "object",
+      "required": ["edge", "file", "line", "column", "kind", "target", "target_state", "edge_status", "classification", "needs_change"],
+      "additionalProperties": false,
+      "properties": {
+        "edge": { "type": "string", "description": "边 id。" },
+        "file": { "type": "string", "description": "引用方文件（仓库相对 posix 路径）。" },
+        "line": { "type": "integer", "minimum": 1 },
+        "column": { "type": "integer", "minimum": 1 },
+        "kind": {
+          "enum": ["import", "export-from", "require", "dynamic-import", "markdown-link", "package-field", "ci-target", "anchor"],
+          "description": "引用种类（与图的 edge kind 同一枚举；type-reference 属增量 3）。"
+        },
+        "target": { "type": ["string", "null"], "description": "被引用目标（裸模块名 / 仓库外目标为 null）。" },
+        "target_state": { "enum": ["indexed", "ignored", "untracked", "deleted", "missing", "outside", null] },
+        "edge_status": {
+          "enum": ["resolved", "dangling", "untracked", "ignored", "case-mismatch", "ambiguous", "external", "unresolved", null],
+          "description": "该边在 to 快照里的解析状态；边已消失（classification=edge-removed）时为 null。"
+        },
+        "classification": { "enum": ["dangling-target", "edge-removed", "edge-added"] },
+        "needs_change": {
+          "type": "boolean",
+          "description": "是否**必须**改这个引用方（悬空目标 = true）。它由机器判定；「处理了没有」记在记录的 handling 字段（粒度 = 整条记录）。"
+        }
+      }
+    }
+  }
+}

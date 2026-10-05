@@ -62,6 +62,38 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
+// 文件级引用解析器（共享内核，唯一事实来源）：纯重构抽取，行为与抽取前逐字节一致。
+const {
+  createReaderContext,
+  SPECIFIER_ANALYSIS,
+  absOf,
+  globToRegExp,
+  readText,
+  readFailure,
+  readTextOrReport,
+  reportReadFailure,
+  positionAt,
+  pathState,
+  globState,
+  forEachMarkdownLink,
+  collectPackageFieldTargets,
+  positionOfJsonKey,
+  extractNodeTargets,
+  collectWorkflowRunLines,
+  extractNpmScriptRefs,
+  indexPathState,
+  isIgnoredPath,
+  globIndexState,
+  moduleSpecifierCandidates,
+  initSpecifierAnalysis,
+  resolveRelativeSpecifier,
+  forEachRelativeSpecifier,
+  loadTypeScript,
+  extractHeadingAnchors,
+  anchorMatches,
+  editDistance,
+} = require('./reference-graph-core.cjs');
+
 const TOOL = 'check-references';
 const TOOL_VERSION = '1.3.0';
 
@@ -187,14 +219,42 @@ const DELETED_REFERENCE_ALLOWLIST = [
       '合法提及已删除路径（例如 0.5.x 条目提到后来的 cordis.patch.yml）。' +
       '若只想豁免单个路径，把 deleted 改成具体路径即可收窄。',
   },
+  {
+    file: 'ledger/references.json',
+    deleted: '*',
+    reason:
+      '机器生成的**文件级引用图**：它的内容按构造就是「仓库里所有被引用的路径」（每个节点一个 id、每条边一个 resolved），' +
+      '因此必然包含历史删除路径的 basename 字面量——那是**数据**，不是残留提及。' +
+      '「引用已删除文件」在图里由 status=dangling + to.state=deleted 表达，比 basename 次级线索精确得多。' +
+      '若只想豁免单条，把 deleted 收窄到具体路径即可。',
+  },
+  {
+    file: 'ledger/change-log/*',
+    deleted: '*',
+    reason:
+      '机器生成的**改动记录**（scripts/generate-change-log.cjs 的产物）与它的 README：一条记录就是「这次改动让哪些路径出现/消失/变了状态」的事实，' +
+      '它的 files.removed / files.state_changed / affected_referrers 按构造会写出**历史删除路径的原文**——那是**数据**，不是残留提及。' +
+      '「谁还在引用被删的东西」在记录里由 affected_referrers[].classification=dangling-target + needs_change 表达。' +
+      '若只想豁免单条，把 deleted 收窄到具体路径即可。',
+  },
+  {
+    file: 'docs/DESIGN-code-graph.zh-CN.md',
+    deleted: 'docs/VIDEO-SCRIPT.zh-CN.md',
+    reason:
+      '设计文档 §4.6 用**一次真实删除**（ed404e5）当反例，说明「只比 id 的差会给出一张空表」——被删文件仍被 README 链接，' +
+      '于是它仍是节点、边 id 也不变，只有 state / status 变了。那是**历史事实的叙述**（与 CHANGELOG 同一类文体），不是悬挂引用；' +
+      '只豁免这一条路径，不放开其它已删除路径。',
+  },
 ];
 
 /**
  * 豁免「指向已删除文件」检查的自身文件。
  * 理由：允许清单与检查逻辑本身不可避免地要写出已删除路径（作为豁免键），
- * 若把本脚本也纳入扫描，它会被自己的清单命中，属于结构性自指，不是残留。
+ * 而共享内核（scripts/reference-graph-core.cjs）是从本脚本逐字抽出的同一批解析器与注释
+ * （提到 package.json / index.js / README.md 这类文件名是「解析目标」的说明文字），
+ * 若把两者纳入扫描，它们会被自己的文本命中，属于结构性自指，不是残留。
  */
-const SELF_EXCLUDED_FILES = new Set(['scripts/check-references.cjs']);
+const SELF_EXCLUDED_FILES = new Set(['scripts/check-references.cjs', 'scripts/reference-graph-core.cjs']);
 
 // ---------------------------------------------------------------------------
 // 配置：「锚点未命中标题」检查（检查 6）的显式豁免清单
@@ -393,43 +453,6 @@ const SCRIPT_VERSION_CITATIONS = [
 // 配置：Markdown 内联链接
 // ---------------------------------------------------------------------------
 
-/**
- * 只处理 CommonMark 内联形式 `[文本](目标 "可选标题")` / `![alt](目标)`。
- * 参考式链接（`[文本][ref]` + `[ref]: url`）由 MD_REF_DEF 单独抽取定义行，
- * 与内联链接送进同一套检查（见 forEachMarkdownLink）。
- */
-const MD_INLINE_LINK =
-  /!?\[[^\]\n]*\]\(\s*(<[^<>\n]*>|[^()\n\s]+)(?:\s+(?:"[^"\n]*"|'[^'\n]*'|\([^()\n]*\)))?\s*\)/g;
-
-/**
- * 参考式链接定义行：`[ref]: ./target "可选标题"`（缩进最多 3 空格，与 CommonMark 一致）。
- * 组 1 = 目标（可带尖括号）。行内链接不带 `](`，所以与 MD_INLINE_LINK 不会互相误吃。
- */
-const MD_REF_DEF = /^ {0,3}\[[^\]\n]+\]:[ \t]*(<[^<>\n]*>|[^\s]+)/;
-
-/**
- * 参考式链接的定义行会写进被检查的 Markdown 自身；如果本脚本也扫描自己，
- * 这些示例会被当成真实链接。SELF_EXCLUDED_FILES 已经排除本脚本，这里无需额外处理。
- */
-
-/** 带 scheme（http:、mailto:、data: …）或协议相对（//host）的目标一律视为外部引用。 */
-const HAS_SCHEME = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
-
-// ---------------------------------------------------------------------------
-// 配置：模块说明符解析（相对 import / export / require）
-// ---------------------------------------------------------------------------
-
-/**
- * 模块说明符的解析模式：
- *   'typescript'      用仓库自带 typescript 的编译器 API 解析语法树（首选，权威）
- *   'regex-fallback'  拿不到 typescript 时的降级实现（注释/字符串掩码 + 多行安全正则）
- * 结果写进 ctx.analysisMode，并在 --json 的 summary.analysisMode 与人类可读头部回显：
- * 降级必须是可见的，否则「静默换了套更弱的解析」本身就是一种假绿。
- */
-const SPECIFIER_ANALYSIS = { mode: 'regex-fallback', reason: '尚未尝试加载 typescript', version: null };
-
-/** require 解析 typescript 的候选顺序（与 check-doc-snippets 的 resolveTsc 对齐）。 */
-const TYPESCRIPT_CANDIDATE_ROOTS = [__dirname, path.resolve(__dirname, '..')];
 
 // ---------------------------------------------------------------------------
 // 配置：未跟踪引用检查（检查 5）——以 git 索引为权威
@@ -442,55 +465,6 @@ const TYPESCRIPT_CANDIDATE_ROOTS = [__dirname, path.resolve(__dirname, '..')];
  *   所以：目标「在索引里」才算合法；「只在磁盘上」不算。
  */
 
-/** 需要做相对说明符解析的源码扩展名。 */
-const MODULE_EXTENSIONS = new Set(['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs']);
-
-/** TS 的 ESM 写法：`./execution.js` 实际指向源码 `./execution.ts`（编译产物则指向 `./execution.d.ts`）。 */
-const MODULE_EXT_SWAPS = {
-  '.js': ['.ts', '.tsx', '.d.ts', '.js'],
-  '.jsx': ['.tsx', '.d.ts', '.jsx'],
-  '.mjs': ['.mts', '.d.mts', '.mjs'],
-  '.cjs': ['.cts', '.d.cts', '.cjs'],
-};
-
-/** 没有扩展名时的候选扩展名（含 .json：`import x from …data.json`）。 */
-const MODULE_EXT_FALLBACKS = [
-  '.ts',
-  '.tsx',
-  '.d.ts',
-  '.mts',
-  '.cts',
-  '.d.mts',
-  '.d.cts',
-  '.js',
-  '.jsx',
-  '.mjs',
-  '.cjs',
-  '.json',
-];
-
-/**
- * 降级路径用的说明符正则（只在拿不到 typescript 时启用）。
- * 与旧实现的三点差异（对应三个已修复的失败开放）：
- *   1. 静态 import / export 分支不再要求出现 `from` —— 于是副作用导入 `import './g.js';`
- *      也能命中（旧正则要求 from / import( / require(，副作用导入直接漏掉）；
- *   2. 匹配区间里**不允许出现 `;`** —— 于是跨行 import（`import {` 换行 `} from './g2.js'`）
- *      能命中，而 `from 'a'; const y = require('b')` 这种跨语句贪吃不会发生
- *      （旧正则用 `[^;\n]` 直接跨不了行，所以多行 import 全漏）；
- *   3. 只喂「掩码后的源码」（注释与字符串内容已换成同长度空格），
- *      于是注释掉的 import（`// import x from './g6.js';`）与模板字符串里的假源码都不再被当成真引用；
- *      真实说明符本身由掩码前记录的「引号内位置」提供，不受掩码影响。
- * 四个分支：`… from '…'`、副作用 `import '…'`、动态 `import('…')`、`require('…')`。
- * 注意分支顺序无关紧要（各自要求不同的关键字/括号），但副作用分支必须排除 `import(`：
- * 副作用分支的 `\s*` 不含 `(`，所以 `import('./x')` 不会落到副作用分支。
- *
- * 已如实记录的降级限制：regex-fallback **只掩掉注释里的普通文本，不掩掉注释里带引号的示例写法**
- * （掩码必须保持被检查的真实字符串字面量，无法两全）。因此如果某条注释里正好写了
- * 「关键字 + 引号 + 相对路径」这种形状，降级模式会把它当成真引用误报。
- * 拿得到 typescript 时不存在这个问题；这也是「优先用编译器 API」的又一个理由。
- */
-const MODULE_SPECIFIER_FALLBACK =
-  /\b(?:import|export)\b[^;]{0,400}?\bfrom\s*(?=['"])|(?:^|[^\w$.])import\s*(?=['"])|(?:^|[^\w$.])import\s*\(\s*(?=['"])|(?:^|[^\w$.])require\s*\(\s*(?=['"])/gm;
 
 // ---------------------------------------------------------------------------
 // 小工具
@@ -498,28 +472,9 @@ const MODULE_SPECIFIER_FALLBACK =
 
 const relPosix = (p) => p.split(path.sep).join('/');
 
-/** 把仓库相对 posix 路径落到当前操作系统的绝对路径（path.join 负责分隔符转换）。 */
-const absOf = (root, rel) => path.join(root, ...rel.split('/'));
 
 const isTextFile = (rel) => TEXT_EXTENSIONS.has(path.posix.extname(rel).toLowerCase());
 
-function globToRegExp(glob) {
-  const escaped = glob.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]');
-  return new RegExp(`^${escaped}$`);
-}
-
-/**
- * 解码 `#` 后面的片段：GitHub 用解码后的值与标题 id 比对，所以 `#5-%E5%AE%89%E8%A3%85`
- * 等价于 `#5-安装`。非法百分号编码按原文处理（绝不因为编码坏掉而误报）。
- * 注意 `+` 在片段里是字面加号，不做空格转换。
- */
-function decodeFragment(raw) {
-  try {
-    return decodeURIComponent(raw);
-  } catch {
-    return raw;
-  }
-}
 
 /** 执行 git（直接 exec，无 shell；不依赖 Windows/POSIX 差异）。 */
 function execGit(root, args) {
@@ -683,31 +638,20 @@ function printHelp() {
 
 function createContext(opts) {
   const cwd = process.cwd();
-  const ctx = {
-    root: null,
-    tracked: [],
-    trackedSet: new Set(),
-    trackedDirSet: new Set(),
-    lowerFileMap: new Map(),
-    lowerDirMap: new Map(),
-    untrackedSet: new Set(),
-    ignoredSet: new Set(),
+  // 读/判定层的字段（root / tracked* / untracked* / ignored* / cache / lineOffsets / readFailures /
+  // ignoreCache / anchorCache / violations / stats 基座）由共享内核提供——ctx 契约见
+  // scripts/reference-graph-core.cjs 文件头。这里只补本门禁特有的诊断与统计字段，
+  // 保证门禁与图生成器读的是同一套解析上下文，不会各自演化出第二份字段清单。
+  const ctx = createReaderContext();
+  Object.assign(ctx, {
     untrackedError: null,
-    ignoreCache: new Map(),
     textFiles: [],
-    cache: new Map(),
-    lineOffsets: new Map(),
-    // 「读不到就必须红」的账本：rel → { status, code, reason }（见 readText / checkTrackedReadability）。
-    readFailures: new Map(),
-    readFailureReported: new Set(),
     // 忽略规则原文缓存（`git check-ignore -v` 的逐条回显）。
     ignoreRuleCache: new Map(),
     // 模块说明符解析模式：'typescript'（首选）或 'regex-fallback'（降级，报告里明确标注）。
     analysisMode: { mode: 'regex-fallback', reason: '尚未初始化', version: null },
-    // 检查 6 专用：目标文件的「可命中锚点集合」缓存，以及豁免清单每条规则的命中次数。
-    anchorCache: new Map(),
+    // 检查 6 专用：豁免清单每条规则的命中次数（可命中锚点集合缓存在内核的 anchorCache）。
     anchorAllowlistHits: new Map(),
-    violations: [],
     suppressed: [],
     // 被忽略规则覆盖、因而「跳过不报」的目标：逐条列出（含命中的忽略规则），不再只给计数。
     ignoredRefs: [],
@@ -733,7 +677,7 @@ function createContext(opts) {
       checks: {},
     },
     bootstrapError: null,
-  };
+  });
 
   // report/suppress 必须在任何提前 return 之前挂好：引导失败时 main() 也要能报 guard-unavailable。
   ctx.report = (v) => {
@@ -923,112 +867,6 @@ function assertGitRoot(root, explicit) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// 文件访问（「读不到就必须红」的实现层）
-// ---------------------------------------------------------------------------
-/**
- * 解码一份「必须是文本」的文件内容。
- *   · 剥掉 UTF-8 BOM（否则 Markdown 首行标题会带 U+FEFF，锚点 slug 算出来与 GitHub 不一致）；
- *   · UTF-16 BOM（FF FE / FE FF）或高比例 NUL 字节 → 判定为「不是可读的 UTF-8 文本」，
- *     返回 error 而不是按 utf8 硬解码：硬解码出来的乱码会让文件里的链接/版本字面量
- *     全部静默漏检（这正是本函数存在的理由）；
- *   · 非法 UTF-8 连续字节（替换字符 U+FFFD）同样按不可信处理，绝不静默将就。
- */
-function decodeGuardedText(buffer) {
-  if (buffer.length >= 2 && ((buffer[0] === 0xff && buffer[1] === 0xfe) || (buffer[0] === 0xfe && buffer[1] === 0xff))) {
-    return { error: 'UTF-16 BOM 编码（本门禁只接受 UTF-8；按 utf8 解码会变成乱码并静默漏检）' };
-  }
-  let nul = 0;
-  for (const byte of buffer) if (byte === 0) nul += 1;
-  if (buffer.length > 0 && nul / buffer.length > 0.1) {
-    return { error: `含 ${nul}/${buffer.length} 个 NUL 字节（疑似 UTF-16/二进制，而非 UTF-8 文本）` };
-  }
-  const text = buffer.toString('utf8');
-  if (text.includes('\uFFFD')) return { error: '不是合法 UTF-8（解码出现替换字符 U+FFFD）' };
-  return { text: text.charCodeAt(0) === 0xfeff ? text.slice(1) : text };
-}
-
-/**
- * 读取一个仓库相对路径的文本。
- * **读不到就记账**：凡「在 git 索引里」的路径（或「磁盘上确实存在」的路径）读失败/解码不可信，
- * 都写进 ctx.readFailures，由 checkTrackedReadability 逐条报 guard-unavailable（error）。
- * 只有「不在索引里、磁盘上也不存在」的悬空目标才允许静默返回 null —— 那种目标是别的检查的职责。
- * 返回值：成功 = 字符串；失败 = null（失败原因见 ctx.readFailure(rel)）。
- */
-function readText(ctx, rel) {
-  const cached = ctx.cache.get(rel);
-  if (cached !== undefined) return cached.value;
-  const entry = { value: null };
-  ctx.cache.set(rel, entry);
-
-  const abs = absOf(ctx.root, rel);
-  const indexed = ctx.trackedSet.has(rel);
-  let buffer = null;
-  let status = null;
-  try {
-    buffer = fs.readFileSync(abs);
-  } catch (err) {
-    const code = (err && err.code) || 'EUNKNOWN';
-    // EISDIR：已跟踪文件被同名目录顶替（`Remove-Item README.md; mkdir README.md`）。
-    // EPERM/EACCES：ACL 拒绝读。ENOENT：索引里有、磁盘上没有。都算「读不到」。
-    status = {
-      status: code === 'ENOENT' ? 'missing-on-disk' : 'unreadable',
-      code,
-      reason: `${code}: ${(err && err.message) || String(err)}`,
-    };
-  }
-
-  if (!status) {
-    const decoded = decodeGuardedText(buffer);
-    if (decoded.error) status = { status: 'undecodable', code: 'ENCODING', reason: decoded.error };
-    else entry.value = decoded.text;
-  }
-
-  if (status && (indexed || fs.existsSync(abs))) {
-    ctx.readFailures.set(rel, status);
-    ctx.stats.unreadableIndexedFiles += 1;
-  }
-  return entry.value;
-}
-
-/** 某个路径的读取失败记录（没有则返回 null）。 */
-function readFailure(ctx, rel) {
-  return ctx.readFailures.get(rel) || null;
-}
-
-/**
- * 读取一个「检查必然要读」的文本文件；读不到时由 checkTrackedReadability 统一报 error。
- * 供各检查复用：读失败一律不再静默 continue（那正是要修的失败开放）。
- * options.severity 传 'warning' 时降级为 warning（仅用于编译产物滞后这类非阻塞条目）。
- */
-function readTextOrReport(ctx, rel, options) {
-  const text = readText(ctx, rel);
-  if (text !== null) return text;
-  const failure = readFailure(ctx, rel);
-  if (failure) reportReadFailure(ctx, rel, failure, options && options.severity);
-  return null;
-}
-
-/** 统一报「索引内路径读不到」：severity 默认 error，退出码 1。 */
-function reportReadFailure(ctx, rel, failure, severity) {
-  const key = `${rel}::${failure.code}`;
-  if (ctx.readFailureReported.has(key)) return;
-  ctx.readFailureReported.add(key);
-  const indexed = ctx.trackedSet.has(rel);
-  ctx.report({
-    check: 'guard-unavailable',
-    severity: severity === 'warning' ? 'warning' : 'error',
-    type: 'guard-unavailable',
-    file: rel,
-    line: 1,
-    target: rel,
-    message: `${indexed ? 'git 索引内' : '磁盘上存在'}的路径读不到（${failure.status}）：${failure.reason}`,
-    hint:
-      '「读不到就必须红」：本门禁只信任能读到的 UTF-8 文本。按 utf8 硬解码或静默跳过会让文件里的' +
-      '链接/版本字面量全部漏检（比不检查更危险）。修法：恢复文件可读（EISDIR = 被同名目录顶替；' +
-      'EPERM = ACL 拒绝读；ENOENT = 索引里有但工作区缺文件），或把非 UTF-8 文件转成 UTF-8。',
-  });
-}
 
 /**
  * 检查 0（最先跑）：git 索引内的文本文件必须能读到且能可信解码。
@@ -1079,272 +917,11 @@ function readJson(ctx, rel) {
   }
 }
 
-/** 1-based 行号 / 列号：按字节偏移换算。 */
-function positionAt(ctx, rel, text, index) {
-  let offsets = ctx.lineOffsets.get(rel);
-  if (!offsets) {
-    offsets = [0];
-    for (let i = 0; i < text.length; i += 1) if (text[i] === '\n') offsets.push(i + 1);
-    ctx.lineOffsets.set(rel, offsets);
-  }
-  let lo = 0;
-  let hi = offsets.length - 1;
-  while (lo < hi) {
-    const mid = (lo + hi + 1) >> 1;
-    if (offsets[mid] <= index) lo = mid;
-    else hi = mid - 1;
-  }
-  return { line: lo + 1, column: index - offsets[lo] + 1 };
-}
-
-/**
- * 判定仓库相对路径是否存在，并区分「大小写不一致」。
- * 大小写不一致在 Windows/macOS 上 fs.existsSync 为 true，在 ubuntu-latest 上会 404，
- * 属于典型的「本地绿、CI 红」，这里按 error 报出。
- */
-function pathState(ctx, rel) {
-  if (!rel || rel === '.' || rel.startsWith('..')) return 'outside';
-  if (ctx.trackedSet.has(rel) || ctx.trackedDirSet.has(rel)) return 'ok';
-
-  const lower = rel.toLowerCase();
-  const trackedMatch = ctx.lowerFileMap.get(lower) || ctx.lowerDirMap.get(lower);
-
-  let onDisk = false;
-  try {
-    fs.statSync(absOf(ctx.root, rel));
-    onDisk = true;
-  } catch {
-    onDisk = false;
-  }
-
-  if (onDisk) return trackedMatch && trackedMatch !== rel ? 'case-mismatch' : 'ok';
-  if (trackedMatch) return 'case-mismatch';
-  return 'missing';
-}
-
-/** 单个路径段是否含通配符。 */
-const hasGlobMagic = (segment) => segment.includes('*') || segment.includes('?');
-
-/** 单段通配 → 正则（`*`/`?` 不跨 `/`）。 */
-function segmentRegExp(segment) {
-  const escaped = segment.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]');
-  return new RegExp(`^${escaped}$`);
-}
-
-const GLOB_MAX_NODES = 20000;
-
-/**
- * 递归展开一个仓库相对 glob（posix 分隔符），返回**真实存在**的匹配路径（相对仓库根）。
- * 关键修复：旧实现的 glob 只 readdir 顶层目录，遇到多段通配（package.json 的
- * `exports` 里写 `lib` + 通配目录 + `index.js` 这种形状）必然判「悬空」，
- * 而 npm 完全支持这种 exports 形状，
- * 于是真实存在的目标被误报，逼人往豁免清单里塞条目。这里按段递归：
- *   `lib` + `*` + `index.js` 会逐段下钻，`*` 只匹配一层，`**` 匹配任意层。
- * 上限 GLOB_MAX_NODES 防止病态 glob 把门禁卡死（超限只是少列候选，不影响已匹配到的结果）。
- */
-function expandGlob(ctx, globRel) {
-  const segments = globRel.split('/').filter((s) => s !== '');
-  const results = [];
-  let budget = GLOB_MAX_NODES;
-
-  const walk = (dirRel, index) => {
-    if (budget <= 0) return;
-    budget -= 1;
-    if (index >= segments.length) return;
-    const segment = segments[index];
-    const last = index === segments.length - 1;
-
-    if (segment === '**') {
-      if (!last) walk(dirRel, index + 1); // `**` 匹配零层
-      const entries = readDirEntries(ctx, dirRel);
-      for (const entry of entries) {
-        if (!entry.isDirectory()) continue;
-        walk(dirRel ? `${dirRel}/${entry.name}` : entry.name, index);
-      }
-      return;
-    }
-
-    const entries = readDirEntries(ctx, dirRel);
-    if (!hasGlobMagic(segment)) {
-      const match = entries.find((entry) => entry.name === segment);
-      if (!match) return;
-      const nextRel = dirRel ? `${dirRel}/${segment}` : segment;
-      if (last) {
-        if (match.isFile()) results.push(nextRel);
-      } else if (match.isDirectory()) walk(nextRel, index + 1);
-      return;
-    }
-
-    const re = segmentRegExp(segment);
-    for (const entry of entries) {
-      if (!re.test(entry.name)) continue;
-      const nextRel = dirRel ? `${dirRel}/${entry.name}` : entry.name;
-      if (last) {
-        if (entry.isFile()) results.push(nextRel);
-      } else if (entry.isDirectory()) walk(nextRel, index + 1);
-    }
-  };
-
-  walk('', 0);
-  return results;
-}
-
-/** readdir 的容错包装（目录不存在 / 无权限 → 空列表，由调用方按 missing/ambiguous 处理）。 */
-function readDirEntries(ctx, dirRel) {
-  try {
-    return fs.readdirSync(dirRel ? absOf(ctx.root, dirRel) : ctx.root, { withFileTypes: true });
-  } catch {
-    return [];
-  }
-}
-
-/**
- * 解析 glob（npm files/exports 里的 `*`）：展开后只要有任意一个匹配真实存在即视为存在。
- * 无通配符时语义与 pathState 完全一致（保证既有行为不变）。
- */
-function globState(ctx, rel) {
-  if (!hasGlobMagic(rel)) return pathState(ctx, rel);
-  const matches = expandGlob(ctx, rel);
-  if (matches.length === 0) return 'missing';
-  let sawCaseMismatch = false;
-  for (const match of matches) {
-    const state = pathState(ctx, match);
-    if (state === 'ok') return 'ok';
-    if (state === 'case-mismatch') sawCaseMismatch = true;
-  }
-  return sawCaseMismatch ? 'case-mismatch' : 'missing';
-}
 
 // ---------------------------------------------------------------------------
 // 检查 1a：Markdown 相对链接 / 图片
 // ---------------------------------------------------------------------------
 
-/**
- * 遍历一个 Markdown 文件里所有「仓库内相对目标」的链接 / 图片，逐个交给 visit(link)。
- * 跳过：外部 URL（http(s):、mailto:、data:、//host）、纯锚点（除非 options.includeSameFileAnchors）、
- *       模板占位符、代码块（``` / ~~~）与行内代码、HTML 注释里的伪链接。
- * 覆盖形式：内联 `[文本](目标)` / `![alt](目标)`，以及**引用式链接定义行** `[ref]: 目标`
- *       （历史缺口：只解析内联形式时，`[x][r]` + `[r]: ./ghost.md` 三道检查全都不报）。
- * 读不到文件时不再静默返回：报 guard-unavailable（error，见 readTextOrReport）。
- * link = { target 原文, decoded 解码后, resolved 仓库相对路径, line, column,
- *          fragment 片段（URL 解码后，无 `#` 则为空串）, fragmentRaw 片段原文,
- *          sameFile 是否「纯锚点」形式的同文件链接 }
- * 行号/列号按原文精确推进（CRLF 也不会漂移），与既有报告格式保持一致。
- *
- * options.countSkips             默认 true；检查 5 / 检查 6 复用本遍历器时传 false，跳过计数只统计一次。
- * options.includeSameFileAnchors 默认 false；检查 6 需要校验 `[x](#frag)`，其余调用方行为不变。
- */
-function forEachMarkdownLink(ctx, rel, visit, options) {
-  // countSkips: false —— 检查 5 会复用同一个遍历器，跳过计数只应由检查 1a 统计一次，避免报告数字翻倍。
-  const countSkips = !options || options.countSkips !== false;
-  const includeSameFileAnchors = Boolean(options && options.includeSameFileAnchors);
-  // 读不到就报 error：Markdown 是本门禁最主要的输入，静默跳过等于整份文件不设防。
-  const text = readTextOrReport(ctx, rel);
-  if (text === null) return;
-
-  const lines = text.split(/\r?\n/);
-  let offset = 0;
-  let fence = null; // 代码块围栏（``` / ~~~）
-  let inComment = false;
-
-  /**
-   * 把一个「链接目标」送进 visitor。内联链接与引用式定义行共用这一套解析：
-   * 片段切分、外部 scheme 跳过、百分号解码、按引用方目录解析成仓库相对路径。
-   */
-  const emit = (target, pos) => {
-    if (!target) return;
-    // `#fragment` 在第一个 `#` 之后（查询串里的 `?` 不影响片段提取）。
-    const hashAt = target.indexOf('#');
-    const fragmentRaw = hashAt === -1 ? '' : target.slice(hashAt + 1);
-    const fragment = fragmentRaw ? decodeFragment(fragmentRaw) : '';
-
-    if (target.startsWith('#')) {
-      // 纯锚点 = 指向本文件；只有需要做锚点校验的调用方关心它，其余调用方沿用旧行为（直接跳过）。
-      if (includeSameFileAnchors) {
-        visit({ target, decoded: '', resolved: rel, fragment, fragmentRaw, sameFile: true, line: pos.line, column: pos.column });
-      }
-      return;
-    }
-    if (target.startsWith('//') || HAS_SCHEME.test(target)) {
-      if (countSkips) ctx.stats.skippedExternal += 1;
-      return;
-    }
-    if (target.includes('{{') || target.includes('${')) return; // 模板占位符
-
-    let decoded = target;
-    try {
-      decoded = decodeURIComponent(target);
-    } catch {
-      /* 非法百分号编码：按原文处理 */
-    }
-    decoded = decoded.split('#')[0].split('?')[0].trim();
-    if (!decoded) return;
-
-    const resolved = decoded.startsWith('/')
-      ? path.posix.normalize(decoded.slice(1))
-      : path.posix.normalize(path.posix.join(path.posix.dirname(rel), decoded));
-
-    visit({ target, decoded, resolved, fragment, fragmentRaw, line: pos.line, column: pos.column });
-  };
-
-  for (const rawLine of lines) {
-    const lineStart = offset;
-    // 精确推进：split(/\r?\n/) 丢掉了行尾的 \r，这里按原文补回，否则 CRLF 文件的行号会逐行漂移。
-    offset += rawLine.length;
-    if (text.startsWith('\r\n', offset)) offset += 2;
-    else if (text[offset] === '\n' || text[offset] === '\r') offset += 1;
-
-    const fenceMatch = rawLine.match(/^\s{0,3}(`{3,}|~{3,})/);
-    if (fenceMatch) {
-      const marker = fenceMatch[1][0];
-      if (fence === null) fence = marker;
-      else if (fence === marker) fence = null;
-      continue;
-    }
-    if (fence !== null) continue;
-
-    let line = rawLine;
-    if (inComment) {
-      const end = line.indexOf('-->');
-      if (end === -1) continue;
-      line = ' '.repeat(end + 3) + line.slice(end + 3);
-      inComment = false;
-    }
-    const commentStart = line.indexOf('<!--');
-    if (commentStart !== -1) {
-      const end = line.indexOf('-->', commentStart);
-      if (end === -1) {
-        inComment = true;
-        line = line.slice(0, commentStart) + ' '.repeat(line.length - commentStart);
-      } else {
-        line = line.slice(0, commentStart) + ' '.repeat(end + 3 - commentStart) + line.slice(end + 3);
-      }
-    }
-
-    // 引用式链接定义行：`[ref]: ./target "标题"`。
-    // 在剥行内代码之前抽取（目标本身可能被反引号包着，那种写法少见但合法），
-    // 与内联链接共用 emit，于是悬空/未跟踪/死锚点三道检查一并覆盖。
-    const refDef = MD_REF_DEF.exec(rawLine);
-    if (refDef) {
-      const rawTarget = refDef[1];
-      const target = rawTarget.startsWith('<') ? rawTarget.slice(1, -1).trim() : rawTarget;
-      const column = rawLine.indexOf(rawTarget, refDef[0].indexOf(']:')) + 1;
-      emit(target, { line: positionAt(ctx, rel, text, lineStart).line, column: column > 0 ? column : 1 });
-    }
-
-    // 行内代码里的 [x](y) 不是链接（同长度空格替换，保持列号）。
-    line = line.replace(/`+[^`]*`+/g, (m) => ' '.repeat(m.length));
-
-    MD_INLINE_LINK.lastIndex = 0;
-    let m;
-    while ((m = MD_INLINE_LINK.exec(line)) !== null) {
-      const rawTarget = m[1];
-      const target = rawTarget.startsWith('<') ? rawTarget.slice(1, -1).trim() : rawTarget;
-      const pos = positionAt(ctx, rel, text, lineStart + m.index);
-      emit(target, pos);
-    }
-  }
-}
 
 function checkMarkdownLinks(ctx) {
   for (const rel of ctx.textFiles) {
@@ -1489,69 +1066,9 @@ function checkPackageJson(ctx) {
   }
 }
 
-/** 收集 package.json 里所有指向仓库内路径的字段值（main/types/module/browser/bin/exports/files）。 */
-function collectPackageFieldTargets(pkg) {
-  const fieldTargets = [];
-  for (const field of ['main', 'types', 'module', 'browser']) {
-    if (typeof pkg[field] === 'string') fieldTargets.push({ field, target: pkg[field] });
-  }
-  if (typeof pkg.bin === 'string') fieldTargets.push({ field: 'bin', target: pkg.bin });
-  else if (pkg.bin && typeof pkg.bin === 'object') {
-    for (const [name, target] of Object.entries(pkg.bin)) fieldTargets.push({ field: `bin.${name}`, target });
-  }
-  for (const [key, value] of collectExportStrings(pkg.exports)) fieldTargets.push({ field: `exports["${key}"]`, target: value });
-  if (Array.isArray(pkg.files)) for (const entry of pkg.files) fieldTargets.push({ field: 'files', target: entry });
-  return fieldTargets;
-}
 
-/** 收集 exports 里所有字符串叶子（含 `*` 通配），键为子路径 key。 */
-function collectExportStrings(exportsField, key = '.', out = []) {
-  if (typeof exportsField === 'string') out.push([key, exportsField]);
-  else if (exportsField && typeof exportsField === 'object') {
-    for (const [k, v] of Object.entries(exportsField)) collectExportStrings(v, key === '.' ? k : `${key}.${k}`, out);
-  }
-  return out;
-}
+/** 在 package.json 原文里定位某个 JSON 键的行/列（实现已移入共享内核，见文件头）。 */
 
-/** 在 package.json 原文里定位某个 JSON 键的行/列（找不到返回 null）。 */
-function positionOfJsonKey(ctx, text, rel, key) {
-  if (!key) return null;
-  const re = new RegExp(`"${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"\\s*:`);
-  const m = re.exec(text);
-  return m ? positionAt(ctx, rel, text, m.index) : null;
-}
-
-/** 从一段 shell 风格命令行里抽取 `node <入口文件>` 的目标（跳过 flag；-e/-p 视为内联代码）。 */
-function extractNodeTargets(command) {
-  const out = [];
-  for (const segment of command.split(/&&|\|\||;|\|/)) {
-    const tokens = segment.match(/"[^"]*"|'[^']*'|[^\s"']+/g) || [];
-    for (let i = 0; i < tokens.length; i += 1) {
-      const token = tokens[i].replace(/^["']|["']$/g, '');
-      if (token !== 'node') continue;
-      let j = i + 1;
-      let target = null;
-      while (j < tokens.length) {
-        const arg = tokens[j].replace(/^["']|["']$/g, '');
-        if (arg === '-e' || arg === '--eval' || arg === '-p' || arg === '--print') {
-          target = null; // 内联代码，没有入口文件
-          j = tokens.length;
-          break;
-        }
-        if (arg.startsWith('-')) {
-          j += 1;
-          continue;
-        }
-        target = arg;
-        break;
-      }
-      if (!target) continue;
-      // 只认「看起来像文件」的参数：带路径分隔符或已知脚本扩展名。
-      if (target.includes('/') || target.includes('\\') || /\.(c|m)?js$|\.ts$/.test(target)) out.push(target);
-    }
-  }
-  return out;
-}
 
 // ---------------------------------------------------------------------------
 // 检查 1c：workflow run: 里的 node <路径> 与 npm run <script>
@@ -1611,57 +1128,6 @@ function checkWorkflowRuns(ctx) {
   }
 }
 
-/**
- * 抽取 workflow YAML 里所有 `run:` 命令行（含 `|` / `>` 块标量的多行体），带 1-based 行号。
- * 行号语义与旧的内联实现完全一致（块体按缩进判定结束）。
- */
-function collectWorkflowRunLines(text) {
-  const out = [];
-  const lines = text.split(/\r?\n/);
-
-  for (let i = 0; i < lines.length; i += 1) {
-    const m = lines[i].match(/^(\s*(?:-\s+)?)run:\s*(.*)$/);
-    if (!m) continue;
-    const runIndent = m[0].indexOf('run:');
-    const inline = m[2].trim();
-
-    if (inline && !/^[|>][+-]?$/.test(inline)) {
-      out.push({ line: i + 1, text: inline });
-      continue;
-    }
-    for (let j = i + 1; j < lines.length; j += 1) {
-      const bodyLine = lines[j];
-      if (bodyLine.trim() === '') {
-        out.push({ line: j + 1, text: '' });
-        continue;
-      }
-      const indent = bodyLine.match(/^\s*/)[0].length;
-      if (indent <= runIndent) break;
-      out.push({ line: j + 1, text: bodyLine });
-    }
-  }
-  return out;
-}
-
-/** 抽取 `npm run <name>` / `npm test` 形式引用的 script 名（跳过 npm ci/install 等内建命令）。 */
-function extractNpmScriptRefs(line) {
-  const out = [];
-  const tokens = line.match(/"[^"]*"|'[^']*'|[^\s"']+/g) || [];
-  for (let i = 0; i < tokens.length; i += 1) {
-    const token = tokens[i].replace(/^["']|["']$/g, '');
-    if (token !== 'npm') continue;
-    const next = (tokens[i + 1] || '').replace(/^["']|["']$/g, '');
-    if (next === 'run' || next === 'run-script') {
-      const name = (tokens[i + 2] || '').replace(/^["']|["']$/g, '');
-      if (!name || name.startsWith('-')) continue;
-      if (tokens.slice(i + 2).some((t) => t === '--if-present')) continue;
-      out.push(name);
-    } else if (next === 'test' || next === 'start' || next === 'stop' || next === 'restart') {
-      out.push(next);
-    }
-  }
-  return out;
-}
 
 // ---------------------------------------------------------------------------
 // 检查 2：版本字面量漂移
@@ -2317,347 +1783,6 @@ function checkUntrackedReferences(ctx, resolvedSpecifiers) {
   checkUntrackedMarkdownLinks(ctx);
 }
 
-/**
- * 判定引用目标相对 git 索引的状态（检查 5 专用；既有 pathState 的语义一字未动）。
- *   'tracked'       目标在索引里（含被跟踪的目录）→ 合法
- *   'untracked'     磁盘上有、不在索引里、且不被忽略规则覆盖 → 本该 `git add`（被引用即 error）
- *   'ignored'       磁盘上有、但被忽略规则覆盖 → 正常状态，不报
- *   'missing'       磁盘上也没有 → 不在本检查范围
- *   'case-mismatch' 大小写不一致 → 交给既有的大小写检查报，避免重复
- *   'ambiguous'     磁盘上有但无法判定 → 跳过并计数
- *   'outside'       仓库外路径 / 根路径本身
- */
-function indexPathState(ctx, rel) {
-  // Markdown 链接可能写成 `docs/`：目录要按去掉尾斜杠的形式比对索引（git 只记录 `docs`）。
-  let target = rel;
-  while (target.length > 1 && target.endsWith('/')) target = target.slice(0, -1);
-  if (!target || target === '.' || target.startsWith('..')) return 'outside';
-  if (ctx.trackedSet.has(target) || ctx.trackedDirSet.has(target)) return 'tracked';
-
-  let stat = null;
-  try {
-    stat = fs.statSync(absOf(ctx.root, target));
-  } catch {
-    stat = null;
-  }
-
-  const lowerMatch = ctx.lowerFileMap.get(target.toLowerCase()) || ctx.lowerDirMap.get(target.toLowerCase());
-  if (!stat) return lowerMatch ? 'case-mismatch' : 'missing';
-  if (lowerMatch && lowerMatch !== target) return 'case-mismatch';
-
-  if (ctx.untrackedSet.has(target)) return 'untracked';
-  if (ctx.ignoredSet.has(target)) return 'ignored';
-
-  // 被 `--directory` 折叠掉的忽略目录的后代、以及边界情形，用 check-ignore 兜底。
-  const ignored = isIgnoredPath(ctx, target);
-  if (ignored === true) return 'ignored';
-  if (ignored === null) return 'ambiguous';
-
-  // 目录：磁盘上有、索引里没有、也不被忽略 → 整个目录都没被跟踪（git 不跟踪空目录）。
-  if (stat.isDirectory()) return 'untracked';
-  // 文件：不在 `ls-files --others` 输出里又不被忽略（嵌套 git 仓库等）→ 不猜。
-  return 'ambiguous';
-}
-
-/**
- * 目标是否被忽略规则（.gitignore / .git/info/exclude / core.excludesFile）覆盖。
- * 返回 true / false；git 命令本身出错时返回 null（调用方按「无法判定」处理，不误报）。
- */
-function isIgnoredPath(ctx, rel) {
-  if (ctx.ignoreCache.has(rel)) return ctx.ignoreCache.get(rel);
-  let result = null;
-  try {
-    execFileSync('git', ['-c', 'core.quotePath=false', 'check-ignore', '-q', '--', rel], {
-      cwd: ctx.root,
-      stdio: ['ignore', 'ignore', 'ignore'],
-    });
-    result = true;
-  } catch (err) {
-    result = err && err.status === 1 ? false : null;
-  }
-  ctx.ignoreCache.set(rel, result);
-  return result;
-}
-
-/**
- * glob 形式的字段值（npm files/exports 的 `*`）：返回 { state, path }。
- * 用与 globState 相同的递归展开（多段通配 `lib` + `*` + `index.js` 也能落到真实文件），
- * 而不是旧实现的「只 readdir 顶层」——那会把真实存在的 exports 目标误判成悬空。
- */
-function globIndexState(ctx, rel) {
-  if (!hasGlobMagic(rel)) return { state: indexPathState(ctx, rel), path: rel };
-
-  const matches = expandGlob(ctx, rel);
-  const firstOf = (state) => matches.find((m) => indexPathState(ctx, m) === state);
-
-  const tracked = firstOf('tracked');
-  if (tracked) return { state: 'tracked', path: tracked };
-  const untracked = firstOf('untracked');
-  if (untracked) return { state: 'untracked', path: untracked };
-  const ignored = firstOf('ignored');
-  if (ignored) return { state: 'ignored', path: ignored };
-  const ambiguous = firstOf('ambiguous');
-  if (ambiguous) return { state: 'ambiguous', path: ambiguous };
-  const caseMismatch = firstOf('case-mismatch');
-  if (caseMismatch) return { state: 'case-mismatch', path: caseMismatch };
-
-  // 一个真实文件都没展开出来：按「通配符前面那段目录」的状态归类，便于给出可读原因。
-  const star = Math.min(
-    ...[rel.indexOf('*'), rel.indexOf('?')].filter((i) => i >= 0),
-  );
-  const prefix = rel.slice(0, star);
-  const dirRel = prefix.endsWith('/') ? prefix.slice(0, -1) : path.posix.dirname(prefix);
-  const dirState = dirRel && dirRel !== '.' ? indexPathState(ctx, dirRel) : 'tracked';
-  if (dirState === 'tracked') return { state: 'missing', path: rel };
-  return { state: dirState, path: dirRel };
-}
-
-/** 把相对说明符展开成候选的真实文件路径（按 TS/ESM 解析顺序，前者优先）。 */
-function moduleSpecifierCandidates(fromRel, spec) {
-  const base = path.posix.normalize(path.posix.join(path.posix.dirname(fromRel), spec));
-  const out = new Set([base]);
-  const ext = path.posix.extname(base);
-  const stem = ext ? base.slice(0, -ext.length) : base;
-  const swaps = MODULE_EXT_SWAPS[ext];
-  if (swaps) for (const candidateExt of swaps) out.add(stem + candidateExt);
-  else if (!ext) for (const candidateExt of MODULE_EXT_FALLBACKS) out.add(base + candidateExt);
-  for (const candidateExt of MODULE_EXT_FALLBACKS) out.add(path.posix.join(stem, `index${candidateExt}`));
-  return [...out].filter((candidate) => candidate && candidate !== '.' && !candidate.startsWith('..'));
-}
-
-// ---------------------------------------------------------------------------
-// 模块说明符抽取：typescript 编译器 API 优先，正则降级
-// ---------------------------------------------------------------------------
-
-/**
- * 尝试加载仓库自带的 typescript（只用编译器 API，不做类型检查；不引入运行时依赖）。
- * 失败不是错误：记下降级原因，报告里明确标注。这样 CI 没装 devDependencies 时门禁仍能跑，
- * 但「用的是哪套解析」永远可见（静默降级本身就是一种假绿）。
- */
-function initSpecifierAnalysis() {
-  const tried = [];
-  for (const base of TYPESCRIPT_CANDIDATE_ROOTS) {
-    try {
-      const ts = require(require.resolve('typescript', { paths: [base] }));
-      if (ts && typeof ts.createSourceFile === 'function') {
-        SPECIFIER_ANALYSIS.mode = 'typescript';
-        SPECIFIER_ANALYSIS.reason = null;
-        SPECIFIER_ANALYSIS.version = ts.version || null;
-        SPECIFIER_ANALYSIS.source = require.resolve('typescript', { paths: [base] });
-        return;
-      }
-      tried.push(`${base}: 模块存在但没有 createSourceFile`);
-    } catch (err) {
-      tried.push(`${base}: ${(err && err.code) || (err && err.message) || 'require 失败'}`);
-    }
-  }
-  SPECIFIER_ANALYSIS.mode = 'regex-fallback';
-  SPECIFIER_ANALYSIS.reason = `定位不到 typescript（试过：${tried.join('；')}）`;
-  SPECIFIER_ANALYSIS.version = null;
-}
-
-/** 扩展名 → TS 解析用的 ScriptKind（拿不到 ts 时返回 'mixed'，由调用方用统一解析）。 */
-function scriptKindFor(ts, rel) {
-  const ext = path.posix.extname(rel).toLowerCase();
-  if (!ts) return 'mixed';
-  if (ext === '.tsx') return ts.ScriptKind.TSX;
-  if (ext === '.jsx') return ts.ScriptKind.JSX;
-  if (ext === '.js' || ext === '.mjs' || ext === '.cjs') return ts.ScriptKind.JS;
-  return ts.ScriptKind.TS;
-}
-
-/**
- * 用 typescript 语法树抽取「真实代码里」的相对/裸模块说明符。
- * 与正则实现的关键差别（都是历史失败开放的根因）：
- *   · ImportDeclaration 覆盖副作用导入 `import './g.js'`（无 import 子句也无 from 关键字）；
- *   · 说明符来自字符串字面量节点，天然跨行；
- *   · 注释与模板字符串里的文本不是节点，不会被误报——
- *     例如 tests/branch-e2e.mjs 里写进临时夹具的模板字符串源码。
- * 返回 [{ spec, index }]（index 为文件内字符偏移，用于定位行列）。
- */
-function collectSpecifiersWithTypescript(ts, rel, text) {
-  const source = ts.createSourceFile(rel, text, ts.ScriptTarget.Latest, true, scriptKindFor(ts, rel));
-  const out = [];
-
-  const pushLiteral = (node) => {
-    if (!node || !ts.isStringLiteralLike(node)) return;
-    out.push({ spec: node.text, index: node.getStart(source) });
-  };
-  const importLikeCall = (node) => {
-    if (!ts.isCallExpression(node) || node.arguments.length === 0) return false;
-    const callee = node.expression;
-    if (callee.kind === ts.SyntaxKind.ImportKeyword) return true; // import('./x.js')
-    // require('./x.js')：只认不带属性的裸 require 调用。
-    return ts.isIdentifier(callee) && callee.text === 'require';
-  };
-
-  const visit = (node) => {
-    if (ts.isImportDeclaration(node)) pushLiteral(node.moduleSpecifier);
-    else if (ts.isExportDeclaration(node)) pushLiteral(node.moduleSpecifier);
-    else if (importLikeCall(node)) pushLiteral(node.arguments[0]);
-    ts.forEachChild(node, visit);
-  };
-  visit(source);
-  out.sort((a, b) => a.index - b.index);
-  return out;
-}
-
-/**
- * 把源码里的「注释」与「字符串 / 模板字面量」替换成同长度空格，保留换行结构。
- * 目的是让降级正则跑在「纯代码骨架」上：
- *   · `// import x from './g6.js';` 与 `/* ... *\/` 不再被当成引用；
- *   · 模板字符串里的假源码（写进临时夹具的 import 语句）不再被当成引用。
- * 说明符本身由掩码前解析出来的「引号内区间」提供，所以掩码不会丢掉真实说明符。
- */
-function maskSource(text) {
-  const out = text.split('');
-  const blank = (from, to) => {
-    for (let i = from; i < to; i += 1) if (out[i] !== '\n' && out[i] !== '\r') out[i] = ' ';
-  };
-  const length = text.length;
-  let i = 0;
-  while (i < length) {
-    const ch = text[i];
-    const next = text[i + 1];
-    if (ch === '/' && next === '/') {
-      let j = i + 2;
-      while (j < length && text[j] !== '\n') j += 1;
-      blank(i, j);
-      i = j;
-      continue;
-    }
-    if (ch === '/' && next === '*') {
-      const end = text.indexOf('*/', i + 2);
-      const stop = end === -1 ? length : end + 2;
-      blank(i, stop);
-      i = stop;
-      continue;
-    }
-    if (ch === '"' || ch === "'" || ch === '`') {
-      const quote = ch;
-      let j = i + 1;
-      while (j < length) {
-        if (text[j] === '\\') {
-          j += 2;
-          continue;
-        }
-        if (text[j] === quote) {
-          j += 1;
-          break;
-        }
-        j += 1;
-      }
-      // 只在确实找到闭引号时才保留它；未闭合的模板/字符串必须整段掩掉，
-      // 否则会把一个孤立的引号留在掩码里，让正则从那里误配到后面的真实说明符。
-      if (j <= length && text[j - 1] === quote && j - 1 > i) {
-        out[i] = quote;
-        out[j - 1] = quote;
-        blank(i + 1, j - 1);
-      } else {
-        blank(i, Math.min(j, length));
-      }
-      i = j;
-      continue;
-    }
-    i += 1;
-  }
-  return out.join('');
-}
-
-/** 降级实现：在掩码后的源码上找 import/export/require 的起始关键字位置。 */
-function collectSpecifiersWithRegex(text) {
-  const masked = maskSource(text);
-  const out = [];
-  MODULE_SPECIFIER_FALLBACK.lastIndex = 0;
-  let m;
-  while ((m = MODULE_SPECIFIER_FALLBACK.exec(masked)) !== null) {
-    if (m[0] === '') {
-      MODULE_SPECIFIER_FALLBACK.lastIndex += 1;
-      continue;
-    }
-    // 关键字之后跳过空白，读一个真实的字符串字面量（从原文取，掩码里内容是空格）。
-    let j = MODULE_SPECIFIER_FALLBACK.lastIndex;
-    while (j < text.length && /\s/.test(text[j])) j += 1;
-    const quote = text[j];
-    if (quote !== '"' && quote !== "'") continue;
-    let k = j + 1;
-    let value = '';
-    let closed = false;
-    while (k < text.length) {
-      if (text[k] === '\\') {
-        value += text[k + 1] || '';
-        k += 2;
-        continue;
-      }
-      if (text[k] === quote) {
-        closed = true;
-        break;
-      }
-      if (text[k] === '\n') break;
-      value += text[k];
-      k += 1;
-    }
-    if (!closed) continue;
-    out.push({ spec: value, index: j + 1 });
-    MODULE_SPECIFIER_FALLBACK.lastIndex = k + 1;
-  }
-  return out;
-}
-
-/** 抽取一个源码文件里全部模块说明符（含裸模块名；由调用方筛掉非相对说明符）。 */
-function collectModuleSpecifiers(ctx, ts, rel) {
-  const text = readTextOrReport(ctx, rel);
-  if (text === null) return [];
-  return ts ? collectSpecifiersWithTypescript(ts, rel, text) : collectSpecifiersWithRegex(text);
-}
-
-/**
- * 在一个「引用方」里解析一个相对说明符，判断它的最终归宿。
- * 返回 { kind, candidate, specIndex }：
- *   'missing'       所有候选都不存在 → **悬空模块说明符**（dangling-module-specifier，检查 6）
- *   'untracked'     某个候选在磁盘上、却不在索引里 → 未跟踪引用（untracked-file-reference，检查 5）
- *   'ignored'       某个候选被忽略规则覆盖 → 跳过并逐条列出
- *   'ambiguous'     磁盘上有但无法判定 → 跳过并计数
- *   'tracked'       命中索引 → 合法
- * 分工（本任务明确要求的边界）：
- *   目标**根本不存在** → dangling-module-specifier；
- *   目标**存在但不在索引** → untracked-file-reference。
- * 两者的唯一区别就是磁盘上有没有那个候选文件，因此必须由同一处判定，避免一个目标被两个检查重复报。
- * 优先序：tracked > ignored > ambiguous > untracked > missing。
- *   ignored 排在 untracked 之前：被 gitignore 覆盖的目标按设计「跳过不报」，
- *   不能因为 `git ls-files --others` 的语义差异反而变成 error。
- */
-function resolveRelativeSpecifier(ctx, fromRel, spec) {
-  const candidates = moduleSpecifierCandidates(fromRel, spec);
-  const states = candidates.map((candidate) => ({ candidate, state: indexPathState(ctx, candidate) }));
-  const firstOf = (state) => states.find((s) => s.state === state);
-
-  const tracked = firstOf('tracked');
-  if (tracked) return { kind: 'tracked', candidate: tracked.candidate };
-  const ignored = firstOf('ignored');
-  if (ignored) return { kind: 'ignored', candidate: ignored.candidate };
-  const ambiguous = firstOf('ambiguous');
-  if (ambiguous) return { kind: 'ambiguous', candidate: ambiguous.candidate };
-  const untracked = firstOf('untracked');
-  if (untracked) return { kind: 'untracked', candidate: untracked.candidate };
-  const caseMismatch = firstOf('case-mismatch');
-  if (caseMismatch) return { kind: 'case-mismatch', candidate: caseMismatch.candidate };
-  return { kind: 'missing', candidate: candidates[0] || spec };
-}
-
-/** 遍历所有被跟踪的源码文件，对每个相对说明符调用 visit({ rel, spec, index, text, resolution }) */
-function forEachRelativeSpecifier(ctx, ts, visit) {
-  for (const rel of ctx.tracked) {
-    if (!MODULE_EXTENSIONS.has(path.posix.extname(rel).toLowerCase())) continue;
-    const text = readTextOrReport(ctx, rel);
-    if (text === null) continue;
-    for (const { spec, index } of collectModuleSpecifiers(ctx, ts, rel)) {
-      // 裸模块名 / node: 内置 / 绝对路径 / URL 不归本门禁管。
-      if (!spec.startsWith('.')) continue;
-      visit({ rel, spec, index, text, resolution: resolveRelativeSpecifier(ctx, rel, spec) });
-    }
-  }
-}
 
 // ---------------------------------------------------------------------------
 // 检查 6：相对说明符指向根本不存在的文件（悬空模块说明符）
@@ -2737,17 +1862,6 @@ function checkDanglingModuleSpecifiers(ctx) {
   return resolvedSpecifiers;
 }
 
-/** 取本进程已加载的 typescript（只在没有源码文件可查时不加载）。 */
-function loadTypeScript() {
-  if (SPECIFIER_ANALYSIS.mode !== 'typescript') return null;
-  if (SPECIFIER_ANALYSIS.module) return SPECIFIER_ANALYSIS.module;
-  try {
-    SPECIFIER_ANALYSIS.module = require(SPECIFIER_ANALYSIS.source);
-  } catch {
-    SPECIFIER_ANALYSIS.module = null;
-  }
-  return SPECIFIER_ANALYSIS.module;
-}
 
 /** 统一报告「引用了未纳入 git 索引的路径」。 */
 function reportUntrackedReference(ctx, { file, line, column, target, resolved, source }) {
@@ -2954,130 +2068,6 @@ function checkUntrackedMarkdownLinks(ctx) {
  *     （每次运行回显命中次数；未被任何锚点命中的条目报 warning）。
  */
 
-/** GitHub 的 heading → id 规则（小写、去标点与 emoji、空格转 `-`、保留 CJK 与 `_`）。 */
-function githubSlug(headingText) {
-  return headingText
-    .toLowerCase()
-    .replace(/[^\p{L}\p{M}\p{N}\p{Pc}\- ]/gu, '')
-    .replace(/ /g, '-');
-}
-
-/** ATX 标题：`#` 后必须跟空格或行尾（CommonMark），行尾的 `#` 闭合序列不算标题内容。 */
-const ATX_HEADING = /^ {0,3}(#{1,6})(?:[ \t]+(.*))?$/;
-
-/**
- * 显式 HTML 锚点：`<a id="x">` / `<a name="x">`（元素名不限，属性值可带引号或裸写）。
- * GitHub 会剥掉大部分 HTML 属性，但锚点依赖的 id / name 是保留的。
- */
-const HTML_ANCHOR_ATTR = /<[a-zA-Z][a-zA-Z0-9-]*\b[^>]*?\s(?:id|name)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/g;
-
-/** 标题文本里的行内 Markdown（图片/链接/HTML 标签/反引号）先还原成纯文本，再算 slug。 */
-function headingPlainText(rawHeading) {
-  return rawHeading
-    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/<[^>]*>/g, '')
-    .replace(/`/g, '')
-    .trim();
-}
-
-/**
- * 解析一个 Markdown 文件里所有可命中的锚点 id（标题 slug + 显式 HTML 锚点），按文件缓存。
- * 返回 { slugs:Set, explicit:Set, headings:[{id,text}], missing:boolean }（missing = 文件读不到）。
- */
-function extractHeadingAnchors(ctx, rel) {
-  if (ctx.anchorCache.has(rel)) return ctx.anchorCache.get(rel);
-
-  const result = { slugs: new Set(), explicit: new Set(), headings: [], missing: false };
-  ctx.anchorCache.set(rel, result); // 先入缓存：异常路径下也不会重复解析
-
-  // BOM 已在 readText 里剥掉（否则首行标题会带 U+FEFF，slug 与 GitHub 不一致 → 真实锚点被判死）。
-  const text = readTextOrReport(ctx, rel);
-  if (text === null) {
-    result.missing = true;
-    return result;
-  }
-
-  const lines = text.split(/\r?\n/);
-  const seen = new Map(); // slug → 出现次数（重名标题追加 -1、-2…）
-  let fence = null;
-  let inComment = false;
-
-  for (const rawLine of lines) {
-    // 代码围栏内的 `#` 行不是标题（围栏判定与检查 1a 的遍历器保持一致）。
-    const fenceMatch = rawLine.match(/^\s{0,3}(`{3,}|~{3,})/);
-    if (fenceMatch) {
-      const marker = fenceMatch[1][0];
-      if (fence === null) fence = marker;
-      else if (fence === marker) fence = null;
-      continue;
-    }
-    if (fence !== null) continue;
-
-    let line = rawLine;
-    if (inComment) {
-      const end = line.indexOf('-->');
-      if (end === -1) continue;
-      line = ' '.repeat(end + 3) + line.slice(end + 3);
-      inComment = false;
-    }
-    const commentStart = line.indexOf('<!--');
-    if (commentStart !== -1) {
-      const end = line.indexOf('-->', commentStart);
-      if (end === -1) {
-        inComment = true;
-        line = line.slice(0, commentStart);
-      } else {
-        line = line.slice(0, commentStart) + ' '.repeat(end + 3 - commentStart) + line.slice(end + 3);
-      }
-    }
-
-    HTML_ANCHOR_ATTR.lastIndex = 0;
-    let attr;
-    while ((attr = HTML_ANCHOR_ATTR.exec(line)) !== null) {
-      const id = (attr[1] ?? attr[2] ?? attr[3] ?? '').trim();
-      if (id) result.explicit.add(id);
-    }
-
-    const heading = line.match(ATX_HEADING);
-    if (!heading) continue;
-    const plain = headingPlainText((heading[2] || '').replace(/[ \t]+#+[ \t]*$/, ''));
-    if (!plain) continue;
-    const base = githubSlug(plain);
-    if (!base) continue; // 纯标点/emoji 标题在 GitHub 上也算不出可用 id，跳过（不误判也别硬猜）
-    const count = seen.get(base) || 0;
-    seen.set(base, count + 1);
-    const id = count === 0 ? base : `${base}-${count}`;
-    result.slugs.add(id);
-    result.headings.push({ id, text: plain });
-  }
-
-  return result;
-}
-
-/** 片段是否命中：GitHub 的锚点图标自带 id="user-content-<slug>"，两种写法都能跳。 */
-function anchorMatches(anchors, fragment) {
-  const candidates = fragment.startsWith('user-content-')
-    ? [fragment, fragment.slice('user-content-'.length)]
-    : [fragment];
-  return candidates.some((candidate) => anchors.slugs.has(candidate) || anchors.explicit.has(candidate));
-}
-
-/** 编辑距离：只用于「最接近的候选」提示，不参与判定。 */
-function editDistance(a, b) {
-  const prev = new Array(b.length + 1);
-  const curr = new Array(b.length + 1);
-  for (let j = 0; j <= b.length; j += 1) prev[j] = j;
-  for (let i = 1; i <= a.length; i += 1) {
-    curr[0] = i;
-    for (let j = 1; j <= b.length; j += 1) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      curr[j] = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
-    }
-    for (let j = 0; j <= b.length; j += 1) prev[j] = curr[j];
-  }
-  return prev[b.length];
-}
 
 /** 命中 DEAD_ANCHOR_ALLOWLIST 的哪一条（返回 { entry, index }；未命中返回 null）。 */
 function matchAnchorAllowlist(referencingFile, target, fragment) {

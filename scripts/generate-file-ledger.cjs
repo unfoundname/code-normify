@@ -48,6 +48,13 @@
  *   现在改为「只保留基线清单里的条目」，上述洗白路径不复存在。
  *   第二个历史缺口（同日第二批修复）：基线原本是**工作区那份被改过的台账**，于是「手工加一条在
  *   索引里的路径 + git add」这条洗白路径仍然成立；现在基线是 HEAD 版台账（见上）。
+ *   第三个历史缺口（本批修复，写盘模式的静默自愈）：写盘模式原本把「索引版/工作区台账里有、而 HEAD
+ *   基线里没有」的 accounted 条目**静默剔除**——报告还写着「剔除的**非基线**条目 0 条」（那个计数只覆盖
+ *   反方向：重算结果有、索引版没有），退出码 0。危害窗口是「手工加条目 → 跑生成器（自愈）→ git add
+ *   台账 → 不跑 check:ledger:gen 就提交」，事后全链绿，洗白被固化。现在写盘模式一旦检出这类
+ *   **相对 HEAD 基线的非法新增**，就**逐条点名 + 拒绝写盘 + exit 1**：本仓的既定哲学是 fail-closed、
+ *   宁可红不假绿——生成器的职责是重算机器可算的部分，但它绝不能替一条非法条目做静默自愈；
+ *   拒绝写盘还能保证「跳过 --check 直接提交」拿不到被洗干净的台账，必须由人先处理。
  *
  * 台账宇宙：git 索引（`git ls-files`）。生成器只写台账文件本身，不碰其它任何文件
  *   （豁免清单、门禁脚本都不由它写）。
@@ -70,7 +77,8 @@
  *
  * 退出码：
  *   0  生成成功（内容有变化才写盘；内容一致时不动文件，只报告一致）
- *   1  生成失败（git 不可用 / 台账或豁免清单不可解析 / 结构与版本不符 / yaml 不可用 / 模块文件读不到）
+ *   1  生成失败（git 不可用 / 台账或豁免清单不可解析 / 结构与版本不符 / yaml 不可用 / 模块文件读不到），
+ *      以及**写盘模式检出「相对 HEAD 基线的非法新增 accounted 条目」→ 点名 + 拒绝写盘**（见上）
  *   2  命令行用法错误
  *
  * 用法：node scripts/generate-file-ledger.cjs [--root <dir>] [--check] [--help]
@@ -318,6 +326,26 @@ function main(argv) {
       process.exitCode = 0;
       return;
     }
+    if (result.refused) {
+      // 写盘模式的 fail-closed：检出非法新增 → 点名 + 拒绝写盘 + exit 1。
+      const list = result.nonBaselineAdditions;
+      const lines = list.slice(0, 8).map((rel) => `    + ${rel}`);
+      if (list.length > 8) lines.push(`    + …还有 ${list.length - 8} 条`);
+      process.stderr.write(
+        `${TOOL}: **拒绝写盘**：索引版 / 工作区版台账里有 ${list.length} 条 accounted 条目不在 HEAD 基线里` +
+          `（只减不增：新增即手工洗白），本次**没有改写** ${LEDGER_REL}。\n` +
+          `  ${baselineLine}` +
+          `${lines.join('\n')}\n` +
+          '  为什么直接红：静默自愈会把洗白固化——「手工加条目 → 跑生成器 → git add → 不跑 check:ledger:gen 就提交」\n' +
+          '  事后全链绿，谁也不会发现。写盘模式宁可红也不替一条非法条目做自愈（本仓既定哲学：fail-closed）。\n' +
+          '  合法修法只有两条：① 让某个模块用 source.path 精确声明该路径（→ owned）；' +
+          `② 在 ${EXEMPT_REL} 里加一条带 reason 的模式豁免（→ exempt）。\n` +
+          `  两条都不适用：把新增条目从 ${LEDGER_REL} > accounted 里删掉` +
+          `（或 git checkout -- ${LEDGER_REL} 取回索引/提交版），再重跑本脚本。\n`,
+      );
+      process.exitCode = 1;
+      return;
+    }
     process.stdout.write(
       `${TOOL}: ${result.changed ? `已写出 ${LEDGER_REL}` : `${LEDGER_REL} 与重新生成的结果一致，未改动文件`}\n` +
         `  ${baselineLine}` +
@@ -380,7 +408,7 @@ function printHelp() {
     '                  ② 索引版台账其余部分与重新生成的结果不一致（陈旧 / 手改）。集合缩小是合法的。',
     '  -h, --help      打印本帮助',
     '',
-    '退出码：0 成功 / 1 生成失败（含 --check 不一致）/ 2 用法错误',
+    '退出码：0 成功 / 1 生成失败（含 --check 不一致、写盘模式拒绝写盘）/ 2 用法错误',
     '',
     '生成器只重算「机器可算」的部分：',
     `  · meta.tracked_total / meta.universe_hash —— 台账宇宙 = git ls-files（${LEDGER_REL}）`,
@@ -400,6 +428,10 @@ function printHelp() {
     '    **任何新增都会让 `--check` exit 1**（手工洗白的拦截点），并逐条点名新增了哪些路径。',
     '  · 已 owned / 已豁免 / 已从索引消失的条目会被自动剔除（腐烂条目不进新台账）；',
     '    新增无条目文件不会进清单，而是被 scripts/check-file-ledger.cjs 报成 unowned/error。',
+    '  · **写盘模式也拦非法新增**：索引版 / 工作区版台账里若有「不在 HEAD 基线里」的 accounted 条目，',
+    '    本脚本**逐条点名 + 拒绝写盘 + exit 1**（不静默自愈：否则「加条目 → 跑生成器 → git add →',
+    '    不跑 --check 就提交」会把洗白固化）。合法修法只有两条：模块 source.path 声明（owned）、',
+    `    或 ${EXEMPT_REL} 加一条带 reason 的豁免（exempt）。`,
     '  · **首次引入的一次性初始化语义**：HEAD 里没有该文件（`git show HEAD:...` 找不到）或仓库尚无提交时，',
     '    基线退回索引 blob、再退回工作区那份，`--check` **exit 0**（不许红）；`git commit` 之后 HEAD 就有了',
     '    基线，此后任何新增都会被拦。HEAD 里有该文件却读不出 / 不是合法 JSON / schema_version 不匹配 /',
@@ -632,6 +664,32 @@ function regenerate(root, opts) {
           .filter(Boolean)
       : null;
   const previousPaths = new Set(previous.accounted.map((entry) => entry.path));
+
+  // ---- 5a. 「相对 HEAD 基线的非法新增」检出（写盘模式也必须拦，不能静默自愈） ----
+  // 判定对象 = **索引版 ∪ 工作区版**台账的 accounted 路径：两份都可能被人先改过
+  // （改工作区那份还没 git add 的、以及已经 git add 的），只查一份都会漏。
+  // 只要有一条不在 HEAD 基线里 → 它就是手工加进来的（合法路径只有「模块声明 owned」与「豁免 exempt」，
+  // 两条都不经过 accounted）。检出后写盘模式**拒绝写盘**并 exit 1，由 main 点名报出。
+  const worktreeLedgerText = (() => {
+    try {
+      return fs.readFileSync(ledgerAbs, 'utf8');
+    } catch {
+      return null;
+    }
+  })();
+  const worktreeLedger = parseMaybeLedger(worktreeLedgerText);
+  const worktreeAccountedPaths =
+    worktreeLedger && Array.isArray(worktreeLedger.accounted)
+      ? worktreeLedger.accounted
+          .map((entry) => (entry && typeof entry === 'object' && typeof entry.path === 'string' ? entry.path : null))
+          .filter(Boolean)
+      : [];
+  const nonBaselineAdditions = [...new Set([...(indexAccountedPaths || []), ...worktreeAccountedPaths])]
+    .filter((rel) => !previousPaths.has(rel))
+    .sort((a, b) => byCodePoint(a, b));
+  // 索引版台账与工作区版不一致（改了没 git add）由门禁的 ledger-index-drift 负责；这里只用两份的**并集**
+  // 做「有没有非法新增」的判定，不改变任何既有判定基准（--check 的唯一基准仍是索引 blob）。
+
   const unbaselined = [];
   let effectiveAccounted = accounted;
   if (indexAccountedPaths !== null) {
@@ -687,12 +745,21 @@ function regenerate(root, opts) {
     }
   }
   const changed = opts.check ? additions.length > 0 || stale : !worktreeMatches;
-  if (!opts.check && !worktreeMatches) fs.writeFileSync(ledgerAbs, serialized, 'utf8');
+  // 写盘模式的两条闸门：
+  //   ① 检出「相对 HEAD 基线的非法新增」→ **拒绝写盘**（refused）：静默自愈会把洗白固化
+  //      （手工加条目 → 跑生成器 → git add → 不跑 --check 就提交，事后全链绿）；
+  //   ② 其余情况按需写盘（内容一致时不动文件）。
+  const refused = !opts.check && nonBaselineAdditions.length > 0;
+  if (!opts.check && !worktreeMatches && !refused) fs.writeFileSync(ledgerAbs, serialized, 'utf8');
 
   return {
     changed,
     removed,
     unbaselined,
+    /** 写盘模式是否**拒绝写盘**（检出相对 HEAD 基线的非法新增条目）：main 据此报 error + exit 1。 */
+    refused,
+    /** 相对 HEAD 基线、却出现在索引版/工作区版台账里的非法新增路径（写盘模式同样点名）。 */
+    nonBaselineAdditions,
     /** --check 的比较基准：'index'（索引里有台账，门禁的判定基准）/ 'worktree'（索引里没有，退回工作区）。 */
     comparedWith: opts.check && indexLedger !== null ? 'index' : 'worktree',
     /** 相对 HEAD 基线的新增条目（`--check` 的红线就是它非空）。 */
