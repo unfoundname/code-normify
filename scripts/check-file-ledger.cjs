@@ -15,8 +15,12 @@
  * 四态归属（每个已跟踪文件必须落到且只落到一类，四类计数之和必须等于 git ls-files 条数）：
  *   bound          被某个模块的 source.path **精确声明**，且该路径是仓库里真实存在的普通文件；
  *   exempt-pattern 命中台账 exempt_patterns 里的某条豁免模式（每条必带 reason）；
- *   grandfathered  在台账 grandfathered 清单里的存量未归属文件（**只减不增**）；
+ *   grandfathered  在台账 grandfathered 清单里的存量未归属文件（**只减不增**，基线与判据见下一段）；
  *   unowned        不在上面三类里的已跟踪文件 → **error**（新增文件必须归属或显式豁免）。
+ *
+ * 绿灯依据只有一条：**台账里有条目**（owned / exempt / accounted 三条来路）。
+ *   「在 HEAD 里」**不是**绿灯理由（文件旧 ≠ 已记账）；祖父清单**不是欠账**，那 29 条是
+ *   2026-10-05 会话审计 + 十环门禁全绿时已清点记账的**正账**，只是这条清单不再增长。
  *
  * planned 与 bound 分离（本门禁最容易被做成假绿的地方）：
  *   `source.path` 的声明分两种事实——「声明写在那里」与「目标真的存在」。当前仓库
@@ -27,6 +31,12 @@
  * 棘轮语义：grandfathered **只减不增**。清单里已经变成 bound/exempt 的路径、
  * 以及已经从索引消失的路径，都必须从清单里删掉；本门禁对这类腐烂条目报 warning，
  * 并在报告里回显「祖父清单还可再减 N 条」这种可操作信息（而不是只给一个总数）。
+ *   「只减不增」的判据是**与 HEAD 版台账比对**（`git show HEAD:<台账>`，见 readHeadLedger）：
+ *   旧版比的是「同一份被改过的台账」，于是人可以把一条**已在 git 索引里**、又未被模块声明、
+ *   也不命中豁免的路径手工写进 grandfathered 再 `git add`，门禁与 `--check` 双双报绿（洗白后门）。
+ *   现在相对 HEAD 的**任何新增 → grandfathered-growth（error）**；允许缩小。
+ *   三态：HEAD 里有台账 → 正常比对；HEAD 里没有该文件（首次引入）/ 仓库尚无提交 → 本项跳过且
+ *   **不许红**（一次性初始化：基线由本次提交建立）；HEAD 里有却读不出/结构非法 → error（fail-closed）。
  *
  * 豁免模式过宽（R1，防止一条模式把整个门禁静默关掉）：豁免**先于**祖父判定，
  * 所以一条过宽模式会立刻让全宇宙变成 exempt-pattern 并报 green（实测：pattern = `**`
@@ -54,7 +64,8 @@
  *   · 台账文件缺失 / 不可解析 / 结构非法（缺 reason、pattern 非法、清单非字符串数组）→ error；
  *   · git 不可用 / 不是 git 仓库 / 拿不到跟踪清单 → error；
  *   · yaml 不可用（解析模块 frontmatter 必需）→ error；
- *   · 模块文件读不到 / frontmatter 解析失败 → error（绝不静默跳过该模块的声明）。
+ *   · 模块文件读不到 / frontmatter 解析失败 → error（绝不静默跳过该模块的声明）；
+ *   · HEAD 版台账读不出 / 不可解析 / 缺 grandfathered 数组 → error（基线不可用也不许静默跳过）。
  *
  * 退出码：
  *   0  通过（或只有 warning）
@@ -72,7 +83,7 @@ const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 
 const TOOL = 'check-file-ledger';
-const TOOL_VERSION = '1.1.0';
+const TOOL_VERSION = '1.2.0';
 
 /** 台账数据文件（相对仓库根，posix）。唯一的新增可写数据文件。 */
 const LEDGER_REL = 'ledger/file-ledger.json';
@@ -112,6 +123,7 @@ const PATTERN_BROAD_CONFIRM_FIELD = 'broad_confirmed';
 const CHECK_TITLES = {
   'unowned-file': '已跟踪但无归属、无豁免、不在祖父清单的文件（新增必须归属或显式豁免）',
   'grandfathered-removable': '祖父清单腐烂：条目已经 bound/exempt/消失，应当从清单里删掉（清单只减不增）',
+  'grandfathered-growth': '祖父清单新增条目（与 HEAD 版台账比对：grandfathered 只减不增，任何新增即手工洗白）',
   'exempt-unused': '豁免模式未命中任何已跟踪文件（可能是过期规则或拼写错误）',
   'exempt-invalid': '豁免模式条目非法（缺 reason / 缺 pattern / pattern 写法不受支持）',
   'exempt-too-broad': '豁免模式过宽（无字面量 / 通配占比过高 / 命中率超阈值未人工确认）——会静默吞掉整个门禁',
@@ -132,6 +144,20 @@ const CHECK_HELP_DETAILS = {
   'grandfathered-removable': [
     '· 清单里的路径若已经 bound、已经命中豁免、或已经从 git 索引消失 → warning 提示删除该条。',
     '· 报告回显「祖父清单还可再减 N 条」（可操作信息），清单腐烂不会被静默容忍。',
+  ],
+  'grandfathered-growth': [
+    '· 判据：`git show HEAD:ledger/file-ledger.json` 的 grandfathered 集合 ⊇ 本次台账的 grandfathered 集合。',
+    '  台账内容取**索引 blob**（与 ledger-index-drift 同基准），基线取 **HEAD 版台账**（提交后不可篡改）；',
+    '  两者都与工作区磁盘无关，所以「改了索引没改工作区」同样成立。',
+    '· **任何新增（含把一条曾删掉的条目重新加回）→ error**；允许集合缩小（删条目不是违规）。',
+    '· 「路径在 HEAD 里」**不是**绿灯理由：旧 ≠ 已记账。手工把一条在索引里的路径写进台账 grandfathered',
+    '  再 git add —— 正是本项要拦的事（旧版 keep-only 比的是同一份被改过的台账，因此会漏）。',
+    '· 合法修法两条：① 让某个模块用 source.path 精确声明它；② 在 exempt_patterns 里加一条**带 reason**',
+    '  的模式豁免。祖父清单**不是欠账**：里面 29 条是 2026-10-05 已清点记账的正账，只是不再增长。',
+    '· 三态：HEAD 里有台账 → 正常比对；HEAD 里没有该文件（首次引入 / 仓库尚无提交）→ **本项跳过、退出码 0**，',
+    '  报告明确回显「基线由本次提交建立」（一次性初始化语义，基线在 `git commit` 之后生效）；',
+    '  HEAD 里有该文件却读不出 / 不是合法 JSON / 顶层结构非法 → **error**（fail-closed：删掉或写坏 HEAD 版台账',
+    '  绝不能变成洗白路径）。',
   ],
   'exempt-unused': [
     '· 一条豁免模式本次没有任何已跟踪文件命中 → warning（可能是过期规则或拼写错误）。',
@@ -160,6 +186,8 @@ const CHECK_HELP_DETAILS = {
     '  工作区台账与索引版不一致（改了没 git add / 索引里有而工作区没有）→ error，判定仍按索引版进行。',
     '· 索引里根本没有这个条目（新台账没 git add）→ 同样 error：否则「本地绿」会依赖一个未提交改动，',
     '  CI 与新克隆拿到的索引内容与本地不是同一份事实。临时夹具仓库请先 `git add` 台账再跑门禁。',
+    '· 另外：索引里没有、但 HEAD 里有该台账时同样报本项（type=ledger-missing-in-index）——判定基准名义上',
+    '  退化为工作区副本，此时「与 HEAD 版台账比对」的棘轮基线不再取自索引；先 `git add` 回来。',
   ],
   'tracked-mismatch': [
     '· meta.universe_hash 必须等于 sha256(排序后的 git ls-files 清单)，否则台账已过期 → error。',
@@ -334,7 +362,7 @@ function printHelp() {
     '四态归属（计数之和 == git ls-files 条数）：',
     `  bound            被模块 source.path 精确声明，且目标是真实存在的普通文件`,
     `  exempt-pattern   命中 ${LEDGER_REL} > exempt_patterns 的某条模式（每条必带 reason）`,
-    '  grandfathered    台账 grandfathered 清单里的存量未归属文件（**只减不增**）',
+    '  grandfathered    台账 grandfathered 清单里的存量未归属文件（**只减不增**：新增 = 相对 HEAD 版台账的新增 → error）',
     '  unowned          三类之外 → error（新增文件必须归属或显式豁免）',
     '',
     'planned 与 bound 必须分开（否则覆盖率假绿）：',
@@ -356,6 +384,27 @@ function printHelp() {
     '  `**` 至少匹配一层（编译成 `.*`），所以 `**/*.md` **不**匹配根级 c.md，只匹配带目录段的路径；',
     '  `*` 与 `?` 都不跨 `/`。要同时覆盖根级与任意层，请分别写 `*.md` 与 `**/*.md`。',
     '',
+    'grandfathered 棘轮的判据（与 HEAD 版台账比对，本增量新增）：',
+    `  基线 = \`git show HEAD:${LEDGER_REL}\` 的 grandfathered 集合；判定对象 = **索引版**台账的 grandfathered；`,
+    '  判据 = 基线集合 ⊇ 本次集合。允许集合缩小（删条目不是违规），**任何新增（含把一条曾删掉的条目',
+    '  重新加回）→ grandfathered-growth（error）**：报告逐条列出新增路径，并给出可能的合法修法。',
+    '  为什么基线必须是 HEAD：旧版 keep-only 比的是「同一份被改过的台账」，于是人可以把一条**已在 git 索引里**、',
+    '  又未被模块声明、也不命中豁免的路径手工写进 grandfathered 再 `git add`，门禁与 --check 双双报绿；',
+    '  HEAD 版台账在提交之后不可被工作区改动影响，比对才有意义。',
+    '三态语义（含首次引入的一次性初始化）：',
+    '  · HEAD 里有该台账 → 正常比对（新增即 error）。',
+    '  · HEAD 里没有该文件（首次引入）/ 仓库尚无提交 → **本项跳过、退出码 0**，报告明确回显',
+    '    「一次性初始化：基线由本次提交建立」；提交之后 HEAD 有了基线，任何新增都会被拦住。',
+    '  · HEAD 里有该文件却读不出 / 不是合法 JSON / 顶层缺 grandfathered 数组 → **error（fail-closed）**：',
+    '    删掉或写坏 HEAD 版台账绝不能变成新的洗白路径。',
+    '  · 索引里没有台账、HEAD 里有 → ledger-index-drift（error，type=ledger-missing-in-index）：索引基线失效。',
+    '「只减不增」的准确含义（两套旧说法在此明确否掉）：',
+    '  ① 「在 HEAD 里即绿」**不成立**：文件旧 ≠ 已记账，绿灯依据是**台账里有条目**；',
+    '  ② 祖父清单**不是欠账**：那 29 条是 2026-10-05 会话审计 + 十环门禁全绿时**已清点记账的正账**',
+    '     （清点日期与依据见台账 meta / CONTRIBUTING.md），只是这条清单**不再增长**。',
+    '  合法修法只有两条：让某个模块用 source.path 精确声明它；或在 exempt_patterns 里加一条**带 reason**',
+    '  的模式豁免。两条都不适用时，删掉那条新增条目即可恢复绿（而不是给清单加条目）。',
+    '',
     '检查项（编号顺序 = 报告分组顺序 = --json 的 summary.checks 顺序）：',
     ...checkList,
     '',
@@ -364,6 +413,8 @@ function printHelp() {
     `  台账内容同样取索引 blob（\`git show :${LEDGER_REL}\`）：工作区与索引不一致、`,
     '  或台账不在索引里（没 git add）→ ledger-index-drift（error），判定仍按索引版进行。',
     '  临时夹具仓库请先 `git add` 台账再跑本门禁。',
+    `  棘轮的基线另取 \`git show HEAD:${LEDGER_REL}\`（与之比对**只读**，不改本门禁的索引判定基准）：`,
+    '  索引版台账与工作区是否一致都不影响基线比对，所以「索引改了而工作区没改」同样成立。',
   ];
   process.stdout.write(`${lines.join('\n')}\n`);
 }
@@ -396,6 +447,19 @@ function createContext(opts) {
     projects: [],
     states: { bound: [], 'exempt-pattern': [], grandfathered: [], unowned: [] },
     grandfatheredRemovable: [],
+    /**
+     * grandfathered 棘轮（与 HEAD 版台账比对）的判定结果。
+     * baseline 三态：'head'（HEAD 里有台账，正常比对）/ 'absent'（HEAD 里没有该文件 = 首次引入，本项跳过）/
+     * 'unreadable'（HEAD 里有但读不出或结构非法 → error，fail-closed）。added 是相对 HEAD 的新增条目。
+     */
+    grandfatheredGrowth: {
+      baseline: null,
+      headTotal: null,
+      added: [],
+      headErr: null,
+      headParsed: null,
+      headRev: null,
+    },
     unusedPatterns: [],
     invalidPatterns: [],
     broadPatterns: [],
@@ -618,6 +682,95 @@ function readIndexBlob(root, rel) {
 const normalizeEol = (s) => s.replace(/\r\n/g, '\n');
 
 /**
+ * 读 **HEAD 版**台账，作为 grandfathered「只减不增」的**不可篡改基线**（本增量新增）。
+ * 为什么必须用 HEAD 而不是「上一份台账」：判定基准若与被判定的对象是同一份文件，
+ * 人手工往 `grandfathered` 加一条（路径确实在索引里、又未被模块声明、也不命中豁免）再 `git add`，
+ * keep-only 规则会认为它「原本就在清单里」而放行——门禁与 `--check` 双双报绿（实测过的洗白后门）。
+ * HEAD 版台账在提交后不可被工作区改动影响（「在 HEAD 里」本身不是绿灯理由，它只是基线的载体）。
+ *
+ * 返回 { status, ... }：
+ *   · 'no-head'         仓库还没有任何提交（连 HEAD 都不存在）——与「HEAD 里没有该文件」同档；
+ *   · 'absent'          HEAD 里有仓库，但没有 ledger/<...> 这个条目 → **首次引入的一次性初始化语义**，
+ *                       本项跳过且**不许红**（基线由本次提交建立，提交之后任何新增都会被拦住）；
+ *   · 'unparsable'      HEAD 里有该文件却读不出 / 不是合法 JSON / 顶层结构非法 → fail-closed（调用方报 error）：
+ *                       删掉或写坏 HEAD 版台账绝不能变成新的洗白路径；
+ *   · 'ok'              拿到基线，返回 { ledger, rev }（rev 是短 sha，用于回显）。
+ * 只读比对：本函数不改变门禁「判定基准 = git 索引」的既有口径。
+ */
+function readHeadLedger(root, rel) {
+  let rev;
+  try {
+    rev = execGit(root, ['rev-parse', '--verify', '--short', 'HEAD^{commit}']).trim();
+  } catch {
+    return { status: 'no-head' };
+  }
+  let buf;
+  try {
+    buf = execFileSync('git', ['-c', 'core.quotePath=false', 'show', `HEAD:${rel}`], {
+      cwd: root,
+      maxBuffer: 64 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch (err) {
+    // 不猜 git 的失败原因：HEAD 里到底有没有这个条目，用 ls-tree 单独问一次（首次引入与真正的读失败要分开）。
+    let inHead;
+    try {
+      execGit(root, ['cat-file', '-e', `HEAD:${rel}`]);
+      inHead = true;
+    } catch {
+      inHead = false;
+    }
+    if (inHead) return { status: 'unparsable', rev, message: `git show HEAD:${rel} 失败：${err.message}` };
+    return { status: 'absent', rev };
+  }
+
+  const text = buf.toString('utf8');
+  let parsed;
+  try {
+    parsed = JSON.parse(text.charCodeAt(0) === 0xfeff ? text.slice(1) : text);
+  } catch (err) {
+    return { status: 'unparsable', rev, message: `HEAD 版台账不是合法 JSON（${err.message}）` };
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return { status: 'unparsable', rev, message: 'HEAD 版台账顶层必须是对象' };
+  }
+  // 只需要 grandfathered 集合做包含性判定；它缺失/类型不符同样 fail-closed（不按「空清单」放过）。
+  if (!Array.isArray(parsed.grandfathered)) {
+    return {
+      status: 'unparsable',
+      rev,
+      message: `HEAD 版台账缺 grandfathered 数组（实际 ${JSON.stringify(parsed.grandfathered)}）`,
+    };
+  }
+  return { status: 'ok', rev, ledger: parsed };
+}
+
+/**
+ * grandfathered 棘轮：**相对 HEAD 版台账只允许集合缩小**。
+ * 判定用索引版台账（ctx.ledger）对 HEAD 版台账，两者都与工作区磁盘无关。
+ * 三态语义与原因见 readHeadLedger 的注释；'absent'（首次引入）跳过且不红，由 --help 与 CONTRIBUTING 写明。
+ */
+function checkGrandfatheredGrowth(ctx) {
+  const result = readHeadLedger(ctx.root, ctx.ledgerRel);
+  // 对外统一口径：'head'（基线可用）/ 'absent'（HEAD 里没有该文件）/ 'no-head'（仓库尚无提交）/ 'unparsable'。
+  ctx.grandfatheredGrowth.baseline = result.status === 'ok' ? 'head' : result.status;
+  ctx.grandfatheredGrowth.headRev = result.rev || null;
+  if (result.status === 'unparsable') {
+    ctx.grandfatheredGrowth.headErr = result.message;
+    return;
+  }
+  if (result.status !== 'ok') return; // 'absent' / 'no-head'：首次引入，本项跳过（不许红）
+
+  const headSet = new Set(result.ledger.grandfathered);
+  ctx.grandfatheredGrowth.headTotal = headSet.size;
+  ctx.grandfatheredGrowth.headParsed = result.ledger;
+  for (const rel of ctx.ledger.grandfathered) {
+    if (headSet.has(rel)) continue;
+    ctx.grandfatheredGrowth.added.push(rel);
+  }
+}
+
+/**
  * 读台账：**内容以 git 索引 blob 为准**（R7，本仓既有约定「判定基准 = git 索引」）。
  *   · 索引里有：以索引版判定；工作区与索引不一致（改了没 add / 索引有而工作区无）→ ledger-index-drift（error）；
  *   · 索引里没有但磁盘上有：同样 ledger-index-drift（error）——否则「本地绿」依赖未提交改动，
@@ -674,6 +827,15 @@ function loadLedger(ctx) {
         hint: `先 git add ${ctx.ledgerRel}：否则 CI / 新克隆看不到这份台账，「本地绿」是未提交改动撑起来的。`,
       },
     );
+    // 索引里没有、HEAD 里却有该台账：判定基准退化为工作区副本，grandfathered 棘轮的索引基线也随之失效。
+    // 不静默跳过本项比对，而是把「索引缺台账」这件事本身报成 error（HEAD 版仍可作基线，但基准已退化）。
+    if (readHeadLedger(ctx.root, ctx.ledgerRel).status !== 'absent') {
+      reportLedgerIndexDrift(ctx, `台账已从 git 索引消失（HEAD 里仍有 ${ctx.ledgerRel}）：棘轮的索引基线失效，本次按工作区副本判定。`, {
+        type: 'ledger-missing-in-index',
+        target: `${ctx.ledgerRel}#missing-in-index`,
+        hint: `先 git add ${ctx.ledgerRel} 把台账放回索引：HEAD 版台账只能当基线，判定基准必须是索引 blob。`,
+      });
+    }
     text = worktreeText;
   } else {
     ctx.ledgerBasis = null;
@@ -943,6 +1105,9 @@ function declaredPathState(ctx, declared) {
 function runLedgerChecks(ctx) {
   if (!loadLedger(ctx)) return;
 
+  // ---- 0. grandfathered 棘轮的基线比对（与 HEAD 版台账比，先于四态判定；只读，不改判定基准） ----
+  checkGrandfatheredGrowth(ctx);
+
   const yaml = loadYaml(ctx);
   if (!yaml) return;
 
@@ -1134,6 +1299,57 @@ function emitViolations(ctx, patterns) {
     });
   }
 
+  // grandfathered-growth：相对 HEAD 版台账的新增条目（error，逐条报出）
+  const growth = ctx.grandfatheredGrowth;
+  if (growth.baseline === 'unparsable') {
+    ctx.report({
+      check: 'grandfathered-growth',
+      severity: 'error',
+      type: 'grandfathered-head-baseline-unusable',
+      file: ledgerRel,
+      line: 1,
+      column: null,
+      target: `${ledgerRel}#head-baseline`,
+      message: `HEAD 版台账不可用作棘轮基线：${growth.headErr}`,
+      hint:
+        `删除或写坏 HEAD 版台账绝不能变成洗白路径：用 git show HEAD:${ledgerRel} 确认基线内容并修好它` +
+        `（基线必须能解析出 grandfathered 数组），再重跑本门禁。`,
+    });
+  }
+  for (const rel of growth.added.slice(0, EVIDENCE_LIMIT)) {
+    ctx.report({
+      check: 'grandfathered-growth',
+      severity: 'error',
+      type: 'grandfathered-added-vs-head',
+      file: ledgerRel,
+      line: 1,
+      column: null,
+      target: rel,
+      message:
+        `grandfathered 新增条目（HEAD 版台账里没有它）：${rel}` +
+        '——祖父清单只减不增，允许集合缩小，**任何新增即手工洗白**。',
+      hint:
+        `「路径在 HEAD 里」不是绿灯理由（旧 ≠ 已记账）。合法修法两条：① 让某个模块用 source.path 精确声明它；` +
+        `② 在 ${ledgerRel} > exempt_patterns 里加一条带 reason 的模式豁免。` +
+        `若这条路径确实不该有归属，也不要往 grandfathered 里加（清单是已记账的正账，不是欠账，且不再增长）；` +
+        `把 ${rel} 从 grandfathered 里删掉即可恢复绿。`,
+    });
+  }
+  if (growth.added.length > EVIDENCE_LIMIT) {
+    const rest = growth.added.length - EVIDENCE_LIMIT;
+    ctx.report({
+      check: 'grandfathered-growth',
+      severity: 'error',
+      type: 'grandfathered-added-vs-head',
+      file: ledgerRel,
+      line: 1,
+      column: null,
+      target: `${ledgerRel}#grandfathered-growth-overflow`,
+      message: `另有 ${rest} 条新增条目未逐条列出（共新增 ${growth.added.length} 条，基线 = HEAD 版台账）。`,
+      hint: '先修前几条，重跑后本提示会给出下一批。',
+    });
+  }
+
   // exempt-invalid：缺 reason / pattern 非法（error）
   for (const p of ctx.invalidPatterns) {
     ctx.report({
@@ -1309,6 +1525,28 @@ function printHuman(ctx) {
           `还可再减 ${ctx.grandfatheredRemovable.length} 条（已 bound / 已豁免 / 已消失 / 重复）——清单只减不增`,
         ),
     );
+    // 棘轮基线（本增量新增）：与 HEAD 版台账比对的结果必须回显，否则「只减不增」无从核对。
+    const g = ctx.grandfatheredGrowth;
+    if (g.baseline === 'head') {
+      out.push(
+        paint(
+          g.added.length > 0 ? '31' : '32',
+          `祖父清单棘轮: 基线 = HEAD 版台账（${g.headRev || 'HEAD'} 共 ${g.headTotal} 条）· ` +
+            `相对基线新增 ${g.added.length} 条 · 已减 ${
+              g.headTotal === null ? '-' : Math.max(0, g.headTotal - (ctx.ledger ? ctx.ledger.grandfathered.length : 0))
+            } 条——只允许集合缩小`,
+        ),
+      );
+    } else if (g.baseline === 'absent' || g.baseline === 'no-head') {
+      out.push(
+        paint('33', `祖父清单棘轮: HEAD 里没有该台账（${g.baseline === 'no-head' ? '仓库尚无提交' : '首次引入'}）→ 本项跳过，` +
+          '一次性初始化：基线由本次提交建立，提交之后任何新增都会被拦成 error'),
+      );
+    } else if (g.baseline === 'unparsable') {
+      out.push(paint('31', `祖父清单棘轮: HEAD 版台账不可用作基线（${g.headErr}）→ error（fail-closed）`));
+    } else {
+      out.push('祖父清单棘轮: 基线不可用（台账未成功加载，本项未判定）');
+    }
     if (ctx.projects.length > 0) {
       out.push(`项目数据目录（${ctx.projects.length}）: ${ctx.projectDirs.join(' · ')}`);
     }
@@ -1404,6 +1642,17 @@ function printJson(ctx) {
         total: ctx.ledger ? ctx.ledger.grandfathered.length : 0,
         removable: ctx.grandfatheredRemovable.length,
         removableDetail: ctx.grandfatheredRemovable.map((item) => ({ path: item.rel, why: item.why })),
+        // 棘轮基线（与 HEAD 版台账比）：'head' 正常比对 / 'absent' 或 'no-head' 首次引入（本项跳过、
+        // 退出码 0）/ 'unparsable' 基线不可用 → error（fail-closed）/ null 台账未加载，本项未判定。
+        baseline: ctx.grandfatheredGrowth.baseline,
+        baselineRev: ctx.grandfatheredGrowth.headRev,
+        baselineError: ctx.grandfatheredGrowth.headErr,
+        headTotal: ctx.grandfatheredGrowth.headTotal,
+        growth: ctx.grandfatheredGrowth.added.length,
+        growthDetail: ctx.grandfatheredGrowth.added.map((rel) => ({
+          path: rel,
+          note: 'HEAD 版台账的 grandfathered 里没有该条目（只减不增：新增即手工洗白）',
+        })),
       },
       projectDirs: ctx.projectDirs,
     },
