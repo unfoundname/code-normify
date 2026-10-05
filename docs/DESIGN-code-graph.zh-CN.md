@@ -239,10 +239,10 @@
 
 即 `src/` 一个目录就有 **12,960 个图元素**（2,624 声明 + 10,336 引用），与用户预期的「上万条边」一致。因此**不能**把每条边都按最啰嗦的形态落盘。
 
-> **口径警告（读任何行数之前先读这一段）：本文档手写表格里的「行数」与产物 `ledger/references.json` 的 `files[].lines` 不是同一个量，两者不可互相求和、也不可互相校验。**
-> - **文档表格 = LF 口径**：文本里 `\n` 的个数（= `(git show :<p> -split "\n").Length - 1`）。本表的 `src/**/*.ts` = **9,782**。
-> - **产物 `files[].lines` = split 口径**：`split('\n')` 之后数组的长度；文件末尾有换行时**恰好比 LF 口径多 1**。同一批 28 个文件在产物里求和 = **9,810**（= 9,782 + 28）。
-> - 单文件对照（实测，`git show :<p>`）：`scripts/check-references.cjs` 在产物里 `lines = 2374`，其 LF 计数 = **2373**；`ledger/file-ledger.json` 在产物里 `lines = 168`，其 LF 计数 = **167**；本文档自身在产物里 `lines = 1325`，其 LF 计数 = **1324**。
+> **口径警告（读任何行数之前先读这一段）：本文档的「行数」有两族，口径相差 1，两者不可互相求和、也不可互相校验。**
+> - **① 文档规模表（如本节 / §9.7 的符号面）= LF 口径**：文本里 `\n` 的个数（= `(git show :<p> -split "\n").Length - 1`）。本表的 `src/**/*.ts` = **9,782**。
+> - **② 脚本与数据文件的行数（如 §1.3 / §6.3 / §10 偏差记录）= 「显式行数」= split 口径**：与产物 `ledger/references.json` 的 `files[].lines` 同源，`split('\n')` 后数组的长度**恒 = `\n` 个数 + 1**（本批实测：扫描面 75 条非 null 项无一例外，且末尾都带换行）。同一批 28 个文件在产物里求和 = **9,810**（= 9,782 + 28）。
+> - 单文件对照（实测，`git show :<p>`，均属上述 ② 口径）：`scripts/check-references.cjs` 在产物里 `lines = 2374`，其 LF 计数 = **2373**；`ledger/file-ledger.json` 在产物里 `lines = 168`，其 LF 计数 = **167**；本文档自身在产物里 `lines = 1331`，其 LF 计数 = **1330**。
 > - **处置：产物口径不改，只在这里声明差异。** 把产物改成 LF 会让 1,412 条登记项的 `lines` 全体变动、图摘要随之改变，为纯口径问题不值得；因此两张表**各按各的口径读**，跨表引用行数时必须先换算（减 1/文件）或改用字节数。
 
 **分层与稀疏化策略**（四层，逐层放大）：
@@ -472,7 +472,7 @@
 | 未解析原因码 | `symbol-not-found-in-program` 215 · `bare-module-specifier` 126 · `declaration-out-of-scope` 9 · `external-module-symbol` 8 | 同上 → `symbolGraph.unresolvedReasons` |
 | **无静默 null** | `to.sym === null && !reason` 的边 **0 条**（抛错级不变量，不是统计值） | 同上 → `symbolGraph.silentNullEdges` |
 | Program 范围 | `root_names` **28** · `program_source_files` **28** · `program_outside_repo_files` **0** | 同上 → `symbolGraph.rootNames / programSourceFiles / programOutsideRepoFiles` |
-| 符号面规模 | **28 个文件 / 9,782 行（LF 口径） / 516,319 B**（= 扫描面内 `lang=ts`；全仓扫描面 **76 个文件 / 93,496 行（split 口径） / 3,461,917 B**——这两个数**含图自身** `ledger/references.json`（图里该条 `bytes`/`lines` 记 `null`，自指，设计如此）⇒ **随每次重算同步**，两处引用（本行与 §9.7 测量条件）必须同批一起改；与符号面那个 LF 口径的 9,782 **不可相加**，完整口径说明见 §2.5 表下的口径警告） | `git ls-files` + 索引 blob 逐文件求和（`git cat-file -s :<p>` 求字节、`git show :<p>` 按 `\n` 切分求 split 行数） |
+| 符号面规模 | **28 个文件 / 9,782 行（LF 口径） / 516,319 B**（= 扫描面内 `lang=ts`；全仓扫描面 **76 个文件 / 93,496 行（split 口径） / 3,462,125 B**——这两个数**含图自身** `ledger/references.json`（图里该条 `bytes`/`lines` 记 `null`，自指，设计如此）⇒ **随每次重算同步**，两处引用（本行与 §9.7 测量条件）必须同批一起改；与符号面那个 LF 口径的 9,782 **不可相加**，完整口径说明见 §2.5 表下的口径警告） | `git ls-files` + 索引 blob 逐文件求和（`git cat-file -s :<p>` 求字节、`git show :<p>` 按 `\n` 切分求 split 行数） |
 | 产物体积 | **1,482,686 B（1.41 MiB）**（LF；`schema_version` 2 整份） | `git cat-file blob :ledger/references.json` 的长度 |
 | 体积分解（缩进 2，与产物同口径） | `symbol_edges` **727,531 B** + `files` 291,466 B + `edges` 239,834 B + `declarations` **101,293 B** + `meta` 4,789 B（五项之和 = **1,364,913 B**；余项 **117,773 B** = 各部分的括号/逗号 **+ 嵌套缩进差**——各部分单独 `JSON.stringify` 时缩进从 0 起算，在整份产物里整体多一层 ⇒ `1,364,913 + 117,773 = 1,482,686`，实测自洽） | `JSON.stringify(<该部分>, null, 2) + '\n'` 的 UTF-8 字节 |
 | 相对文件级的增长 | **2.543 倍**（1,482,686 ÷ 583,014；分母 = 同一份索引上「`meta` + `files` + `edges` + `schema_version: 1`」的口径近似） | 同上 |
@@ -1097,7 +1097,7 @@
 
 **增量 3 实测结果（2026-10-05；四个 ✅ 项的原始数字与条件）**
 
-**测量条件（缺一不可，否则数字对不上）**：Windows 10.0.26200 x64 · Intel Core i5-13500H（16 逻辑核）· 15.7 GiB 内存 · **Node v24.21.0**（V8 13.6.233.17-node.53）· **TypeScript 5.9.3**（仓库自带 `node_modules/typescript/lib/typescript.js`）· **不含 `node_modules` 类型**（Program 显式 `noLib: true` + `types: []`）· **`skipLibCheck: true`**（与仓库 `tsconfig.json` 一致；本批没有 lib 文件，取值只为口径一致）· 扫描面 **76 个文件 / 93,496 行 / 3,461,917 B**（**split 口径**：按 `\n` 切分后数组长度求和；**含图自身** `ledger/references.json`——图里该条 `bytes`/`lines` 记 `null`（自指，设计如此），因此本行**随每次重算同步**，改完文档必须与 §2.8 的同一行一起重测、一起改；测量 = 扫描面 76 个文件的 `git ls-tree -r -l` 尺寸与 `git show :<p>` 的切分求和），其中符号面（`lang=ts`）**28 个文件 / 9,782 行（LF 口径，与上一条不同口径） / 516,319 B** · 索引 = 本批提交态（`git ls-files` 1,412 条）。**「冷」的定义与限度**：同一进程中 `createProgram` 的**首次**调用（TypeScript 模块本身已在更早的 `initSpecifierAnalysis` 里加载）——测量脚本自身只做了一次 blob 读取，因此它测的是「TypeScript 解析器未预热」，**不是**「OS 文件缓存冷」；后者在本机无法在不重启的前提下可控复现，故**不声称**测过。**测量脚本**：临时脚本（写在系统 temp、跑完自删），用与生成器**同一批**内核函数（`createIndexCompilerHost` / `symbolCompilerOptions` / `buildSymbolGraph`）避免另造第二套解析；逐项命令见下表。
+**测量条件（缺一不可，否则数字对不上）**：Windows 10.0.26200 x64 · Intel Core i5-13500H（16 逻辑核）· 15.7 GiB 内存 · **Node v24.21.0**（V8 13.6.233.17-node.53）· **TypeScript 5.9.3**（仓库自带 `node_modules/typescript/lib/typescript.js`）· **不含 `node_modules` 类型**（Program 显式 `noLib: true` + `types: []`）· **`skipLibCheck: true`**（与仓库 `tsconfig.json` 一致；本批没有 lib 文件，取值只为口径一致）· 扫描面 **76 个文件 / 93,496 行 / 3,462,125 B**（**split 口径**：按 `\n` 切分后数组长度求和；**含图自身** `ledger/references.json`——图里该条 `bytes`/`lines` 记 `null`（自指，设计如此），因此本行**随每次重算同步**，改完文档必须与 §2.8 的同一行一起重测、一起改；测量 = 扫描面 76 个文件的 `git ls-tree -r -l` 尺寸与 `git show :<p>` 的切分求和），其中符号面（`lang=ts`）**28 个文件 / 9,782 行（LF 口径，与上一条不同口径） / 516,319 B** · 索引 = 本批提交态（`git ls-files` 1,412 条）。**「冷」的定义与限度**：同一进程中 `createProgram` 的**首次**调用（TypeScript 模块本身已在更早的 `initSpecifierAnalysis` 里加载）——测量脚本自身只做了一次 blob 读取，因此它测的是「TypeScript 解析器未预热」，**不是**「OS 文件缓存冷」；后者在本机无法在不重启的前提下可控复现，故**不声称**测过。**测量脚本**：临时脚本（写在系统 temp、跑完自删），用与生成器**同一批**内核函数（`createIndexCompilerHost` / `symbolCompilerOptions` / `buildSymbolGraph`）避免另造第二套解析；逐项命令见下表。
 
 | 量 | 实测值 | 条件 / 命令 |
 | --- | --- | --- |
@@ -1225,7 +1225,7 @@
 - **不做**：不做函数内局部变量与参数（增量 4）、不做按需展开（增量 4）、不做传递闭包与查询接口（增量 5）、不做变更影响门禁（增量 6）。
 - **`check:refs` 的 warning 面变化（必须披露）**：本批把 `docs/DESIGN-code-graph.zh-CN.md` / `CONTRIBUTING.md` / `.github/workflows/ci.yml` 的说明文字改了，**warning 633 → 643（+10）**，**error 0 → 0**、退出码 0。10 条**全部**是既有的 `deleted-file-basename-mention` 家族（把 `package.json` / `README.md` / `index.ts` / `types.ts` 这类**历史删除路径的 basename**当次级线索报出的提示），与基线那 633 条同类同源；新增的 10 条来自本节新写的文字里出现的这些 basename 字面量（含本条自身）。**没有新增 error，也没有为此新增任何豁免**——既有豁免面（`DELETED_REFERENCE_ALLOWLIST` 3 条 + `SELF_EXCLUDED_FILES` 1 个）一字未动。
 - **规模护栏结论**：产物 **1.41 MiB < 5 MB**、端到端 **1.73 s < 30 s** ⇒ **本批不触发**护栏，因此**不**引入分层存储 / 按需展开 / 只对 in-scope 代码建图 / 分片这四种处置中的任何一种；P8「图不分片 vs 分片」的答案因此仍是 §2.7 的「先量后切，本批单文件」。
-- **一条实测踩到的操作坑（写给后来者，不是设计缺陷）**：`files[]` 里的 `bytes` / `lines` 取自**索引 blob**，而**生成器脚本自己也在 `files[]` 里**。于是"改完文档 → 跑 `graph:gen` → `git add`"这个顺序**会留下不一致**：`graph:gen` 把**当前索引里**那些文件的旧 `bytes` / `lines` 写进产物，而你刚刚改过、**还没 `git add`** 的文件在索引里仍是旧版本——两次实测都出现「工作区与索引逐字节相同、`--check` 却红」，差额恰好是被改文件的 `bytes` / `lines` 若干行。**正确顺序**：先把改动 `git add`（让索引成为最新事实）→ 再 `npm run graph:gen` → 再 `git add ledger/references.json` → 最后 `npm run check:graph` 确认 exit 0。产物大小可能**恰好不变**（本次两次都是 1,482,686 B，因为差额行数相同），所以"字节数没变"**不能**当作"内容没变"的证据。
+- **一条实测踩到的操作坑（写给后来者，不是设计缺陷）**：`files[]` 里的 `bytes` / `lines` 取自**索引 blob**，而**生成器脚本自己也在 `files[]` 里**。于是"改完文档 → 跑 `graph:gen` → `git add`"这个顺序**会留下不一致**：`graph:gen` 把**当前索引里**那些文件的旧 `bytes` / `lines` 写进产物，而你刚刚改过、**还没 `git add`** 的文件在索引里仍是旧版本——两次实测都出现「工作区与索引逐字节相同、`--check` 却红」，差额恰好是被改文件的 `bytes` / `lines` 若干行。**正确顺序**：先把改动 `git add`（让索引成为最新事实）→ 再 `npm run graph:gen` → 再 `git add ledger/references.json` → 最后 `npm run check:graph` 确认 exit 0。产物大小可能**恰好不变**（上一批两次的字节数就完全相同，因为差额行数相同），所以"字节数没变"**不能**当作"内容没变"的证据。
 
 ### 增量 4：最小变量（函数内局部变量与参数）与按需展开
 
