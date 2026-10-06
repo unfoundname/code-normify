@@ -12400,8 +12400,8 @@
       "id": "scripts/check-references.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 107815,
-      "lines": 2374,
+      "bytes": 117978,
+      "lines": 2565,
       "edge_out": 4,
       "edge_in": 1
     },

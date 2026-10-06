@@ -137,6 +137,8 @@ const CHECK_HELP_DETAILS = {
     '· package.json 的 main / types / exports / bin / files 字段（exports 的多段通配会逐段展开）',
     '· package.json 各 script 里的 `node <路径>`',
     `· ${WORKFLOW_DIR}/*.yml 的 run: 里的 ` + '`node <路径>`' + ` 与 ` + '`npm run <script>`' + `（script 必须存在）`,
+    '· Markdown 散文里写的 `npm run <script>` / `npm test` 必须真实存在于 package.json > scripts',
+    '  （扫描面写死 = git 索引里的全部 *.md，等价 `git ls-files "*.md"`；模板/占位符跳过；见检查 1d）',
     '· 大小写不一致的路径（Windows 能过、Linux CI 会挂）按 error 报出',
   ],
   'dangling-module-specifier': [
@@ -566,6 +568,7 @@ function main(argv) {
     checkMarkdownLinks(ctx);
     checkPackageJson(ctx);
     checkWorkflowRuns(ctx);
+    checkMarkdownNpmScriptRefs(ctx);
     const resolvedSpecifiers = checkDanglingModuleSpecifiers(ctx);
     checkVersionLiterals(ctx);
     checkScriptVersionCitations(ctx);
@@ -656,6 +659,8 @@ function createContext(opts) {
     // 被忽略规则覆盖、因而「跳过不报」的目标：逐条列出（含命中的忽略规则），不再只给计数。
     ignoredRefs: [],
     ignoredRefSeen: new Set(),
+    // 检查 1d 专用：被判定为「元变量模板」而跳过的候选 token，逐条列出（跳过必须可见）。
+    npmScriptMetavariables: [],
     dedupe: new Set(),
     stats: {
       skippedExternal: 0,
@@ -674,6 +679,14 @@ function createContext(opts) {
       anchorsViaExplicitHtmlId: 0,
       anchorTargetsNonMarkdown: 0,
       anchorTargetsUnresolved: 0,
+      // 检查 1d（Markdown 散文里的 `npm run <script>`）：
+      // mdFiles = 扫描面文件数；candidates = 抽到的候选 token 总数（含元变量）；
+      // references = 去重后的 (文件, 脚本名) 引用数；dangling = 其中报 error 的条数。
+      mdFiles: 0,
+      npmScriptCandidates: 0,
+      npmScriptMetavariablesSkipped: 0,
+      npmScriptReferences: 0,
+      npmScriptDangling: 0,
       checks: {},
     },
     bootstrapError: null,
@@ -1125,6 +1138,169 @@ function checkWorkflowRuns(ctx) {
         });
       }
     }
+  }
+}
+
+
+// ---------------------------------------------------------------------------
+// 检查 1d：Markdown 散文里的 `npm run <script>` / `npm test` 必须真实存在
+// ---------------------------------------------------------------------------
+/**
+ * 为什么需要（与检查 1c 的分工）：
+ *   1c 只覆盖 `.github/workflows/*.yml` 的 `run:`——CI 里调错脚本会红，但**散文里**写的
+ *   `npm run <script>` 此前无人校验：脚本一旦改名/删除，README / CONTRIBUTING / docs 照旧
+ *   写着旧名字，读者照抄即失败（"照抄就报 Missing script"）。与检查 1「文档提到不存在的路径」
+ *   同类，因此复用 `dangling-reference` 这个 check id，不新增 check 类别。
+ *
+ * 扫描面（写死、可复现）：git 索引里扩展名为 `.md` 的文件，等价于 `git ls-files "*.md"`
+ *   —— 含 README*、CONTRIBUTING.md、AGENTS.md、docs/**、ledger/**、skills/**、examples/**；
+ *   实测本仓 1073 个。**不扫** .cjs/.mjs/.ts 源码里的字符串：那是代码不是散文，
+ *   且源码里的 `npm run <x>` 大量出现在测试夹具、正则与注释里，纳入只会制造噪声。
+ *
+ * 抽取与判定规则（实证依据，不靠印象）：
+ *   · 复用共享内核的 extractNpmScriptRefs（与检查 1c 同一实现，不造第二套）：覆盖
+ *     `npm run <name>` / `npm run-script <name>` / `npm test|start|stop|restart`，
+ *     带 `--if-present` 的整条跳过；`npm ci|install|pack` 等内建命令不含脚本名，天然不命中。
+ *     `npm test` 与 `npm run test` 都归一成候选名 `test`，都要求 `scripts.test` 存在
+ *     （`npm test` 只是 npm 的内建别名，脚本不存在时同样 Missing script）。
+ *   · 候选名规范化：只取 token 开头一段 `[A-Za-z0-9:_.-]`，并去掉结尾的 `.`/`_`/`-`。
+ *     实测依据（本仓原文，不规范化会把这 2 处**真引用**误判成悬空；截断只发生在 token
+ *     尾部，不会凭空造出名字）：
+ *       `…`npm run build`（tsc 编译 src/ → lib/）`            → 候选 build`（tsc → build
+ *       `… # 为 HEAD 写记录（= npm run changelog:gen）`        → 候选 changelog:gen） → changelog:gen
+ *   · 元变量（模板而非真引用）一律跳过，绝不报：
+ *       - token 任何位置含 `<` `>` `*` `$` `…` `{` `}`（如 `npm run <script>`、`npm run $SCRIPT`、
+ *         `npm run build:*`）—— 含 `*` 的通配写法整体跳过，不做前缀猜测；
+ *       - 规范化后不是「ASCII 字母/数字开头」的占位（如 `npm run 某脚本`、`npm run <脚本>`）；
+ *       - 单个大写字母占位（如 `npm run X`）。
+ *   · 同一 (文件, 脚本名) 只报一次：本仓 `check:refs` 已有 714 条 warning，重复上报会把报告
+ *     推到大几千，反而稀释真正要看的东西。
+ *
+ * 零命中 fail-closed：整轮扫到的候选 token 数为 0 ⇒ 判定扫描器失效（md 读不到 / 抽取规则被改错 /
+ *   扫描面被改空），报 error 并非 0 退出。**"一个引用都没找到"不等于"所有引用都合法"。**
+ *   判定基准 package.json 读不到/解析失败时同理：报一条 guard-unavailable，绝不把每个候选
+ *   都当悬空（噪声炸弹），也绝不静默通过。
+ */
+
+/** 扫描面判定：git 索引里扩展名为 `.md` 的文件（`git ls-files "*.md"` 的等价形式）。 */
+const isMarkdownPath = (rel) => path.posix.extname(rel).toLowerCase() === '.md';
+
+/**
+ * 候选名规范化 + 元变量判定。
+ *   { name }              真引用：name 是待断言的 npm script 名
+ *   { skip: true, reason } 模板/占位符：跳过并计入统计（**不是**合法引用，只是不报）
+ */
+function classifyNpmScriptCandidate(raw) {
+  const bare = String(raw == null ? '' : raw)
+    .trim()
+    .replace(/^[`"']+/, '')
+    .replace(/[`"']+$/, '');
+  if (!bare) return { skip: true, reason: '空 token' };
+
+  // 元变量标记：出现在 token 任何位置都说明这是模板而不是名字。
+  const marker = /[<>*$…{}]/.exec(bare);
+  if (marker) return { skip: true, reason: `含元变量标记 ${marker[0]}` };
+
+  const name = (/^[A-Za-z0-9][A-Za-z0-9:_.-]*/.exec(bare) || [''])[0].replace(/[._-]+$/, '');
+  if (!name) return { skip: true, reason: '非 ASCII 字母/数字开头的占位符' };
+  if (/^[A-Z]$/.test(name)) return { skip: true, reason: '单个大写字母占位符' };
+  return { name };
+}
+
+function checkMarkdownNpmScriptRefs(ctx) {
+  const parsed = readJson(ctx, 'package.json');
+  if (parsed.error) {
+    // 判定基准不可用：既不能把每个候选都当悬空（噪声炸弹），也不能静默放行 —— fail-closed。
+    ctx.report({
+      check: 'dangling-reference',
+      severity: 'error',
+      type: 'guard-unavailable',
+      file: 'package.json',
+      line: 1,
+      target: 'scripts',
+      dedupeKey: 'md-npm-script-baseline-unavailable',
+      message: `Markdown 里 npm script 引用的判定基准 package.json 不可用（${parsed.error}）：本项检查失效，按 fail-closed 报 error。`,
+      hint: '先修 package.json 的可读性 / JSON 语法；判定基准不在就不能判「引用合法」。',
+    });
+    return;
+  }
+  const scripts = parsed.value.scripts && typeof parsed.value.scripts === 'object' ? parsed.value.scripts : {};
+
+  let markdownFiles = 0;
+  let candidates = 0;
+  let metavariables = 0;
+  let references = 0;
+  let dangling = 0;
+  const seen = new Set();
+
+  for (const rel of ctx.textFiles) {
+    if (!isMarkdownPath(rel)) continue;
+    markdownFiles += 1;
+    const text = readText(ctx, rel);
+    if (text === null) continue; // 读失败由 checkTrackedReadability 统一报 guard-unavailable
+
+    const lines = text.split(/\r?\n/);
+    for (let i = 0; i < lines.length; i += 1) {
+      const line = lines[i];
+      let searchFrom = 0;
+      for (const raw of extractNpmScriptRefs(line)) {
+        candidates += 1;
+        const classified = classifyNpmScriptCandidate(raw);
+        if (classified.skip) {
+          metavariables += 1;
+          ctx.npmScriptMetavariables.push({ file: rel, line: i + 1, token: raw, reason: classified.reason });
+          continue;
+        }
+        const name = classified.name;
+        // 列号：在整行里顺着找这个 token（同一行多次出现时逐个推进），找不到就退回第 1 列。
+        const at = line.indexOf(raw, searchFrom);
+        if (at >= 0) searchFrom = at + raw.length;
+        const column = at >= 0 ? at + 1 : 1;
+
+        const key = `${rel}\u0000${name}`;
+        if (seen.has(key)) continue; // 同一 (文件, 脚本名) 只报一次
+        seen.add(key);
+        references += 1;
+
+        if (Object.prototype.hasOwnProperty.call(scripts, name)) continue;
+        dangling += 1;
+        ctx.report({
+          check: 'dangling-reference',
+          severity: 'error',
+          type: 'dangling-markdown-npm-script',
+          file: rel,
+          line: i + 1,
+          column,
+          target: name,
+          dedupeKey: `md-npm-script::${rel}::${name}`,
+          message: `Markdown 里写了 \`npm run ${name}\`，但 package.json > scripts 里没有这个脚本。`,
+          hint: '改文档里的命令，或在 package.json > scripts 里补上该脚本；元变量（如 `npm run <script>`）会被跳过、不会报。',
+        });
+      }
+    }
+  }
+
+  ctx.stats.mdFiles = markdownFiles;
+  ctx.stats.npmScriptCandidates = candidates;
+  ctx.stats.npmScriptMetavariablesSkipped = metavariables;
+  ctx.stats.npmScriptReferences = references;
+  ctx.stats.npmScriptDangling = dangling;
+
+  // 零命中 fail-closed：扫描器失效必须变红，而不是"没找到就算通过"。
+  if (candidates === 0) {
+    ctx.report({
+      check: 'dangling-reference',
+      severity: 'error',
+      type: 'guard-unavailable',
+      file: '.',
+      line: 1,
+      target: 'npm run',
+      dedupeKey: 'md-npm-script-scan-empty',
+      message:
+        `Markdown 散文里的 npm script 引用扫描到 0 个候选 token（扫描面 ${markdownFiles} 个 .md）——` +
+        '视为扫描器失效，按 fail-closed 报 error：没抽到任何引用不等于所有引用都合法。',
+      hint: '检查 git 索引里的 *.md 是否可读、抽取规则是否仍匹配 `npm run <script>` 的写法。',
+    });
   }
 }
 
@@ -2232,6 +2408,9 @@ function printHuman(ctx) {
       out.push(paint('33', `  ⚠ 降级解析：${ctx.analysisMode.reason}`));
     }
     out.push(`索引内读失败(报 error): ${ctx.stats.unreadableIndexedFiles}`);
+    out.push(
+      `Markdown 里的 npm script 引用: 扫描面 ${ctx.stats.mdFiles} 个 .md · 候选 token ${ctx.stats.npmScriptCandidates} · 元变量跳过 ${ctx.stats.npmScriptMetavariablesSkipped} · 引用(文件,脚本) ${ctx.stats.npmScriptReferences} · 悬空(报 error) ${ctx.stats.npmScriptDangling}`,
+    );
     const anchorAllowHits = DEAD_ANCHOR_ALLOWLIST.reduce(
       (sum, _entry, index) => sum + (ctx.anchorAllowlistHits.get(index) || 0),
       0,
@@ -2317,6 +2496,11 @@ function printJson(ctx) {
       unresolvedModuleSpecifiers: ctx.stats.unresolvedModuleSpecifiers,
       danglingModuleSpecifiers: ctx.stats.danglingModuleSpecifiers,
       unreadableIndexedFiles: ctx.stats.unreadableIndexedFiles,
+      markdownFiles: ctx.stats.mdFiles,
+      npmScriptCandidates: ctx.stats.npmScriptCandidates,
+      npmScriptMetavariablesSkipped: ctx.stats.npmScriptMetavariablesSkipped,
+      npmScriptReferences: ctx.stats.npmScriptReferences,
+      npmScriptDangling: ctx.stats.npmScriptDangling,
       specifierAnalysis: { mode: ctx.analysisMode.mode, version: ctx.analysisMode.version || null, reason: ctx.analysisMode.reason || null },
       anchorsChecked: ctx.stats.anchorsChecked,
       anchorsHit: ctx.stats.anchorsHit,
@@ -2365,6 +2549,13 @@ function printJson(ctx) {
       resolved: entry.resolved,
       source: entry.source,
       ignoreRule: entry.rule,
+    })),
+    // 检查 1d 里被判为「元变量模板」而跳过的候选 token：逐条列出（跳过不等于看不见）。
+    npmScriptMetavariables: ctx.npmScriptMetavariables.map((entry) => ({
+      file: entry.file,
+      line: entry.line,
+      token: entry.token,
+      reason: entry.reason,
     })),
   };
   process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
