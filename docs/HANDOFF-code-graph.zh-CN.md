@@ -2,7 +2,7 @@
 
 本文档面向**接手这套东西的下一批执行者**。它只讲一件事：本仓的「引用图 + 改动记录 + 查询接口 + 门禁链」这一整套机器事实是怎么落的、字段口径是什么、哪里还是灰的、想改该怎么改。
 
-设计动机与验收标准在 `docs/DESIGN-code-graph.zh-CN.md`（1,332 行，`node scripts/generate-reference-graph.cjs --check` 输出的 `lines` 字段实测值）；本文档不重复设计论证，只写**落地后的现状与口径**。
+设计动机与验收标准在 `docs/DESIGN-code-graph.zh-CN.md`（**行数不在此复述——它每改一次就变**；现值取数 `node scripts/generate-reference-graph.cjs --check` 输出的 `lines` 字段，或 `node -e "console.log(require('./ledger/references.json').files.find(f=>f.id==='docs/DESIGN-code-graph.zh-CN.md').lines)"`。**留痕（只作留痕，不是现值）**：本行原写「1,332 行」，独立复核者第四轮实测 **1338**，本批复核实测同为 1338）；本文档不重复设计论证，只写**落地后的现状与口径**。
 
 ---
 
@@ -194,7 +194,7 @@ id, lang, state, bytes, lines, edge_out, edge_in
 
 ### 2.3 `lines` 的三条口径（**最容易读错的一栏**）
 
-1. **算式**：`lines = text.split('\n').length`，源码位置 = `scripts/generate-reference-graph.cjs` 里的 `lines: self || text === undefined ? null : text.split('\n').length,` 一行（**本批改引实测**：该引文仍是原文，未漂移）。⇒ **末尾带换行的文件会比可见行数多 1**。实测：字符串 `"a\nb\n"` 的 `split('\n').length` = 3（可见 2 行）；`"a\nb"` = 2（可见 2 行）。本文档自身也适用：`docs/DESIGN-code-graph.zh-CN.md` 的 `lines` = 1332，而它文件末尾有换行，因此**可见行数 = 1331**（`Get-Content docs/DESIGN-code-graph.zh-CN.md | Measure-Object -Line` **实测报 1046**——**注意这个 cmdlet 数的是非空行，不是可见行数**：该文档 1331 个可见行里有 285 行是空行，1331 − 285 = 1046。旧版此处写「报 1331」是**把 `Measure-Object -Line` 当成了行数计数器**，本版照实改正；要数可见行用 `(Get-Content <文件>).Count`）。
+1. **算式**：`lines = text.split('\n').length`，源码位置 = `scripts/generate-reference-graph.cjs` 里的 `lines: self || text === undefined ? null : text.split('\n').length,` 一行（**本批改引实测**：该引文仍是原文，未漂移）。⇒ **末尾带换行的文件会比可见行数多 1**。实测：字符串 `"a\nb\n"` 的 `split('\n').length` = 3（可见 2 行）；`"a\nb"` = 2（可见 2 行）。本文档自身也适用，但**这三个数都是活值、不在此复述**（本文档每改一次、DESIGN 每改一次，它们就变）。现值取数：`lines`（split 口径）= `node -e "console.log(require('./ledger/references.json').files.find(f=>f.id==='docs/DESIGN-code-graph.zh-CN.md').lines)"`；可见行数 = `(Get-Content docs/DESIGN-code-graph.zh-CN.md).Count`；非空行数 = `Get-Content docs/DESIGN-code-graph.zh-CN.md | Measure-Object -Line`。**算式自洽性（与具体数值无关，永远成立）**：`lines`（split 口径）**恒 = 可见行数 + 1**（当且仅当文件末尾带换行），而 **`Measure-Object -Line` 数的是非空行**、不是可见行数 ⇒ 恒有 `非空行 = 可见行数 − 空行数 = lines − 1 − 空行数`。**留痕（只作留痕，不是现值）**：本行原写 DESIGN「`lines` = **1332**、可见 **1331**、`Measure-Object -Line` 报 **1046**、空行 **285**」（与上面的算式自洽：1331 − 285 = 1046）；**独立复核者第四轮实测 1338 / 1337 / 1051 / 286**（同样自洽：1337 − 286 = 1051），本批复核实测与之逐字相同。旧版此处还写过「报 1331」，那是**把 `Measure-Object -Line` 当成了行数计数器**，本版照实改正；要数可见行用 `(Get-Content <文件>).Count`）。
 
 2. **`lines` 只对「扫描面内」的文件有值**。⇒ `lines !== null` 的条数 = 扫描面文件数减 1（自指的 `ledger/references.json`），其余为 `null`；`bytes` 为 `null` 的节点 = **非索引节点**（`untracked` / `ignored` / `deleted`）**加上自指的 `ledger/references.json` 这一条**（§2.3 第 3 条的豁免）。**今天恰为 1 条**只是因为「非索引节点」当前一个都没有——全仓节点都是 `indexed`（`meta.node_states` 可自证），**不是不变量** —— 本行历史上写作"恒为 1 条"，与本文档"非索引节点为 null"的契约冲突（`ignored` / `untracked` / `deleted` 节点同样写 `null`）。**（本批按实测补精确，不改上面这句的结论）** 上面这条等式**只管 `bytes`**：`lines` 还有一个 null 成因——**不在扫描面内的索引节点也不解析**（本节第 2 条前半句），今天 `lines === null` 是 **1,337 条** = 自指产物 1 条 + 扫描面外的索引节点 1,336 条，**远不止 1 条**；这也是「今天恰为 1 条」只能挂在 `bytes` 上的原因。两栏取数：`node -e "const f=require('./ledger/references.json').files;console.log('bytes',f.filter(x=>x.bytes===null).length,'lines',f.filter(x=>x.lines===null).length)"`。**留痕（只作留痕，不是现值）**：本批改引实测 `lines !== null` 计 **79**（= 扫描面 80 个文件 − 自指 1），其余 **1337** 条为 `null`；现值取数 `node -e "console.log(require('./ledger/references.json').files.filter(f=>f.lines===null).length)"`（附录命令索引里也有这条）。
    ⇒ **`lines: null` 的含义是「这个文件没被解析过」，不是「0 行」，也不是「未知内容」。** 想知道扫描面外文件的行数，`git cat-file blob :<path>` 自己数，或把它加进扫描面（§8.2）。
@@ -905,7 +905,7 @@ src/index.ts  <- <位置串>  <位置串>  <位置串> …（共 29 次；三处
 
 > **写这一节时踩到的坑（值得单记）**：第一版这里把那条已删除文件的**完整路径**照抄了出来，`node scripts/check-references.cjs` 当场从 `0 error / 696 warning` 变成 **`2 error / 699 warning`**、**exit 1**——两条 `deleted-file-reference`、`severity: "error"`、`file` 指向本文档。
 > **⚠ 上面那三个数（`696` → `699`、两条 error）是「当时那次运行」的观测值，本轮核对未能独立复现**——复现它必须把那条完整路径**写回本文档**，那是写盘操作：写下去之后，你面对的就已经不是当前这份文档了。本轮独立复核者的结论同样是「无法独立复现，只有现值 warning 数这一条旁证」。
-> **本轮可复现的旁证**：`node scripts/check-references.cjs` ⇒ `✔ 0 error / 717 warning —— 门禁通过`、**exit 0**（`717` 是本批落盘时点的活值——本文档每改一次它就变，按本节开头「总条数刻意不写死」的惯例只作取数时点记录，要现值就跑这条命令；稳定可复现的是 `0 error` 与「门禁通过」本身）。
+> **本批的旁证（取数命令，不写死值）**：`node scripts/check-references.cjs` ⇒ `✔ 0 error / <N> warning —— 门禁通过`、**exit 0**。**warning 数不是可复现量**——本文档每改一次它就变，所以这里只给取数命令、**不写死**（**本行历史上把这一句写成「本轮可复现的旁证」并钉了 `717`：那个数既复现不出来、也与「可复现」的措辞矛盾，本批按本仓口径改成取数命令**）。**留痕（只作留痕，不是现值）**：原写 **717**（该批落盘时点），独立复核者第四轮实测 **718**，本批开工实测同为 718。**稳定可复现的只有两件事**：`0 error` 与「门禁通过」本身。
 > **想亲手复现那个失败态**：用 `git log --diff-filter=D --name-only` 取一条**已删除文件**的完整路径，写进任一被扫描的文本文件（例如本文档）再跑门禁——同一行命中完整路径即报 `deleted-file-reference`（error、`severity: "error"`）；**跑完记得把这次写入撤销**。
 > **区别是硬的**：提到删除文件的 **basename** 只是 `warning`（次级线索），提到 **完整路径** 是 `error`。⇒ **在文档里复述历史删除清单时，不要写出完整路径**——把错误复述进文档，等于把「残留提及」亲手造出来。这与本仓「残留零容忍」是同一条纪律。
 
@@ -916,7 +916,7 @@ src/index.ts  <- <位置串>  <位置串>  <位置串> …（共 29 次；三处
 - 门禁**只拦 error**，所以它不影响绿灯；但**拿 warning 数当"健康度指标"会得出错误结论**——本文档加入时是 **649 → 700**（`node scripts/check-references.cjs`），差别全部来自这一条规则。**旧值 714 已过期**，它的拆法是：去掉本文档 **651** + 本文档 **63**（初次 51 + `56ea956` 那批补写 12；**旧标 `9adf069` 已订正**）。**这条规则数的是「命中某个已删除 basename 的行数」，与仓库健康度无关。**
   **现值取数命令（刻意不写死）**：`node scripts/check-references.cjs --json` → 读 `summary.warnings`；本文档自身的贡献 = `violations[]` 里 `file === "docs/HANDOFF-code-graph.zh-CN.md"` 的条数。
 - 精确的「引用已删除文件」判定不靠它：**图里由 `status=dangling` + `to.state=deleted` 表达**，比 basename 次级线索精确得多（`ledger/references.json` 的 `ledger/exempt.gitignore` 豁免理由里也写着同一句话）。
-- 该脚本另有 `allowlisted` 机制（`summary.allowlisted` 实测 = **1865** 条被豁免）：`ledger/references.json` 因为「内容按构造就是仓库里所有被引用的路径」整文件豁免了这类 warning，**本文档不在豁免名单里**。
+- 该脚本另有 `allowlisted` 机制（现值取数 `node scripts/check-references.cjs --json` → `summary.allowlisted`；**活值、不在此复述**——它随豁免清单与仓库内容变化。**留痕（只作留痕，不是现值）**：本行原写「实测 = **1865** 条被豁免」，独立复核者第四轮实测 **3593**，本批复核实测同为 3593——旧值已过期近一倍）：`ledger/references.json` 因为「内容按构造就是仓库里所有被引用的路径」整文件豁免了这类 warning，**本文档不在豁免名单里**。
 
 ### 7.10 本次核对**未验证**的事项（写明怎么验证）
 

@@ -161,7 +161,9 @@ jobs:
         # 红了先看是不是「仓库里新加了文件但没条目」「台账已过期」「台账或豁免清单改了没 git add」「台账相对 HEAD
         # 多记了条目」「accounted 缺依据」或「豁免模式与 .gitignore 打架」，前者只能加归属或加带 reason 的豁免，
         # 后几者重跑 `npm run ledger:gen` 后 `git add`（生成器只减不增，**绝不**新增豁免与 accounted 条目）。
-        # 回归用例：`npm test` 里的 tests/file-ledger-ratchet-e2e.mjs（62 条断言；临时夹具物化、跑完自删；
+        # 回归用例：`npm test` 里的 tests/file-ledger-ratchet-e2e.mjs（**断言条数不在此写死**——活值，
+        # 跑 `npm test` 看该套件末行的 `✔ N/N 条断言通过`；**留痕：本行原写「62 条断言」，独立复核者
+        # 第四轮实测 84，本批实测同为 84/84**，只作留痕、不是现值；临时夹具物化、跑完自删；
         # 覆盖干净态与幂等 / schema_version 不匹配直接 error / accounted 缺 basis / 无条目新文件 /
         # `**` 过宽豁免 / 豁免条目缺 reason / 手工洗白与集合差异 / *review*.md 折叠误伤与交集 /
         # 合法缩小 / 首次引入）。
