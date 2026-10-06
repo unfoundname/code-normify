@@ -27,6 +27,9 @@ export interface PromptManagerOptions {
 
 const TRANSACTION_ROOTS = ['modules', 'renders', 'policy.yml', 'changes', 'branch-plan.json', 'tree.json', 'outline.md', 'api-index.json', 'receipt.json', 'normify.html'];
 
+/** 宿主配置是封闭集合：未知键不得静默忽略（SPEC：「缺失或取值非法 MUST 以 workspace/config 拒绝，不得留默认值」）。 */
+const PROMPT_MANAGER_OPTION_KEYS = ['repoRoot', 'dataDir', 'access', 'execution', 'requireBilingual'];
+
 /** `/conflict` 后缀是引擎对“共享产物已被并发写入者改写”的统一命名口径。 */
 const CONFLICT_CODES = ['branch/conflict', 'graph/conflict', 'module/conflict', 'module/id-conflict'];
 function conflictCode(code: string): boolean {
@@ -81,7 +84,10 @@ function branchParameters(properties: Record<string, SchemaNode>, required: stri
 /** 一个服务实例绑定一个项目，模型参数不拥有改写绑定身份的能力。 */
 export async function createPromptManagerTools(options: PromptManagerOptions): Promise<NormifyTool[]> {
     options = { ...options };
-    if (!isAbsolute(options.repoRoot) || !isAbsolute(options.dataDir)) throw new WorkspaceError('workspace/config', 'repoRoot 和 dataDir 必须由宿主配置为绝对路径');
+    if (typeof options.repoRoot !== 'string' || typeof options.dataDir !== 'string' || !isAbsolute(options.repoRoot) || !isAbsolute(options.dataDir))
+        throw new WorkspaceError('workspace/config', 'repoRoot 和 dataDir 必须由宿主配置为绝对路径');
+    const unknownKeys = Object.keys(options).filter(key => !PROMPT_MANAGER_OPTION_KEYS.includes(key));
+    if (unknownKeys.length > 0) throw new WorkspaceError('workspace/config', '未知的宿主配置项：' + unknownKeys.join('、'));
     if (options.execution !== 'host' && options.execution !== 'standalone')
         throw new WorkspaceError('workspace/config', 'execution 必须明确配置 host 或 standalone');
     if (options.access !== 'read' && options.access !== 'write') throw new WorkspaceError('workspace/config', 'access 必须明确配置 read 或 write');

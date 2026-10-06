@@ -87,6 +87,30 @@ try {
   assert.notEqual(written.digest, empty.digest)
   // Host execution is a separate argument and never a model-selected permission fallback.
   await assert.rejects(createPromptManagerTools({ repoRoot, dataDir, access: 'write' }), /execution/)
+  // 公开配置校验向 SPEC 契约对齐：缺失 / 非法 / 未知键一律 workspace/config，
+  // 不能再把未校验的目录参数交给 path 实现抛 TypeError，也不能静默忽略未知键。
+  const rejectsConfig = async (label, options, fragment) => {
+    let raised
+    try { await createPromptManagerTools(options) } catch (error) { raised = error }
+    assert.ok(raised, label + '必须以 workspace/config 拒绝')
+    assert.equal(raised.name, 'WorkspaceError', label)
+    assert.equal(raised.code, 'workspace/config', label)
+    assert.match(raised.message, fragment, label)
+  }
+  await rejectsConfig('空配置', {}, /repoRoot 和 dataDir/)
+  await rejectsConfig('缺 repoRoot', { dataDir, access: 'write', execution: 'standalone' }, /repoRoot 和 dataDir/)
+  await rejectsConfig('缺 dataDir', { repoRoot, access: 'write', execution: 'standalone' }, /repoRoot 和 dataDir/)
+  await rejectsConfig('repoRoot 非字符串', { repoRoot: 123, dataDir, access: 'write', execution: 'standalone' }, /repoRoot 和 dataDir/)
+  await rejectsConfig('dataDir 非字符串', { repoRoot, dataDir: null, access: 'write', execution: 'standalone' }, /repoRoot 和 dataDir/)
+  await rejectsConfig('dataDir 相对路径', { repoRoot, dataDir: 'normify-relative', access: 'write', execution: 'standalone' }, /repoRoot 和 dataDir/)
+  await rejectsConfig('未知配置键 baseline', { repoRoot, dataDir, access: 'write', execution: 'standalone', baseline: { commit: '0'.repeat(40) } }, /未知的宿主配置项：baseline/)
+  await rejectsConfig('未知配置键 dir', { repoRoot, dataDir, access: 'write', execution: 'standalone', dir: dataDir }, /未知的宿主配置项：dir/)
+  await rejectsConfig('execution 非法', { repoRoot, dataDir, access: 'write', execution: 'local' }, /execution/)
+  await rejectsConfig('access 非法', { repoRoot, dataDir, access: 'rw', execution: 'standalone' }, /access/)
+  // 合法配置（含唯一的可选键 requireBilingual）行为一字不变：照常返回只读受管目录。
+  const bilingualRead = await createPromptManagerTools({ repoRoot, dataDir, access: 'read', execution: 'standalone', requireBilingual: false })
+  assert.equal(bilingualRead.length, readCatalog.length)
+  assert.equal(bilingualRead.every(tool => tool.behavior === 'read'), true)
   const host = new Map((await createPromptManagerTools({ repoRoot, dataDir, access: 'write', execution: 'host' })).map(tool => [tool.name, tool]))
   const signal = new AbortController().signal
   const execution = { signal, check: () => {}, readGit: async () => { throw Error('graph APIs must not invoke Git') } }

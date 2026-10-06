@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "a27fa9ca275bd9890b65d26bdc45c33c61a8294ca967d6e2cbde7b2de3ee4a32",
+    "universe_hash": "8b7a06717191a168a1b07ddf8c7341abe51aa2595164efa6115f148659aaefef",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1497,
+    "tracked_total": 1498,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 161
+      "scanned_total": 162
     },
     "analysis": {
       "mode": "typescript",
@@ -62,7 +62,7 @@
         "function": 206,
         "interface": 114,
         "type": 18,
-        "variable": 62
+        "variable": 63
       },
       "edge_kinds": {
         "export-from": 70,
@@ -92,7 +92,7 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "自指条目（本产物自身的 bytes / lines）固定写 null —— 这是【处置选择】，不是\"没有不动点\"：实测把这两个量迭代写回，第 3 次即收敛（不动点存在）。因此这里写 null 是为了让产物写入幂等、而不是因为\"自指在数学上不可能稳定\"。（本条 = 图数据文件自己（ledger/references.json）那一行；只豁免这两个派生量，其余字段照常登记。）",
     "node_states": {
-      "indexed": 1497
+      "indexed": 1498
     },
     "edge_kinds": {
       "anchor": 3,
@@ -12262,6 +12262,15 @@
       "edge_in": 0
     },
     {
+      "id": "ledger/change-log/20261006T202806Z-559fa83.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 11752,
+      "lines": 364,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
       "id": "ledger/change-log/README.md",
       "lang": "md",
       "state": "indexed",
@@ -12760,7 +12769,7 @@
       "id": "lib/service.js",
       "lang": "js",
       "state": "indexed",
-      "bytes": 21132,
+      "bytes": 21722,
       "lines": null,
       "edge_out": 0,
       "edge_in": 1
@@ -12769,7 +12778,7 @@
       "id": "lib/service.js.map",
       "lang": "other",
       "state": "indexed",
-      "bytes": 15976,
+      "bytes": 16401,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -13426,8 +13435,8 @@
       "id": "src/service.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 21948,
-      "lines": 257,
+      "bytes": 22539,
+      "lines": 263,
       "edge_out": 18,
       "edge_in": 4
     },
@@ -13516,8 +13525,8 @@
       "id": "tests/graph-e2e.mjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 22494,
-      "lines": 316,
+      "bytes": 24802,
+      "lines": 340,
       "edge_out": 8,
       "edge_in": 1
     },
@@ -27898,9 +27907,20 @@
       "origin": "source"
     },
     {
-      "id": "src/service.ts#CONFLICT_CODES@31:7",
+      "id": "src/service.ts#CONFLICT_CODES@34:7",
       "file": "src/service.ts",
       "name": "CONFLICT_CODES",
+      "decl_kind": "variable",
+      "exported": false,
+      "scope": null,
+      "line": 34,
+      "column": 7,
+      "origin": "source"
+    },
+    {
+      "id": "src/service.ts#PROMPT_MANAGER_OPTION_KEYS@31:7",
+      "file": "src/service.ts",
+      "name": "PROMPT_MANAGER_OPTION_KEYS",
       "decl_kind": "variable",
       "exported": false,
       "scope": null,
@@ -27931,20 +27951,31 @@
       "origin": "source"
     },
     {
-      "id": "src/service.ts#branchParameters@77:10",
+      "id": "src/service.ts#branchParameters@80:10",
       "file": "src/service.ts",
       "name": "branchParameters",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 77,
+      "line": 80,
       "column": 10,
       "origin": "source"
     },
     {
-      "id": "src/service.ts#codesOf@35:10",
+      "id": "src/service.ts#codesOf@38:10",
       "file": "src/service.ts",
       "name": "codesOf",
+      "decl_kind": "function",
+      "exported": false,
+      "scope": null,
+      "line": 38,
+      "column": 10,
+      "origin": "source"
+    },
+    {
+      "id": "src/service.ts#conflictCode@35:10",
+      "file": "src/service.ts",
+      "name": "conflictCode",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
@@ -27953,57 +27984,46 @@
       "origin": "source"
     },
     {
-      "id": "src/service.ts#conflictCode@32:10",
-      "file": "src/service.ts",
-      "name": "conflictCode",
-      "decl_kind": "function",
-      "exported": false,
-      "scope": null,
-      "line": 32,
-      "column": 10,
-      "origin": "source"
-    },
-    {
-      "id": "src/service.ts#createPromptManagerTools@82:23",
+      "id": "src/service.ts#createPromptManagerTools@85:23",
       "file": "src/service.ts",
       "name": "createPromptManagerTools",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 82,
+      "line": 85,
       "column": 23,
       "origin": "source"
     },
     {
-      "id": "src/service.ts#lostRace@48:10",
+      "id": "src/service.ts#lostRace@51:10",
       "file": "src/service.ts",
       "name": "lostRace",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 48,
+      "line": 51,
       "column": 10,
       "origin": "source"
     },
     {
-      "id": "src/service.ts#object@72:10",
+      "id": "src/service.ts#object@75:10",
       "file": "src/service.ts",
       "name": "object",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 72,
+      "line": 75,
       "column": 10,
       "origin": "source"
     },
     {
-      "id": "src/service.ts#previewTool@54:16",
+      "id": "src/service.ts#previewTool@57:16",
       "file": "src/service.ts",
       "name": "previewTool",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 54,
+      "line": 57,
       "column": 16,
       "origin": "source"
     },
@@ -50239,9 +50259,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/service.ts#createPromptManagerTools@82:23",
+        "sym": "src/service.ts#createPromptManagerTools@85:23",
         "file": "src/service.ts",
-        "line": 82,
+        "line": 85,
         "column": 23,
         "state": "indexed"
       },
@@ -50860,9 +50880,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/service.ts#createPromptManagerTools@82:23",
+        "sym": "src/service.ts#createPromptManagerTools@85:23",
         "file": "src/service.ts",
-        "line": 82,
+        "line": 85,
         "column": 23,
         "state": "indexed"
       },
@@ -51182,9 +51202,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/service.ts#createPromptManagerTools@82:23",
+        "sym": "src/service.ts#createPromptManagerTools@85:23",
         "file": "src/service.ts",
-        "line": 82,
+        "line": 85,
         "column": 23,
         "state": "indexed"
       },
@@ -52783,13 +52803,13 @@
       "type_only": false
     },
     {
-      "id": "src/service.ts:54:68:type-reference",
+      "id": "src/service.ts:57:68:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 54,
+        "line": 57,
         "column": 68,
-        "sym": "src/service.ts#previewTool@54:16"
+        "sym": "src/service.ts#previewTool@57:16"
       },
       "to": {
         "sym": "src/tools.ts#ToolEnv@27:18",
@@ -52806,13 +52826,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:54:83:type-reference",
+      "id": "src/service.ts:57:83:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 54,
+        "line": 57,
         "column": 83,
-        "sym": "src/service.ts#previewTool@54:16"
+        "sym": "src/service.ts#previewTool@57:16"
       },
       "to": {
         "sym": "src/tools.ts#NormifyTool@68:18",
@@ -52829,13 +52849,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:54:102:type-reference",
+      "id": "src/service.ts:57:102:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 54,
+        "line": 57,
         "column": 102,
-        "sym": "src/service.ts#previewTool@54:16"
+        "sym": "src/service.ts#previewTool@57:16"
       },
       "to": {
         "sym": null,
@@ -52852,13 +52872,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:54:138:type-reference",
+      "id": "src/service.ts:57:138:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 54,
+        "line": 57,
         "column": 138,
-        "sym": "src/service.ts#previewTool@54:16"
+        "sym": "src/service.ts#previewTool@57:16"
       },
       "to": {
         "sym": "src/execution.ts#NormifyToolExecution@9:18",
@@ -52875,13 +52895,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:68:103:type-reference",
+      "id": "src/service.ts:71:103:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 68,
+        "line": 71,
         "column": 103,
-        "sym": "src/service.ts#previewTool@54:16"
+        "sym": "src/service.ts#previewTool@57:16"
       },
       "to": {
         "sym": null,
@@ -52898,13 +52918,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:72:29:type-reference",
+      "id": "src/service.ts:75:29:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 72,
+        "line": 75,
         "column": 29,
-        "sym": "src/service.ts#object@72:10"
+        "sym": "src/service.ts#object@75:10"
       },
       "to": {
         "sym": null,
@@ -52921,13 +52941,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:72:44:type-reference",
+      "id": "src/service.ts:75:44:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 72,
+        "line": 75,
         "column": 44,
-        "sym": "src/service.ts#object@72:10"
+        "sym": "src/service.ts#object@75:10"
       },
       "to": {
         "sym": "src/tools.ts#SchemaNode@33:18",
@@ -52944,13 +52964,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:72:83:type-reference",
+      "id": "src/service.ts:75:83:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 72,
+        "line": 75,
         "column": 83,
-        "sym": "src/service.ts#object@72:10"
+        "sym": "src/service.ts#object@75:10"
       },
       "to": {
         "sym": "src/tools.ts#ObjectSchema@47:13",
@@ -52967,13 +52987,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:77:39:type-reference",
+      "id": "src/service.ts:80:39:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 77,
+        "line": 80,
         "column": 39,
-        "sym": "src/service.ts#branchParameters@77:10"
+        "sym": "src/service.ts#branchParameters@80:10"
       },
       "to": {
         "sym": null,
@@ -52990,13 +53010,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:77:54:type-reference",
+      "id": "src/service.ts:80:54:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 77,
+        "line": 80,
         "column": 54,
-        "sym": "src/service.ts#branchParameters@77:10"
+        "sym": "src/service.ts#branchParameters@80:10"
       },
       "to": {
         "sym": "src/tools.ts#SchemaNode@33:18",
@@ -53013,13 +53033,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:77:93:type-reference",
+      "id": "src/service.ts:80:93:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 77,
+        "line": 80,
         "column": 93,
-        "sym": "src/service.ts#branchParameters@77:10"
+        "sym": "src/service.ts#branchParameters@80:10"
       },
       "to": {
         "sym": "src/tools.ts#ObjectSchema@47:13",
@@ -53036,13 +53056,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:82:57:type-reference",
+      "id": "src/service.ts:85:57:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 82,
+        "line": 85,
         "column": 57,
-        "sym": "src/service.ts#createPromptManagerTools@82:23"
+        "sym": "src/service.ts#createPromptManagerTools@85:23"
       },
       "to": {
         "sym": "src/service.ts#PromptManagerOptions@20:18",
@@ -53059,13 +53079,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:82:80:type-reference",
+      "id": "src/service.ts:85:80:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 82,
+        "line": 85,
         "column": 80,
-        "sym": "src/service.ts#createPromptManagerTools@82:23"
+        "sym": "src/service.ts#createPromptManagerTools@85:23"
       },
       "to": {
         "sym": null,
@@ -53082,13 +53102,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:82:88:type-reference",
+      "id": "src/service.ts:85:88:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 82,
+        "line": 85,
         "column": 88,
-        "sym": "src/service.ts#createPromptManagerTools@82:23"
+        "sym": "src/service.ts#createPromptManagerTools@85:23"
       },
       "to": {
         "sym": "src/tools.ts#NormifyTool@68:18",
@@ -53105,13 +53125,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:94:16:type-reference",
+      "id": "src/service.ts:100:16:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 94,
+        "line": 100,
         "column": 16,
-        "sym": "src/service.ts#createPromptManagerTools@82:23"
+        "sym": "src/service.ts#createPromptManagerTools@85:23"
       },
       "to": {
         "sym": "src/tools.ts#ToolEnv@27:18",
@@ -53128,13 +53148,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:97:24:type-reference",
+      "id": "src/service.ts:103:24:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 97,
+        "line": 103,
         "column": 24,
-        "sym": "src/service.ts#createPromptManagerTools@82:23"
+        "sym": "src/service.ts#createPromptManagerTools@85:23"
       },
       "to": {
         "sym": "src/tools.ts#SchemaNode@33:18",
@@ -53151,13 +53171,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:102:18:type-reference",
+      "id": "src/service.ts:108:18:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 102,
+        "line": 108,
         "column": 18,
-        "sym": "src/service.ts#createPromptManagerTools@82:23"
+        "sym": "src/service.ts#createPromptManagerTools@85:23"
       },
       "to": {
         "sym": "src/tools.ts#NormifyTool@68:18",
@@ -53174,13 +53194,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:107:36:type-reference",
+      "id": "src/service.ts:113:36:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 107,
+        "line": 113,
         "column": 36,
-        "sym": "src/service.ts#createPromptManagerTools@82:23"
+        "sym": "src/service.ts#createPromptManagerTools@85:23"
       },
       "to": {
         "sym": "src/engine/graph.ts#ArchitectureGraph@22:18",
@@ -53197,13 +53217,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:111:36:type-reference",
+      "id": "src/service.ts:117:36:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 111,
+        "line": 117,
         "column": 36,
-        "sym": "src/service.ts#createPromptManagerTools@82:23"
+        "sym": "src/service.ts#createPromptManagerTools@85:23"
       },
       "to": {
         "sym": "src/engine/graph.ts#ArchitectureGraph@22:18",
@@ -53220,13 +53240,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:125:27:type-reference",
+      "id": "src/service.ts:131:27:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 125,
+        "line": 131,
         "column": 27,
-        "sym": "src/service.ts#createPromptManagerTools@82:23"
+        "sym": "src/service.ts#createPromptManagerTools@85:23"
       },
       "to": {
         "sym": "src/engine/branches.ts#BranchSuggestionInput@49:18",
@@ -53243,13 +53263,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:139:48:type-reference",
+      "id": "src/service.ts:145:48:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 139,
+        "line": 145,
         "column": 48,
-        "sym": "src/service.ts#createPromptManagerTools@82:23"
+        "sym": "src/service.ts#createPromptManagerTools@85:23"
       },
       "to": {
         "sym": "src/engine/branches.ts#BranchPlan@38:18",
@@ -53266,13 +53286,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:143:48:type-reference",
+      "id": "src/service.ts:149:48:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 143,
+        "line": 149,
         "column": 48,
-        "sym": "src/service.ts#createPromptManagerTools@82:23"
+        "sym": "src/service.ts#createPromptManagerTools@85:23"
       },
       "to": {
         "sym": "src/engine/branches.ts#BranchPlan@38:18",
@@ -53289,13 +53309,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:160:20:type-reference",
+      "id": "src/service.ts:166:20:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 160,
+        "line": 166,
         "column": 20,
-        "sym": "src/service.ts#createPromptManagerTools@82:23"
+        "sym": "src/service.ts#createPromptManagerTools@85:23"
       },
       "to": {
         "sym": "src/tools.ts#NormifyTool@68:18",
@@ -53312,13 +53332,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:172:38:type-reference",
+      "id": "src/service.ts:178:38:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 172,
+        "line": 178,
         "column": 38,
-        "sym": "src/service.ts#createPromptManagerTools@82:23"
+        "sym": "src/service.ts#createPromptManagerTools@85:23"
       },
       "to": {
         "sym": "src/execution.ts#NormifyToolExecution@9:18",
@@ -53335,13 +53355,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:174:83:type-reference",
+      "id": "src/service.ts:180:83:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 174,
+        "line": 180,
         "column": 83,
-        "sym": "src/service.ts#createPromptManagerTools@82:23"
+        "sym": "src/service.ts#createPromptManagerTools@85:23"
       },
       "to": {
         "sym": null,
@@ -53358,13 +53378,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:217:40:type-reference",
+      "id": "src/service.ts:223:40:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 217,
+        "line": 223,
         "column": 40,
-        "sym": "src/service.ts#createPromptManagerTools@82:23"
+        "sym": "src/service.ts#createPromptManagerTools@85:23"
       },
       "to": {
         "sym": "src/engine/edit.ts#ProjectSnapshot@101:18",
@@ -53381,13 +53401,13 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:235:152:type-reference",
+      "id": "src/service.ts:241:152:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/service.ts",
-        "line": 235,
+        "line": 241,
         "column": 152,
-        "sym": "src/service.ts#createPromptManagerTools@82:23"
+        "sym": "src/service.ts#createPromptManagerTools@85:23"
       },
       "to": {
         "sym": null,
