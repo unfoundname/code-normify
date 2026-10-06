@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "c36076874f5e4775e40defa77ee695b3832b145d7c81529601a95cd37d1dc127",
+    "universe_hash": "e8ee4fa2f46f70ba8e783c2e16d057d35e20783ffcb64f1bac2e7bea240f2ada",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1483,
+    "tracked_total": 1484,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 147
+      "scanned_total": 148
     },
     "analysis": {
       "mode": "typescript",
@@ -92,7 +92,7 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "图数据文件自己（ledger/references.json）那一行的 bytes / lines 恒为 null：它们是自指的（产物大小依赖上一次写出的自己），记了就没有不动点、幂等当场失效；其余字段照常登记。",
     "node_states": {
-      "indexed": 1483
+      "indexed": 1484
     },
     "edge_kinds": {
       "anchor": 3,
@@ -160,7 +160,7 @@
       "id": "CONTRIBUTING.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 57756,
+      "bytes": 59034,
       "lines": 170,
       "edge_out": 1,
       "edge_in": 0
@@ -214,8 +214,8 @@
       "id": "docs/DESIGN-code-graph.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 187991,
-      "lines": 1338,
+      "bytes": 192786,
+      "lines": 1339,
       "edge_out": 0,
       "edge_in": 0
     },
@@ -223,8 +223,8 @@
       "id": "docs/HANDOFF-code-graph.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 118764,
-      "lines": 1094,
+      "bytes": 121384,
+      "lines": 1100,
       "edge_out": 0,
       "edge_in": 0
     },
@@ -12132,6 +12132,15 @@
       "state": "indexed",
       "bytes": 2518,
       "lines": 75,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T135732Z-db9ab1b.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 15893,
+      "lines": 468,
       "edge_out": 0,
       "edge_in": 0
     },

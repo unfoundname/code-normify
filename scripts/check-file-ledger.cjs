@@ -213,7 +213,7 @@ const CHECK_HELP_DETAILS = {
   'exempt-too-broad': [
     `· 判据 1（不可豁免）：归一化（去掉 \`*\` \`?\` 与 \`/\`）后没有任何字面量字符 → error。`,
     '  例：`**`、`*`、`**/*`、`?`——豁免先于 accounted 判定，这类模式会把整个宇宙变成 exempt（实测假绿）。',
-    `· 判据 2（不可豁免）：通配字符占比 > ${PATTERN_MAX_WILDCARD_RATIO * 100}% → error。例：\`**/*\`（4/4）。`,
+    `· 判据 2（不可豁免）：通配字符占比 > ${PATTERN_MAX_WILDCARD_RATIO * 100}% → error。例：\`**/*\`（3/4）。`,
     `· 判据 3（可人工确认）：单条模式命中率 > ${PATTERN_MAX_HIT_RATIO * 100}% 台账宇宙 → error，`,
     `  除非该条目显式写了 \`${PATTERN_BROAD_CONFIRM_FIELD}=true\`（人工确认它确实要覆盖过半已跟踪文件）。`,
     '· 被判过宽的模式**不参与匹配**：它本该吞掉的文件会落回 accounted/unowned，绝不静默放过。',

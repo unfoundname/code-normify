@@ -196,10 +196,10 @@ id, lang, state, bytes, lines, edge_out, edge_in
 
 1. **算式**：`lines = text.split('\n').length`，源码位置 = `scripts/generate-reference-graph.cjs` 里的 `lines: self || text === undefined ? null : text.split('\n').length,` 一行（**本批改引实测**：该引文仍是原文，未漂移）。⇒ **末尾带换行的文件会比可见行数多 1**。实测：字符串 `"a\nb\n"` 的 `split('\n').length` = 3（可见 2 行）；`"a\nb"` = 2（可见 2 行）。本文档自身也适用：`docs/DESIGN-code-graph.zh-CN.md` 的 `lines` = 1332，而它文件末尾有换行，因此**可见行数 = 1331**（`Get-Content docs/DESIGN-code-graph.zh-CN.md | Measure-Object -Line` **实测报 1046**——**注意这个 cmdlet 数的是非空行，不是可见行数**：该文档 1331 个可见行里有 285 行是空行，1331 − 285 = 1046。旧版此处写「报 1331」是**把 `Measure-Object -Line` 当成了行数计数器**，本版照实改正；要数可见行用 `(Get-Content <文件>).Count`）。
 
-2. **`lines` 只对「扫描面内」的文件有值**。⇒ `lines !== null` 的条数 = 扫描面文件数减 1（自指的 `ledger/references.json`），其余为 `null`；`bytes` 为 `null` 的**恒为 1 条**（就是自指的 `ledger/references.json`）。**留痕（只作留痕，不是现值）**：本批改引实测 `lines !== null` 计 **79**（= 扫描面 80 个文件 − 自指 1），其余 **1337** 条为 `null`；现值取数 `node -e "console.log(require('./ledger/references.json').files.filter(f=>f.lines===null).length)"`（附录命令索引里也有这条）。
+2. **`lines` 只对「扫描面内」的文件有值**。⇒ `lines !== null` 的条数 = 扫描面文件数减 1（自指的 `ledger/references.json`），其余为 `null`；`bytes` 为 `null` 的节点 = **非索引节点**（`untracked` / `ignored` / `deleted`）**加上自指的 `ledger/references.json` 这一条**（§2.3 第 3 条的豁免）。**今天恰为 1 条**只是因为「非索引节点」当前一个都没有——全仓节点都是 `indexed`（`meta.node_states` 可自证），**不是不变量** —— 本行历史上写作"恒为 1 条"，与本文档"非索引节点为 null"的契约冲突（`ignored` / `untracked` / `deleted` 节点同样写 `null`）。**（本批按实测补精确，不改上面这句的结论）** 上面这条等式**只管 `bytes`**：`lines` 还有一个 null 成因——**不在扫描面内的索引节点也不解析**（本节第 2 条前半句），今天 `lines === null` 是 **1,337 条** = 自指产物 1 条 + 扫描面外的索引节点 1,336 条，**远不止 1 条**；这也是「今天恰为 1 条」只能挂在 `bytes` 上的原因。两栏取数：`node -e "const f=require('./ledger/references.json').files;console.log('bytes',f.filter(x=>x.bytes===null).length,'lines',f.filter(x=>x.lines===null).length)"`。**留痕（只作留痕，不是现值）**：本批改引实测 `lines !== null` 计 **79**（= 扫描面 80 个文件 − 自指 1），其余 **1337** 条为 `null`；现值取数 `node -e "console.log(require('./ledger/references.json').files.filter(f=>f.lines===null).length)"`（附录命令索引里也有这条）。
    ⇒ **`lines: null` 的含义是「这个文件没被解析过」，不是「0 行」，也不是「未知内容」。** 想知道扫描面外文件的行数，`git cat-file blob :<path>` 自己数，或把它加进扫描面（§8.2）。
 
-3. **自指例外**：`ledger/references.json` 自己的那一行 `bytes` 与 `lines` **恒为 `null`**（`meta.self_reference`，以及 `scripts/generate-reference-graph.cjs` 里那段以 `图数据文件自己（` 开头、带 `记了就没有不动点、幂等当场失效` 一语的说明）。理由是可证的：记了它，产物内容就依赖「上一次写出的自己有多大」，写出后重算必然得到不同的值——那是没有不动点的自指，会当场破坏幂等。**只豁免这两个派生量**；`id` / `lang` / `state` / `edge_*` 一律照记。
+3. **自指例外**：自指条目（本产物自身的 `bytes`/`lines`）在产物里**固定写 `null`** —— 这是**处置选择**，不是"没有不动点"：实测把这两个量迭代写回，**第 3 次就收敛**（不动点存在）。本行历史上写的"必然得到不同的值"是错的。（本批复算的收敛链：产物 1,506,027 B ⇒ 把自身 `bytes` 写回后重排得 1,506,031 B〔变了〕⇒ 再写回 1,506,031 得 1,506,031 B〔`stable=true`〕；把"首次写出、自身记 `null`"算作第 1 次写出，则收敛发生在**第 3 次写出**，等价于写回循环第 2 轮。收敛的**前提**是产物里除这两个量之外的一切都不依赖自身大小 —— 这一点成立，所以不动点唯一。**注意**：`meta.self_reference` 的字符串与 `scripts/generate-reference-graph.cjs` 里那段同源说明**仍写着"记了就没有不动点、幂等当场失效"的旧理由**，本批**只改文档、未动生成器与产物**，那两处措辞与本节新结论不一致，属待改项。）**为什么仍然固定写 `null`**：不动点要靠**迭代写回**才拿得到，而生成器是"从索引一次算出、再写盘"的单遍实现 —— 要让产物描述自己，就得先知道自己的最终大小，等于把写盘变成迭代；本批按"幂等 = 一次算、一次写、连跑两次逐字节相同"的口径，选择继续写 `null`。**只豁免这两个派生量**；`id` / `lang` / `state` / `edge_*` 一律照记。
 
 ### 2.4 降级四态，**以及产物里没有 `degradation` 字段**
 
@@ -952,7 +952,13 @@ src/index.ts  <- <位置串>  <位置串>  <位置串> …（共 29 次；三处
 
 ```powershell
 # ① 行号残留：应为 2（本节末那处显式标注的演示 + §1.2 里 `ledger/exempt.gitignore` 那处真引用）
-Select-String -LiteralPath docs/HANDOFF-code-graph.zh-CN.md -Pattern '[\w./-]+\.(cjs|mjs|js|ts|tsx|json|md|yml|yaml|gitignore):[0-9]+' -AllMatches |
+#    路径段用 [\w./-]*（**零个或多个**，不是 `+`）：`+` 要求点号前至少有一个字符，
+#    于是**根级点文件**（直接以 `.` 开头的那类路径）永远匹配不到 —— 自检口径比结论窄。
+#    本批复核实测（探针 = 三个路径各补一个行号）：老的 `[\w./-]+` 版对 `ledger/exempt.gitignore`
+#    给 True、对根级的 `.gitignore` 给 **False**、对 `./.gitignore` 给 True；换成 `[\w./-]*`
+#    后三者都是 True，而本文档的残留数仍是 2。**本注释刻意不写出「路径:行号」的字面量**
+#    ——写出来会让自己也命中，把残留数从 2 顶上去，自检就失去意义。
+Select-String -LiteralPath docs/HANDOFF-code-graph.zh-CN.md -Pattern '[\w./-]*\.(cjs|mjs|js|ts|tsx|json|md|yml|yaml|gitignore):[0-9]+' -AllMatches |
   ForEach-Object { "{0}: {1}" -f $_.LineNumber, $_.Line.Trim() }
 
 # ② 逐条核对引文锚：把文档里反引号引的片段拿去 grep，命中 0 次 ⇒ 引文已被改写，必须回改
