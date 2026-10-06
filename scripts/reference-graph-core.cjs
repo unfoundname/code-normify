@@ -1267,7 +1267,7 @@ function createReaderContext(options) {
  * `import { foo } from './x.js'` 这个节点，却**回答不了 `foo` 指向 `x.ts` 里的哪个声明**。
  * 下面这些问句只有类型检查器能回答，本模块因此逐个用到它们（注释里标明用的是哪个 API）：
  *   · `export * from './x.js'` 的再导出链 → `checker.getExportsOfModule(moduleSymbol)`
- *     （`src/index.ts:4` 就是这种形状，它自己一个声明都没有）；
+ *     （`src/index.ts` 里那行 `export * from './engine/types.js';` 就是这种形状，它自己一个声明都没有）；
  *   · 同名声明区分（`store.ts` 与 `edit.ts` 各有一个同名声明）→ 符号**身份**而不是名字字符串
  *     （`checker.getSymbolAtLocation` 拿到的 Symbol 对象，再映射到声明节点）；
  *   · import / 再导出别名穿透 → `checker.getAliasedSymbol(symbol)`；

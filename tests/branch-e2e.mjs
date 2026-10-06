@@ -717,7 +717,7 @@ console.log('beta standalone PASS');
     assert.ok(!plannedDirCase.warnings.some(warning => warning.code === 'structure/planned-source-missing'), '目录不得记成 planned-source-missing');
 
     // ---- 四态之外的第五个观测点：证据层 error 非空时，分支四入口实际推导出多少交付单元 ----
-    // 背景（设计文档 5.6）：`src/engine/branches.ts:257` 与 `:504` 在 ctx.errors 非空时直接清空 units。
+    // 背景（设计文档 5.6）：`src/engine/branches.ts` 里 `if (errors.length > 0) return {` 与 `if (ctx.errors.length || selectionErrors.length || leaves.length === 0) return {` 两处在 ctx.errors 非空时直接清空 units。
     // 两条通路形态不同，必须分别断言：suggest 在生成前短路（plan 为 null，无任何候选）；
     // validate/put/packet 走 validateWithContext，plan 原样保留、但推导出的 units 为空。
     // 这里锁死「实际值」，将来任何一侧改语义（例如只为与本次计划无关的既存错误放行）都会在此断言处变红。

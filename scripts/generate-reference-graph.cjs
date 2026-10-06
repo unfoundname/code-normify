@@ -50,7 +50,7 @@
  * 台账允许 `meta.generated_at`（那是**人写**字段，生成器只保留），图是**纯机器产物**，没有可写的人字段。
  *
  * 确定性排序：节点按 id、边按 (from.file, from.line, from.column, kind, id)，一律 **UTF-8 字节序**
- * （`Buffer.compare`），**不用** `localeCompare`（`src/engine/manifest.ts:11` 是本仓的已知反例）。
+ * （`Buffer.compare`），**不用** `localeCompare`（`src/engine/manifest.ts` 里 `snapshot.files` 的 `a.localeCompare(b)` 排序是本仓的已知反例）。
  *
  * 扫描面（产边的文件）：已跟踪 + 文本扩展名 + 不在 `EXCLUDED_PREFIXES` 内。
  *   · 排除 `examples/`：目标工程示例产物，占工作区行数的绝大部分且几乎不改（设计稿 P9 的取舍）；

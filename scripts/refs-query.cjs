@@ -1069,7 +1069,7 @@ function buildImpactReport(opts, target, loaded) {
         file: f.file,
         // via 展示的是「把该文件牵进闭包的那组边」的**位置路径**（from_file:line:column）。同一个位置上常常
         // 同时挂着一条文件级边和 N 条符号级边（一条 `export … from` / `import …` 带 N 个符号 ⇒ N 条符号边，
-        // 它们与那条文件级边同行同列），原样打印会把**同一条路径重复 N 遍**——实测 src/index.ts:4:15 指向
+        // 它们与那条文件级边同行同列），原样打印会把**同一条路径重复 N 遍**——实测 `src/index.ts` 里那行 `export * from './engine/types.js';` 指向
         // src/engine/types.ts 的边会渲染成一串一模一样的字符串（**条数是活值 —— 取数、不复述**：现值 =
         // `node -e "const g=require('./ledger/references.json');console.log(g.edges.filter(e=>e.from.file==='src/index.ts'&&e.to.file==='src/engine/types.ts').length, g.symbol_edges.filter(e=>e.from.file==='src/index.ts'&&e.to.file==='src/engine/types.ts').length)"`
         // ⇒ 依次给出「文件级条数 / 符号级条数」；口径 = 图产物里同一对文件的 `edges[]` / `symbol_edges[]`；

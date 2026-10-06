@@ -807,7 +807,7 @@ function createContext(opts) {
  * 关键约定（与 scripts/check-lib-sync.cjs、scripts/check-file-ledger.cjs 同构）：**显式传了 --root 就绝不回退**。
  * 返回绝对路径字符串，或 { error } 标记对象 —— 后者必须由 createContext 变成 bootstrapError，
  * 否则「--root 打错一个字符」会静默退回本脚本所在仓库继续扫描：扫了另一个仓库还报绿，
- * 正是本脚本第 20-32 行那条「宁可红也不要假绿」不变量要防的假绿。
+ * 正是本脚本开头那条「读不到就必须红」（第一优先级不变量，即「宁可红也不要假绿」）要防的假绿。
  * 注意「存在但不是仓库根」是更隐蔽的一半：git 会向上发现父仓库，于是
  * `--root <仓库子目录>` 会静默把扫描基准落到父仓库上，这由下面的 assertGitRoot 拦。
  */

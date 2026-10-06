@@ -9,7 +9,7 @@
  * 为什么需要它（历史缺口，实测）：把一个已跟踪、且没有任何模块声明的文件放进仓库，
  * `validateProject` 对它**零提及**——引擎只回答「哪个模块漂移了」，从不回答
  * 「哪些文件没人管」。唯一近似的 normify_sync「新文件建议」只看**未跟踪**文件，
- * 还用 IGNORE_DIR 主动排除 lib/（src/tools.ts:988-993），而 lib/ 的**已跟踪**文件数是活值
+ * 还用 IGNORE_DIR 主动排除 lib/（`src/tools.ts` 里的 `const IGNORE_DIR = /^(lib|dist|build|out|node_modules|vendor|coverage|\.git|_tmp)\//;`），而 lib/ 的**已跟踪**文件数是活值
  * （**取数、不复述**：现值 = `(git ls-files 'lib/' | Measure-Object).Count`，口径 = git 索引里的
  * `lib/` 条目数，与本门禁的判定基准同一份索引；**留痕：本批开工版 `4e0170f` 实测 84 个，只作留痕、
  * 不是现值**），
@@ -123,7 +123,7 @@ const foldCase = core.foldCase;
 const normalizeEol = core.normalizeEol;
 const execGit = core.execGit;
 
-/** 数据目录名前缀（与 src/engine/store.ts:14 的 PROJECT_PREFIX 一致）。 */
+/** 数据目录名前缀（与 `src/engine/store.ts` 的 `export const PROJECT_PREFIX = 'normify-';` 一致）。 */
 const PROJECT_PREFIX = 'normify-';
 
 /**
@@ -718,7 +718,7 @@ function reportLedgerIndexDrift(ctx, message, extra) {
 // ---------------------------------------------------------------------------
 
 /**
- * 取 git 索引里的文件原始字节（`git show :<rel>`，与 scripts/check-lib-sync.cjs:226-233 同构）。
+ * 取 git 索引里的文件原始字节（`git show :<rel>`，与 `scripts/check-lib-sync.cjs` 的 `function execGitShowBytes(root, rel) {` 同构）。
  * 返回 { ok: true, text } 或 { ok: false, message }（不在索引里 / git 报错都归到 ok:false，不猜原因）。
  */
 function readIndexBlob(root, rel) {
@@ -1125,7 +1125,7 @@ function extractFrontmatter(text) {
 /**
  * 扫描所有项目目录里的模块文件，抽取 source.path 声明。
  * 模块文件 = 索引里位于 `<projectDir>/modules/` 下、以 `.md` 结尾的文件
- * （与 src/engine/store.ts:84-96 的发现规则同构；差异见台账 meta.known_divergences）。
+ * （与 `src/engine/store.ts` 里 `else if (e.name.endsWith('.md'))` 的发现规则同构；差异见台账 meta.known_divergences）。
  */
 function scanDeclarations(ctx, yaml) {
   const moduleRels = ctx.tracked.filter((rel) => {
@@ -1172,7 +1172,7 @@ function scanDeclarations(ctx, yaml) {
     if (!Array.isArray(source)) {
       reportGuardUnavailable(ctx, `模块的 source 不是数组：${rel}`, {
         target: rel,
-        hint: 'source 必须是 [{path, line?, end_line?}] 数组（src/engine/types.ts:8-12）。',
+        hint: 'source 必须是 [{path, line?, end_line?}] 数组（`src/engine/types.ts` 的 `export interface SourceRef {`）。',
       });
       continue;
     }
@@ -1196,7 +1196,7 @@ function scanDeclarations(ctx, yaml) {
 
 /**
  * 一个声明路径的落地状态（四态判定的核心）：
- *   syntax-ok      语法合法（无盘符/反斜杠/`..`/`.`/空段/末尾斜杠；与 src/workspace.ts:11-15 同构）
+ *   syntax-ok      语法合法（无盘符/反斜杠/`..`/`.`/空段/末尾斜杠；与 `src/workspace.ts` 的 `function relativePath(value: string): string {` 同构）
  *   onDisk         磁盘上 lstat 到的类型：'file' | 'dir' | 'other' | 'missing'
  *   tracked        该路径是否在 git 索引里（台账宇宙的「存在」基准）
  *   trackedRel     命中的索引条目（大小写不一致时给出真实条目，供报告回显）

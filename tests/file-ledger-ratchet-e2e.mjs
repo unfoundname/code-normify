@@ -14,7 +14,7 @@
  *   4. 负例(iii)：豁免清单里写一条 `**` → 门禁 **exit 1**（报 exempt-too-broad-no-literal，回归）；
  *   5. 负例(iv)：手工把一条**在索引里**的路径写进 accounted + `git add` → 门禁 **exit 1**
  *      （报 accounted-added-vs-head），生成器 --check 也 **exit 1**；
- *   6. 真实事故复现：`.gitignore` 里的 `*review*.md`（本仓 examples/bilibili-pi-full/.gitignore:18 真实规则）
+ *   6. 真实事故复现：`.gitignore` 里的 `*review*.md`（本仓 `examples/bilibili-pi-full/.gitignore` 里的真实规则）
  *      在 core.ignoreCase=true 下命中 preview 系文件 → 门禁 **exit 1**，同时报出
  *      ① 交集（豁免清单放行的路径被真 .gitignore 覆盖）与 ② 大小写折叠误伤；
  *   7. 正向例：合法**删掉**一条已可移除（已命中豁免）的 accounted 条目 + `git add` → **exit 0**（只减不增）；
@@ -311,7 +311,7 @@ function main() {
   resetFixture();
 
   // ---- 6. 真实事故复现：`*review*.md` 在 core.ignoreCase=true 下命中 preview 系文件 ----
-  // 现场（本仓 examples/bilibili-pi-full/.gitignore:18）就是这样一条规则，误伤了 modules/ 下的 preview 文件。
+  // 现场（本仓 `examples/bilibili-pi-full/.gitignore` 的 `*review*.md`）就是这样一条规则，误伤了 modules/ 下的 preview 文件。
   // 这里只 `git add` 不提交：探针进了索引就算「已跟踪」，.gitignore 规则读的是工作区那份（check-ignore 语义），
   // 用例跑完 resetFixture() 即可完全复原，不把扰动留给后面的用例。
   writeFileInFix(ACCIDENT_LOWER, '# e2e 事故复现：preview 含子串 review，被 *review*.md 命中\n');
