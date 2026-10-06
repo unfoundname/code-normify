@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "10390ec92f4c9b9fe31f81c2ec0846ce8bfcce0107ee31a7b27e108c95e5d83e",
+    "universe_hash": "2aa64dbdacf05d88f8fe9534ccdc2d9e8cbf6879944240b215dcaa5d37c784f5",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1480,
+    "tracked_total": 1481,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 144
+      "scanned_total": 145
     },
     "analysis": {
       "mode": "typescript",
@@ -92,7 +92,7 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "图数据文件自己（ledger/references.json）那一行的 bytes / lines 恒为 null：它们是自指的（产物大小依赖上一次写出的自己），记了就没有不动点、幂等当场失效；其余字段照常登记。",
     "node_states": {
-      "indexed": 1480
+      "indexed": 1481
     },
     "edge_kinds": {
       "anchor": 3,
@@ -124,8 +124,8 @@
       "id": ".github/workflows/ci.yml",
       "lang": "yaml",
       "state": "indexed",
-      "bytes": 32157,
-      "lines": 296,
+      "bytes": 32452,
+      "lines": 298,
       "edge_out": 17,
       "edge_in": 0
     },
@@ -214,8 +214,8 @@
       "id": "docs/DESIGN-code-graph.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 181035,
-      "lines": 1332,
+      "bytes": 183283,
+      "lines": 1336,
       "edge_out": 0,
       "edge_in": 0
     },
@@ -223,7 +223,7 @@
       "id": "docs/HANDOFF-code-graph.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 118008,
+      "bytes": 118124,
       "lines": 1095,
       "edge_out": 0,
       "edge_in": 0
@@ -12109,6 +12109,15 @@
       "edge_in": 0
     },
     {
+      "id": "ledger/change-log/20261006T120043Z-ad86f86.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 8009,
+      "lines": 235,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
       "id": "ledger/change-log/README.md",
       "lang": "md",
       "state": "indexed",
@@ -13685,11 +13694,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:233:9:ci-target:scripts[\"check:changes\"]→check:changes",
+      "id": ".github/workflows/ci.yml:235:9:ci-target:scripts[\"check:changes\"]→check:changes",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 233,
+        "line": 235,
         "column": 9
       },
       "to": {
@@ -13707,11 +13716,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:275:9:ci-target:scripts[\"check:impact\"]→check:impact",
+      "id": ".github/workflows/ci.yml:277:9:ci-target:scripts[\"check:impact\"]→check:impact",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 275,
+        "line": 277,
         "column": 9
       },
       "to": {
@@ -13729,11 +13738,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:288:9:ci-target:scripts[\"test:render\"]→test:render",
+      "id": ".github/workflows/ci.yml:290:9:ci-target:scripts[\"test:render\"]→test:render",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 288,
+        "line": 290,
         "column": 9
       },
       "to": {
@@ -13751,11 +13760,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:292:24:ci-target:lib/index.js",
+      "id": ".github/workflows/ci.yml:294:24:ci-target:lib/index.js",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 292,
+        "line": 294,
         "column": 24
       },
       "to": {
@@ -13773,11 +13782,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:293:24:ci-target:lib/tools.js",
+      "id": ".github/workflows/ci.yml:295:24:ci-target:lib/tools.js",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 293,
+        "line": 295,
         "column": 24
       },
       "to": {
@@ -13795,11 +13804,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:294:24:ci-target:lib/mcp.js",
+      "id": ".github/workflows/ci.yml:296:24:ci-target:lib/mcp.js",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 294,
+        "line": 296,
         "column": 24
       },
       "to": {

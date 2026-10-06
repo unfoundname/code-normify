@@ -225,7 +225,9 @@ jobs:
         # **本批不做**（设计稿 §10 分期，产物里 omitted 字段自证）：符号级声明差与 type-reference 边（增量 3）、
         # 传递闭包与查询接口（增量 5）、cas-write 观测点（schema 用 cas_digest: const null 钉死，不假装支持）。
         # 「每次保存」不在观测点范围内（要常驻文件监听）——观测点 = 每次提交，这条边界是用户拍板确认的。
-        # 快照（2026-10-05）：已落盘 2 条记录。其中 ed404e5（一次**真实的删除提交**：删掉一个仍被 README 链接的文件）
+        # 改动记录：条数【不在此复述】（当时快照：2026-10-05 时点为 2 条）；
+        # 现值取数：Get-ChildItem ledger/change-log/*.json | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json } | Where-Object { $_.kind -eq 'commit' } | Measure-Object | Select-Object -ExpandProperty Count
+        # 其中 ed404e5（一次**真实的删除提交**：删掉一个仍被 README 链接的文件）
         # 给出 1 条 dangling-target / needs_change=true——这正是「删了某个东西之后谁还在引用它」的机器答案；
         # 另一条 10766d1（台账语义校准 v1→v2）给出文件 +2、边 +24/−20、受影响引用方 44 条。
         # **新增字段 / 改降级判据 / 改记录目录时必须同步改本注释与 CONTRIBUTING.md**。

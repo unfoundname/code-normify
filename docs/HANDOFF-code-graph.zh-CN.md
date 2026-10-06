@@ -336,7 +336,7 @@ id, kind, from, to, cross_file, specifier, resolved, status, reason, type_only
 
 ## 3. 查询接口
 
-**入口**：`scripts/refs-query.cjs`（**1,720 行**——`files[].lines` 口径的实测值，即索引 blob 的 `text.split('\n').length`；**本批改引实测**：**旧值 1,384 已过期**，那是 `56ea956` 时的值，`e166e94`（1,384 → 1,687）与 `5e78029`（1,687 → 1,720）两批改动把它推到 1,720。取数命令 `node -e "console.log(require('./ledger/references.json').files.find(f=>f.id==='scripts/refs-query.cjs').lines)"`；字节数见 `files[].bytes`，可用 `git cat-file -s :scripts/refs-query.cjs` 复测）。**不在门禁链上**——查询结果再可疑也不拦提交（`CONTRIBUTING.md` 里写着「**不在 `npm run check` 链里**」的那一处）。
+**入口**：`scripts/refs-query.cjs`（当时写作时该脚本 1,720 行；**行数不复述**，现值取数：`(Get-Content scripts/refs-query.cjs).Count`。**本批改引实测（留痕）**：另一条口径 = `files[].lines`（即索引 blob 的 `text.split('\n').length`），取数命令 `node -e "console.log(require('./ledger/references.json').files.find(f=>f.id==='scripts/refs-query.cjs').lines)"`；**旧值 1,384 已过期**，那是 `56ea956` 时的值，`e166e94`（1,384 → 1,687）与 `5e78029`（1,687 → 1,720）两批改动把它推到 1,720。字节数见 `files[].bytes`，可用 `git cat-file -s :scripts/refs-query.cjs` 复测）。**不在门禁链上**——查询结果再可疑也不拦提交（`CONTRIBUTING.md` 里写着「**不在 `npm run check` 链里**」的那一处）。
 
 **三条子命令**（以 `node scripts/refs-query.cjs --help` 实测为准）：`who-references` / `impact` / `locals`。
 

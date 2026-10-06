@@ -4,6 +4,10 @@
 > 方向依据（用户原话，逐字引用）：①「其实我们只需要知道删了某个夹具后相互之间的引用，引用和被引用之间的关系就好了」；②「最小的变量也要，就是每做一个改动都有」；③ 观测点确认为「每次提交 / 每次 CAS 写入」（**不是**每次保存）。
 > 取证基线：`git status --porcelain` 无未跟踪（`??`）残留；`git config --get core.ignoreCase` → `true`；`git ls-files` 共 1,399 条；`package.json` 版本 0.8.0；仓库自带 TypeScript 5.9.3。
 > 数字口径：标「实测」的数字一律给出命令与原始输出（附录 A）；**未实测的一律标「待实测」并写出测量方法**，不写推测值。凡标「外推」的数字都由两个实测值相乘/相加得到，并写明是哪两个。**「实测」是带时点的快照，不是恒真式**——`git ls-files` 条数、各文件行数/字节数都会随后续提交变化，复核时请按同一条命令重测；历次复核：1,399（原稿）→ **1,402**（补版本字面量门禁轮）→ **1,412**（本批：增量 2 的改动记录一侧落地，新增 5 个文件），各文件的行数/字节数见 §7.6 数据行（**那是本批快照，不是现值**；现值请按同一条命令重测）。
+> **引用约定**：本文档引用代码位置时，**行号是写作时点的**，会随改动漂移。读的时候**不要信行号**——
+> 请用行内给出的**引文片段**去 `grep` 定位（本文档尽量同时给"路径 + 引文"）。
+> 若你发现某处行号已漂移，**改动本身不必迁就本文档**；请就地补一句「（写作时为 `旧坐标`，已漂移）」，
+> 这样后来人能看到这条引用曾经指向哪里。
 > 边界：本文档只写设计与验收标准。**不新增 MCP 工具契约**；图与改动记录的生成器放在 `scripts/`（与增量 1 一致），因此**不改 `src/` 行为、不需要重建 `lib/`**；门禁是否新增由第 11 节 P1 拍板。
 
 ---
@@ -22,9 +26,9 @@
 
 | # | 问句 | 今天能否回答 | 依据（实测） |
 | --- | --- | --- | --- |
-| **Q1** | **谁引用了它？**（直接入边） | ⚠ 部分（仅文件级、且不持久化） | `scripts/check-references.cjs:2184-2209` 用 `ts.createSourceFile` 逐文件取 import/export-from/require/动态 import 说明符，能回答"哪些文件 import 了这个文件"，但**只用于判悬空、不建图、不落盘**，每次都要全仓重扫；`src/engine/types.ts:113-119` 的 `ChangeModules` 只有模块 id 级，无符号 |
+| **Q1** | **谁引用了它？**（直接入边） | ⚠ 部分（仅文件级、且不持久化） | `scripts/reference-graph-core.cjs` 的 `collectSpecifiersWithKinds`（`ts.createSourceFile` + 语法树遍历，逐文件取 import/export-from/require/动态 import 说明符；写作时为 `scripts/check-references.cjs:2184-2209`，已漂移——该坐标今天是 `reportUntrackedReference` 与 `checkUntrackedMarkdownLinks` 两段检查，解析器已抽到共享内核）能回答"哪些文件 import 了这个文件"，但**只用于判悬空、不建图、不落盘**，每次都要全仓重扫；`src/engine/types.ts:113-119` 的 `ChangeModules` 只有模块 id 级，无符号 |
 | **Q2** | **它引用了谁？**（直接出边） | ⚠ 部分（同上） | 同上；另有一条**声明式**近似：模块的 `deps`（`src/engine/reference.ts` 的 `DEPS_REFERENCE`）是人工在 `modules/*.md` 里写的箭头，不是从源码解析出来的引用 |
-| **Q3** | **删了它之后哪些引用会断？**（直接 + 传递闭包） | ❌ 不能 | 现有门禁只做**存在性**判定：`dangling-reference` / `dangling-module-specifier` 在"目标根本不存在"时报 error（`scripts/check-references.cjs:84-94`）。**存在性 ≠ 影响传播**：它不会告诉你"删掉 `src/execution.ts` 会波及哪 12 个文件、其中哪些是类型引用"，也没有传递闭包查询 |
+| **Q3** | **删了它之后哪些引用会断？**（直接 + 传递闭包） | ❌ 不能 | 现有门禁只做**存在性**判定：`dangling-reference` / `dangling-module-specifier` 在"目标根本不存在"时报 error（`scripts/check-references.cjs` 的 `CHECK_TITLES`，实测 `:116`；写作时为 `scripts/check-references.cjs:84-94`，已漂移）。**存在性 ≠ 影响传播**：它不会告诉你"删掉 `src/execution.ts` 会波及哪 12 个文件、其中哪些是类型引用"，也没有传递闭包查询 |
 | **Q4** | **这次改动动了哪些声明与边？** | ❌ 不能 | `ChangeData`（`src/engine/types.ts:121-137`）只有 `id`/`title`/`intent`/`modules.create|modify|delete`/`api_add|api_remove`/`revision.before|after`，**无文件路径、无符号、无边**；且**本仓库当前不存在 `changes/` 目录**（实测 `git ls-files` 无任何 `changes/` 条目），所以连"变更意图"都还没有落点 |
 | **Q5** | **这些影响处理了没有？** | ❌ 不能 | 全仓没有任何"引用影响处理状态"的概念；`ChangeData.status`（`ChangeStatus`）是**变更**的状态，不是**某条受影响引用**的状态 |
 
@@ -37,7 +41,7 @@
 | 模块 → 源码路径 | `src/engine/types.ts:8-12` `SourceRef{path,line?,end_line?}`；`types.ts:146` `Module.source: SourceRef[]` | 模块 → 路径（可选行区间） | 只能给"这个文件属于哪个模块"，**没有**符号 |
 | 整文件指纹 | `src/engine/store.ts` 的 `fingerprintOf`；`types.ts:149` `Module.fingerprint` | **模块级**：按 path 升序去重后哈希文件字节 → 单个 SHA-256 | 只回答"这个模块的源码变了"，**不回答哪里变了、谁被波及** |
 | L2 证据诊断 | `src/engine/validate.ts:299,306,321,328,334,343,346,351`（8 个 `evidence/*` code） | 路径可用性 / 根无 source / 不是普通文件 / 缺失 / 指纹 pending / 指纹不可算 / 指纹漂移 / 跳过校验 | 全部是"**现在**是否漂移"，**没有引用维度、没有历史维度** |
-| 相对说明符解析 | `scripts/check-references.cjs` 的 `collectSpecifiersWithTypescript`(2184) / `collectSpecifiersWithRegex`(2274) / `resolveRelativeSpecifier`(2336) | **单文件语法树** + 相对路径解析 | 能列边，但**不解析符号**：`import { foo }` 里的 `foo` 到底指哪个声明，它不知道 |
+| 相对说明符解析 | `scripts/reference-graph-core.cjs` 的 `collectSpecifiersWithTypescript` / `collectSpecifiersWithRegex` / `resolveRelativeSpecifier`（写作时为 `scripts/check-references.cjs` 的 `(2184)` / `(2274)` / `(2336)`，已漂移——解析器已抽到共享内核） | **单文件语法树** + 相对路径解析 | 能列边，但**不解析符号**：`import { foo }` 里的 `foo` 到底指哪个声明，它不知道 |
 | 文件级台账 | `scripts/check-file-ledger.cjs`（2003 行）+ 共享内核 `scripts/file-ledger-core.cjs`（462 行）+ `ledger/file-ledger.json`（`schema_version: 2`，168 行 / 10131 B）+ 独立豁免清单 `ledger/exempt.gitignore`（56 行 / 19 条模式） | **文件级**归属状态 | 回答"这个文件有没有人管"，与引用关系无关 |
 | 声明式依赖箭头 | `src/engine/reference.ts` 的 `DEPS_REFERENCE`；`DEP_KINDS`（`src/engine/types.ts`） | 模块/API 级，人工在 `modules/*.md` 写 | 是**设计意图**，不是**代码事实**；两者不能互相替代 |
 
@@ -535,7 +539,7 @@
 
 ### 3.1 为什么必须 `ts.createProgram`（不能只遍历单文件 AST）
 
-现有门禁的解析器用 `ts.createSourceFile`（`scripts/check-references.cjs:2185`）——**单文件**语法树，没有类型检查器，因此拿不到符号绑定。后果：
+现有门禁的解析器用 `ts.createSourceFile`（`scripts/reference-graph-core.cjs` 的 `collectSpecifiersWithKinds` 内，实测 `:817`；写作时为 `scripts/check-references.cjs:2185`，已漂移，该坐标今天是 `reportUntrackedReference`）——**单文件**语法树，没有类型检查器，因此拿不到符号绑定。后果：
 
 - `import { foo } from './x.js'` 里的 `foo` 在语法树上只是一个 `ImportSpecifier` 节点，**它指向 `x.ts` 里哪个声明，语法树不回答**；
 - 同名符号（`src/engine/store.ts` 与 `src/engine/edit.ts` 各有一个 `load`）无法区分；
@@ -563,7 +567,7 @@
 
 | 边 kind | 枚举方式 | 目标端解析 |
 | --- | --- | --- |
-| `import` / `export-from` / `require` / `dynamic-import` | 语法树节点（沿用 `check-references.cjs:2200-2205` 的判定：`ImportDeclaration` / 带说明符的 `ExportDeclaration` / `ImportKeyword` 调用 / 裸 `require` 调用） | 先按 3.5 的解析器定位目标文件，再对每个 `ImportSpecifier` 用 `checker.getSymbolAtLocation` + `getAliasedSymbol` 定位目标声明 |
+| `import` / `export-from` / `require` / `dynamic-import` | 语法树节点（沿用 `scripts/reference-graph-core.cjs` 的 `collectSpecifiersWithKinds` 判定（实测 `:835-848`；写作时为 `check-references.cjs:2200-2205`，已漂移，该坐标今天是 `checkUntrackedMarkdownLinks` 的 `forEachMarkdownLink` 循环）：`ImportDeclaration` / 带说明符的 `ExportDeclaration` / `ImportKeyword` 调用 / 裸 `require` 调用） | 先按 3.5 的解析器定位目标文件，再对每个 `ImportSpecifier` 用 `checker.getSymbolAtLocation` + `getAliasedSymbol` 定位目标声明 |
 | `type-reference` | `TypeReferenceNode`（`src/` 实测 805 个） | 同上；`type_only: true` |
 | `markdown-link` / `anchor` | 沿用 `check-references.cjs` 的 `forEachMarkdownLink`(1134) 与 `extractHeadingAnchors`(2694) | 目标文件 + `githubSlug`(2664) 或显式 HTML `id`/`name` |
 | `package-field` | 沿用 `collectPackageFieldTargets`(1390) | 文件/目录存在性 |
@@ -575,11 +579,11 @@
 | 后缀 | 处理 | 产出粒度 | 依据 |
 | --- | --- | --- | --- |
 | `.ts` / `.tsx` / `.mts` / `.cts` | `createProgram` 全精度 | 文件 + 声明 + 边 | 3.1 |
-| `.mjs` / `.cjs` / `.js` / `.jsx` | 归入同一个 `createProgram`（`allowJs`）或用 `createSourceFile` + `scriptKindFor` 退化为文件级 | **文件级**（不保证符号级） | `check-references.cjs:2166-2173` 已有 `scriptKindFor` 映射 |
+| `.mjs` / `.cjs` / `.js` / `.jsx` | 归入同一个 `createProgram`（`allowJs`）或用 `createSourceFile` + `scriptKindFor` 退化为文件级 | **文件级**（不保证符号级） | `scripts/reference-graph-core.cjs` 的 `scriptKindFor`（后缀 → `ts.ScriptKind`，实测 `:797`；写作时为 `check-references.cjs:2166-2173`，已漂移，该坐标今天是 `checkUntrackedWorkflowRefs` 的循环）已有映射 |
 | `.md` | 只解析 Markdown 链接、图片、引用式定义、标题锚点 | 文件级 + 锚点 | `forEachMarkdownLink`(1134)、`extractHeadingAnchors`(2694) |
 | `.json` | 只解析 `package.json` 的 `main`/`types`/`exports`/`bin`/`files`；其它 `.json` 只记文件节点 | 文件级 | `collectPackageFieldTargets`(1390)、`collectExportStrings`(1405) |
 | `.yml` / `.yaml` | 只解析 workflow 的 `run:` 里的 `node <路径>` 与 `npm run <script>` | 文件级 | `collectWorkflowRunLines`(1515) |
-| `.toml` 及其它 | 只记文件节点（参与 L0 文件表与 `edge_in`/`edge_out` 计数），不产边 | 文件级 | `TEXT_EXTENSIONS`（`check-references.cjs:73`）当前含 `.toml` |
+| `.toml` 及其它 | 只记文件节点（参与 L0 文件表与 `edge_in`/`edge_out` 计数），不产边 | 文件级 | `TEXT_EXTENSIONS`（`scripts/check-references.cjs`，实测 `:105`；写作时为 `check-references.cjs:73`，已漂移）当前含 `.toml` |
 
 **退化必须显式标注**：每条边的 `status` 之外，`meta` 里记录每个后缀降到了哪一级；文档与查询输出**不得**把"文件级"答案说成"符号级"（见 5.5 的降级契约）。
 
@@ -863,7 +867,7 @@
 
 | 既有 code | 位置 | 覆盖什么 | 与图的关系 |
 | --- | --- | --- | --- |
-| `dangling-reference` | `scripts/check-references.cjs` `CHECK_TITLES`（84-94） | Markdown / `package.json` 字段 / CI `run:` 指向不存在的文件 | 图里 `kind ∈ {markdown-link, package-field, ci-target}` 的边，其 `status: "dangling"` 与之一一对应 |
+| `dangling-reference` | `scripts/check-references.cjs` `CHECK_TITLES`（实测 `:116`；写作时为 `84-94`，已漂移） | Markdown / `package.json` 字段 / CI `run:` 指向不存在的文件 | 图里 `kind ∈ {markdown-link, package-field, ci-target}` 的边，其 `status: "dangling"` 与之一一对应 |
 | `dangling-module-specifier` | 同上 | 相对 import/export/`import()`/`require()` 指向磁盘上根本不存在的文件 | 图里 `kind ∈ {import, export-from, require, dynamic-import}` 的边 |
 | `dead-anchor` | 同上 | Markdown 相对链接的 `#fragment` 落不到目标文件真实标题 | 图里 `kind: "anchor"` 的边 |
 | `untracked-reference` | 同上 | 引用了"磁盘上有、索引里没有"的路径 | 图里的边的目标若被忽略/未跟踪，必须与它口径一致 |
@@ -890,7 +894,7 @@
 - 选项 (a)：作为 `scripts/check-references.cjs` 的一个新 check id。**不新增门禁脚本**，但会把有状态检查塞进一个刻意无状态的脚本，破坏它"只信任 git 索引文本、可对任意 `--root` 跑"的 fail-closed 边界（见该脚本文件头 `--root` 的 fail-closed 约定）。
 - 选项 (b)：新增 `scripts/check-impact.cjs` + `package.json` 脚本 `check:impact`，成为**第 6 道门禁**。
 > 命名说明：本设计稿早期拟名 `check-change-impact.cjs`，实际定名为 `scripts/check-impact.cjs`（`check` 链第 13 环）。下文凡出现旧名处，均指同一脚本。
-- **建议 (b)**，理由同上；但代价是门禁数量再 +1，而增量 1 已经把门禁从 4 道推到 5 道（`scripts/check-file-ledger.cjs`，`package.json:79`）。**这是用户要拍板的点。**
+- **建议 (b)**，理由同上；但代价是门禁数量再 +1，而增量 1 已经把门禁从 4 道推到 5 道（`scripts/check-file-ledger.cjs`，`package.json` 的 `check:ledger`，实测 `:83`；写作时为 `package.json:79`，已漂移，该坐标今天是 `check:refs`）。**这是用户要拍板的点。**
 
 ### 6.3 与五道既有门禁的分工（不重复）
 
@@ -1012,7 +1016,7 @@
 
 ### 9.1 与 CAS digest 范围
 
-**先纠正一个伪问题**：`graphDigest(dataDir)` 的输入是**目标工程的数据目录**（`src/engine/manifest.ts:7` `snapshotProject(dataDir, SOURCE_ROOTS)`，`SOURCE_ROOTS = ['modules','renders','policy.yml','changes']` 都是**相对 `dataDir` 的名字**）。而本仓库根**没有** `modules/` / `renders/` / `policy.yml` / `changes/`（实测：`git ls-files` 无任何 `changes/` 条目；`src/engine/store.ts` 的 `resolveProject` 要求数据目录名以 `normify-` 开头且含 `modules/`）。
+**先纠正一个伪问题**：`graphDigest(dataDir)` 的输入是**目标工程的数据目录**（`src/engine/manifest.ts` 的 `graphDigest` 内，实测 `:9` `snapshotProject(dataDir, SOURCE_ROOTS)`；写作时为 `src/engine/manifest.ts:7`，已漂移，该坐标今天是空行，`SOURCE_ROOTS = ['modules','renders','policy.yml','changes']` 都是**相对 `dataDir` 的名字**）。而本仓库根**没有** `modules/` / `renders/` / `policy.yml` / `changes/`（实测：`git ls-files` 无任何 `changes/` 条目；`src/engine/store.ts` 的 `resolveProject` 要求数据目录名以 `normify-` 开头且含 `modules/`）。
 
 ⇒ **本仓库根的 `ledger/` 不在任何 `graphDigest` 的输入域内**，"台账/图要不要进 CAS 摘要"在本仓库是**伪问题**。只有当把图放进某个 `normify-*` 数据目录时才需要决定，届时两个选项：
 
@@ -1143,7 +1147,7 @@
 
 | # | 偏差内容（实测） | 原文档的说法（承接自旧稿的同一命题） | 为何按用户指令实现 | 影响面 |
 | --- | --- | --- | --- | --- |
-| **1** | **新增了第 5 道门禁**：`scripts/check-file-ledger.cjs`（`npm run check:ledger`）+ 配套写入侧 `scripts/generate-file-ledger.cjs`（`npm run ledger:gen` / `check:ledger:gen`），并把 `ledger/file-ledger.json` 作为唯一新增数据文件 | 旧稿的分工假设是"门禁数量不变、复用既有解析器"；该假设在本文档里已被改写为**既定事实**——§6.3 标题即"与五道既有门禁的分工"（节标题现行位置 `docs/DESIGN-code-graph.zh-CN.md:573`；本文档本行以下又新增了内容，全部自引用锚点都会随之漂移，按内容搜而不是按行号数；§6.3 里的 "CHECK_TITLES（84-94）" 这类**指向脚本**的行号同样会随脚本改动漂移），第 11 节 P1 也记着"增量 1 已经把门禁从 4 道推到 5 道"（§10.2 建议段 `docs/DESIGN-code-graph.zh-CN.md:571`、P1 行 `:905`） | 用户的增量 1 目标就是"让『这个文件有没有人管』变成可断言的机器事实"。既有四道门禁没有一道管**文件归属**：`check-references` 管引用完整性、`check-doc-snippets` 管文档示例、`check-lib-sync` 管产物逐字节、`check-examples` 管示例可执行。不新增门禁就只能"描述"归属而不能"断言"它 | 门禁计数 4 → 5；`package.json`（`check:ledger`/`check:ledger:gen`/`ledger:gen`/`check` 链）、`.github/workflows/ci.yml`（两个独立 step）、`CONTRIBUTING.md:22-34` 三处同步；后续增量新增门禁时**必须**按这套三处同步走（§6.3 末段 `:558` 已写成约束） |
+| **1** | **新增了第 5 道门禁**：`scripts/check-file-ledger.cjs`（`npm run check:ledger`）+ 配套写入侧 `scripts/generate-file-ledger.cjs`（`npm run ledger:gen` / `check:ledger:gen`），并把 `ledger/file-ledger.json` 作为唯一新增数据文件 | 旧稿的分工假设是"门禁数量不变、复用既有解析器"；该假设在本文档里已被改写为**既定事实**——§6.3 标题即"与五道既有门禁的分工"（节标题现行位置 `docs/DESIGN-code-graph.zh-CN.md:573`；本文档本行以下又新增了内容，全部自引用锚点都会随之漂移，按内容搜而不是按行号数；§6.3 里的 "CHECK_TITLES（84-94）" 这类**指向脚本**的行号同样会随脚本改动漂移），第 11 节 P1 也记着"增量 1 已经把门禁从 4 道推到 5 道"（§10.2 建议段 `docs/DESIGN-code-graph.zh-CN.md:571`、P1 行 `:905`） | 用户的增量 1 目标就是"让『这个文件有没有人管』变成可断言的机器事实"。既有四道门禁没有一道管**文件归属**：`check-references` 管引用完整性、`check-doc-snippets` 管文档示例、`check-lib-sync` 管产物逐字节、`check-examples` 管示例可执行。不新增门禁就只能"描述"归属而不能"断言"它 | 门禁计数 4 → 5；`package.json`（`check:ledger`/`check:ledger:gen`/`ledger:gen`/`check` 链）、`.github/workflows/ci.yml`（两个独立 step）、`CONTRIBUTING.md` 的台账门禁清单（实测 `:29-46`；写作时为 `CONTRIBUTING.md:22-34`，已漂移）三处同步；后续增量新增门禁时**必须**按这套三处同步走（§6.3 末段 `:558` 已写成约束） |
 | **2** | **改动了 `src/` 行为**：索引里 `src/*.ts` 的改动面是 18 个文件（`git status --porcelain -- src` 有 18 条，含新增的 `src/execution.ts`） | 本文档两处写"不改 `src/` 行为、不需要重建 `lib/`"（文档头边界声明 `docs/DESIGN-code-graph.zh-CN.md:7`、§9.5 `:706`）。但这两句的**主语是"图与改动记录的生成器"（第 2–6 节的新方向）**，不是增量 1：增量 1 的门禁脚本本身只读、确实不碰 `src/`；改动 `src/` 的是同一工作区里**另一批已暂存的引擎改造**（`git diff --cached --stat -- src`：17 个文件的差异统计为 524 插入 / 157 删除，另加新增的 `src/execution.ts`，合计 18 条） | 该批 `src/` 改动早于本轮、已 `git add` 进索引在本轮之前，不是增量 1 的产物；本轮（R4 + 文档对齐）**一个字都没有改 `src/`**（改动前后 `git status --porcelain -- src` 输出逐字节相同） | ⚠ **必须区分两个命题，否则会把"增量 2 不改 `src/`"误推成"增量 1 没改 `src/`"**：① 增量 2 的落点选择（生成器放 `scripts/`）⇒ 与 `check:libsync` 零交互；② 增量 1 落地时的 `src/` 改动面 = 索引里那 18 个文件。二者都真，但说的不是同一件事。本轮只**记录**这张改动面，不动它（触碰它会牵连 `lib/` 重建与 `check:libsync`，超出本轮范围） |
 | **3** | **跨文档引用的行号与命中范围更正**：脚本内枚举（`CHECK_TITLES`）、`--help`、人类报告、`--json` 的 `summary.checks` 曾各自演进，文档里引用的"行号 / 命中范围"随之失效，必须按当前实测值写 | 旧稿与本轮的早期引用给过已失效的锚点，例如"台账豁免模式的 2-115 行"；按**当时**文件实测，`exempt_patterns` 数组的范围是 **18-115 行**（`:18` 是数组起点、`:116` 是 `grandfathered` 起点）——**该内嵌数组已在 v2 迁到 `ledger/exempt.gitignore`，这两个行号只是改造前的历史锚点，现状不再适用**；旧的 `tracked-mismatch / unlisted` 检查名现已不存在，被拆成 `tracked-mismatch`（`:120`）、`ledger-index-drift`（`:119`）、`ledger-missing`（`:118`）三项 | 用户要求"结论必须带文件:行号"，行号写了就得能复核；引用一个已改名或已删的入口，等于制造第二份真相互相矛盾 | 只动**引用与措辞**，不动任何判定与数字。**数据随实现变化，改实现要同步这里**：每次改门禁 / 生成器 / 内核 / 台账 / 豁免清单，都要按下面的实测值回改本行。本轮（v2 语义校准）复核后的实测值：门禁 `scripts/check-file-ledger.cjs` **2003 行**、生成器 `scripts/generate-file-ledger.cjs` **799 行**、共享内核 `scripts/file-ledger-core.cjs` **462 行**、台账 `ledger/file-ledger.json` **168 行 / 10131 B**、豁免清单 `ledger/exempt.gitignore` **56 行 / 7226 B**、`CONTRIBUTING.md` **100 行**（上一轮的 1,426 行 / 403 行 / 147 行 / 82 行已被本次语义校准取代，本节按新值更正；`CONTRIBUTING.md` 的 88 行是本轮补文档前的值）。**补测（v3 版本字面量门禁轮次）**：`scripts/check-references.cjs` **2374 行 / 107815 B**（v3 记 3384 行 / 151442 B、更早记 3,089 行 / 136,739 B，两者都已被本次复核取代——解析器已抽到 `scripts/reference-graph-core.cjs`）、`scripts/check-doc-snippets.cjs` **1630 行**、`scripts/check-lib-sync.cjs` **1573 行**（原写 1,439 行）、`scripts/check-examples.cjs` **1051 行**（原写 974 行）。**行数口径**：等于「显式行数」= `([IO.File]::ReadAllText(f) -split "\`n").Length`，等价于编辑器 / `Set-Content` 的**末行号**（文件末尾有换行时少 1），等价于 Linux `wc -l` 的**换行符数 + 1**；`ledger/file-ledger.json` 的 168 行可由数据自证（`meta.tracked_total` 之外，其 `git ls-files` 计数与本文件行数同口径）。字面量数量口径见下方「字面量清单规模」小节 |
 
@@ -1293,7 +1297,7 @@
 | 8 | 豁免误伤事故的现场 | `Get-Content examples/bilibili-pi-full/.gitignore`；`git check-ignore -v <preview.md>`；读 `ledger/file-ledger.json` 的 `meta.known_divergences` | `.gitignore` 含 `*review*.md` 与注释「注意 "preview" 含子串 "review"，会被 `*review*.md` 误伤，故显式反选」+ 反选规则 `!**/modules/**/*.md`；当前 `git check-ignore -v` 对那两个文件**无输出**；台账 `known_divergences[0]` 记录了该历史 |
 | 9 | 门禁基线（改稿前） | `node scripts/check-references.cjs`；`node scripts/check-doc-snippets.cjs` | 两者均 **EXIT 0** |
 | 10 | 门禁复跑（改稿后） | 同上 | 两者均 **EXIT 0**（0 error / 0 warning）；`git status --porcelain` 无 `??` |
-| 11 | 改名的连带影响核实 | `node scripts/check-file-ledger.cjs`；按 `scripts/generate-file-ledger.cjs:250-261` 的算法复算索引哈希，并做"旧路径在 / 新路径不在"的反事实复算 | 台账门禁 **EXIT 1**，报 `ledger-universe-hash-drift`；反事实复算结果与台账存值**逐字符相同** ⇒ 漂移由本次改名唯一造成；修法是重跑 `npm run ledger:gen`（见附录 C） |
+| 11 | 改名的连带影响核实 | `node scripts/check-file-ledger.cjs`；按 `scripts/generate-file-ledger.cjs` 的 `universeHash`（`.sort(byCodePoint)` + `sha256(tracked.join('\n') + '\n')`，实测 `:535-546`；写作时为 `scripts/generate-file-ledger.cjs:250-261`，已漂移，该坐标今天是豁免清单报错与 `main()` 开头）的算法复算索引哈希，并做"旧路径在 / 新路径不在"的反事实复算 | 台账门禁 **EXIT 1**，报 `ledger-universe-hash-drift`；反事实复算结果与台账存值**逐字符相同** ⇒ 漂移由本次改名唯一造成；修法是重跑 `npm run ledger:gen`（见附录 C） |
 
 > 说明：#3/#5 的探针是**一次性只读脚本**，写在 `%TEMP%` 下、只读仓库文件、不写任何仓库内文件；用后删除。测量方法已完整写入本表，任何人可复现。
 
@@ -1316,9 +1320,9 @@
 | 门禁 | 约束 | 依据 |
 | --- | --- | --- |
 | `scripts/check-doc-snippets.cjs` | ① **不要写「数字 + 个工具」/「数字 + tools」/「exposes all + 数字」**——它会被 `tool-count` 拿去与运行时注册数比对，而该检查的正则是 `/(\d+)\s*个工具/g`、`/(\d+)\s+tools?\b/gi`、`/exposes\s+all\s+(\d+)/gi`（**不带 lookbehind**），因此连中文序数写法也会被当成数量断言。本文档的做法是**不重复该数字**；② `ts` 代码块若含包 `import`/`require('@promptmanager/code-normify…')` 会被还原成 `.ts` 并以 `--noEmit --strict` 编译，**编译不过即 error**；`js`/`cjs`/`mjs` 块里出现包 import/require 却未被编译也是 error；③ 散文里以「形参清单」形式描述工具的执行签名会与 `lib/types/tools.d.ts` 比对，**错名/错序即 error**（写成省略号形式则按"不是形参清单"跳过） | 脚本内 `COUNT_CLAIMS`、`CODE_LANGS`/`COMPILABLE_LANGS`、`checkExecuteSignature` |
-| `scripts/check-references.cjs` | ① 引用的路径必须**存在且在 git 索引里**（`untracked-reference` → error）；② 不得引用 git 历史中已删除的路径（`deleted-reference`，完整路径 error / basename warning）；③ Markdown 相对链接必须命中目标与真实标题（`dangling-reference` / `dead-anchor`）。**本文档因此对尚未落地的脚本只写行内代码、不写 Markdown 链接** | 脚本内 `CHECK_TITLES`(84-94) 与各 `check*` 实现 |
+| `scripts/check-references.cjs` | ① 引用的路径必须**存在且在 git 索引里**（`untracked-reference` → error）；② 不得引用 git 历史中已删除的路径（`deleted-reference`，完整路径 error / basename warning）；③ Markdown 相对链接必须命中目标与真实标题（`dangling-reference` / `dead-anchor`）。**本文档因此对尚未落地的脚本只写行内代码、不写 Markdown 链接** | 脚本内 `CHECK_TITLES`（实测 `:116`；写作时为 `(84-94)`，已漂移）与各 `check*` 实现 |
 
-**改名的连带影响（已实测，不是推测）**：`scripts/check-file-ledger.cjs` 的 `tracked-mismatch` 检查要求 `ledger/file-ledger.json` 的 `meta.universe_hash` 等于 `sha256(按码点升序排序后的 git ls-files 清单 join('\n') + '\n')`（算法见 `scripts/generate-file-ledger.cjs:250-261`）。本文档改名（删旧路径、增新路径）改变了该清单，实测后果：
+**改名的连带影响（已实测，不是推测）**：`scripts/check-file-ledger.cjs` 的 `tracked-mismatch` 检查要求 `ledger/file-ledger.json` 的 `meta.universe_hash` 等于 `sha256(按码点升序排序后的 git ls-files 清单 join('\n') + '\n')`（算法见 `scripts/generate-file-ledger.cjs` 的 `universeHash`，实测 `:535-546`；写作时为 `scripts/generate-file-ledger.cjs:250-261`，已漂移）。本文档改名（删旧路径、增新路径）改变了该清单，实测后果：
 
 | 项 | 实测值 |
 | --- | --- |
