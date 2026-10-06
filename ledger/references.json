@@ -160,8 +160,8 @@
       "id": "CONTRIBUTING.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 54477,
-      "lines": 149,
+      "bytes": 55870,
+      "lines": 170,
       "edge_out": 1,
       "edge_in": 0
     },
@@ -12355,8 +12355,8 @@
       "id": "scripts/check-doc-snippets.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 65533,
-      "lines": 1630,
+      "bytes": 65862,
+      "lines": 1635,
       "edge_out": 5,
       "edge_in": 1
     },

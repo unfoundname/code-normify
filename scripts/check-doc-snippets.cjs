@@ -56,8 +56,13 @@ const TOOL_VERSION = '1.0.0';
 /** 包名（文档 import 语句必须指向它才算「用法示例」）。 */
 const PACKAGE_NAME = '@promptmanager/code-normify';
 
-/** 固定扫描的文档（相对仓库根，posix 分隔符）。 */
-const DOC_FILES = ['README.md', 'README_EN.md'];
+/**
+ * 固定扫描的文档（相对仓库根，posix 分隔符）。
+ * `CONTRIBUTING.md` 同样在列：它是「贡献者照着写示例」的样板文档，
+ * 里面的用法示例同样是「声称可直接使用」的代码，不能落在门禁之外
+ * （历史教训同 DOC_DIRS：扫描面靠枚举维护时，漏掉一个文件就等于放行一整类漂移）。
+ */
+const DOC_FILES = ['README.md', 'README_EN.md', 'CONTRIBUTING.md'];
 
 /**
  * 额外的扫描范围。

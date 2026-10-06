@@ -70,11 +70,32 @@
 
 > 已修复的缺口（增量 1 → 本增量，2026-10-05）：手工洗白后门——「人把某条**确实在索引里**的路径加进清单再 `git add`」曾经能蒙过门禁与 `--check`（keep-only 规则比的是**同一份被改过的台账**，它当然认为那一条「原本就在清单里」）。现在棘轮的基线改为 **HEAD 版台账**，两条路都堵住：门禁的 `accounted-growth`（相对 HEAD 的任何新增 → **error**，逐条列出新增路径），生成器 `--check` 也改以索引 blob 为比较基准、并对「索引版比 HEAD 多的条目」直接 **exit 1**。判据是**集合包含**而不是条数：手工 +1 与合法 -1 同时发生时条数不变，照样报红（实测）。首次引入（HEAD 里没有该台账）按**一次性初始化**处理：门禁与 `--check` 都 **exit 0** 并回显「基线由本次提交建立」，`git commit` 之后基线生效。回归用例：`node tests/file-ledger-ratchet-e2e.mjs`（已接进 `npm test`，临时夹具物化、跑完自删；覆盖干净态与幂等、**`schema_version` 不匹配直接 error**、`accounted` 缺 `basis`、无条目新文件、`**` 过宽豁免、**豁免条目缺 `reason`**、手工洗白与「条数不变但集合不等」、`*review*.md` 折叠误伤与 `.gitignore` 交集、合法缩小、首次引入共 84 条断言）。
 
+### 文档代码示例（`npm run check:docs`）
+
+本文件（`CONTRIBUTING.md`）与其它文档一样在 `scripts/check-doc-snippets.cjs` 的扫描面内（完整清单见下文 `npm run check:docs` 一条）：语言标记为 `ts` / `typescript` 且 `import` 了包名的围栏块会被还原成 `.ts`，用仓库自带 typescript 以 `--noEmit --strict` 编译（`paths` 映射到 `lib/types/*.d.ts`），编不过就红。写文档示例时照下面这段的形状来——它本身就在扫描面内，会被真的编译：
+
+```ts
+import { join } from 'node:path'
+import { createPromptManagerTools } from '@promptmanager/code-normify/service'
+
+export async function openArchitectureTools(groupWorkspace: string) {
+  return createPromptManagerTools({
+    repoRoot: groupWorkspace,
+    dataDir: join(groupWorkspace, 'normify-architecture'),
+    access: 'read',
+    execution: 'host'
+  })
+}
+```
+
+- 语言标记写成 `js` / `cjs` / `mjs` 却在块内 `import` / `require` 了包名 → `uncompiled-package-example`（**error**；历史上把语言标记改成 `js` 就能悄悄绕过编译）：要么改成 `ts`，要么确认它只是说明性片段、根本不该出现包 import。
+- 伪代码 / 依赖外部环境、无法独立编译的块不要伪装成可编译示例：语言标记用非代码标记（例如 `text`），或写成不含包 import 的片段。
+
 ## 全量门禁
 
 `npm run check` 按顺序跑：`npm run typecheck` → `npm run build` → `npm test` → `node ci-contract-check.cjs` → `npm run check:refs` → `npm run check:docs` → `npm run check:libsync` → `npm run check:examples` → `npm run check:ledger:gen` → `npm run check:ledger` → `npm run check:graph` → `npm run check:changes` → `npm run check:impact`（CI 里每道门禁各占一个独立步骤，红了能一眼看出是哪道）。下面八道脚本门禁的当前口径（`check:libsync` / `check:examples` 于 2026-10-05 接入：此前脚本已完工但零接线，永远不会被执行；`check:ledger:gen` 于同日晚些时候接入，理由见该条；`check:graph` 与 `check:changes` 于同日的增量 2 批次接入；`check:impact` 于本批接入——脚本先于接线落地，接入前它在链上零执行）：
 
-- **`npm run check:docs`**（= `node scripts/check-doc-snippets.cjs`，共 4 项检查）— 扫描 `README.md` / `README_EN.md`、`docs/**` 与 `skills/**`（含 `docs/RELEASE-*.md`）里的围栏代码块：语言标记为 `ts`/`typescript` 且含包 `import`/`require` 的块还原成 `.ts`，用仓库自带 typescript 以 `--noEmit --strict` 编译（`paths` 映射到 `lib/types/*.d.ts`），并核对文档里的工具数量断言、`createPromptManagerTools` 必填选项与 `execute` 签名描述。**2026-10-05 起多处判定由 warning 升为 error**：`js`/`cjs`/`mjs` 等「代码语言」块里出现包 `import`/`require` 却未被编译（`uncompiled-package-example`）直接红（历史上把语言标记写成 `js` 就能悄悄绕过编译），**运行时工具数量取不到也是 error 而不是 warning**（`lib/` 未 build、入口不导出工厂、调用失败）——所以它必须排在 `build` 之后：CI 里由前面的 Build 步骤提供 `lib/` 与运行时数量，缺了是红，不是黄。
+- **`npm run check:docs`**（= `node scripts/check-doc-snippets.cjs`，共 4 项检查）— 扫描 `README.md` / `README_EN.md` / `CONTRIBUTING.md`、`docs/**` 与 `skills/**`（含 `docs/RELEASE-*.md`）里的围栏代码块：语言标记为 `ts`/`typescript` 且含包 `import`/`require` 的块还原成 `.ts`，用仓库自带 typescript 以 `--noEmit --strict` 编译（`paths` 映射到 `lib/types/*.d.ts`），并核对文档里的工具数量断言、`createPromptManagerTools` 必填选项与 `execute` 签名描述。**2026-10-05 起多处判定由 warning 升为 error**：`js`/`cjs`/`mjs` 等「代码语言」块里出现包 `import`/`require` 却未被编译（`uncompiled-package-example`）直接红（历史上把语言标记写成 `js` 就能悄悄绕过编译），**运行时工具数量取不到也是 error 而不是 warning**（`lib/` 未 build、入口不导出工厂、调用失败）——所以它必须排在 `build` 之后：CI 里由前面的 Build 步骤提供 `lib/` 与运行时数量，缺了是红，不是黄。
 - **`npm run check:libsync`**（= `node scripts/check-lib-sync.cjs`）— **git 索引里的 `lib/`** 必须与「拿索引版 `src/` 全新编译」的产物**逐字节**一致（零归一化）。基准刻意取 git 索引而不是工作区：`check` 链里 `build` 排在它前面，比工作区会永远绿，恰好放过它唯一要抓的那种提交（`src/` 改了、`lib/` 没重建就提交）。代价是一次全量 tsc；临时工程建在 `os.tmpdir()`，被检查仓库运行期只读。
 - **`npm run check:examples`**（= `node scripts/check-examples.cjs`）— 逐条执行脚本内 `INCLUDE` 清单里的示例（当前 3 条），断言退出 0，并在每条示例运行前后各取一次 git 快照（`git status --porcelain -z`，含 `--ignored`）求差：示例失败/超时，或改动仓库（**含被忽略路径**的变化）都算 error。依赖 `build` 产物，耗时约 30–60 秒，不要并进 `npm test`。
 - **`npm run check:ledger:gen`**（= `node scripts/generate-file-ledger.cjs --check`，只比较不写盘）— 台账必须与「重新生成的结果」**字符串完全相等**（行尾除外，见本段末），否则 exit 1——实现上比的是「重新生成后按 `JSON.stringify(next, null, 2)` 规范化序列化、再补一个尾随换行」得到的字符串与台账原文，**不是**解析成对象后做深比较：缩进、键序、空白的任何差异都算不一致；两侧行尾在比较前统一归一到 LF（`normalizeEol`），**只差行尾不算不一致**——Windows 上 `core.autocrlf=true` 会把工作区台账检出成 CRLF，不归一的话全新 clone 在 Windows 上到这一步必然假红，而 Linux CI 全绿。这与 `check:ledger` 的 `ledger-index-drift` 是同一条口径。它把「台账还是不是机器可算出来的那一份」变成链上的硬失败，具体拦四类：① 索引清单变了（新增/删除/改名）而台账没重跑（`tracked_total` / `universe_hash` 漂移）；② `accounted` 清单腐烂没清（条目已经 `owned` / 已命中豁免 / 已从索引消失——门禁对这类只给 warning，本步直接红）；③ **索引版 `accounted` 相对 `HEAD` 版有新增**（手工洗白）——判据是集合包含，不是条数（手工 +1 与合法 -1 同时发生、条数不变时照样红，实测）；④ **`accounted` 条目缺 `accounted_at` / `basis`**（缺依据的条目不是记账）或**豁免清单有语法问题**（缺 `reason` / 未知字段）——生成器不会代写依据，也不会代按确认键。**比较基准 = git 索引 blob**（`git show :ledger/file-ledger.json`，与门禁同基准），索引里没有该台账时才退回工作区文件。**棘轮基线 = `HEAD` 版台账**（提交后不可被工作区改动影响），写入侧同样如此：生成器输出恒为「基线清单 ∩ 索引版清单 ∩ 当前条件」，手工加进去的条目在第一次重算就被剔除并点名（否则「写盘 → `git add`」会把洗白固化）。**首次引入的一次性初始化语义**：`HEAD` 里没有该台账（或仓库尚无提交）时基线退回索引 blob、再退回工作区那份，本步 **exit 0**（不许红）并回显「基线由本次提交建立」；`git commit` 之后基线生效。`HEAD` 里有该文件却读不出 / 不是合法 JSON / **`schema_version` 不匹配** / 缺 `accounted` 数组 → 生成失败（**exit 1**，fail-closed）。豁免清单是**只读输入**（本脚本不写它），按**索引版**读取（与门禁同基准），索引里没有时才退回工作区文件。它**不是**棘轮的牙齿本身：新增的无条目文件不会被生成器写进 `accounted`，所以「跑一次 `ledger:gen` 就把 `unowned` 抹掉」这条路径不成立（生成器只减不增）。
