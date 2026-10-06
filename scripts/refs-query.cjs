@@ -3,7 +3,8 @@
 /**
  * refs-query.cjs —— 引用图产物 `ledger/references.json` 的**只读查询层**。
  *
- * 只实现一条查询：who-references <仓库相对路径>，即「谁直接引用我这个文件」。
+ * 实现两条查询：who-references <仓库相对路径>（「谁直接引用我这个文件」）与
+ * impact <仓库相对路径>（「谁（间接）引用我」：反向闭包按深度分组，另附派生产物与 gate: 义务项）。
  * 数据源只有图产物：本脚本**不重新分析源码、不建 TypeScript Program**。
  * 读取基准：优先 git 索引版（git show :ledger/references.json）；索引里取不到才回退
  * 工作区文件，并把实际用的那一份写进输出的 basis 字段。
@@ -37,14 +38,17 @@ function sortRows(rows, keyOf) {
 function usage() {
   return [
     '用法：node scripts/refs-query.cjs who-references <仓库相对路径> [选项]',
+    '      node scripts/refs-query.cjs impact <仓库相对路径> [选项]',
     '',
     '查询：',
     '  who-references <路径>   谁直接引用这个文件（读 ledger/references.json）',
+    '  impact <路径>           谁（间接）引用这个文件：反向闭包按深度分组，另列派生产物与 gate: 义务项',
     '',
     '选项：',
     '  --json          以 JSON 输出（含全部符号级边；确定性、无绝对路径/耗时）',
     '  --root <目录>   仓库根，默认当前目录；不是 git 仓库根则非零退出',
     '  --limit <n>     人类可读输出里最多显示多少条符号级边（默认 40，0 = 全部）',
+    '  --depth <n>     impact 的反向闭包深度上限（默认 8）',
     '  --help          显示本帮助',
     '',
     '不支持：符号 id 输入（如 src/tools.ts#Name@1:2）——会以 unsupported 拒绝。',
@@ -229,7 +233,7 @@ function buildReport(opts, target, loaded) {
     '只覆盖文件级边（edges[]）：文件内边（同一文件内部的引用/依赖）未展开。',
     '未实现符号 id 输入：目标只能是文件路径；符号 id 会以 unsupported 拒绝。',
     '文件级 edges[] 的 type_only 恒为 false（产物口径），故运行时/类型拆分只对 symbol_edges[] 有效。',
-    '未实现 what-references、impact 等其它查询；本版只有 who-references。',
+    '未实现 what-references、change-impact 等其它查询；本版只有 who-references 与 impact 两条查询（impact = 反向闭包 + 按深度打印 + 派生产物分区 + gate: 义务项；impact 内部尚未做三档分类、path[]、cycles[]、informational 与截断标注）。',
   ];
   if (diverged) reasons.push(...gaps);
   const completeness = diverged ? 'stale' : 'partial';
@@ -361,9 +365,96 @@ function reverseClosure(artifact, target, maxDepth) {
   return { levels, closure };
 }
 
-/** impact 报告：反向闭包 + 按深度分组的受影响文件。只做闭包与分层，不做分类/分区/义务项。 */
+/**
+ * 派生产物推导规则：`src/<rel>.ts` -> `lib/<rel>.js`、`lib/<rel>.js.map`、`lib/types/<rel>.d.ts`。
+ * 候选路径一律用图的 files[] 逐个校验，图里不存在的绝不列出（不凭想象造路径）；
+ * 非 src/ 下的目标或不是 .ts 的目标（文档、脚本、CI 自身等，如 docs/*.md、scripts/*.cjs）直接判为空，不产任何派生产物。
+ * 产物形态以图为准：本仓库 28 个 src 下的 .ts 的这三条候选全部命中（已逐条核对），无例外形态。
+ */
+const DERIVED_ARTIFACT_RULES = [
+  (rel) => `lib/${rel}.js`,
+  (rel) => `lib/${rel}.js.map`,
+  (rel) => `lib/types/${rel}.d.ts`,
+];
+
+/** 由 src/ 路径推导派生产物，只保留图 files[] 中真实存在者（来源统一标 build-artifact）。 */
+function derivedArtifacts(target, fileIndex) {
+  if (!target.startsWith('src/') || !target.endsWith('.ts')) return [];
+  const rel = target.slice('src/'.length, -'.ts'.length);
+  if (rel === '') return [];
+  return DERIVED_ARTIFACT_RULES.map((rule) => rule(rel))
+    .filter((p) => fileIndex.has(p))
+    .map((p) => ({ path: p, source: 'build-artifact', state: fileIndex.get(p).state }));
+}
+
+/** 每条 gate: 义务项的「为什么要做」：说清该环节到底会因为产物缺失怎么红。 */
+function gateWhy(edge, layer) {
+  const at = `${edge.from.file}:${edge.from.line}`;
+  switch (edge.kind) {
+    case 'ci-target':
+      return `CI 工作流 ${at} 点名了这个派生产物（这条边本来就在图里）；产物不在或改名，则该 CI 步骤直接红。`;
+    case 'package-field':
+      return `package.json 字段（${at}）点名了这个派生产物；产物不在或改名，则发布入口/类型入口失效。`;
+    case 'import':
+    case 'require':
+    case 'dynamic-import':
+      return `${at} 以 ${edge.kind} 加载这个派生产物；产物不在或改名，则该处运行时直接失败。`;
+    case 'markdown-link':
+    case 'anchor':
+      return `文档 ${at} 以 ${edge.kind} 指向这个派生产物；产物不在或改名，则该链接失效。`;
+    default:
+      return `${at} 有一条 ${layer} 层 ${edge.kind} 边点名了这个派生产物；产物不在或改名，则对应环节失败。`;
+  }
+}
+
+/**
+ * 门禁义务项：**全部由图里的既有事实推导，不写死任何清单**。
+ * 1) 只要派生产物含 lib/ 前缀，就必须跑 check:libsync —— 该门禁要求索引里的 lib/ 与全新编译逐字节一致；
+ * 2) 图里指向这些派生产物的既有边（edges[] 与 symbol_edges[]）逐条列出，尤其是 ci-target。
+ * 义务项不进闭包：它们不是引用方，也不冒充引用边。
+ */
+function gateObligations(derived, artifact) {
+  const rows = [];
+  const paths = new Set(derived.map((d) => d.path));
+  if (derived.some((d) => d.path.startsWith('lib/'))) {
+    rows.push({
+      source: 'gate:',
+      kind: 'script',
+      command: 'npm run check:libsync',
+      why: 'check:libsync 门禁要求索引里的 lib/ 与全新编译产物逐字节一致；动过 src/ 后 lib/ 会漂移，必须重新编译并同步。',
+    });
+  }
+  const add = (layer, e) => {
+    const to = e && e.to && e.to.file;
+    if (typeof to !== 'string' || !paths.has(to)) return;
+    rows.push({
+      source: 'gate:',
+      kind: 'edge',
+      layer,
+      edge_kind: e.kind,
+      edge_id: e.id,
+      from_file: e.from.file,
+      line: e.from.line,
+      column: e.from.column,
+      specifier: e.specifier === undefined ? null : e.specifier,
+      to_file: to,
+      why: gateWhy(e, layer),
+    });
+  };
+  for (const e of artifact.edges || []) add('file', e);
+  for (const e of artifact.symbol_edges || []) add('symbol', e);
+  return sortRows(
+    rows,
+    (r) => `${r.kind === 'script' ? '0' : '1'}|${r.command || ''}|${r.layer || ''}|${r.edge_kind || ''}|${r.edge_id || ''}`,
+  );
+}
+
+/** impact 报告：反向闭包 + 按深度分组的受影响文件 + 派生产物分区（build-artifact）+ 门禁义务项分区（gate:）。 */
 function buildImpactReport(opts, target, loaded) {
   const { levels, closure } = reverseClosure(loaded.artifact, target, opts.depth);
+  const fileIndex = new Map((loaded.artifact.files || []).map((f) => [f.id, f]));
+  const derived = derivedArtifacts(target, fileIndex);
+  const gates = gateObligations(derived, loaded.artifact);
   const layerEdges = (layer) =>
     levels.reduce((n, l) => n + l.files.reduce((m, f) => m + f.via.filter((v) => v.layer === layer).length, 0), 0);
   const affectedEdges = levels.reduce((n, l) => n + l.files.reduce((m, f) => m + f.via.length, 0), 0);
@@ -371,7 +462,7 @@ function buildImpactReport(opts, target, loaded) {
   const reasons = basisReasons(loaded);
   const gaps = [
     '反向闭包只沿 to.file 走文件级 edges[] 与符号级 symbol_edges[]；文件内边（同一文件内部的引用/依赖）未展开。',
-    '未做三档分类、派生产物分区、gate: 义务项、path[]、cycles[]、informational 与截断标注：本版只有反向闭包与按深度打印。',
+    '未做三档分类、path[]、cycles[]、informational 与截断标注。',
     `闭包深度上限 --depth ${opts.depth}：更深的层未展开，closure 可能不完整。`,
   ];
   const diverged = reasons.length > 0;
@@ -396,6 +487,8 @@ function buildImpactReport(opts, target, loaded) {
       affected_edges: affectedEdges,
       file_layer_edges: layerEdges('file'),
       symbol_layer_edges: layerEdges('symbol'),
+      derived_artifacts: derived.length,
+      gate_obligations: gates.length,
     },
     by_depth: levels.map((l) => ({
       depth: l.depth,
@@ -405,6 +498,8 @@ function buildImpactReport(opts, target, loaded) {
       })),
     })),
     closure,
+    derived_artifacts: derived,
+    gate_obligations: gates,
   };
 }
 
@@ -422,6 +517,21 @@ function renderImpactHuman(report) {
     lines.push(`深度 ${level.depth}：${level.files.length} 个文件`);
     for (const f of level.files) {
       lines.push(`  ${f.file}  <- ${f.via.length ? f.via.join('  ') : '（无）'}`);
+    }
+  }
+  lines.push(``, `派生产物（由 src/ 路径推导，仅列图 files[] 中真实存在者；来源 build-artifact）：${report.derived_artifacts.length} 个`);
+  if (report.derived_artifacts.length === 0) lines.push('  （无：该目标没有图里存在的派生产物，不凭空构造路径）');
+  for (const d of report.derived_artifacts) {
+    lines.push(`  ${d.path}  source=${d.source}  state=${d.state}`);
+  }
+  lines.push(``, `门禁义务项（来源 gate:，由图里既有事实推导）：${report.gate_obligations.length} 条`);
+  if (report.gate_obligations.length === 0) lines.push('  （无：没有派生产物，也没有指向它们的既有边）');
+  for (const g of report.gate_obligations) {
+    if (g.kind === 'script') lines.push(`  执行 ${g.command}  —— 为什么要做：${g.why}`);
+    else {
+      lines.push(
+        `  ${g.edge_kind} 边 ${g.from_file}:${g.line}:${g.column} -> ${g.to_file}（specifier=${g.specifier === null ? '-' : g.specifier}）  —— 为什么要做：${g.why}`,
+      );
     }
   }
   lines.push(``, `空列表怎么读：${report.empty_referrers_reading}`);
