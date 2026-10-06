@@ -888,7 +888,8 @@
 **归属（待拍板 P1）**：
 
 - 选项 (a)：作为 `scripts/check-references.cjs` 的一个新 check id。**不新增门禁脚本**，但会把有状态检查塞进一个刻意无状态的脚本，破坏它"只信任 git 索引文本、可对任意 `--root` 跑"的 fail-closed 边界（见该脚本文件头 `--root` 的 fail-closed 约定）。
-- 选项 (b)：新增 `scripts/check-change-impact.cjs` + `package.json` 脚本 `check:impact`，成为**第 6 道门禁**。
+- 选项 (b)：新增 `scripts/check-impact.cjs` + `package.json` 脚本 `check:impact`，成为**第 6 道门禁**。
+> 命名说明：本设计稿早期拟名 `check-change-impact.cjs`，实际定名为 `scripts/check-impact.cjs`（`check` 链第 13 环）。下文凡出现旧名处，均指同一脚本。
 - **建议 (b)**，理由同上；但代价是门禁数量再 +1，而增量 1 已经把门禁从 4 道推到 5 道（`scripts/check-file-ledger.cjs`，`package.json:79`）。**这是用户要拍板的点。**
 
 ### 6.3 与五道既有门禁的分工（不重复）
@@ -900,7 +901,7 @@
 | `check:libsync` | `scripts/check-lib-sync.cjs`（1,573 行） | **git 索引里的 `lib/`** 与"索引版 `src/` 全新编译产物"逐字节一致 | 图生成器放 `scripts/` ⇒ 与它零交互（9.5）。若将来把生成器移进 `src/`，则必须同提交重建 `lib/` |
 | `check:examples` | `scripts/check-examples.cjs`（1,051 行） | 示例可执行 + 运行前后 git 快照**零变化**（含 `--ignored`） | 图生成器**不得**在示例运行期间写工作区；生成器只写 `ledger/`，且 `ledger/**` 已在台账豁免模式内 |
 | `check:ledger` | `scripts/check-file-ledger.cjs`（2003 行，`CHECK_TITLES` 13 项）+ 共享内核 `scripts/file-ledger-core.cjs`（462 行） | **文件级**台账：每个已跟踪文件落到四态之一（`owned` / `exempt` / `accounted` / `unowned`），并与真 `.gitignore` 交叉校验（交集 / 折叠误伤 / 放行本该 `git add` 的普通文件） | 图是**符号级**、与文件归属无关；两者共用 `ledger/` 目录但**不共用判定**。第 7 节的用户口径**已于 2026-10-05 落地** |
-| （建议新增）`check:impact` | `scripts/check-change-impact.cjs` | 6.2 的未处理引用影响 | 只在有改动记录时触发；不重做 6.1 的任何判定 |
+| （建议新增）`check:impact` | `scripts/check-impact.cjs` | 6.2 的未处理引用影响 | 只在有改动记录时触发；不重做 6.1 的任何判定 |
 
 **统一接线**：`package.json` 的 `check` 链（当前 `typecheck → build → test → ci-contract-check.cjs → check:refs → check:docs → check:libsync → check:examples → check:ledger`）与 `.github/workflows/ci.yml`（每道门禁一个独立 step）。新增门禁必须同时改这三处（`package.json` / `ci.yml` / `CONTRIBUTING.md` 的检查项清单与快照行）——CI 注释里已有这条约束。
 
@@ -1238,7 +1239,7 @@
   4. **跨文件传播不穿过文件内边**这一点有测试：构造"局部变量 A 被同文件私有函数 B 使用、B 被另一文件引用"的夹具，删除 A 的传递闭包必须包含那个另一文件（证明 2.5 ④ 的判据成立）。
 - **不做**：不把文件内边默认落盘（除非验收标准 3 触发回退）。
 
-### 增量 5：查询接口（三个问句落地）
+### 增量 5：查询接口（三个问句落地）（**已落地**）
 
 - **范围**：实现 5.1 / 5.2 / 5.3 / 5.4 四个查询，含 `completeness` 降级契约（5.5）。
 - **改动面**：`scripts/` 下的查询 CLI（`--json`）；**不新增 MCP 工具**（9.3）。
@@ -1249,10 +1250,10 @@
   4. **不得假绿**：故意移除一个已跟踪文件使 `universe_hash` 失配，查询必须返回 `stale` 而不是空数组；故意让一个目标文件不可读，必须返回 `unknown`（对应 `check-references` 的"读不到就必须红"）。
 - **不做**：不做变更影响门禁（增量 6）、不做跨平台矩阵。
 
-### 增量 6：变更影响门禁 + 规模与跨平台定标
+### 增量 6：变更影响门禁 + 规模与跨平台定标（**已落地**）
 
 - **范围**：落地 6.2 的"本次改动引入了未处理的引用影响 → error"（归属按 P1 拍板）；补齐 9.7 剩余待实测项；把 9.8 的变更意图对账项落地（按 P5 拍板）。
-- **改动面**：若 P1 选 (b)：新增 `scripts/check-change-impact.cjs` + `package.json` 的 `check:impact` + `ci.yml` 独立 step + `CONTRIBUTING.md` 检查项清单与快照行（三处同步）。
+- **改动面**：若 P1 选 (b)：新增 `scripts/check-impact.cjs` + `package.json` 的 `check:impact` + `ci.yml` 独立 step + `CONTRIBUTING.md` 检查项清单与快照行（三处同步）。
 - **可被断言的验收标准**：
   1. 构造一次"删了被引用的符号但未处理"的提交，门禁**退出码非 0** 并点名未处理的引用方；
   2. 把 `handling.status` 补成 `handled`（或带 `note` 的 `waived`）后，门禁退出 0；
@@ -1266,7 +1267,7 @@
 
 | # | 问题 | 建议选项 | 我的建议与理由 |
 | --- | --- | --- | --- |
-| **P1** | 6.2 的"未处理引用影响"检查放哪？ | (a) 塞进 `scripts/check-references.cjs` 的新 check id；(b) 新增 `scripts/check-change-impact.cjs`（第 6 道门禁）；(c) 只做查询、不做门禁 | **(b)**：它依赖图快照与改动记录（有状态），而 `check-references` 的核心不变量是"无状态、只信任 git 索引、可对任意 `--root` fail-closed"。代价是门禁数量再 +1（增量 1 已把 4 道推到 5 道）。若用户不接受第 6 道门禁，退 **(a)** 但需接受该脚本边界被破坏 |
+| **P1** | 6.2 的"未处理引用影响"检查放哪？ | (a) 塞进 `scripts/check-references.cjs` 的新 check id；(b) 新增 `scripts/check-impact.cjs`（第 6 道门禁）；(c) 只做查询、不做门禁 | **(b)**：它依赖图快照与改动记录（有状态），而 `check-references` 的核心不变量是"无状态、只信任 git 索引、可对任意 `--root` fail-closed"。代价是门禁数量再 +1（增量 1 已把 4 道推到 5 道）。若用户不接受第 6 道门禁，退 **(a)** 但需接受该脚本边界被破坏 |
 | **P2** | 图数据放哪？ | (a) 仓库根 `ledger/graph/`（与增量 1 同域）；(b) 仓库根新目录 `graph/`；(c) 放进某个 `normify-*` 数据目录 | **(a)**：与 `ledger/file-ledger.json` 同域，`ledger/**` 已在台账豁免模式内（`git ls-files` 宇宙一致），且 9.1 已证明它不在任何 `graphDigest` 域内 |
 | **P3** | 类成员（`property` / `method`）算不算节点？ | (a) 算（完整）；(b) 只记边不记节点 | **(b) 起步**：类成员可由所属 `class` 节点派生，先记边即可回答"谁引用了这个成员"；节点化留到有实际问句时再加 |
 | **P4** | `accounted` 条目依据失效时报 error 还是 warning？ | (a) error；(b) warning（沿用现状 `grandfathered-removable` 的级别） | **本轮实测取折中（与推荐值 (a) 不同，如实记账）**：字段缺失 / 空依据（缺 `accounted_at` / `basis`）→ **error**（`accounted-invalid`）；**条目腐烂**（已 `owned` / 已豁免 / 已从索引消失 / 重复）→ **warning**（`accounted-removable`）。理由：腐烂是清单卫生问题，条目本身的依据仍在；升为 error 会让"把一条已记账路径改成豁免"这类合法动作直接变红 |
