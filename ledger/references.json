@@ -124,7 +124,7 @@
       "id": ".github/workflows/ci.yml",
       "lang": "yaml",
       "state": "indexed",
-      "bytes": 31810,
+      "bytes": 31699,
       "lines": 293,
       "edge_out": 17,
       "edge_in": 0
