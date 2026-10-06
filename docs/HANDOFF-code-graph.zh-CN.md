@@ -540,9 +540,9 @@ npm run typecheck && npm run build && npm test && node ci-contract-check.cjs && 
 
 **这 9 项的名称与顺序以 `node scripts/check-references.cjs --json` 的 `summary.checks[]` 为准**（**本批改引实测**：`["dangling-reference","dangling-module-specifier","untracked-reference","deleted-reference","version-drift","tarball-version-drift","test-inventory","dead-anchor","guard-unavailable"]`，恰好 9 项）。
 
-**现值**：`✔ 0 error —— 门禁通过`（`node scripts/check-references.cjs`，**本批改引实测**，退出码 0）。**warning 总数刻意不写死**：它包含本文档自身的贡献，而本文档每写一次它就会变（§7.9 讲的机制）；**旧值 700 / 714 都已过期**，留痕如下——差额全部来自两处、**都不是真实残留**：`9adf069` 给 `scripts/refs-query.cjs` 加的两行注释（提到 `src/index.ts`、`src/engine/types.ts`，命中同一条 basename 规则）先带来 `700 → 702`；同一批给本文档补写「已修 / 留痕」与 §7.11 时，本文档自身由 51 条涨到 **63** 条，合计 `702 → 714`。**门禁只拦 error。**
+**现值**：`✔ 0 error —— 门禁通过`（`node scripts/check-references.cjs`，**本批改引实测**，退出码 0）。**warning 总数刻意不写死**：它包含本文档自身的贡献，而本文档每写一次它就会变（§7.9 讲的机制）；**旧值 700 / 714 都已过期**，留痕如下——差额全部来自两处、**都不是真实残留**：`9adf069` 给 `scripts/refs-query.cjs` 加的两行注释（提到 `src/index.ts`、`src/engine/types.ts`，命中同一条 basename 规则）先带来 `700 → 702`；**`56ea956`**（`9adf069` 的下一个提交）给本文档补写「已修 / 留痕」与 §7.11 时，本文档自身由 51 条涨到 **63** 条，合计 `702 → 714`（**旧说此处为「同一批」，已订正**：那条文档补写不在 `9adf069` 里）。**门禁只拦 error。**
 
-**全部 warning 是同一个 type**（`--json` 的 `violations[]` 实测：`deleted-file-basename-mention` 是唯一取值，`summary.errors` = 0；**本批改引实测**）。其中**本文档贡献了一部分**（`9adf069` 那批实测是 63 条）——原因见 §7.9，不是本文档写错了路径。
+**全部 warning 是同一个 type**（`--json` 的 `violations[]` 实测：`deleted-file-basename-mention` 是唯一取值，`summary.errors` = 0；**本批改引实测**）。其中**本文档贡献了一部分**（`56ea956` 那批实测是 63 条；**旧标 `9adf069` 已订正**）——原因见 §7.9，不是本文档写错了路径。
 
 ### 4.4 `check:docs` 的扫描面与两条「新增文档会被拦」的规则
 
@@ -902,11 +902,11 @@ src/index.ts  <- <位置串>  <位置串>  <位置串> …（共 29 次；三处
 > **想亲手复现那个失败态**：用 `git log --diff-filter=D --name-only` 取一条**已删除文件**的完整路径，写进任一被扫描的文本文件（例如本文档）再跑门禁——同一行命中完整路径即报 `deleted-file-reference`（error、`severity: "error"`）；**跑完记得把这次写入撤销**。
 > **区别是硬的**：提到删除文件的 **basename** 只是 `warning`（次级线索），提到 **完整路径** 是 `error`。⇒ **在文档里复述历史删除清单时，不要写出完整路径**——把错误复述进文档，等于把「残留提及」亲手造出来。这与本仓「残留零容忍」是同一条纪律。
 
-**本文档自己就贡献了一部分**（历史实测：初次落地 51 条，`9adf069` 那批补写「已修 / 留痕」与 §7.11 后涨到 63 条——**这正是本条要说明的机制：写文档就会涨**）——因为 §3 的三条查询示例都以 `src/engine/types.ts` 为目标，正文里反复出现。**这些条不代表本文档写错了路径**。
+**本文档自己就贡献了一部分**（历史实测：初次落地 51 条，`56ea956` 那批补写「已修 / 留痕」与 §7.11 后涨到 63 条——**这正是本条要说明的机制：写文档就会涨**；**旧标 `9adf069` 已订正**：该提交没动过本文档，其文档 blob 与初次落地的 `b4fddb3` 逐字节相同（sha `089b0838…`），对本文档的贡献恒为 51 条）——因为 §3 的三条查询示例都以 `src/engine/types.ts` 为目标，正文里反复出现。**这些条不代表本文档写错了路径**。
 
 **灰在哪**：
 - 这类 warning 的数量与「**某个常用 basename 在你文中出现的次数**」成正比，**与真实残留无关**。`types.ts` 是本仓最常见的文件名之一（`files[]` 里 `lang=ts` 的就有 58 个），因此这是一条**高噪声**的次级线索。
-- 门禁**只拦 error**，所以它不影响绿灯；但**拿 warning 数当"健康度指标"会得出错误结论**——本文档加入时是 **649 → 700**（`node scripts/check-references.cjs`），差别全部来自这一条规则。**旧值 714 已过期**，它的拆法是：去掉本文档 **651** + 本文档 **63**（初次 51 + `9adf069` 那批补写 12）。**这条规则数的是「命中某个已删除 basename 的行数」，与仓库健康度无关。**
+- 门禁**只拦 error**，所以它不影响绿灯；但**拿 warning 数当"健康度指标"会得出错误结论**——本文档加入时是 **649 → 700**（`node scripts/check-references.cjs`），差别全部来自这一条规则。**旧值 714 已过期**，它的拆法是：去掉本文档 **651** + 本文档 **63**（初次 51 + `56ea956` 那批补写 12；**旧标 `9adf069` 已订正**）。**这条规则数的是「命中某个已删除 basename 的行数」，与仓库健康度无关。**
   **现值取数命令（刻意不写死）**：`node scripts/check-references.cjs --json` → 读 `summary.warnings`；本文档自身的贡献 = `violations[]` 里 `file === "docs/HANDOFF-code-graph.zh-CN.md"` 的条数。
 - 精确的「引用已删除文件」判定不靠它：**图里由 `status=dangling` + `to.state=deleted` 表达**，比 basename 次级线索精确得多（`ledger/references.json` 的 `ledger/exempt.gitignore` 豁免理由里也写着同一句话）。
 - 该脚本另有 `allowlisted` 机制（`summary.allowlisted` 实测 = **1865** 条被豁免）：`ledger/references.json` 因为「内容按构造就是仓库里所有被引用的路径」整文件豁免了这类 warning，**本文档不在豁免名单里**。
