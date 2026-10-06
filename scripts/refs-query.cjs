@@ -76,6 +76,7 @@ class UsageError extends Error {}
 
 /** 失败出口：--json 时把结构化结果写到 stdout，否则写 stderr；两者都以非零码退出。 */
 function die(opts, code, message, payload) {
+  if (payload) assertCompletenessInvariant(payload.completeness, Array.isArray(payload.gaps) ? payload.gaps : []);
   if (opts && opts.json && payload) process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
   else process.stderr.write(`${message}\n`);
   process.exit(code);
@@ -154,6 +155,20 @@ function emptyReading(completeness) {
   return `空引用方列表 ≠ 没人引用它：completeness=${completeness}，图不完整或已过期，空只代表「本查询没看到引用」。`;
 }
 
+/**
+ * 抛错级不变量：completeness === 'complete' 与 gaps.length > 0 不得同时成立。
+ * 本版 `complete` 不可达（取值只会是 stale/partial/unknown）；此断言是给未来新增 complete 分支的护栏，不要删。
+ * 违反即抛未捕获异常：进程非零退出（exit 1），不降级、不静默继续，也不写出一份自相矛盾的报告。
+ */
+function assertCompletenessInvariant(completeness, gaps) {
+  if (completeness === 'complete' && gaps.length > 0) {
+    throw new Error(
+      `不变量被破坏：completeness='complete' 与 gaps.length=${gaps.length} 同时成立；` +
+        `'complete' 必须意味着没有任何缺口。首个缺口：${gaps[0]}`,
+    );
+  }
+}
+
 function buildReport(opts, target, loaded) {
   const artifact = loaded.artifact;
   const files = new Set((artifact.files || []).map((f) => f.id));
@@ -213,6 +228,7 @@ function buildReport(opts, target, loaded) {
   ];
   if (diverged) reasons.push(...gaps);
   const completeness = diverged ? 'stale' : 'partial';
+  assertCompletenessInvariant(completeness, gaps);
   const runtimeRefs = symbolRows.filter((r) => !r.type_only).length;
   const typeRefs = symbolRows.filter((r) => r.type_only).length;
 
