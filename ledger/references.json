@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "fbd1b3143863ab4d848d62665b31a1ad6f4390858e3218bf9ef1b52912e5123a",
+    "universe_hash": "6e0ecc3c7f6e410acc09ffa17107cf9155124bec760998a8b928f7f6891195c3",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1413,
+    "tracked_total": 1414,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 77
+      "scanned_total": 78
     },
     "analysis": {
       "mode": "typescript",
@@ -92,7 +92,7 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "图数据文件自己（ledger/references.json）那一行的 bytes / lines 恒为 null：它们是自指的（产物大小依赖上一次写出的自己），记了就没有不动点、幂等当场失效；其余字段照常登记。",
     "node_states": {
-      "indexed": 1413
+      "indexed": 1414
     },
     "edge_kinds": {
       "anchor": 3,
@@ -102,10 +102,10 @@
       "import": 315,
       "markdown-link": 35,
       "package-field": 48,
-      "require": 49
+      "require": 52
     },
     "edge_status": {
-      "external": 179,
+      "external": 182,
       "resolved": 307
     },
     "omitted": [
@@ -12370,6 +12370,15 @@
       "edge_in": 1
     },
     {
+      "id": "scripts/check-impact.cjs",
+      "lang": "js",
+      "state": "indexed",
+      "bytes": 23120,
+      "lines": 433,
+      "edge_out": 3,
+      "edge_in": 0
+    },
+    {
       "id": "scripts/check-lib-sync.cjs",
       "lang": "js",
       "state": "indexed",
@@ -15345,6 +15354,72 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
+      "type_only": false
+    },
+    {
+      "id": "scripts/check-impact.cjs:41:34:require:node:child_process",
+      "kind": "require",
+      "from": {
+        "file": "scripts/check-impact.cjs",
+        "line": 41,
+        "column": 34
+      },
+      "to": {
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": "outside"
+      },
+      "cross_file": false,
+      "specifier": "node:child_process",
+      "resolved": null,
+      "fragment": null,
+      "field": null,
+      "status": "external",
+      "type_only": false
+    },
+    {
+      "id": "scripts/check-impact.cjs:42:20:require:node:fs",
+      "kind": "require",
+      "from": {
+        "file": "scripts/check-impact.cjs",
+        "line": 42,
+        "column": 20
+      },
+      "to": {
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": "outside"
+      },
+      "cross_file": false,
+      "specifier": "node:fs",
+      "resolved": null,
+      "fragment": null,
+      "field": null,
+      "status": "external",
+      "type_only": false
+    },
+    {
+      "id": "scripts/check-impact.cjs:43:22:require:node:path",
+      "kind": "require",
+      "from": {
+        "file": "scripts/check-impact.cjs",
+        "line": 43,
+        "column": 22
+      },
+      "to": {
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": "outside"
+      },
+      "cross_file": false,
+      "specifier": "node:path",
+      "resolved": null,
+      "fragment": null,
+      "field": null,
+      "status": "external",
       "type_only": false
     },
     {
