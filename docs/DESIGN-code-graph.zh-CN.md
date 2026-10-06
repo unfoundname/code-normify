@@ -569,9 +569,9 @@
 | --- | --- | --- |
 | `import` / `export-from` / `require` / `dynamic-import` | 语法树节点（沿用 `scripts/reference-graph-core.cjs` 的 `collectSpecifiersWithKinds` 判定（实测 `:835-848`；写作时为 `check-references.cjs:2200-2205`，已漂移，该坐标今天是 `checkUntrackedMarkdownLinks` 的 `forEachMarkdownLink` 循环）：`ImportDeclaration` / 带说明符的 `ExportDeclaration` / `ImportKeyword` 调用 / 裸 `require` 调用） | 先按 3.5 的解析器定位目标文件，再对每个 `ImportSpecifier` 用 `checker.getSymbolAtLocation` + `getAliasedSymbol` 定位目标声明 |
 | `type-reference` | `TypeReferenceNode`（`src/` 实测 805 个） | 同上；`type_only: true` |
-| `markdown-link` / `anchor` | 沿用 `check-references.cjs` 的 `forEachMarkdownLink`(1134) 与 `extractHeadingAnchors`(2694) | 目标文件 + `githubSlug`(2664) 或显式 HTML `id`/`name` |
-| `package-field` | 沿用 `collectPackageFieldTargets`(1390) | 文件/目录存在性 |
-| `ci-target` | 沿用 `collectWorkflowRunLines`(1515) / `extractNodeTargets`(1422) / `extractNpmScriptRefs`(1544) | 脚本文件 / `package.json` script 名 |
+| `markdown-link` / `anchor` | 沿用共享内核 `scripts/reference-graph-core.cjs` 的 `function forEachMarkdownLink(ctx, rel, visit, options) {`（实测 `:425`）与 `function extractHeadingAnchors(ctx, rel) {`（实测 `:1099`）；写作时为 `check-references.cjs:1134` / `:2694`，已漂移 | 目标文件 + `function githubSlug(headingText) {`（`scripts/reference-graph-core.cjs`，实测 `:1069`；写作时为 `check-references.cjs:2664`，已漂移）或显式 HTML `id`/`name` |
+| `package-field` | 沿用共享内核 `scripts/reference-graph-core.cjs` 的 `function collectPackageFieldTargets(pkg) {`（实测 `:539`；写作时为 `check-references.cjs:1390`，已漂移） | 文件/目录存在性 |
+| `ci-target` | 沿用共享内核 `scripts/reference-graph-core.cjs` 的 `function collectWorkflowRunLines(text) {`（实测 `:608`）/ `function extractNodeTargets(command) {`（实测 `:572`）/ `function extractNpmScriptRefs(line) {`（实测 `:637`）；写作时为 `check-references.cjs:1515` / `:1422` / `:1544`，已漂移 | 脚本文件 / `package.json` script 名 |
 | `module-id-reference` | 解析 `modules/*.md` frontmatter 的 `source.path`、`deps[].to`、`apis[].input/output`、Schema `$ref` | `Module.id` / 命名类型 |
 
 ### 3.4 非 TS 文件的退化处理
@@ -580,9 +580,9 @@
 | --- | --- | --- | --- |
 | `.ts` / `.tsx` / `.mts` / `.cts` | `createProgram` 全精度 | 文件 + 声明 + 边 | 3.1 |
 | `.mjs` / `.cjs` / `.js` / `.jsx` | 归入同一个 `createProgram`（`allowJs`）或用 `createSourceFile` + `scriptKindFor` 退化为文件级 | **文件级**（不保证符号级） | `scripts/reference-graph-core.cjs` 的 `scriptKindFor`（后缀 → `ts.ScriptKind`，实测 `:797`；写作时为 `check-references.cjs:2166-2173`，已漂移，该坐标今天是 `checkUntrackedWorkflowRefs` 的循环）已有映射 |
-| `.md` | 只解析 Markdown 链接、图片、引用式定义、标题锚点 | 文件级 + 锚点 | `forEachMarkdownLink`(1134)、`extractHeadingAnchors`(2694) |
-| `.json` | 只解析 `package.json` 的 `main`/`types`/`exports`/`bin`/`files`；其它 `.json` 只记文件节点 | 文件级 | `collectPackageFieldTargets`(1390)、`collectExportStrings`(1405) |
-| `.yml` / `.yaml` | 只解析 workflow 的 `run:` 里的 `node <路径>` 与 `npm run <script>` | 文件级 | `collectWorkflowRunLines`(1515) |
+| `.md` | 只解析 Markdown 链接、图片、引用式定义、标题锚点 | 文件级 + 锚点 | `scripts/reference-graph-core.cjs` 的 `function forEachMarkdownLink(ctx, rel, visit, options) {`（实测 `:425`）、`function extractHeadingAnchors(ctx, rel) {`（实测 `:1099`）；写作时为 `check-references.cjs:1134` / `:2694`，已漂移 |
+| `.json` | 只解析 `package.json` 的 `main`/`types`/`exports`/`bin`/`files`；其它 `.json` 只记文件节点 | 文件级 | `scripts/reference-graph-core.cjs` 的 `function collectPackageFieldTargets(pkg) {`（实测 `:539`）、`function collectExportStrings(exportsField, key = '.', out = []) {`（实测 `:554`）；写作时为 `check-references.cjs:1390` / `:1405`，已漂移 |
+| `.yml` / `.yaml` | 只解析 workflow 的 `run:` 里的 `node <路径>` 与 `npm run <script>` | 文件级 | `scripts/reference-graph-core.cjs` 的 `function collectWorkflowRunLines(text) {`（实测 `:608`）；写作时为 `check-references.cjs:1515`，已漂移 |
 | `.toml` 及其它 | 只记文件节点（参与 L0 文件表与 `edge_in`/`edge_out` 计数），不产边 | 文件级 | `TEXT_EXTENSIONS`（`scripts/check-references.cjs`，实测 `:105`；写作时为 `check-references.cjs:73`，已漂移）当前含 `.toml` |
 
 **退化必须显式标注**：每条边的 `status` 之外，`meta` 里记录每个后缀降到了哪一级；文档与查询输出**不得**把"文件级"答案说成"符号级"（见 5.5 的降级契约）。
@@ -594,20 +594,22 @@
 - 它是一个 **CLI-only 的 3,384 行（151,442 B）脚本**，文件末尾直接 `main(process.argv.slice(2));`，**全仓 `git grep "module.exports" scripts/` 无命中** ⇒ 现在**无法被 require 复用**。
 - 它的解析器是**闭包内函数**，依赖 `ctx`（`createContext` 的产物）与模块级可变状态（如 `SPECIFIER_ANALYSIS`、`TYPESCRIPT_CANDIDATE_ROOTS`）。
 
-**复用方案（唯一改动面）**：把纯函数解析器抽到一个共享模块（计划时写的是 `scripts/lib/reference-parsers.cjs`，**实际落地名 = `scripts/reference-graph-core.cjs`**，见 §2.7 / §10 增量 2 的落地状态），由 `check-references.cjs` 与新的图生成器**同时** require。抽取清单（含行号，均为实测）：
+**复用方案（唯一改动面）**：把纯函数解析器抽到一个共享模块（计划时写的是 `scripts/lib/reference-parsers.cjs`，**实际落地名 = `scripts/reference-graph-core.cjs`**，见 §2.7 / §10 增量 2 的落地状态），由 `check-references.cjs` 与新的图生成器**同时** require。抽取清单（**每条 = 路径 + 可 grep 的定义行引文 + 实测坐标**；本列原先只给裸行号，旧数字逐条留痕在表内，见表下「留痕」段）：
 
-| 抽取目标 | 现位置 | 用途 |
+| 抽取目标 | 现位置（**路径 + 可 grep 的定义行引文 + 实测坐标**；括号里留痕写作时点的旧坐标） | 用途 |
 | --- | --- | --- |
-| `scriptKindFor` | 2166 | 后缀 → `ts.ScriptKind` |
-| `collectSpecifiersWithTypescript` | 2184 | 模块说明符（语法树） |
-| `maskSource` / `collectSpecifiersWithRegex` | 2218 / 2274 | 拿不到 typescript 时的降级路径 |
-| `resolveRelativeSpecifier` / `moduleSpecifierCandidates` | 2336 / 2122 | 说明符 → 目标文件 |
-| `forEachMarkdownLink` | 1134 | Markdown 链接/图片/引用式定义 |
-| `extractHeadingAnchors` / `githubSlug` / `anchorMatches` | 2694 / 2664 / 2765 | 锚点 |
-| `collectPackageFieldTargets` / `collectExportStrings` | 1390 / 1405 | package.json 字段 |
-| `extractNodeTargets` / `collectWorkflowRunLines` / `extractNpmScriptRefs` | 1422 / 1515 / 1544 | CI 目标 |
-| `globToRegExp` | 411 | 模式匹配（复用同一套 `*` / `?` 语义） |
-| `pathState` / `indexPathState` / `isIgnoredPath` | 1002 / 2036 / 2072 | 以 git 索引为权威的存在性判定 |
+| `scriptKindFor` | `scripts/reference-graph-core.cjs` 的 `function scriptKindFor(ts, rel) {`（实测 `:797`；写作时为 `scripts/check-references.cjs:2166`，已漂移） | 后缀 → `ts.ScriptKind` |
+| `collectSpecifiersWithTypescript` | `scripts/reference-graph-core.cjs` 的 `function collectSpecifiersWithTypescript(ts, rel, text) {`（实测 `:862`；写作时为 `scripts/check-references.cjs:2184`，已漂移） | 模块说明符（语法树） |
+| `maskSource` / `collectSpecifiersWithRegex` | `scripts/reference-graph-core.cjs` 的 `function maskSource(text) {`（实测 `:873`）/ `function collectSpecifiersWithRegex(text) {`（实测 `:984`）（写作时为 `scripts/check-references.cjs:2218` / `:2274`，已漂移） | 拿不到 typescript 时的降级路径 |
+| `resolveRelativeSpecifier` / `moduleSpecifierCandidates` | `scripts/reference-graph-core.cjs` 的 `function resolveRelativeSpecifier(ctx, fromRel, spec) {`（实测 `:1022`）/ `function moduleSpecifierCandidates(fromRel, spec) {`（实测 `:753`）（写作时为 `scripts/check-references.cjs:2336` / `:2122`，已漂移） | 说明符 → 目标文件 |
+| `forEachMarkdownLink` | `scripts/reference-graph-core.cjs` 的 `function forEachMarkdownLink(ctx, rel, visit, options) {`（实测 `:425`；写作时为 `scripts/check-references.cjs:1134`，已漂移） | Markdown 链接/图片/引用式定义 |
+| `extractHeadingAnchors` / `githubSlug` / `anchorMatches` | `scripts/reference-graph-core.cjs` 的 `function extractHeadingAnchors(ctx, rel) {`（实测 `:1099`）/ `function githubSlug(headingText) {`（实测 `:1069`）/ `function anchorMatches(anchors, fragment) {`（实测 `:1170`）（写作时为 `scripts/check-references.cjs:2694` / `:2664` / `:2765`，已漂移） | 锚点 |
+| `collectPackageFieldTargets` / `collectExportStrings` | `scripts/reference-graph-core.cjs` 的 `function collectPackageFieldTargets(pkg) {`（实测 `:539`）/ `function collectExportStrings(exportsField, key = '.', out = []) {`（实测 `:554`）（写作时为 `scripts/check-references.cjs:1390` / `:1405`，已漂移） | package.json 字段 |
+| `extractNodeTargets` / `collectWorkflowRunLines` / `extractNpmScriptRefs` | `scripts/reference-graph-core.cjs` 的 `function extractNodeTargets(command) {`（实测 `:572`）/ `function collectWorkflowRunLines(text) {`（实测 `:608`）/ `function extractNpmScriptRefs(line) {`（实测 `:637`）（写作时为 `scripts/check-references.cjs:1422` / `:1515` / `:1544`，已漂移） | CI 目标 |
+| `globToRegExp` | `scripts/reference-graph-core.cjs` 的 `function globToRegExp(glob) {`（实测 `:145`；写作时为 `scripts/check-references.cjs:411`，已漂移）。同名副本另有两份**独立实现**，不是本次抽取对象：`scripts/check-doc-snippets.cjs:152` 与 `scripts/check-examples.cjs:269` 的 `function globToRegExp(glob) {` | 模式匹配（复用同一套 `*` / `?` 语义） |
+| `pathState` / `indexPathState` / `isIgnoredPath` | `scripts/reference-graph-core.cjs` 的 `function pathState(ctx, rel) {`（实测 `:296`）/ `function indexPathState(ctx, rel) {`（实测 `:667`）/ `function isIgnoredPath(ctx, rel) {`（实测 `:703`）（写作时为 `scripts/check-references.cjs:1002` / `:2036` / `:2072`，已漂移） | 以 git 索引为权威的存在性判定 |
+
+**留痕（本列原来的 19 个裸行号，一个都没删）**：旧写法只给数字，语境文件是 `scripts/check-references.cjs`。逐条复核：文档创建提交 `9a2f167` 时该文件 3,089 行，这 19 个数字**逐个命中同名 `function`**（是写作时点的真坐标）；到抽取落地前（`c493e80^`，该文件已涨到 3,383 行）它们**已经漂移**（例：`scriptKindFor` 当时在 `:2460`、`forEachMarkdownLink` 在 `:1237`）；今天该文件 2,574 行、这些实现**一个都不在里面**——它改为从共享内核复用（`scripts/check-references.cjs` 里 `const {` … `} = require('./reference-graph-core.cjs');`，实测 `:66` / `:95`）。所以：**复核请按上表的引文 grep，不要按旧数字跳转**。
 
 **硬约束**：抽取是**纯重构**——`check-references.cjs` 的行为、诊断码、`--json` 输出、退出码、`CHECK_TITLES`（9 项）与 `--help` 编号**逐字节不变**。验收方式：抽取前后各跑一次 `node scripts/check-references.cjs --json`，两份输出逐字节相同（见 10.2 验收标准）。
 
