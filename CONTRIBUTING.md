@@ -100,7 +100,8 @@ node scripts/refs-query.cjs impact <仓库相对路径>
 ```
 
 - `who-references <路径>` —— **谁直接引用这个文件**：文件级边 `edges[]`（`来源:行:列` + `kind` + `status`）与符号级边 `symbol_edges[]`（另按运行时 `runtime_refs` / 类型 `type_refs` 拆分计数）。
-- `impact <路径>` —— **谁（间接）引用这个文件**：反向闭包**按深度分组**（每层列出受影响文件，并标出牵动它的 `来源:行:列`），另加两个分区：
+- `impact <路径>` —— **谁（间接）引用这个文件**：反向闭包**按深度分组**（每层列出受影响文件，并标出牵动它的 `来源:行:列`），每个受影响文件另附一条**最短引用链** `path[]`（形如 `A ⇐ B ⇐ 目标`，带跳数 `path_hops`，链上每跳用的边在 `path_edges[]`）——只给 BFS 首达的那一条，同一文件存在多条等价最短链时不列全。另报闭包子图内的环与两个分区：
+  - **环**（`cycles[]` / `self_loops[]`）：`cycles[]` 是**闭包子图内**（target ∪ 闭包文件）size>1 的强连通分量，**不是全图 SCC**——闭包之外的环不报，换个 target 可能看到不同的环；自环（某文件引用自己）单列在 `self_loops[]`，不混进分量。
   - **派生产物**（`source=build-artifact`）：由 `src/<rel>.ts` 推导 `lib/<rel>.js`、`lib/<rel>.js.map`、`lib/types/<rel>.d.ts` 三条候选，**只列图 `files[]` 里真实存在的**，绝不凭想象造路径；非 `src/` 下的目标或非 `.ts` 的目标（文档、脚本、工作流等）直接判空——所以 `impact docs/SPEC.zh-CN.md` 的派生产物必然是 0，不会凭空造出 `lib/SPEC.js`。
   - **门禁义务项**（`source=gate:`）：全部由图里的既有事实推导，**不写死任何清单**——只要派生产物含 `lib/` 前缀就要求跑 `npm run check:libsync`；图里指向这些派生产物的既有边逐条列出，并说明产物缺失会红在哪一环（例如 `ci-target` 边 `.github/workflows/ci.yml:246` → `lib/tools.js`，就是 CI 里那句 `node --check lib/tools.js`）。义务项**不进闭包**：它们不是引用方，也不冒充引用边。
 
