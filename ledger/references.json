@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "ce06c2dca691aa20918d5afb16e21fb95d0d963a257e56d12090c52e4da3d3e0",
+    "universe_hash": "e9f5b78b4e76fbae2456ce7e018e1ce3f822edab9e0f17475cdf953588cdb299",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1494,
+    "tracked_total": 1495,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 158
+      "scanned_total": 159
     },
     "analysis": {
       "mode": "typescript",
@@ -92,7 +92,7 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "自指条目（本产物自身的 bytes / lines）固定写 null —— 这是【处置选择】，不是\"没有不动点\"：实测把这两个量迭代写回，第 3 次即收敛（不动点存在）。因此这里写 null 是为了让产物写入幂等、而不是因为\"自指在数学上不可能稳定\"。（本条 = 图数据文件自己（ledger/references.json）那一行；只豁免这两个派生量，其余字段照常登记。）",
     "node_states": {
-      "indexed": 1494
+      "indexed": 1495
     },
     "edge_kinds": {
       "anchor": 3,
@@ -124,8 +124,8 @@
       "id": ".github/workflows/ci.yml",
       "lang": "yaml",
       "state": "indexed",
-      "bytes": 32910,
-      "lines": 302,
+      "bytes": 35561,
+      "lines": 324,
       "edge_out": 17,
       "edge_in": 0
     },
@@ -160,8 +160,8 @@
       "id": "CONTRIBUTING.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 66779,
-      "lines": 178,
+      "bytes": 71398,
+      "lines": 184,
       "edge_out": 1,
       "edge_in": 0
     },
@@ -214,7 +214,7 @@
       "id": "docs/DESIGN-code-graph.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 232555,
+      "bytes": 233811,
       "lines": 1363,
       "edge_out": 0,
       "edge_in": 0
@@ -12235,6 +12235,15 @@
       "edge_in": 0
     },
     {
+      "id": "ledger/change-log/20261006T181216Z-4e0170f.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2426,
+      "lines": 75,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
       "id": "ledger/change-log/README.md",
       "lang": "md",
       "state": "indexed",
@@ -13075,8 +13084,8 @@
       "id": "scripts/check-file-ledger.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 103323,
-      "lines": 2024,
+      "bytes": 104171,
+      "lines": 2032,
       "edge_out": 5,
       "edge_in": 1
     },
@@ -13093,8 +13102,8 @@
       "id": "scripts/check-lib-sync.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 70167,
-      "lines": 1573,
+      "bytes": 71861,
+      "lines": 1586,
       "edge_out": 5,
       "edge_in": 1
     },
@@ -13102,8 +13111,8 @@
       "id": "scripts/check-references.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 118767,
-      "lines": 2576,
+      "bytes": 120421,
+      "lines": 2585,
       "edge_out": 4,
       "edge_in": 1
     },
@@ -13156,8 +13165,8 @@
       "id": "scripts/refs-query.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 92038,
-      "lines": 1722,
+      "bytes": 93162,
+      "lines": 1729,
       "edge_out": 3,
       "edge_in": 1
     },
@@ -13480,8 +13489,8 @@
       "id": "tests/file-ledger-ratchet-e2e.mjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 29288,
-      "lines": 459,
+      "bytes": 29611,
+      "lines": 462,
       "edge_out": 6,
       "edge_in": 2
     },
@@ -13516,8 +13525,8 @@
       "id": "tests/reference-graph-e2e.mjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 38148,
-      "lines": 556,
+      "bytes": 38698,
+      "lines": 560,
       "edge_out": 6,
       "edge_in": 2
     },
@@ -13657,11 +13666,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:65:9:ci-target:scripts[\"check:refs\"]→check:refs",
+      "id": ".github/workflows/ci.yml:70:9:ci-target:scripts[\"check:refs\"]→check:refs",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 65,
+        "line": 70,
         "column": 9
       },
       "to": {
@@ -13679,11 +13688,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:78:9:ci-target:scripts[\"check:docs\"]→check:docs",
+      "id": ".github/workflows/ci.yml:86:9:ci-target:scripts[\"check:docs\"]→check:docs",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 78,
+        "line": 86,
         "column": 9
       },
       "to": {
@@ -13701,11 +13710,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:87:9:ci-target:scripts[\"check:libsync\"]→check:libsync",
+      "id": ".github/workflows/ci.yml:95:9:ci-target:scripts[\"check:libsync\"]→check:libsync",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 87,
+        "line": 95,
         "column": 9
       },
       "to": {
@@ -13723,11 +13732,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:98:9:ci-target:scripts[\"check:examples\"]→check:examples",
+      "id": ".github/workflows/ci.yml:109:9:ci-target:scripts[\"check:examples\"]→check:examples",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 98,
+        "line": 109,
         "column": 9
       },
       "to": {
@@ -13745,11 +13754,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:120:9:ci-target:scripts[\"check:ledger:gen\"]→check:ledger:gen",
+      "id": ".github/workflows/ci.yml:131:9:ci-target:scripts[\"check:ledger:gen\"]→check:ledger:gen",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 120,
+        "line": 131,
         "column": 9
       },
       "to": {
@@ -13767,11 +13776,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:174:9:ci-target:scripts[\"check:ledger\"]→check:ledger",
+      "id": ".github/workflows/ci.yml:194:9:ci-target:scripts[\"check:ledger\"]→check:ledger",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 174,
+        "line": 194,
         "column": 9
       },
       "to": {
@@ -13789,11 +13798,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:216:9:ci-target:scripts[\"check:graph\"]→check:graph",
+      "id": ".github/workflows/ci.yml:236:9:ci-target:scripts[\"check:graph\"]→check:graph",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 216,
+        "line": 236,
         "column": 9
       },
       "to": {
@@ -13811,11 +13820,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:239:9:ci-target:scripts[\"check:changes\"]→check:changes",
+      "id": ".github/workflows/ci.yml:259:9:ci-target:scripts[\"check:changes\"]→check:changes",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 239,
+        "line": 259,
         "column": 9
       },
       "to": {
@@ -13833,11 +13842,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:281:9:ci-target:scripts[\"check:impact\"]→check:impact",
+      "id": ".github/workflows/ci.yml:303:9:ci-target:scripts[\"check:impact\"]→check:impact",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 281,
+        "line": 303,
         "column": 9
       },
       "to": {
@@ -13855,11 +13864,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:294:9:ci-target:scripts[\"test:render\"]→test:render",
+      "id": ".github/workflows/ci.yml:316:9:ci-target:scripts[\"test:render\"]→test:render",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 294,
+        "line": 316,
         "column": 9
       },
       "to": {
@@ -13877,11 +13886,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:298:24:ci-target:lib/index.js",
+      "id": ".github/workflows/ci.yml:320:24:ci-target:lib/index.js",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 298,
+        "line": 320,
         "column": 24
       },
       "to": {
@@ -13899,11 +13908,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:299:24:ci-target:lib/tools.js",
+      "id": ".github/workflows/ci.yml:321:24:ci-target:lib/tools.js",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 299,
+        "line": 321,
         "column": 24
       },
       "to": {
@@ -13921,11 +13930,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:300:24:ci-target:lib/mcp.js",
+      "id": ".github/workflows/ci.yml:322:24:ci-target:lib/mcp.js",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 300,
+        "line": 322,
         "column": 24
       },
       "to": {
@@ -16055,11 +16064,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/check-file-ledger.cjs:95:20:require:node:fs",
+      "id": "scripts/check-file-ledger.cjs:98:20:require:node:fs",
       "kind": "require",
       "from": {
         "file": "scripts/check-file-ledger.cjs",
-        "line": 95,
+        "line": 98,
         "column": 20
       },
       "to": {
@@ -16077,11 +16086,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/check-file-ledger.cjs:96:22:require:node:path",
+      "id": "scripts/check-file-ledger.cjs:99:22:require:node:path",
       "kind": "require",
       "from": {
         "file": "scripts/check-file-ledger.cjs",
-        "line": 96,
+        "line": 99,
         "column": 22
       },
       "to": {
@@ -16099,11 +16108,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/check-file-ledger.cjs:97:24:require:node:crypto",
+      "id": "scripts/check-file-ledger.cjs:100:24:require:node:crypto",
       "kind": "require",
       "from": {
         "file": "scripts/check-file-ledger.cjs",
-        "line": 97,
+        "line": 100,
         "column": 24
       },
       "to": {
@@ -16121,11 +16130,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/check-file-ledger.cjs:98:34:require:node:child_process",
+      "id": "scripts/check-file-ledger.cjs:101:34:require:node:child_process",
       "kind": "require",
       "from": {
         "file": "scripts/check-file-ledger.cjs",
-        "line": 98,
+        "line": 101,
         "column": 34
       },
       "to": {
@@ -16143,11 +16152,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/check-file-ledger.cjs:104:22:require:./file-ledger-core.cjs",
+      "id": "scripts/check-file-ledger.cjs:107:22:require:./file-ledger-core.cjs",
       "kind": "require",
       "from": {
         "file": "scripts/check-file-ledger.cjs",
-        "line": 104,
+        "line": 107,
         "column": 22
       },
       "to": {
@@ -16231,11 +16240,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/check-lib-sync.cjs:85:20:require:node:fs",
+      "id": "scripts/check-lib-sync.cjs:87:20:require:node:fs",
       "kind": "require",
       "from": {
         "file": "scripts/check-lib-sync.cjs",
-        "line": 85,
+        "line": 87,
         "column": 20
       },
       "to": {
@@ -16253,11 +16262,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/check-lib-sync.cjs:86:20:require:node:os",
+      "id": "scripts/check-lib-sync.cjs:88:20:require:node:os",
       "kind": "require",
       "from": {
         "file": "scripts/check-lib-sync.cjs",
-        "line": 86,
+        "line": 88,
         "column": 20
       },
       "to": {
@@ -16275,11 +16284,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/check-lib-sync.cjs:87:22:require:node:path",
+      "id": "scripts/check-lib-sync.cjs:89:22:require:node:path",
       "kind": "require",
       "from": {
         "file": "scripts/check-lib-sync.cjs",
-        "line": 87,
+        "line": 89,
         "column": 22
       },
       "to": {
@@ -16297,11 +16306,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/check-lib-sync.cjs:88:24:require:node:crypto",
+      "id": "scripts/check-lib-sync.cjs:90:24:require:node:crypto",
       "kind": "require",
       "from": {
         "file": "scripts/check-lib-sync.cjs",
-        "line": 88,
+        "line": 90,
         "column": 24
       },
       "to": {
@@ -16319,11 +16328,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/check-lib-sync.cjs:89:34:require:node:child_process",
+      "id": "scripts/check-lib-sync.cjs:91:34:require:node:child_process",
       "kind": "require",
       "from": {
         "file": "scripts/check-lib-sync.cjs",
-        "line": 89,
+        "line": 91,
         "column": 34
       },
       "to": {
@@ -23227,11 +23236,11 @@
       "type_only": false
     },
     {
-      "id": "tests/file-ledger-ratchet-e2e.mjs:37:16:import:node:fs",
+      "id": "tests/file-ledger-ratchet-e2e.mjs:40:16:import:node:fs",
       "kind": "import",
       "from": {
         "file": "tests/file-ledger-ratchet-e2e.mjs",
-        "line": 37,
+        "line": 40,
         "column": 16
       },
       "to": {
@@ -23249,11 +23258,11 @@
       "type_only": false
     },
     {
-      "id": "tests/file-ledger-ratchet-e2e.mjs:38:16:import:node:os",
+      "id": "tests/file-ledger-ratchet-e2e.mjs:41:16:import:node:os",
       "kind": "import",
       "from": {
         "file": "tests/file-ledger-ratchet-e2e.mjs",
-        "line": 38,
+        "line": 41,
         "column": 16
       },
       "to": {
@@ -23271,11 +23280,11 @@
       "type_only": false
     },
     {
-      "id": "tests/file-ledger-ratchet-e2e.mjs:39:18:import:node:path",
+      "id": "tests/file-ledger-ratchet-e2e.mjs:42:18:import:node:path",
       "kind": "import",
       "from": {
         "file": "tests/file-ledger-ratchet-e2e.mjs",
-        "line": 39,
+        "line": 42,
         "column": 18
       },
       "to": {
@@ -23293,11 +23302,11 @@
       "type_only": false
     },
     {
-      "id": "tests/file-ledger-ratchet-e2e.mjs:40:20:import:node:crypto",
+      "id": "tests/file-ledger-ratchet-e2e.mjs:43:20:import:node:crypto",
       "kind": "import",
       "from": {
         "file": "tests/file-ledger-ratchet-e2e.mjs",
-        "line": 40,
+        "line": 43,
         "column": 20
       },
       "to": {
@@ -23315,11 +23324,11 @@
       "type_only": false
     },
     {
-      "id": "tests/file-ledger-ratchet-e2e.mjs:41:27:import:node:child_process",
+      "id": "tests/file-ledger-ratchet-e2e.mjs:44:27:import:node:child_process",
       "kind": "import",
       "from": {
         "file": "tests/file-ledger-ratchet-e2e.mjs",
-        "line": 41,
+        "line": 44,
         "column": 27
       },
       "to": {
@@ -23337,11 +23346,11 @@
       "type_only": false
     },
     {
-      "id": "tests/file-ledger-ratchet-e2e.mjs:42:31:import:node:url",
+      "id": "tests/file-ledger-ratchet-e2e.mjs:45:31:import:node:url",
       "kind": "import",
       "from": {
         "file": "tests/file-ledger-ratchet-e2e.mjs",
-        "line": 42,
+        "line": 45,
         "column": 31
       },
       "to": {
@@ -23887,11 +23896,11 @@
       "type_only": false
     },
     {
-      "id": "tests/reference-graph-e2e.mjs:46:16:import:node:fs",
+      "id": "tests/reference-graph-e2e.mjs:48:16:import:node:fs",
       "kind": "import",
       "from": {
         "file": "tests/reference-graph-e2e.mjs",
-        "line": 46,
+        "line": 48,
         "column": 16
       },
       "to": {
@@ -23909,11 +23918,11 @@
       "type_only": false
     },
     {
-      "id": "tests/reference-graph-e2e.mjs:47:16:import:node:os",
+      "id": "tests/reference-graph-e2e.mjs:49:16:import:node:os",
       "kind": "import",
       "from": {
         "file": "tests/reference-graph-e2e.mjs",
-        "line": 47,
+        "line": 49,
         "column": 16
       },
       "to": {
@@ -23931,11 +23940,11 @@
       "type_only": false
     },
     {
-      "id": "tests/reference-graph-e2e.mjs:48:18:import:node:path",
+      "id": "tests/reference-graph-e2e.mjs:50:18:import:node:path",
       "kind": "import",
       "from": {
         "file": "tests/reference-graph-e2e.mjs",
-        "line": 48,
+        "line": 50,
         "column": 18
       },
       "to": {
@@ -23953,11 +23962,11 @@
       "type_only": false
     },
     {
-      "id": "tests/reference-graph-e2e.mjs:49:20:import:node:crypto",
+      "id": "tests/reference-graph-e2e.mjs:51:20:import:node:crypto",
       "kind": "import",
       "from": {
         "file": "tests/reference-graph-e2e.mjs",
-        "line": 49,
+        "line": 51,
         "column": 20
       },
       "to": {
@@ -23975,11 +23984,11 @@
       "type_only": false
     },
     {
-      "id": "tests/reference-graph-e2e.mjs:50:27:import:node:child_process",
+      "id": "tests/reference-graph-e2e.mjs:52:27:import:node:child_process",
       "kind": "import",
       "from": {
         "file": "tests/reference-graph-e2e.mjs",
-        "line": 50,
+        "line": 52,
         "column": 27
       },
       "to": {
@@ -23997,11 +24006,11 @@
       "type_only": false
     },
     {
-      "id": "tests/reference-graph-e2e.mjs:51:31:import:node:url",
+      "id": "tests/reference-graph-e2e.mjs:53:31:import:node:url",
       "kind": "import",
       "from": {
         "file": "tests/reference-graph-e2e.mjs",
-        "line": 51,
+        "line": 53,
         "column": 31
       },
       "to": {

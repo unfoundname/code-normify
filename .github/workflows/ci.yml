@@ -56,15 +56,23 @@ jobs:
         #    （EISDIR 被同名目录顶替 / EPERM·EACCES ACL 拒绝 / ENOENT 索引里有磁盘上没有）即 error，
         #    编码不可信（UTF-16 BOM、高比例 NUL、非法 UTF-8）同样 error，绝不按 utf8 静默硬解码；
         #    拿不到 git 跟踪清单或历史删除清单也是 error（浅克隆除外，那种情况为 warning）。
-        # 快照（2026-10-05）：以上「9 类」以当时 scripts/check-references.cjs 的 CHECK_TITLES（9 项）
-        # 与 VERSION_SYNC_LITERALS（8 条：src/adapters/mcp.ts、package-lock.json ×2、tests/mcp-e2e.mjs、
-        # README.md、README_EN.md、docs/SPEC.zh-CN.md 为 error，lib/adapters/mcp.js 编译产物为 warning）
-        # 为准。该脚本仍在扩充，**新增检查项或同步字面量时必须同步改本注释与 CONTRIBUTING.md**。
+        # 快照（2026-10-05，【只作留痕，不是现值】）：以上「9 类」以当时 scripts/check-references.cjs 的
+        # CHECK_TITLES（9 项）与当时的 VERSION_SYNC_LITERALS（8 条：src/adapters/mcp.ts、package-lock.json ×2、
+        # tests/mcp-e2e.mjs、README.md、README_EN.md、docs/SPEC.zh-CN.md 为 error，lib/adapters/mcp.js
+        # 编译产物为 warning）为准。**两个条数都是活值 —— 取数、不复述**：
+        #   · 「9 类」（= CHECK_TITLES 顶层项数）：node scripts/check-references.cjs --json → summary.checks.length
+        #   · VERSION_SYNC_LITERALS 条数：数脚本里该数组的 id: 行数（error / warning 按同段 severity: 拆）
+        # 后者的完整取数命令与实跑输出见 CONTRIBUTING.md「引用完整性门禁」第 5 项末尾那段代码块（本批实跑 = 8 条：
+        # 7 error + 1 warning，与上面那行 2026-10-05 的留痕值相同）。
+        # 该脚本仍在扩充，**新增检查项或同步字面量时必须同步改本注释与 CONTRIBUTING.md**。
         # 已列进 `npm run check`（在 ci-contract-check.cjs 之后），这里保留独立步骤是为了在 CI 日志里
         # 一眼看出是哪道门禁红。
         run: npm run check:refs
       - name: Doc snippet compile + consistency guard
-        # 文档示例编译 / 一致性门禁（scripts/check-doc-snippets.cjs v1.0.0，4 项检查）：把 README /
+        # 文档示例编译 / 一致性门禁（scripts/check-doc-snippets.cjs v1.0.0；**「4 项检查」是契约常量**
+        # —— `CHECK_TITLES` 的顶层条目数，与链上另外两道同族；**现值取数** = `node scripts/check-doc-snippets.cjs --json`
+        # 的 `summary.checks.length`，口径 = 该数组长度，**本批实测 4**；这一处的检查项数**没有**
+        # `SCRIPT_VERSION_CITATIONS` 断言，只能靠这条取数命令，故写作时不要换成汉字「四项」）：把 README /
         # README_EN / docs/** / skills/**（含 docs/RELEASE-*.md）里声称可直接使用的 ```ts 用法示例
         # 还原成 .ts，用仓库自带 typescript 以 --noEmit --strict 编译（paths 映射到 lib/types/*.d.ts）；
         # 并核对文档里的工具数量断言、createPromptManagerTools 必填选项与 execute 签名描述。
@@ -87,7 +95,10 @@ jobs:
         run: npm run check:libsync
       - name: Examples runnable + self-cleaning guard
         # 示例可执行 + 自净性门禁（scripts/check-examples.cjs）：逐条执行写死在 INCLUDE 清单里的示例
-        # （当前 3 条：examples/branch-development/example.mjs、examples/bilibili-trial/
+        # （**条数是活值 —— 取数、不复述**：现值 = 该脚本 `const INCLUDE = [` 与其后第一个 `\n];` 之间的
+        # `path:` 行数，等价取数 = `node scripts/check-examples.cjs` 末段 `统计:` 行的「纳入 N 条」或
+        # `--json` 的 `manifest.include.length`；**留痕（时点 = 本批开工版 `4e0170f`；只作留痕、不是现值）**：
+        # 该时点实测 3 条 = examples/branch-development/example.mjs、examples/bilibili-trial/
         # project-data-view.mjs 的 --check 与默认影子模式），要求退出 0；并在每条示例运行前后各取一次
         # git 快照（`git status --porcelain -z`，含 --ignored 条目）求差，任何新增/修改/删除——**包括
         # 被忽略路径的变化**——都算 error（example-mutated-repo）。拦的是两类历史事故：「文档/示例
@@ -167,10 +178,19 @@ jobs:
         # 覆盖干净态与幂等 / schema_version 不匹配直接 error / accounted 缺 basis / 无条目新文件 /
         # `**` 过宽豁免 / 豁免条目缺 reason / 手工洗白与集合差异 / *review*.md 折叠误伤与交集 /
         # 合法缩小 / 首次引入）。
-        # 快照（2026-10-05）：台账宇宙 1412 个已跟踪文件 = owned 0 + exempt 1383 + accounted 29
-        # + unowned 0；豁免清单 19 条（其中 examples/** 命中 89.2%，带 broad_confirmed 人工确认）、accounted 29 条
-        # （每条带 accounted_at + basis）、归属覆盖率 0.00%（owned 0）、交叉校验三类均为 0。该脚本仍在扩充，
-        # **新增检查项或改动豁免模式/元信息口径时必须同步改本注释与 CONTRIBUTING.md**（数量、编号、覆盖范围三处）。
+        # **规模快照块已整块换成「取数命令 + 口径」**（与下面 graph 步骤同一处置；不再复述任何规模数字，
+        # 因为它们随每次提交变化，本注释历史上就因此错过多次）。要现值，跑：
+        #   node scripts/check-file-ledger.cjs            四态归属 / 台账宇宙 / accounted 棘轮 / 交叉校验三类
+        #   node scripts/check-file-ledger.cjs --json     summary.trackedTotal · summary.states · summary.statesSum
+        #                                                 · summary.accounted.total · summary.exempt.total
+        #                                                 · summary.exempt.hitFiles · summary.moduleCoverage
+        # 口径：台账宇宙 = `git ls-files` 的全部已跟踪文件；四态计数之和必须等于它（门禁内部不变量断言）；
+        # 豁免模式条数取 `summary.exempt.total`（**不是** `hitFiles`——那是全部模式加总的命中文件数）。
+        # 历史快照（【只作留痕，不是现值】）：2026-10-05 时点 = 台账宇宙 1412（= owned 0 + exempt 1383
+        # + accounted 29 + unowned 0）· 豁免清单 19 条（其中 examples/** 命中 89.2%，带 broad_confirmed
+        # 人工确认）· accounted 29 条 · 归属覆盖率 0.00%（owned 0）· 交叉校验三类均为 0。
+        # 该脚本仍在扩充，**新增检查项或改动豁免模式/元信息口径时必须同步改本注释与 CONTRIBUTING.md**
+        # （数量、编号、覆盖范围三处）。
         run: npm run check:ledger
       - name: Reference graph generator check (file-level graph, idempotent)
         # 文件级引用图生成器 --check（scripts/generate-reference-graph.cjs v1.1.0 + 共享解析内核
@@ -270,7 +290,9 @@ jobs:
         #   impact-schema-version-mismatch（两边 schema_version 不一致——图与门禁必须同一次提交一起改）、
         #   impact-graph-malformed（顶层非对象 / edges 或 symbol_edges 不是数组）。
         # 另有 exit 2 = 命令行用法错误（未知开关 / `--root` 缺参数）；`--root` 指向非 git 仓库根同样 exit 1 拒绝，不回退。
-        # **回归用例**：`npm test` 里的 tests/impact-gate-e2e.mjs（9 组 75 条断言；临时夹具用 `git checkout-index`
+        # **回归用例**：`npm test` 里的 tests/impact-gate-e2e.mjs（**断言条数是活值 —— 取数、不复述**：
+        # 跑它、读末行的 `✔ N/N 条断言通过`；**留痕（时点 = 本批开工版 `4e0170f`；只作留痕、不是现值）**：
+        # 该时点写作 9 组 75 条断言；临时夹具用 `git checkout-index`
         # 物化真仓库、图用真生成器重算、跑完自删）——覆盖上面每条判据与四条 fail-closed 诊断码，包括：
         # 删被引用文件（点名边 id）、删导出符号（新增未解析那一半）、删无人引用文件与只改内容两条反例、
         # **棘轮不追溯历史存量**（C1 引入悬空 → C2 无关改动 ⇒ 在 C2 上 exit 0）、`external`/`outside` 符号边不算未解析、

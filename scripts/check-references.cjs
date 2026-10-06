@@ -1164,7 +1164,10 @@ function checkWorkflowRuns(ctx) {
  *
  * 扫描面（写死、可复现）：git 索引里扩展名为 `.md` 的文件，等价于 `git ls-files "*.md"`
  *   —— 含 README*、CONTRIBUTING.md、AGENTS.md、docs/**、ledger/**、skills/**、examples/**；
- *   实测本仓 1073 个。**不扫** .cjs/.mjs/.ts 源码里的字符串：那是代码不是散文，
+ *   **条数是活值 —— 取数、不复述**：现值 = `node scripts/check-references.cjs --json` 的
+ *   `summary.markdownFiles`（**同一支命令就是本脚本自己的输出**，因此不会与扫描面脱节；口径 =
+ *   「git 索引里扩展名为 `.md` 的文件数」= `git ls-files "*.md"` 的条数）；**留痕（时点 = 本批开工版
+ *   `4e0170f`；只作留痕，不是现值 —— 旧值不删）**：该时点实测 1073 个。**不扫** .cjs/.mjs/.ts 源码里的字符串：那是代码不是散文，
  *   且源码里的 `npm run <x>` 大量出现在测试夹具、正则与注释里，纳入只会制造噪声。
  *
  * 抽取与判定规则（实证依据，不靠印象）：
@@ -1499,8 +1502,14 @@ function expectedCitationValue(fromRel, kind, source) {
  * **计数条目的已知边界（写在实现里，别让读者误以为它万能）**：
  *   它断言的是「顶层**类数**」，即 `CHECK_TITLES` 的 key 数（= `--help` 的编号项数）。
  *   它**管不到**「某一类内部的覆盖范围条数」（例如 version-drift 里 `VERSION_SYNC_LITERALS`
- *   的 8 条、`SCRIPT_VERSION_CITATIONS` 的 8 条）。那些条数散落在 CONTRIBUTING.md 的散文里，
+ *   的条数、`SCRIPT_VERSION_CITATIONS` 的条数）。那些条数散落在 CONTRIBUTING.md 的散文里，
  *   **目前仍靠人工同步**——CONTRIBUTING 已就此写明。
+ *   **上述两个条数本身也是活值 —— 取数、不复述**：现值 = 数本脚本里 `const VERSION_SYNC_LITERALS = [`
+ *   与 `const SCRIPT_VERSION_CITATIONS = [` 两个数组的条目数，口径 = 「两个 `];` 之前的条目数」
+ *   （`VERSION_SYNC_LITERALS` 按 `id:` 行数、`SCRIPT_VERSION_CITATIONS` 按 `kind:` 行数；两者都是一条一行）；
+ *   最小可跑片段（本批复核实跑，输出 `8 / 8`，其中 `VERSION_SYNC_LITERALS` = 7 error + 1 warning）：
+ *   `node -e "const s=require('fs').readFileSync('scripts/check-references.cjs','utf8');const cut=(n)=>{const a=s.slice(s.indexOf('const '+n+' = ['));return a.slice(0,a.indexOf('\n];'))};const v=cut('VERSION_SYNC_LITERALS');const sev=[...v.matchAll(/severity: '(\w+)'/g)].map(m=>m[1]);console.log('VERSION_SYNC_LITERALS',(v.match(/^    id: /gm)||[]).length,'error',sev.filter(x=>x==='error').length,'warning',sev.filter(x=>x==='warning').length);const c=cut('SCRIPT_VERSION_CITATIONS');console.log('SCRIPT_VERSION_CITATIONS',(c.match(/^    kind: /gm)||[]).length)"`。
+ *   **留痕（时点 = 本批开工版 `4e0170f`；只作留痕，不是现值 —— 旧值不删）**：该时点两个条数都是 8 条。
  */
 function checkScriptVersionCitations(ctx) {
   for (const entry of SCRIPT_VERSION_CITATIONS) {

@@ -5,7 +5,9 @@
  * 构建产物与源一致门禁（lib-sync guard）
  * ---------------------------------------------------------------------------
  * 目的：让「改了 src/ 却忘了重建 lib/ 就提交」在 CI 里自动变红。
- *       lib/ 是被 git 跟踪的构建产物（索引里 84 个文件），却没有门禁能发现
+ *       lib/ 是被 git 跟踪的构建产物（**文件数是活值 —— 取数、不复述**：现值 = `(git ls-files 'lib/' | Measure-Object).Count`，
+ *       口径 = 「git 索引里的 `lib/` 条目数」，与下方判定基准是同一份索引；**留痕（时点 = 本批开工版 `4e0170f`；
+ *       只作留痕，不是现值 —— 旧值不删）**：该时点实测 84 个），却没有门禁能发现
  *       「源码已改、产物还是旧的」——本地 `npm test` 跑的是旧 lib，全绿；
  *       CI 里 clone 出来的也是旧 lib，也全绿。这类假绿只有靠「重新编译一遍再逐字节比对」
  *       才能发现。
@@ -244,10 +246,13 @@ function gitBlobSha1(buf) {
 /**
  * 批量取索引内容：一次 `git cat-file --batch`（stdin 传各条目 blob sha）读回全部字节。
  *
- * 为什么不是 84 次 `git show :<path>`：两者读的是**同一份索引 blob、同样的字节**
+ * 为什么不是逐文件 84 次 `git show :<path>`：两者读的是**同一份索引 blob、同样的字节**
  * （脚本会用 git blob SHA-1 逐条自校验，见 gitBlobSha1），但每次 `git show` 都要新起一个
  * git 进程；实测 Windows 上单次约 110ms，84 次 ≈ 9.5s，把整条门禁拖到 20s（本地）。
- * 批量读把这一段压到一个进程。
+ *   上面那个「84 次」的**次数**是活值（= 索引里的 `lib/` 条目数，取数与口径见文件头目的段：现值 =
+ *   `(git ls-files 'lib/' | Measure-Object).Count`，本批开工版 `4e0170f` 实测 84）；「单次约 110ms /
+ *   ≈ 9.5s / 20s」是**机器相关、负载相关的耗时观测，只作量级留痕，不是现值**，故不换算成取数命令。
+ *   批量读把这一段压到一个进程。
  *
  * 返回 { contents: Map<rel, Buffer>, errors: Map<rel, string>, batchError: string|null }。
  *   - batchError 非空 = 批量读整体不可用（调用方回退到逐文件 `git show`，语义完全一致）；
@@ -514,7 +519,10 @@ function walkFiles(absDir, relPrefix, out) {
  *
  *   tsc 把模板字符串（template literal）的原文**逐字节**写进产物。所以产物字节会带上源码里的行尾。
  *   在 `core.autocrlf=true` 的机器上（本仓库所在 Windows 就是），git 检出时把 LF 换成 CRLF：
- *   工作区的 src/engine/policy.ts 是 CRLF（457 处），而索引 blob 是 LF；两者 `git status` 报**干净**，
+ *   工作区的 src/engine/policy.ts 是 CRLF（**处数是活值 —— 取数、不复述**：现值 =
+ *   `node -e "console.log(require('fs').readFileSync('src/engine/policy.ts','utf8').split('\r\n').length-1)"`，
+ *   口径 = 该文件**工作区副本**里的 `\r\n` 个数，受 `core.autocrlf` 与文件内容双重影响；**留痕：本批开工版
+ *   `4e0170f` 在该工作区实测 457 处，只作留痕、不是现值**），而索引 blob 是 LF；两者 `git status` 报**干净**，
  *   因为 git 认为它们只差检出过滤器。此时如果直接拿工作区字节去编译，产出的
  *   lib/engine/policy.js 会带 CRLF 的模板字符串（22885 字节），而索引里的 blob 是 LF（22835 字节）——
  *   门禁就为「换了台机器检出」这种与提交内容无关的原因报红，且 Windows 开发者永远修不绿。
@@ -643,7 +651,9 @@ function prepareTempProject(ctx) {
   // package.json 必须跟着搬：tsconfig 是 `module: NodeNext` 时，tsc 按**最近的 package.json**
   // 的 `type` 字段决定该文件编译成 ESM 还是 CommonJS。临时工程里没有它，tsc 会一路向上找到
   // （通常不存在的）%TEMP%/package.json 并默认成 CommonJS，于是全新编译产出 `"use strict";` +
-  // `require(...)`，而索引里是 `import ...` —— 84 个文件全部假红。
+  // `require(...)`，而索引里是 `import ...` —— 索引里 `lib/` 的每一个文件都会假红
+  // （**条数是活值 —— 取数、不复述**：现值 = `(git ls-files 'lib/' | Measure-Object).Count`，
+  // 口径见文件头目的段；**留痕：本批开工版 `4e0170f` 实测 84 个，只作留痕、不是现值**）。
   // 只在仓库根确实有 package.json 时复制（没有就照实不复制，与仓库内 tsc 的行为保持一致）；
   // 字节拷贝，不做任何改写。
   const pkgAbs = absOf(ctx.root, 'package.json');
@@ -1166,7 +1176,10 @@ function runLibSync(ctx) {
 
     // ---- 4. 枚举全新编译产物 ----
     // 相对路径带上 `lib/` 前缀：索引里的路径形如 `lib/engine/branches.js`，
-    // 两侧必须是同一套「相对仓库根」的路径，否则集合比对会整体错位（84 missing + 84 orphan）。
+    // 两侧必须是同一套「相对仓库根」的路径，否则集合比对会整体错位（索引里每个 lib/ 文件
+    // 各记一次 missing、各记一次 orphan —— **条数是活值 —— 取数、不复述**：现值 =
+    // `(git ls-files 'lib/' | Measure-Object).Count`，口径见文件头目的段；**留痕：本批开工版
+    // `4e0170f` 实测 84 个 ⇒ 84 missing + 84 orphan，只作留痕、不是现值**）。
     const producedDir = path.join(prep.dir, LIB_DIR);
     let produced = [];
     if (fs.existsSync(producedDir)) produced = walkFiles(producedDir, LIB_DIR, []).sort();
@@ -1193,7 +1206,7 @@ function runLibSync(ctx) {
     const indexSet = new Set(ctx.libIndex);
     const producedSet = new Set(produced);
 
-    // 取索引侧字节：优先一次 `git cat-file --batch`（与 84 次 `git show :<path>` 读同一份索引 blob，
+    // 取索引侧字节：优先一次 `git cat-file --batch`（与逐文件 `git show :<path>` 读同一份索引 blob，
     // 且逐条做 git blob SHA-1 自校验）；批量读整体不可用时回退到逐文件 `git show`，语义完全一致。
     ctx.stats.batchRead = true;
     let fetched = fetchIndexContents(ctx, ctx.libEntries);

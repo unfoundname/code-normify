@@ -703,7 +703,10 @@ function findCycles(nodes, edges) {
  * 派生产物推导规则：`src/<rel>.ts` -> `lib/<rel>.js`、`lib/<rel>.js.map`、`lib/types/<rel>.d.ts`。
  * 候选路径一律用图的 files[] 逐个校验，图里不存在的绝不列出（不凭想象造路径）；
  * 非 src/ 下的目标或不是 .ts 的目标（文档、脚本、CI 自身等，如 docs/*.md、scripts/*.cjs）直接判为空，不产任何派生产物。
- * 产物形态以图为准：本仓库 28 个 src 下的 .ts 的这三条候选全部命中（已逐条核对），无例外形态。
+ * 产物形态以图为准：本仓库 src 下的 .ts 的这三条候选全部命中（已逐条核对），无例外形态。
+ *   **文件数是活值 —— 取数、不复述**：现值 = `git ls-files 'src/' | Select-String '\.ts$'` 计数，
+ *   口径 = git 索引里 `src/` 下的 `.ts`（= 符号级扫描面）；**留痕（时点 = 本批开工版 `4e0170f`；
+ *   只作留痕，不是现值 —— 旧值不删）**：该时点实测 28 个。
  */
 const DERIVED_ARTIFACT_RULES = [
   (rel) => `lib/${rel}.js`,
@@ -879,7 +882,8 @@ function isRuntimeEdge(edge) {
 
 /**
  * 运行时边邻接索引：from_file -> Set(to_file)。**只读**，不参与闭包推进 / 计数 / 环检测 / path 回溯。
- * 每次 impact 建一份（产物约 1.8k 条边），供闭包内每个文件做一次可达性 BFS。
+ * 每次 impact 建一份（**边数是活值 —— 取数、不复述**：现值 = `node scripts/generate-reference-graph.cjs --check`
+ * 人类报告的「边」一栏，或 `--check --json` 的 `edges`；口径 = 图产物 `edges[]` 的条数），供闭包内每个文件做一次可达性 BFS。
  * 端点缺失的边（外部模块、未解析符号）不进索引——它们给不出「谁能加载谁」的事实；
  * 但 **kind 归类先于端点检查**：端点缺失不能成为放过一个未归类 kind 的理由。
  * ★ 因此这里刻意**不**预筛共享口径（symbolEdgeSource）：本函数必须遍历**全部** symbol_edges[]，
@@ -1066,10 +1070,13 @@ function buildImpactReport(opts, target, loaded) {
         // via 展示的是「把该文件牵进闭包的那组边」的**位置路径**（from_file:line:column）。同一个位置上常常
         // 同时挂着一条文件级边和 N 条符号级边（一条 `export … from` / `import …` 带 N 个符号 ⇒ N 条符号边，
         // 它们与那条文件级边同行同列），原样打印会把**同一条路径重复 N 遍**——实测 src/index.ts:4:15 指向
-        // src/engine/types.ts 的 29 条边（1 文件级 + 28 符号级）会渲染成 29 个一模一样的字符串。
+        // src/engine/types.ts 的边会渲染成一串一模一样的字符串（**条数是活值 —— 取数、不复述**：现值 =
+        // `node -e "const g=require('./ledger/references.json');console.log(g.edges.filter(e=>e.from.file==='src/index.ts'&&e.to.file==='src/engine/types.ts').length, g.symbol_edges.filter(e=>e.from.file==='src/index.ts'&&e.to.file==='src/engine/types.ts').length)"`
+        // ⇒ 依次给出「文件级条数 / 符号级条数」；口径 = 图产物里同一对文件的 `edges[]` / `symbol_edges[]`；
+        // **留痕（时点 = 本批开工版 `4e0170f`；只作留痕，不是现值 —— 旧值不删）**：该时点实测 1 / 28，合计 29 条）。
         // 因此这里按字符串去重（保序，BFS 的确定性顺序不变）。**只去重展示**：edges 计数
         // （affected_edges / file_layer_edges / symbol_layer_edges）与三档的 via_edges 仍按**边**数统计，
-        // 不在这里改口径——「29 条边」是事实，「29 条相同路径」是噪音。
+        // 不在这里改口径——「29 条边」（同上取数）是事实，「29 条相同路径」是噪音。
         via: [...new Set(f.via.map((v) => `${v.from_file}:${v.line}:${v.column}`))],
         path: paths.get(f.file).chain,
         path_hops: paths.get(f.file).chain.length - 1,

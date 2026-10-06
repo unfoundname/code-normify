@@ -27,7 +27,10 @@
  * 夹具：把本仓库索引里的全部已跟踪文件用 `git checkout-index -a --prefix=<tmp>/` 物化到系统 temp，
  * 在夹具里 `git init` + 一次提交（台账与豁免清单随第一次提交进入 HEAD，基线由此建立）。
  * 夹具的 meta.tracked_total / meta.universe_hash 由本脚本按夹具自己的索引清单现算（夹具宇宙 == 本仓库宇宙，
- * 因为物化的是同一份清单）；夹具台账只写最小必需字段，避免测试依赖台账里那 19 条真实豁免。
+ * 因为物化的是同一份清单）；夹具台账只写最小必需字段，避免测试依赖台账里真实豁免的条数
+ * （**条数是活值 —— 取数、不复述**：现值 = `node scripts/check-file-ledger.cjs --json` 的
+ * `summary.exempt.total`，口径 = `ledger/exempt.gitignore` 里模式行数；**留痕（时点 = 本批开工版
+ * `4e0170f`；只作留痕，不是现值 —— 旧值不删）**：该时点实测 19 条）。
  * **绝不在真仓库里造测试文件**，跑完删掉整个 temp 目录。
  *
  * 用法：node tests/file-ledger-ratchet-e2e.mjs

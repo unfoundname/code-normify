@@ -9,7 +9,10 @@
  * 为什么需要它（历史缺口，实测）：把一个已跟踪、且没有任何模块声明的文件放进仓库，
  * `validateProject` 对它**零提及**——引擎只回答「哪个模块漂移了」，从不回答
  * 「哪些文件没人管」。唯一近似的 normify_sync「新文件建议」只看**未跟踪**文件，
- * 还用 IGNORE_DIR 主动排除 lib/（src/tools.ts:988-993），而 lib/ 有 84 个**已跟踪**文件，
+ * 还用 IGNORE_DIR 主动排除 lib/（src/tools.ts:988-993），而 lib/ 的**已跟踪**文件数是活值
+ * （**取数、不复述**：现值 = `(git ls-files 'lib/' | Measure-Object).Count`，口径 = git 索引里的
+ * `lib/` 条目数，与本门禁的判定基准同一份索引；**留痕：本批开工版 `4e0170f` 实测 84 个，只作留痕、
+ * 不是现值**），
  * 不是 gitignore 覆盖物：按「构建产物」把它排除掉会丢掉全仓相当一部分已跟踪文件。
  *
  * 绿灯依据只有一条：**台账里有条目**（owned / exempt / accounted 三条来路）：
@@ -187,7 +190,10 @@ const CHECK_HELP_DETAILS = {
     '· 「路径在 HEAD 里」**不是**绿灯理由：旧 ≠ 已记账。手工把一条在索引里的路径写进 accounted',
     '  再 git add —— 正是本项要拦的事（旧版 keep-only 比的是同一份被改过的台账，因此会漏）。',
     `· 合法修法两条：① 让某个模块用 source.path 精确声明它；② 在 ${EXEMPT_REL} 里加一条**带 reason**`,
-    '  的模式豁免。accounted **不是欠账**：那 29 条是已清点记账的正账（带日期与依据），只是不再增长。',
+    '  的模式豁免。accounted **不是欠账**：它是已清点记账的正账（带日期与依据），只是不再增长',
+    '  （**条数是活值 —— 取数、不复述**：现值 = `node scripts/check-file-ledger.cjs --json` 的',
+    '  `summary.accounted.total`（**不是 `accounted` 长度**——`--json` 里 `accounted` 是 `summary` 下的对象）；',
+    '  **留痕：本批开工版 `4e0170f` 实测 29 条，只作留痕、不是现值**）。',
     '· 三态：HEAD 里有台账且 schema_version 匹配 → 正常比对；HEAD 里没有该文件（首次引入 / 仓库尚无提交）',
     '  → **本项跳过、退出码 0**，报告明确回显「基线由本次提交建立」（一次性初始化语义，`git commit` 之后生效）；',
     '  HEAD 里有该文件却读不出 / 不是合法 JSON / schema_version 不匹配 / 缺 accounted 数组 → **error**',
@@ -353,7 +359,9 @@ function printHelp() {
     '  带 reason 的模式（→ exempt）；**「把新文件加进 accounted 转绿」走不通**（新增条目即 accounted-growth/error，',
     '  生成器 --check 同样红、写盘模式还会拒绝写盘）。',
     '  ① 「在 HEAD 里即绿」**不成立**：git 索引只定义**待清点的全集**，文件旧 ≠ 已记账；',
-    '  ② accounted **不是欠账**：那 29 条是**已清点记账的正账**（每条带 accounted_at 与 basis），',
+    '  ② accounted **不是欠账**：它是**已清点记账的正账**（每条带 accounted_at 与 basis；**条数是活值 ——',
+    '     取数、不复述**：现值 = `node scripts/check-file-ledger.cjs --json` 的 `summary.accounted.total`；',
+    '     **留痕：本批开工版 `4e0170f` 实测 29 条，只作留痕、不是现值**），',
     '     只是这条清单**不再增长**（相对 HEAD 的任何新增 → accounted-growth/error）。',
     '',
     '四态归属（计数之和 == git ls-files 条数）：',
