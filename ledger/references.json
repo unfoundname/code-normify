@@ -12436,8 +12436,8 @@
       "id": "scripts/refs-query.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 27928,
-      "lines": 659,
+      "bytes": 31135,
+      "lines": 720,
       "edge_out": 3,
       "edge_in": 1
     },
@@ -16030,11 +16030,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/refs-query.cjs:17:34:require:node:child_process",
+      "id": "scripts/refs-query.cjs:18:34:require:node:child_process",
       "kind": "require",
       "from": {
         "file": "scripts/refs-query.cjs",
-        "line": 17,
+        "line": 18,
         "column": 34
       },
       "to": {
@@ -16052,11 +16052,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/refs-query.cjs:18:20:require:node:fs",
+      "id": "scripts/refs-query.cjs:19:20:require:node:fs",
       "kind": "require",
       "from": {
         "file": "scripts/refs-query.cjs",
-        "line": 18,
+        "line": 19,
         "column": 20
       },
       "to": {
@@ -16074,11 +16074,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/refs-query.cjs:19:22:require:node:path",
+      "id": "scripts/refs-query.cjs:20:22:require:node:path",
       "kind": "require",
       "from": {
         "file": "scripts/refs-query.cjs",
-        "line": 19,
+        "line": 20,
         "column": 22
       },
       "to": {

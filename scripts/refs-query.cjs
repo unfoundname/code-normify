@@ -4,7 +4,8 @@
  * refs-query.cjs —— 引用图产物 `ledger/references.json` 的**只读查询层**。
  *
  * 实现两条查询：who-references <仓库相对路径>（「谁直接引用我这个文件」）与
- * impact <仓库相对路径>（「谁（间接）引用我」：反向闭包按深度分组，另附派生产物与 gate: 义务项）。
+ * impact <仓库相对路径>（「谁（间接）引用我」：反向闭包按深度分组，每个受影响文件附一条最短引用链 path[]，
+ * 另附派生产物与 gate: 义务项）。
  * 数据源只有图产物：本脚本**不重新分析源码、不建 TypeScript Program**。
  * 读取基准：优先 git 索引版（git show :ledger/references.json）；索引里取不到才回退
  * 工作区文件，并把实际用的那一份写进输出的 basis 字段。
@@ -42,7 +43,8 @@ function usage() {
     '',
     '查询：',
     '  who-references <路径>   谁直接引用这个文件（读 ledger/references.json）',
-    '  impact <路径>           谁（间接）引用这个文件：反向闭包按深度分组，另列派生产物与 gate: 义务项',
+    '  impact <路径>           谁（间接）引用这个文件：反向闭包按深度分组，每个受影响文件给出最短引用链',
+    '                          path[]（BFS 最短，形如 A ⇐ B ⇐ 目标），另列派生产物与 gate: 义务项',
     '',
     '选项：',
     '  --json          以 JSON 输出（含全部符号级边；确定性、无绝对路径/耗时）',
@@ -233,7 +235,7 @@ function buildReport(opts, target, loaded) {
     '只覆盖文件级边（edges[]）：文件内边（同一文件内部的引用/依赖）未展开。',
     '未实现符号 id 输入：目标只能是文件路径；符号 id 会以 unsupported 拒绝。',
     '文件级 edges[] 的 type_only 恒为 false（产物口径），故运行时/类型拆分只对 symbol_edges[] 有效。',
-    '未实现 what-references、change-impact 等其它查询；本版只有 who-references 与 impact 两条查询（impact = 反向闭包 + 按深度打印 + 派生产物分区 + gate: 义务项；impact 内部尚未做三档分类、path[]、cycles[]、informational 与截断标注）。',
+    '未实现 what-references、change-impact 等其它查询；本版只有 who-references 与 impact 两条查询（impact = 反向闭包 + 按深度打印 + 每个受影响文件的最短引用链 path[] + 派生产物分区 + gate: 义务项；impact 内部已有 path[]，尚未做三档分类、cycles[]、informational 与截断标注）。',
   ];
   if (diverged) reasons.push(...gaps);
   const completeness = diverged ? 'stale' : 'partial';
@@ -331,10 +333,14 @@ function buildReverseIndex(artifact) {
 /**
  * 反向闭包：从 target 出发沿「谁引用了它」逐层传递，文件级与符号级两层同时走。
  * 一个文件只记它第一次出现的深度（最浅深度），深度与文件顺序都确定性排序。
+ * 同时记父指针 parent：file -> { from, edge }，其中 from 是「链上更靠近 target 的那一端」（file 引用了 from）。
+ * 父指针与最浅深度同源：只在**首次入队**时定型，同一层内的先后由 frontier/via 的确定性顺序决定，
+ * 后续更深的路径一律不覆盖。BFS 逐层推进保证首次入队即最短，故沿 parent 回溯得到的就是最短引用链。
  */
 function reverseClosure(artifact, target, maxDepth) {
   const rev = buildReverseIndex(artifact);
   const seen = new Set([target]);
+  const parent = new Map();
   const levels = [];
   let frontier = [target];
   for (let depth = 1; depth <= maxDepth && frontier.length > 0; depth += 1) {
@@ -344,6 +350,7 @@ function reverseClosure(artifact, target, maxDepth) {
         if (seen.has(row.from_file)) continue;
         if (!via.has(row.from_file)) via.set(row.from_file, []);
         via.get(row.from_file).push(row);
+        if (!parent.has(row.from_file)) parent.set(row.from_file, { from: cur, edge: row });
       }
     }
     if (via.size === 0) break;
@@ -362,8 +369,49 @@ function reverseClosure(artifact, target, maxDepth) {
     frontier = files.map((f) => f.file);
   }
   const closure = [...seen].filter((f) => f !== target).sort(byteCompare);
-  return { levels, closure };
+  return { levels, closure, parent };
 }
+
+/**
+ * 沿父指针回溯出「受影响文件 ⇐ … ⇐ 目标」的最短引用链。
+ * 回溯天然从受影响文件走到 target，方向就是展示方向，无需反转：
+ * chain[0] 是最外层的受影响文件，chain[chain.length-1] 是 target；跳数 = chain.length - 1。
+ * 第 i 跳用的边 = parent[chain[i]].edge（from_file = chain[i]），kind/layer 即取自这条边。
+ * 闭包里的非 target 文件必然有父指针（它们都是 via 的 key），取不到即为内部不变量被破坏，直接抛错。
+ */
+function shortestPath(parent, target, file) {
+  const chain = [file];
+  const hops = [];
+  let cur = file;
+  while (cur !== target) {
+    const p = parent.get(cur);
+    if (!p) throw new Error(`内部不变量被破坏：闭包文件 ${file} 回溯到 ${cur} 时没有父指针（target=${target}）`);
+    hops.push({
+      from_file: cur,
+      to_file: p.from,
+      layer: p.edge.layer,
+      kind: p.edge.kind,
+      line: p.edge.line,
+      column: p.edge.column,
+      edge_id: p.edge.edge_id,
+    });
+    chain.push(p.from);
+    cur = p.from;
+  }
+  return { chain, hops };
+}
+
+/** 人类可读的链：`A ⇐ B ⇐ 目标`（⇐ 读作「被…引用」）。 */
+function renderChain(chain) {
+  return chain.join(' ⇐ ');
+}
+
+/** 链上每跳用的边 kind 摘要（layer:kind），0 跳返回空串；不改动 existing via 的结构。 */
+function renderHopKinds(hops) {
+  if (hops.length === 0) return '';
+  return `  跳边：${hops.map((h) => `${h.layer}:${h.kind}`).join(' → ')}`;
+}
+
 
 /**
  * 派生产物推导规则：`src/<rel>.ts` -> `lib/<rel>.js`、`lib/<rel>.js.map`、`lib/types/<rel>.d.ts`。
@@ -449,20 +497,23 @@ function gateObligations(derived, artifact) {
   );
 }
 
-/** impact 报告：反向闭包 + 按深度分组的受影响文件 + 派生产物分区（build-artifact）+ 门禁义务项分区（gate:）。 */
+/** impact 报告：反向闭包 + 按深度分组的受影响文件（每个文件一条最短引用链 path[]）+ 派生产物分区（build-artifact）+ 门禁义务项分区（gate:）。 */
 function buildImpactReport(opts, target, loaded) {
-  const { levels, closure } = reverseClosure(loaded.artifact, target, opts.depth);
+  const { levels, closure, parent } = reverseClosure(loaded.artifact, target, opts.depth);
   const fileIndex = new Map((loaded.artifact.files || []).map((f) => [f.id, f]));
   const derived = derivedArtifacts(target, fileIndex);
   const gates = gateObligations(derived, loaded.artifact);
   const layerEdges = (layer) =>
     levels.reduce((n, l) => n + l.files.reduce((m, f) => m + f.via.filter((v) => v.layer === layer).length, 0), 0);
   const affectedEdges = levels.reduce((n, l) => n + l.files.reduce((m, f) => m + f.via.length, 0), 0);
+  // 最短引用链：纯读父指针，不参与闭包推进，因此不影响 closure 与任何计数。
+  const paths = new Map(closure.map((file) => [file, shortestPath(parent, target, file)]));
 
   const reasons = basisReasons(loaded);
   const gaps = [
     '反向闭包只沿 to.file 走文件级 edges[] 与符号级 symbol_edges[]；文件内边（同一文件内部的引用/依赖）未展开。',
-    '未做三档分类、path[]、cycles[]、informational 与截断标注。',
+    '未做三档分类、cycles[]、informational 与截断标注。',
+    'path[] 只给一条最短链（BFS 首达即定型）：同一文件存在多条等价最短链时只列首达的那条；链上每跳用的边（layer/kind/行:列）在 path_edges[] 里。',
     `闭包深度上限 --depth ${opts.depth}：更深的层未展开，closure 可能不完整。`,
   ];
   const diverged = reasons.length > 0;
@@ -495,9 +546,18 @@ function buildImpactReport(opts, target, loaded) {
       files: l.files.map((f) => ({
         file: f.file,
         via: f.via.map((v) => `${v.from_file}:${v.line}:${v.column}`),
+        path: paths.get(f.file).chain,
+        path_hops: paths.get(f.file).chain.length - 1,
+        path_edges: paths.get(f.file).hops,
       })),
     })),
     closure,
+    paths: closure.map((file) => ({
+      file,
+      path: paths.get(file).chain,
+      path_hops: paths.get(file).chain.length - 1,
+      path_edges: paths.get(file).hops,
+    })),
     derived_artifacts: derived,
     gate_obligations: gates,
   };
@@ -517,6 +577,7 @@ function renderImpactHuman(report) {
     lines.push(`深度 ${level.depth}：${level.files.length} 个文件`);
     for (const f of level.files) {
       lines.push(`  ${f.file}  <- ${f.via.length ? f.via.join('  ') : '（无）'}`);
+      lines.push(`    path: ${renderChain(f.path)}（${f.path_hops} 跳）${renderHopKinds(f.path_edges)}`);
     }
   }
   lines.push(``, `派生产物（由 src/ 路径推导，仅列图 files[] 中真实存在者；来源 build-artifact）：${report.derived_artifacts.length} 个`);
