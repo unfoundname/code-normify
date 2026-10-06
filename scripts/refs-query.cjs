@@ -50,7 +50,8 @@ function usage() {
     '      node scripts/refs-query.cjs locals <仓库相对路径> [选项]',
     '',
     '查询：',
-    '  who-references <路径>   谁直接引用这个文件（读 ledger/references.json）',
+    '  who-references <路径>   谁直接引用这个文件（读 ledger/references.json；单层查询、不沿引用链推进，',
+    '                          不吃 --depth，顶层 truncated 恒为 false —— 目标的全部直接引用者都在结果里）',
     '  impact <路径>           谁（间接）引用这个文件：反向闭包按深度分组，每个受影响文件给出最短引用链',
     '                          path[]（BFS 最短，形如 A ⇐ B ⇐ 目标），另列闭包子图内的环 cycles[]/自环、派生产物与 gate: 义务项，',
     '                          并把闭包文件分成三档 buckets[]（先按边分档，文件取它 via 中那些边（指向上一层；不是入边）的最高档，一个文件只进一个档）：',
@@ -59,6 +60,9 @@ function usage() {
     '                            需复核 needs_review —— kind ∈ ci-target/package-field/anchor/markdown-link（要人看一眼）',
     '                            记录   record       —— 其余边，只登记',
     '                          三档在人类可读与 --json 里恒存在，空档也照列（0 条），「没有」与「没做」不混。',
+    '                          闭包受 --depth 限制：被截断时顶层 truncated=true 且带 truncated_reason="depth-limit"',
+    '                          （判据：处理完最大深度层之后仍有未被收进结果集的引用者；**不是** actual_depth === max_depth），',
+    '                          人类可读输出在被截断时另打一行 ⚠ 提示；没截断 ⇒ truncated=false，此时 closure 按图产物已完整展开。',
     '                          档内另有正交标注 type_only（**不是第四档**），判据是**可达性**：在「目标 ∪ 闭包」内只沿',
     '                          **运行时边**（import / export-from / require / dynamic-import / package-field / ci-target，',
     '                          以及符号级边；type_only=true 的纯类型语句与 markdown-link / anchor 这类纯文字引用不算）走，',
@@ -271,7 +275,7 @@ function buildReport(opts, target, loaded) {
     '直接引用方只数文件级边（edges[]）；符号级边另列在 symbol_referrers[]，其中包含文件内边（同一文件内部的引用/依赖，cross_file=false）——这些边在产物里存在、照列，只是不计入直接引用方计数。',
     '未实现符号 id 输入：目标只能是文件路径；符号 id 会以 unsupported 拒绝。',
     '文件级 edges[] 的 type_only 现已如实表达「该边所在语句是否为纯类型语句」（import type / export type … from；require()/import() 与无 TypeScript 时的正则回退一律按运行时），但本版的运行时/类型拆分仍只数 symbol_edges[]（counts 里的 runtime_refs / type_refs 就取自符号级层）；impact 的 type_only 档内标注不吃这一套，它按**可达性**判：在「目标 ∪ 完整闭包」内只沿运行时边走，从该文件到目标没有运行时路径才标（闭包按图产物全深度展开，不受 --depth 截断影响），仍不排除图产物之外的引用间接触及目标。',
-    '未实现 what-references、change-impact 等其它查询；本版只有 who-references、impact、locals 三条查询（locals = 只解析目标文件自身的语法树，列出形参 params[] / 箭头形参 arrow_params[] / 局部变量 locals[]，**不读图产物、不进图产物**，因此没有 basis 与 completeness，其三条局限见 --help 的「locals 的三条局限」与 --json 的 limitations[]；impact = 反向闭包 + 按深度打印 + 每个受影响文件的最短引用链 path[] + 闭包子图内的环 cycles[]/self_loops[] + 三档分类 buckets[] 与其中的 type_only 标注 + 派生产物分区 + gate: 义务项；impact 尚未做 informational 与截断标注）。',
+    '未实现 what-references、change-impact 等其它查询；本版只有 who-references、impact、locals 三条查询（locals = 只解析目标文件自身的语法树，列出形参 params[] / 箭头形参 arrow_params[] / 局部变量 locals[]，**不读图产物、不进图产物**，因此没有 basis 与 completeness，其三条局限见 --help 的「locals 的三条局限」与 --json 的 limitations[]；impact = 反向闭包 + 按深度打印 + 每个受影响文件的最短引用链 path[] + 闭包子图内的环 cycles[]/self_loops[] + 三档分类 buckets[] 与其中的 type_only 标注 + 派生产物分区 + gate: 义务项；impact 尚未做 informational，其截断标注已做——impact 输出顶层带 truncated / truncated_reason，人类可读输出在被截断时另打一行 ⚠）。',
   ];
   if (diverged) reasons.push(...gaps);
   const completeness = diverged ? 'stale' : 'partial';
@@ -289,6 +293,13 @@ function buildReport(opts, target, loaded) {
     reasons: diverged ? reasons : gaps,
     gaps,
     empty_referrers_reading: emptyReading(completeness),
+    // truncated：**恒为 false**，且这是实测判据的结果、不是图省事的占位——who-references 是**单层**查询：
+    // 只列「直接」引用本文件的边，不沿引用链推进、不吃 --depth（--depth 只作用于 impact）。结果集 =
+    // 目标文件的全部文件级直接引用边（direct_referrers[]）+ 全部指向本文件的符号级边（symbol_referrers[]），
+    // 两者都是全量（--limit 只截人类可读输出的显示条数，且已有显式提示行；--json 与计数始终全量）。
+    // 按 impact 的同一判据读：处理完「最大深度层」（这里 = 第 1 层，目标的全部直接引用者）之后，
+    // 没有任何未被收进结果集的引用者 ⇒ 不存在被 --depth 截断的结果，字段照实写 false。
+    truncated: false,
     counts: {
       file_edges: edgeRows.length,
       referrer_files: new Set(edgeRows.map((r) => r.from_file)).size,
@@ -377,6 +388,7 @@ function buildReverseIndex(artifact) {
  * 同时记父指针 parent：file -> { from, edge }，其中 from 是「链上更靠近 target 的那一端」（file 引用了 from）。
  * 父指针与最浅深度同源：只在**首次入队**时定型，同一层内的先后由 frontier/via 的确定性顺序决定，
  * 后续更深的路径一律不覆盖。BFS 逐层推进保证首次入队即最短，故沿 parent 回溯得到的就是最短引用链。
+ * 返回值另带 truncated：**结果是否被 maxDepth 截断**，判据见函数末尾（不是 actual_depth === max_depth）。
  */
 function reverseClosure(artifact, target, maxDepth) {
   const rev = buildReverseIndex(artifact);
@@ -409,8 +421,20 @@ function reverseClosure(artifact, target, maxDepth) {
     levels.push({ depth, files });
     frontier = files.map((f) => f.file);
   }
+  // 截断判据（**照口径，不自创**）：**处理完最大深度层之后，仍有未被收进结果集的引用者** ⇒ 结果被 --depth 截断。
+  // 刻意**不**用 `actual_depth === maxDepth`：那分不清「恰好走到第 maxDepth 层且再无引用者」与「被砍掉了」，
+  // 前者不是截断，后者才是。循环结束时 frontier 正是「最后处理完的那一层」的推进前沿（一层都没处理时是 [target]，
+  // 覆盖「第 maxDepth 层还有引用者」的情形）；逐一看它还有没有没见过的引用者即可。
+  // 提前 break（via.size === 0，闭包已穷尽）时 frontier 是最后一层的文件，它们的引用者全在 seen 里 ⇒ 恒为 false。
+  let truncated = false;
+  for (const cur of frontier) {
+    if ((rev.get(cur) || []).some((row) => !seen.has(row.from_file))) {
+      truncated = true;
+      break;
+    }
+  }
   const closure = [...seen].filter((f) => f !== target).sort(byteCompare);
-  return { levels, closure, parent };
+  return { levels, closure, parent, truncated };
 }
 
 /**
@@ -654,7 +678,7 @@ function gateObligations(derived, artifact) {
  * 三档分类的档定义。**先按边分档，再把文件归入它 via 中那些边的最高档**（via = 把该文件牵进闭包的那组边，即它指向上一层的出边）——一个文件只出现在一个档里。
  * 定档只看这条边自身的两个事实：① 目标是否已悬空（status === 'dangling'）；② 边的 kind。
  * 优先级 必须改 > 需复核 > 记录：一个文件由 via 中多条边带入闭包时取最高档。
- * kind 是封闭枚举（产物里实际出现：file 层 import / export-from / require / dynamic-import / type-reference /
+ * kind 是封闭枚举（产物里实际出现：file 层 import / export-from / require / dynamic-import /
  * ci-target / package-field / anchor / markdown-link，symbol 层 import / export-from / type-reference）；
  * 未列出的 kind 一律落到「记录」，不猜、不擅自升级。三档在人类可读输出与 --json 里都恒存在，空档也照列（0 条）。
  */
@@ -826,7 +850,7 @@ function typeOnlyAnnotation(target, file, runtimeAdj, closureNodes) {
 
 /** impact 报告：反向闭包 + 按深度分组的受影响文件（每个文件一条最短引用链 path[]）+ 派生产物分区（build-artifact）+ 门禁义务项分区（gate:）。 */
 function buildImpactReport(opts, target, loaded) {
-  const { levels, closure, parent } = reverseClosure(loaded.artifact, target, opts.depth);
+  const { levels, closure, parent, truncated } = reverseClosure(loaded.artifact, target, opts.depth);
   // type_only 标注的判据是「该文件到目标有没有运行时路径」，它必须建立在**完整闭包**上：展示口径受 --depth
   // （默认 8）截断，在截断集合里做可达性 BFS 会把「路径长于上限」的文件判成「没有运行时路径」——那是假话，
   // 而且默认配置下就会发生。所以另算一份**无深度上限**的反向闭包，只喂给标注判据：
@@ -883,10 +907,12 @@ function buildImpactReport(opts, target, loaded) {
     '反向闭包只沿 to.file 走文件级 edges[] 与符号级 symbol_edges[]；文件内边（同一文件内部的引用/依赖）不推进遍历——两端是同一个文件，它已在已见集里，带不来新文件（自环推进不了闭包），也不计入闭包边数——但这些边在产物里存在（symbol_edges[] 中 cross_file=false 的那些）。',
     '三档分类 buckets[]：先按边分档（边悬空，或 kind ∈ 代码级引用 ⇒ 必须改；kind ∈ ci-target/package-field/anchor/markdown-link ⇒ 需复核；其余 ⇒ 记录），再把文件归入它 via 中那些边的最高档（via = 把该文件牵进闭包的那组边，即它指向上一层的出边），因此一个文件只出现在一个档里；三档恒存在，空档照列（0 条），「没有」与「没做」不混。',
     'type_only 是档内**正交标注**，不是第四档：判据是**可达性**——在「target ∪ 完整闭包」内只沿运行时边（import / export-from / require / dynamic-import / package-field / ci-target，以及符号级边；type_only=true 的纯类型语句与 markdown-link / anchor 这类纯文字引用不算）走，从这个文件能否到达目标；到不了 ⇒ 给出有边界的「仅类型级影响」标注，到得了 ⇒ 不标，目标不是 .ts/.tsx ⇒ 「不可判」——「不标」只代表存在到得了目标的运行时路径，不代表没有类型级影响。标注用的闭包**按图产物全深度展开、不受 --depth 截断影响**（展示用的 by_depth/closure 仍受 --depth 限制，见下一条），否则路径长于上限的文件会被说成「没有运行时路径」。标注自身**有边界**：只声明图产物里的边如此，不排除产物之外或未统计到的路径间接触及目标——不要据此跳过测试。',
-    '未做 informational 与截断标注（三档分类与 type_only 标注已做，见 buckets[]）。',
+    '未做 informational（三档分类、type_only 标注与截断标注已做，见 buckets[] 与顶层 truncated / truncated_reason）。',
     'cycles[] 只在闭包子图（target ∪ 闭包文件）内求强连通分量，不是全图 SCC：闭包之外的环不报（换个 target 才看得到）；环用的也是文件级/符号级反向边，文件内边（两端同文件）带不来新节点、进不了 size>1 的分量；自环单列在 self_loops[]（只含文件级自环，即 edges[] 里 from.file === to.file 的边；同文件内部的符号边不算），不混进 size>1 的分量。',
     'path[] 只给一条最短链（BFS 首达即定型）：同一文件存在多条等价最短链时只列首达的那条；链上每跳用的边（layer/kind/行:列）在 path_edges[] 里。',
-    `闭包深度上限 --depth ${opts.depth}：更深的层未展开，closure 可能不完整。`,
+    truncated
+      ? `闭包深度上限 --depth ${opts.depth}：**结果被截断**——处理完第 ${opts.depth} 层后仍有未被收进结果集的引用者（顶层 truncated=true，truncated_reason=depth-limit），更深的层未展开，closure / counts / buckets 都不完整。`
+      : `闭包深度上限 --depth ${opts.depth}：本次**没有截断**——处理完最深一层（第 ${levels.length} 层）后不再有未被收进结果集的引用者（顶层 truncated=false），按图产物 closure 已完整展开。`,
   ];
   const diverged = reasons.length > 0;
   if (diverged) reasons.push(...gaps);
@@ -905,6 +931,8 @@ function buildImpactReport(opts, target, loaded) {
     empty_referrers_reading: emptyReading(completeness),
     max_depth: opts.depth,
     actual_depth: levels.length,
+    truncated,
+    ...(truncated ? { truncated_reason: 'depth-limit' } : {}),
     counts: {
       affected_files: closure.length,
       affected_edges: affectedEdges,
@@ -949,10 +977,18 @@ function renderImpactHuman(report) {
   const lines = [
     `谁（间接）引用 ${report.target}：按深度分组的受影响文件（反向闭包）`,
     `basis=${report.basis}  completeness=${report.completeness}  unsupported=false  depth<=${report.max_depth}（实际 ${report.actual_depth} 层）`,
+  ];
+  // 被 --depth 截断时必须在人类可读输出里也说出来：只写在 JSON 里等于没告诉直接看输出的人。
+  if (report.truncated) {
+    lines.push(
+      `⚠ 结果被 --depth ${report.max_depth} 截断，仍有未访问的引用者（truncated=true，truncated_reason=${report.truncated_reason}）：下面的 closure / counts / buckets 都不完整，加 --depth 或别把它当完整结果读。`,
+    );
+  }
+  lines.push(
     `原因/缺口 reasons：`,
     ...report.reasons.map((r) => `  - ${r}`),
     `闭包合计：${c.affected_files} 个文件，${c.affected_edges} 条边（文件级 ${c.file_layer_edges} / 符号级 ${c.symbol_layer_edges}）`,
-  ];
+  );
   if (report.by_depth.length === 0) lines.push('  （无：图里没有任何文件引用它）');
   for (const level of report.by_depth) {
     lines.push(`深度 ${level.depth}：${level.files.length} 个文件`);
