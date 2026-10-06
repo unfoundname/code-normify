@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "kind": "commit",
+  "commit": "02302e6603987cd73e2a72eb822fbf42476a32d4",
+  "commit_parent": "4643ed99698656ff1c40b6bc1ca0d615f624d346",
+  "cas_digest": null,
+  "change_id": null,
+  "created_at": "2026-10-06T14:15:28Z",
+  "generator": "scripts/generate-change-log.cjs",
+  "generator_version": "1.0.0",
+  "graph_schema_version": 2,
+  "from_snapshot": {
+    "basis": "commit",
+    "rev": "4643ed99698656ff1c40b6bc1ca0d615f624d346",
+    "tree": "b195416b83ada69f3f35a5bdb7d352afeff90ec5",
+    "universe_hash": "a7cb06f81ac989201a6f8080da7295252b425421bce22f9b9ce4a9507d7534ec",
+    "tracked_total": 1485,
+    "files": 1485,
+    "edges": 498,
+    "analysis_mode": "typescript"
+  },
+  "to_snapshot": {
+    "basis": "commit",
+    "rev": "02302e6603987cd73e2a72eb822fbf42476a32d4",
+    "tree": "ed1818ebc5c0f1cc33295ee2281e65ff750bde7f",
+    "universe_hash": "a7cb06f81ac989201a6f8080da7295252b425421bce22f9b9ce4a9507d7534ec",
+    "tracked_total": 1485,
+    "files": 1485,
+    "edges": 498,
+    "analysis_mode": "typescript"
+  },
+  "degradation": {
+    "status": "complete",
+    "reasons": [],
+    "note": "两侧快照都完整重建：本次差在**文件层**是完整的（节点 = 全量已跟踪文件，边 = 扫描面产出的全部边）。数组为空 = 真的没有差异。"
+  },
+  "files": {
+    "added": [],
+    "removed": [],
+    "state_changed": []
+  },
+  "edges": {
+    "added": [],
+    "removed": [],
+    "status_changed": []
+  },
+  "affected_referrers": [],
+  "counts": {
+    "files_added": 0,
+    "files_removed": 0,
+    "files_state_changed": 0,
+    "edges_added": 0,
+    "edges_removed": 0,
+    "edges_status_changed": 0,
+    "affected_referrers": 0,
+    "needs_change": 0
+  },
+  "handling": {
+    "status": "pending",
+    "by": null,
+    "at": null,
+    "note": null
+  },
+  "summary": "提交 02302e6（docs：A4 口径补正 —— 磁盘占用口径的分子分母标注同一测量时点（db9ab1b））：文件 +0/−0/±0 · 边 +0/−0/±0 · 受影响引用方 0 条（需改 0 条）",
+  "omitted": [
+    "declarations（符号级节点差，增量 3）",
+    "type-reference 边（增量 3）",
+    "传递闭包（affected_referrers 只到直接引用方，depth 恒 1；增量 5）",
+    "查询接口（增量 5）",
+    "cas-write 观测点（设计稿 §4.1 的第二个观测点，本批不实现）"
+  ]
+}

@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "a7cb06f81ac989201a6f8080da7295252b425421bce22f9b9ce4a9507d7534ec",
+    "universe_hash": "74ba8e7f9766c707fd89d1904c1daae40dda982d7cd856a389f83b7cec0cfcff",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1485,
+    "tracked_total": 1487,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 149
+      "scanned_total": 151
     },
     "analysis": {
       "mode": "typescript",
@@ -92,7 +92,7 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "图数据文件自己（ledger/references.json）那一行的 bytes / lines 恒为 null：它们是自指的（产物大小依赖上一次写出的自己），记了就没有不动点、幂等当场失效；其余字段照常登记。",
     "node_states": {
-      "indexed": 1485
+      "indexed": 1487
     },
     "edge_kinds": {
       "anchor": 3,
@@ -12150,6 +12150,24 @@
       "state": "indexed",
       "bytes": 2448,
       "lines": 75,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T141523Z-4643ed9.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 9717,
+      "lines": 286,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T141528Z-02302e6.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2366,
+      "lines": 73,
       "edge_out": 0,
       "edge_in": 0
     },
