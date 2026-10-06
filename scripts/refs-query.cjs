@@ -13,7 +13,8 @@
  *     **不读也不写图产物**，因此没有 basis 字段；三条局限见 LOCALS_LIMITATIONS（--help 与 --json 字字相同）。
  * typescript 是**惰性** require 的：只有 locals 需要语法树，另外两条查询不付这份启动成本。
  * 读取基准（who-references / impact）：优先 git 索引版（git show :ledger/references.json）；索引里取不到才回退
- * 工作区文件，并把实际用的那一份写进输出的 basis 字段。
+ * 工作区文件，并把实际用的那一份写进输出的 basis 字段。索引版与工作区版是否**漂移**按**内容**判（不按字节
+ * 长度：等长而内容不同同样是漂移），见 artifactDrifted——一旦漂移，completeness 报 stale，而不是 partial。
  *
  * 符号边口径守卫（--self-check）：who-references 与 impact 对 symbol_edges[] 的**筛选口径只有一份**
  * （isCountedSymbolEdge / symbolEdgeTargetFile），两条查询各经一个命名入口取到**同一个函数引用**；
@@ -166,7 +167,7 @@ function resolveRoot(dir) {
   return realTop;
 }
 
-/** 读图产物：索引优先，回退工作区。返回 {artifact, basis, indexBytes, worktreeBytes}。 */
+/** 读图产物：索引优先，回退工作区。返回 {artifact, basis, indexBytes, worktreeBytes, indexBuf, workBuf}。 */
 function loadArtifact(root) {
   const abs = path.join(root, REL);
   let indexBuf = null;
@@ -185,12 +186,48 @@ function loadArtifact(root) {
       basis: 'index',
       indexBytes: indexBuf.length,
       worktreeBytes: workBuf ? workBuf.length : null,
+      // 原始字节一并带出去，交给 artifactDrifted 做**内容**比较（不再只留长度）：这两份内容本来就已经
+      // 被整个读进内存了，这里只是把引用交出去，不额外拷贝、不额外 I/O。
+      indexBuf,
+      workBuf,
     };
   }
   if (workBuf) {
-    return { artifact: parseJson(workBuf, '工作区 ' + abs), basis: 'worktree', indexBytes: null, worktreeBytes: workBuf.length };
+    return {
+      artifact: parseJson(workBuf, '工作区 ' + abs),
+      basis: 'worktree',
+      indexBytes: null,
+      worktreeBytes: workBuf.length,
+      indexBuf: null,
+      workBuf,
+    };
   }
-  return { artifact: null, basis: 'none', indexBytes: null, worktreeBytes: null };
+  return { artifact: null, basis: 'none', indexBytes: null, worktreeBytes: null, indexBuf: null, workBuf: null };
+}
+
+/**
+ * 索引版与工作区版是否**漂移**（内容不一致）——全局唯一一份判据，buildReport 与 basisReasons 都走这里。
+ *
+ * ★ 为什么必须比内容、不能只比字节长度：**长度相同不代表内容相同**。工作区里把版本号从 `1.1.0` 改成
+ *   `1.1.1`、改掉任意一个字符，字节数一模一样，只比长度的判据会答「未漂移」——于是以索引版为准的结果
+ *   被当成了工作区现状，空引用方列表被读成「没人引用」。这是**漏检**：把该报的 stale 说成了 partial。
+ * ★ 为什么分两级、先比长度：长度不同是绝大多数漂移，一次整数比较即可定案，不必对着 1.5MB 的产物做
+ *   逐字节比较；而长度相同**必须继续比内容**——这一步正是本判据存在的理由，不要为了「省」删掉它。
+ *   内容比较用 Buffer.equals（C++ 层 memcmp），产物已在内存里，实测增量在噪声量级（见提交说明）。
+ */
+function artifactDrifted(loaded) {
+  // 只有单边时无从比较：basis==='worktree'（索引里没有该产物）或 basis==='none'，都不算漂移。
+  if (loaded.indexBytes === null || loaded.worktreeBytes === null) return false;
+  if (loaded.worktreeBytes !== loaded.indexBytes) return true; // 一级：长度不同 ⇒ 必然不同
+  return !loaded.indexBuf.equals(loaded.workBuf); // 二级：等长 ⇒ 比内容（★ 漏检就漏在这一步缺失上）
+}
+
+/** 漂移原因的人话。长度不同报长度，等长而内容不同报内容——两种都必须说清「结果以索引版为准」。 */
+function driftReason(loaded) {
+  if (loaded.worktreeBytes !== loaded.indexBytes) {
+    return `索引版与工作区版 ${REL} 字节不一致（索引 ${loaded.indexBytes} 字节 / 工作区 ${loaded.worktreeBytes} 字节）：结果以索引版为准，可能与工作区现状不符。`;
+  }
+  return `索引版与工作区版 ${REL} **内容不一致**（两边同为 ${loaded.indexBytes} 字节，但逐字节比较不相同）：结果以索引版为准，可能与工作区现状不符。`;
 }
 
 function parseJson(buf, what) {
@@ -334,14 +371,8 @@ function buildReport(opts, target, loaded) {
     (r) => `${r.from_file}:${String(r.line).padStart(12, '0')}:${String(r.column).padStart(12, '0')}:${r.kind}:${r.edge_id}`,
   );
 
-  const reasons = [];
-  if (loaded.basis === 'worktree') {
-    reasons.push(`索引里没有 ${REL}（git show :${REL} 失败），已回退工作区文件：结果可能与索引版不一致。`);
-  } else if (loaded.worktreeBytes !== null && loaded.worktreeBytes !== loaded.indexBytes) {
-    reasons.push(
-      `索引版与工作区版 ${REL} 字节不一致（索引 ${loaded.indexBytes} 字节 / 工作区 ${loaded.worktreeBytes} 字节）：结果以索引版为准，可能与工作区现状不符。`,
-    );
-  }
+  // 读图基准：与 basisReasons 同一份判据（含「等长但内容不同」的漂移），不再内联一份长度比较。
+  const reasons = basisReasons(loaded);
   const diverged = reasons.length > 0;
   const gaps = [
     '直接引用方只数文件级边（edges[]）；符号级边另列在 symbol_referrers[]，其中包含文件内边（同一文件内部的引用/依赖，cross_file=false）——这些边在产物里存在、照列，只是不计入直接引用方计数。',
@@ -414,15 +445,17 @@ function renderHuman(report, opts, symbolRowsForDisplay) {
   return lines.join('\n');
 }
 
-/** 读图基准与工作区/索引是否一致：返回原因数组（空 = 一致）。口径与 buildReport 内联版本相同。 */
+/**
+ * 读图基准与工作区/索引是否一致：返回原因数组（空 = 一致）。
+ * ★ 漂移判据只有 artifactDrifted 一份、原因文案只有 driftReason 一份：buildReport 也调本函数，
+ *   不再自带一份内联副本——两份副本正是「修了一处、漏了另一处」的温床。
+ */
 function basisReasons(loaded) {
   const reasons = [];
   if (loaded.basis === 'worktree') {
     reasons.push(`索引里没有 ${REL}（git show :${REL} 失败），已回退工作区文件：结果可能与索引版不一致。`);
-  } else if (loaded.worktreeBytes !== null && loaded.worktreeBytes !== loaded.indexBytes) {
-    reasons.push(
-      `索引版与工作区版 ${REL} 字节不一致（索引 ${loaded.indexBytes} 字节 / 工作区 ${loaded.worktreeBytes} 字节）：结果以索引版为准，可能与工作区现状不符。`,
-    );
+  } else if (artifactDrifted(loaded)) {
+    reasons.push(driftReason(loaded));
   }
   return reasons;
 }
