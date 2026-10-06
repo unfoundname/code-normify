@@ -15,7 +15,11 @@
  * 读取基准（who-references / impact）：优先 git 索引版（git show :ledger/references.json）；索引里取不到才回退
  * 工作区文件，并把实际用的那一份写进输出的 basis 字段。
  *
- * 退出码：0 成功；2 参数/根不合法；3 读不到图（locals 另含：读不到目标文件 / 拿不到 typescript）；
+ * 符号边口径守卫（--self-check）：who-references 与 impact 对 symbol_edges[] 的**筛选口径只有一份**
+ * （isCountedSymbolEdge / symbolEdgeTargetFile），两条查询各经一个命名入口取到**同一个函数引用**；
+ * --self-check 把这件事变成可执行断言（同一引用 + 逐目标集合相等 + 产物不变量），任一失败即非零退出。
+ *
+ * 退出码：0 成功；1 口径守卫（--self-check）断言失败；2 参数/根不合法；3 读不到图（locals 另含：读不到目标文件 / 拿不到 typescript）；
  *         4 输入不受支持（符号 id；locals 的非源码扩展名）；5 目标不在图里。
  * 输出确定性：所有排序按 UTF-8 字节序（Buffer.compare），禁用 localeCompare；
  * JSON 里不含绝对路径、时间戳、耗时。
@@ -27,7 +31,7 @@ const path = require('node:path');
 let ts = null; // typescript 惰性加载：只有 locals 需要语法树（见 loadTypeScriptForLocals）
 
 const REL = 'ledger/references.json';
-const EXIT = { ok: 0, usage: 2, unreadable: 3, unsupported: 4, notfound: 5 };
+const EXIT = { ok: 0, guard: 1, usage: 2, unreadable: 3, unsupported: 4, notfound: 5 };
 const DEFAULT_SYMBOL_ROWS = 40; // 仅人类可读输出的显示上限；--json 与计数始终是全量
 const DEFAULT_IMPACT_DEPTH = 8; // impact 的反向 BFS 深度上限（含多少层引用方）
 
@@ -48,6 +52,7 @@ function usage() {
     '用法：node scripts/refs-query.cjs who-references <仓库相对路径> [选项]',
     '      node scripts/refs-query.cjs impact <仓库相对路径> [选项]',
     '      node scripts/refs-query.cjs locals <仓库相对路径> [选项]',
+    '      node scripts/refs-query.cjs --self-check [--root <目录>] [--json]',
     '',
     '查询：',
     '  who-references <路径>   谁直接引用这个文件（读 ledger/references.json；单层查询、不沿引用链推进，',
@@ -85,6 +90,9 @@ function usage() {
     '  · 语法级不支持 eval / 动态属性',
     '',
     '选项：',
+    '  --self-check    口径守卫：断言 who-references 与 impact 对符号级边 symbol_edges[] 的筛选口径是**同一份**',
+    '                  （同一函数引用 + 对 files[] 里每个目标集合相等 + 产物不变量），任一断言失败 ⇒ 退出码 1。',
+    '                  不查任何目标、不吃位置参数；只读图产物，不写任何东西。',
     '  --json          以 JSON 输出（who-references/impact：含全部符号级边；locals：params/arrow_params/locals/',
     '                  limitations；确定性、无绝对路径/耗时）',
     '  --root <目录>   仓库根，默认当前目录；不是 git 仓库根则非零退出',
@@ -93,17 +101,18 @@ function usage() {
     '  --help          显示本帮助',
     '',
     '不支持：符号 id 输入（如 src/tools.ts#Name@1:2）——会以 unsupported 拒绝。',
-    '退出码：0 成功 / 2 参数或根不合法 / 3 读不到图（locals 另含：读不到目标文件 / 拿不到 typescript）',
+    '退出码：0 成功 / 1 口径守卫（--self-check）断言失败 / 2 参数或根不合法 / 3 读不到图（locals 另含：读不到目标文件 / 拿不到 typescript）',
     '        / 4 输入不受支持（符号 id；locals 的非源码扩展名） / 5 目标不在图里。',
   ].join('\n');
 }
 
 function parseArgs(argv) {
-  const opts = { root: process.cwd(), json: false, help: false, limit: DEFAULT_SYMBOL_ROWS, depth: DEFAULT_IMPACT_DEPTH, positional: [] };
+  const opts = { root: process.cwd(), json: false, help: false, selfCheck: false, limit: DEFAULT_SYMBOL_ROWS, depth: DEFAULT_IMPACT_DEPTH, positional: [] };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--help' || arg === '-h') opts.help = true;
     else if (arg === '--json') opts.json = true;
+    else if (arg === '--self-check') opts.selfCheck = true;
     else if (arg === '--root' || arg === '--limit' || arg === '--depth') {
       i += 1;
       if (i >= argv.length) throw new UsageError(`缺少 ${arg} 的值`);
@@ -220,6 +229,66 @@ function assertCompletenessInvariant(completeness, gaps) {
   }
 }
 
+// ───────────────── ★ 符号边筛选口径：全脚本唯一一份（--self-check 守卫它不被各查各的） ─────────────────
+// who-references 与 impact 都从本节取 symbol_edges[] 的筛选结果；两条查询各有一个**命名入口**
+// （whoReferencesSymbolSource / impactSymbolSource），--self-check 断言两个入口取到的是**同一个函数引用**。
+// 规矩：任何对符号级边的筛选都必须经由本节的函数，不许在别处再写一份内联 filter / 内联 to.file 判断——
+// 各自实现过一次（who-references 数「to.file 命中 OR to.sym 前缀命中」，impact 数「两端都是文件」），
+// 那份重复口径就是漂移的入口，已收敛到这里。
+
+/**
+ * 口径①：这条符号级边指向**哪个文件**。to.file 优先（产物里它就是文件 id）；
+ * to.file 缺失时才用 to.sym 的 `<file>#<name>@<line>:<col>` 前缀反推——产物里文件名不含 `#`，
+ * 因此第一个 `#` 就是分隔符。两处答案会不会打架，由 --self-check 的 sym-prefix-matches-to-file 断言逐条盯着。
+ * 返回 null = 这条边指不到任何文件（外部模块 / 未解析符号）。
+ */
+function symbolEdgeTargetFile(edge) {
+  const toFile = edge && edge.to && edge.to.file;
+  if (typeof toFile === 'string') return toFile;
+  const sym = edge && edge.to && edge.to.sym;
+  if (typeof sym === 'string') {
+    const hash = sym.indexOf('#');
+    if (hash > 0) return sym.slice(0, hash);
+  }
+  return null;
+}
+
+/**
+ * 口径②：这条符号级边**进不进统计**。判据：两端都能落到图里的文件节点上——
+ * from.file 是字符串，且目标文件可判定（见口径①）。端点悬空的边（外部模块 / 未解析符号，产物里表现为
+ * to.file=null、to.state=outside/null）给不出「谁引用了谁」的事实，故不进。
+ * **注意这不是 kind 判据**：未归类 kind 的 fail-closed 在 RUNTIME_EDGE_POLICY（isRuntimeEdge）里，不在这里。
+ */
+function isCountedSymbolEdge(edge) {
+  return (
+    !!edge &&
+    typeof (edge.from && edge.from.file) === 'string' &&
+    typeof symbolEdgeTargetFile(edge) === 'string'
+  );
+}
+
+/**
+ * 唯一入口的公共实现：一次筛选，两个答案（准入 + 目标文件）。
+ * 两个答案都以**函数引用**的形式交出去，--self-check 据此断言两条查询用的是同一份口径。
+ */
+function symbolEdgeSource(artifact) {
+  return {
+    edges: (artifact.symbol_edges || []).filter(isCountedSymbolEdge),
+    filter: isCountedSymbolEdge,
+    targetFileOf: symbolEdgeTargetFile,
+  };
+}
+
+/** who-references 的符号边来源：buildReport **只许**从这里取 symbol_edges[]。 */
+function whoReferencesSymbolSource(artifact) {
+  return symbolEdgeSource(artifact);
+}
+
+/** impact 的符号边来源：buildReverseIndex 与 gateObligations **只许**从这里取 symbol_edges[]。 */
+function impactSymbolSource(artifact) {
+  return symbolEdgeSource(artifact);
+}
+
 function buildReport(opts, target, loaded) {
   const artifact = loaded.artifact;
   const files = new Set((artifact.files || []).map((f) => f.id));
@@ -240,9 +309,12 @@ function buildReport(opts, target, loaded) {
       })),
     (r) => `${r.from_file}:${String(r.line).padStart(12, '0')}:${String(r.column).padStart(12, '0')}:${r.kind}:${r.edge_id}`,
   );
+  // 符号级边：**只经共享口径入口**（★ 见本节上方的「符号边筛选口径」）——准入与「目标文件」两问都在那里，
+  // 这里不再自带一份 to.file / to.sym 判断。impact 用的是同一个 source，口径漂移由 --self-check 拦下。
+  const symbolSrc = whoReferencesSymbolSource(artifact);
   const symbolRows = sortRows(
-    (artifact.symbol_edges || [])
-      .filter((e) => (e.to && e.to.file === target) || (e.to && typeof e.to.sym === 'string' && e.to.sym.startsWith(`${target}#`)))
+    symbolSrc.edges
+      .filter((e) => symbolSrc.targetFileOf(e) === target)
       .map((e) => ({
         from_file: e.from.file,
         line: e.from.line,
@@ -358,8 +430,9 @@ function basisReasons(loaded) {
 /** 反向邻接表：to.file -> 引用它的边（文件级 edges[] 与符号级 symbol_edges[] 合流）。 */
 function buildReverseIndex(artifact) {
   const map = new Map();
-  const add = (layer, e) => {
-    const toFile = e && e.to && e.to.file;
+  // 两层的「键」都由调用方给出：文件级边用 to.file；符号级边的准入与目标文件都来自**共享口径入口**
+  // （★ impactSymbolSource，与 who-references 同一个函数引用）——这里不再自带一份符号边判断。
+  const add = (layer, e, toFile) => {
     const fromFile = e && e.from && e.from.file;
     if (typeof toFile !== 'string' || typeof fromFile !== 'string') return;
     if (!map.has(toFile)) map.set(toFile, []);
@@ -377,8 +450,9 @@ function buildReverseIndex(artifact) {
       type_only: e.type_only === true,
     });
   };
-  for (const e of artifact.edges || []) add('file', e);
-  for (const e of artifact.symbol_edges || []) add('symbol', e);
+  for (const e of artifact.edges || []) add('file', e, e && e.to && e.to.file);
+  const symbolSrc = impactSymbolSource(artifact);
+  for (const e of symbolSrc.edges) add('symbol', e, symbolSrc.targetFileOf(e));
   return map;
 }
 
@@ -667,7 +741,8 @@ function gateObligations(derived, artifact) {
     });
   };
   for (const e of artifact.edges || []) add('file', e);
-  for (const e of artifact.symbol_edges || []) add('symbol', e);
+  // 符号级边走共享口径入口（★ impactSymbolSource）——与 who-references、impact 反向索引同一份准入。
+  for (const e of impactSymbolSource(artifact).edges) add('symbol', e);
   return sortRows(
     rows,
     (r) => `${r.kind === 'script' ? '0' : '1'}|${r.command || ''}|${r.layer || ''}|${r.edge_kind || ''}|${r.edge_id || ''}`,
@@ -772,6 +847,8 @@ function isRuntimeEdge(edge) {
  * 每次 impact 建一份（产物约 1.8k 条边），供闭包内每个文件做一次可达性 BFS。
  * 端点缺失的边（外部模块、未解析符号）不进索引——它们给不出「谁能加载谁」的事实；
  * 但 **kind 归类先于端点检查**：端点缺失不能成为放过一个未归类 kind 的理由。
+ * ★ 因此这里刻意**不**预筛共享口径（symbolEdgeSource）：本函数必须遍历**全部** symbol_edges[]，
+ *   才能在端点缺失之前先做 kind 归类（fail-closed）。「谁引用谁」的准入是 symbolEdgeSource 的事，不是这里的。
  */
 function buildRuntimeAdjacency(artifact) {
   const adj = new Map();
@@ -1260,6 +1337,230 @@ function runLocalsMinimal(opts, root, target, list) {
   process.exit(EXIT.ok);
 }
 
+// ───────────────────── ★ 口径守卫：--self-check ─────────────────────
+
+/** 守卫诊断里每个断言最多列几条证据（确定性截断，只为可读性；断言本身是全量的）。 */
+const SELF_CHECK_EVIDENCE = 5;
+
+/**
+ * 口径守卫：把「who-references 与 impact 对符号级边的筛选口径是同一份」变成**可执行断言**——
+ * 口径一旦各走各的，这里立刻红（退出码 1 + 明确诊断行），不靠人去读两份代码比。
+ *
+ * 断言（**全量**，不是抽样）：
+ *   ① shared-filter-reference      两条查询各自的命名入口取到的是**同一个函数引用**（准入 + 目标文件两项）；
+ *   ② per-target-set-equality      对 files[] 里**每一个**目标：who-references 真正列进 symbol_referrers[] 的边集合
+ *                                  === impact 反向索引（buildReverseIndex；闭包 / path / cycles / self_loops 都吃它）
+ *                                  在该目标下持有的符号边集合。实测成立的是**相等**（比「⊆」更强），故按相等断言；
+ *                                  两侧都取**真实查询路径**的产物，谁在内部另写一份内联筛选都会被这条抓住。
+ *   ③ no-silent-narrowing          产物里 to.file 是字符串的符号边**一条都不许被漏计**（口径只许解释，不许丢边）；
+ *   ④ target-attributable          被计入的符号边，其目标文件必须在 files[] 里（不许收进无法归属的边）；
+ *   ⑤ from-endpoint-typed          每条符号边的 from.file 都必须是字符串（两条查询的 from 侧判据同真）；
+ *   ⑥ sym-prefix-matches-to-file   to.sym 是字符串时其 `#` 前缀必须等于 to.file——否则「这条边指向哪个文件」
+ *                                  在两条查询里会有两个答案（口径①的 to.sym 回退分支正是靠这条才成立）；
+ *   ⑦ runtime-type-split-complete  who-references 的 runtime_refs + type_refs === symbol_edges（type_only 二分完备）。
+ *
+ * 刻意**不**断言「筛选函数必须叫某个名字」：守卫要抓的是**分裂**，不是冻结实现——两处一起换成另一个共享实现
+ * （口径仍是一份）不该报红；而任何一处单独改口径，②～⑦ 会立刻报出来。
+ * 只读图产物，不写任何东西；输出无绝对路径、无时间戳、无耗时，逐字节确定。
+ */
+function runSelfCheck(opts, loaded) {
+  const artifact = loaded.artifact;
+  const files = [...new Set((artifact.files || []).map((f) => f.id))].sort(byteCompare);
+  const fileSet = new Set(files);
+  const symbolEdges = artifact.symbol_edges || [];
+  const assertions = [];
+  const failures = [];
+  const record = (id, ok, detail) => {
+    assertions.push({ id, ok, detail });
+    if (!ok) failures.push({ id, detail });
+    return ok;
+  };
+
+  // ① 同一函数引用：两条查询的命名入口必须交出同一个筛选函数。
+  const whoSrc = whoReferencesSymbolSource(artifact);
+  const impSrc = impactSymbolSource(artifact);
+  const sameRefs = whoSrc.filter === impSrc.filter && whoSrc.targetFileOf === impSrc.targetFileOf;
+  record(
+    'shared-filter-reference',
+    sameRefs,
+    `准入函数 who-references=${whoSrc.filter.name} / impact=${impSrc.filter.name}；` +
+      `目标函数 who-references=${whoSrc.targetFileOf.name} / impact=${impSrc.targetFileOf.name}：` +
+      (sameRefs ? '两项都是同一引用（符号边口径只有一份）' : '**不是同一引用**——两条查询已在各用各的口径'),
+  );
+
+  // ② 逐目标集合相等：两侧都走真实查询路径（who-references 的 buildReport / impact 的 buildReverseIndex）。
+  const rev = buildReverseIndex(artifact);
+  const setEqEvidence = [];
+  let setEqMismatch = 0;
+  let whoRefsTotal = 0;
+  let revSymbolTotal = 0;
+  const splitEvidence = [];
+  let splitMismatch = 0;
+  for (const target of files) {
+    const report = buildReport(opts, target, loaded);
+    const who = new Set(report.symbol_referrers.map((r) => r.edge_id));
+    whoRefsTotal += who.size;
+    const imp = new Set((rev.get(target) || []).filter((r) => r.layer === 'symbol').map((r) => r.edge_id));
+    revSymbolTotal += imp.size;
+    let same = who.size === imp.size;
+    if (same) for (const id of who) if (!imp.has(id)) { same = false; break; }
+    if (!same) {
+      setEqMismatch += 1;
+      if (setEqEvidence.length < SELF_CHECK_EVIDENCE) {
+        setEqEvidence.push(
+          `${target}：who-references ${who.size} 条 / impact 反向索引 ${imp.size} 条` +
+            `（只在 who-references 有 ${[...who].filter((x) => !imp.has(x)).length} 条，只在 impact 有 ${[...imp].filter((x) => !who.has(x)).length} 条）`,
+        );
+      }
+    }
+    const c = report.counts;
+    if (c.runtime_refs + c.type_refs !== c.symbol_edges) {
+      splitMismatch += 1;
+      if (splitEvidence.length < SELF_CHECK_EVIDENCE) {
+        splitEvidence.push(`${target}：runtime_refs ${c.runtime_refs} + type_refs ${c.type_refs} ≠ symbol_edges ${c.symbol_edges}`);
+      }
+    }
+  }
+  record(
+    'per-target-set-equality',
+    setEqMismatch === 0,
+    `${files.length} 个目标逐一对账：who-references 计入合计 ${whoRefsTotal} 条符号边 / impact 反向索引合计 ${revSymbolTotal} 条，` +
+      (setEqMismatch === 0 ? '集合逐目标相等' : `**有 ${setEqMismatch} 个目标不相等**：${setEqEvidence.join('；')}`),
+  );
+
+  // ③～⑥ 产物不变量：逐条读 symbol_edges[]，口径不许丢边、不许收进无法归属的边。
+  const narrowEvidence = [];
+  const unattributableEvidence = [];
+  const fromEvidence = [];
+  const symEvidence = [];
+  let countedEdges = 0;
+  let toFileTyped = 0;
+  let narrowCount = 0;
+  let unattributableCount = 0;
+  let fromCount = 0;
+  let symCount = 0;
+  for (const e of symbolEdges) {
+    const toFile = e && e.to && e.to.file;
+    const sym = e && e.to && e.to.sym;
+    const counted = isCountedSymbolEdge(e);
+    if (typeof toFile === 'string') toFileTyped += 1;
+    if (counted) countedEdges += 1;
+    if (typeof toFile === 'string' && !counted) {
+      narrowCount += 1;
+      if (narrowEvidence.length < SELF_CHECK_EVIDENCE) narrowEvidence.push(e.id);
+    }
+    if (counted && !fileSet.has(symbolEdgeTargetFile(e))) {
+      unattributableCount += 1;
+      if (unattributableEvidence.length < SELF_CHECK_EVIDENCE) unattributableEvidence.push(`${e.id} -> ${symbolEdgeTargetFile(e)}`);
+    }
+    if (typeof (e.from && e.from.file) !== 'string') {
+      fromCount += 1;
+      if (fromEvidence.length < SELF_CHECK_EVIDENCE) fromEvidence.push(e.id);
+    }
+    if (typeof sym === 'string' && !(typeof toFile === 'string' && sym.startsWith(`${toFile}#`))) {
+      symCount += 1;
+      if (symEvidence.length < SELF_CHECK_EVIDENCE) {
+        symEvidence.push(`${e.id}：to.sym=${sym} / to.file=${typeof toFile === 'string' ? toFile : String(toFile)}`);
+      }
+    }
+  }
+  record(
+    'no-silent-narrowing',
+    narrowCount === 0 && countedEdges === toFileTyped,
+    `to.file 是字符串的符号边 ${toFileTyped} 条，其中被计入 ${toFileTyped - narrowCount} 条；计入总数 ${countedEdges} 条` +
+      (narrowCount === 0
+        ? (countedEdges === toFileTyped ? '' : `；**多计了 ${countedEdges - toFileTyped} 条无法用 to.file 归属的边**`)
+        : `；**有 ${narrowCount} 条本该统计却没被计入**：${narrowEvidence.join('；')}`),
+  );
+  record(
+    'target-attributable',
+    unattributableCount === 0,
+    unattributableCount === 0
+      ? `计入的 ${countedEdges} 条符号边，目标文件全部在 files[]（${fileSet.size} 个节点）里`
+      : `**有 ${unattributableCount} 条符号边的目标文件不在 files[] 里**：${unattributableEvidence.join('；')}`,
+  );
+  record(
+    'from-endpoint-typed',
+    fromCount === 0,
+    fromCount === 0
+      ? `${symbolEdges.length} 条符号边的 from.file 全是字符串（两条查询的 from 侧判据同真）`
+      : `**有 ${fromCount} 条符号边的 from.file 不是字符串**：${fromEvidence.join('；')}——两条查询对这类边的取舍会分叉`,
+  );
+  record(
+    'sym-prefix-matches-to-file',
+    symCount === 0,
+    symCount === 0
+      ? 'to.sym 的 `#` 前缀与 to.file 处处一致（「这条边指向哪个文件」只有一个答案）'
+      : `**有 ${symCount} 条边的 to.sym 前缀与 to.file 打架**：${symEvidence.join('；')}——口径①的回退分支需要人工重新确认`,
+  );
+  record(
+    'runtime-type-split-complete',
+    splitMismatch === 0,
+    splitMismatch === 0
+      ? `${files.length} 个目标的 runtime_refs + type_refs 都等于 symbol_edges（type_only 二分完备）`
+      : `**有 ${splitMismatch} 个目标的 type_only 二分不完备**：${splitEvidence.join('；')}`,
+  );
+
+  const payload = {
+    query: '--self-check',
+    basis: loaded.basis,
+    checked_targets: files.length,
+    symbol_edges: symbolEdges.length,
+    counted_symbol_edges: countedEdges,
+    who_references_symbol_edges_total: whoRefsTotal,
+    impact_symbol_edges_total: revSymbolTotal,
+    assertions,
+    failures,
+    passed: failures.length === 0,
+  };
+  if (failures.length > 0) {
+    if (opts.json) process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+    else {
+      process.stderr.write(
+        `口径守卫失败（--self-check）：${failures.length} 项断言不成立——who-references 与 impact 对符号级边的筛选口径已经不一致。\n` +
+          failures.map((f) => `  ✗ ${f.id}：${f.detail}`).join('\n') +
+          '\n',
+      );
+    }
+    process.exit(EXIT.guard);
+  }
+  if (opts.json) {
+    process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+  } else {
+    process.stdout.write(
+      [
+        '口径守卫（--self-check）：who-references 与 impact 对符号级边的筛选口径是同一份',
+        `basis=${loaded.basis}  目标 ${files.length} 个  符号边 ${symbolEdges.length} 条（计入 ${countedEdges} 条）`,
+        '断言（全量，非抽样）：',
+        ...assertions.map((a) => `  ${a.ok ? '✓' : '✗'} ${a.id}  ${a.detail}`),
+        '✓ 口径一致：0 项失败',
+      ].join('\n') + '\n',
+    );
+  }
+  process.exit(EXIT.ok);
+}
+
+/** --self-check 的入口：解析根 → 读图 → 跑守卫（守卫自己决定退出码；不吃位置参数）。 */
+function runSelfCheckMain(opts) {
+  if (opts.positional.length > 0) {
+    process.stderr.write(`--self-check 不吃位置参数（它对 files[] 里全部目标逐一对账）：${opts.positional.join(' ')}\n`);
+    process.exit(EXIT.usage);
+  }
+  let root;
+  try {
+    root = resolveRoot(opts.root);
+  } catch (err) {
+    process.stderr.write(`${err.message}\n`);
+    process.exit(EXIT.usage);
+  }
+  const loaded = loadArtifact(root);
+  if (!loaded.artifact) {
+    process.stderr.write(`读不到图产物 ${REL}：既不在 git 索引，也不在工作区（${path.join(root, REL)}）。\n`);
+    process.exit(EXIT.unreadable);
+  }
+  runSelfCheck(opts, loaded);
+}
+
 function main() {
   let opts;
   try {
@@ -1272,6 +1573,8 @@ function main() {
     process.stdout.write(`${usage()}\n`);
     process.exit(EXIT.ok);
   }
+  // --self-check 不查任何目标，必须在「缺少查询与目标」之前分流（它自己解析根、自己定退出码）。
+  if (opts.selfCheck) runSelfCheckMain(opts);
   if (opts.positional.length === 0) {
     process.stderr.write(`缺少查询与目标\n\n${usage()}\n`);
     process.exit(EXIT.usage);
