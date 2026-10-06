@@ -247,7 +247,7 @@ id, kind, from, to, cross_file, specifier, resolved, fragment, field, status, ty
 
 合计 320+52+51+35+19+17+3+1 = **498** ✓（与 `edges` 条数一致）。
 
-**边 id 规则**（`meta.edge_id_rule`）：`<from.file>:<line>:<column>:<kind>`，同一位置多条边时追加 `:<field|specifier>` 消歧，仍冲突即**生成失败**。**id 里不含解析结果**——目标被删 / 改名时 id 不变，这正是 `check-impact` 棘轮能工作的前提（§4.7）。
+**边 id 规则**（`meta.edge_id_rule`）：`<from.file>:<line>:<column>:<kind>`，同一位置多条边时追加 `:<field|specifier>` 消歧，仍冲突即**生成失败**。**id 里不含解析结果**——目标被删 / 改名时 id 不变，`check-impact` 的棘轮正是靠「同一个引用还是同一个引用」把历史存量放过的（§4.7）。**注（本批）**：门禁的判定**不再用 `id`**（`id` 里含行号 ⇒ 纯平移会整片误报），改用不含位置的内容键，见 §4.7；`id` 仍是边在产物里的唯一标识与点名用的那个串。
 
 `status` 实测分布：`{"resolved":311,"external":187}`。**当前产物里没有 `dangling`**（`node scripts/generate-reference-graph.cjs --check` 未报任何悬空；`node scripts/check-impact.cjs` 报「新增悬空 0」）。
 
@@ -592,7 +592,7 @@ npm run typecheck && npm run build && npm test && node ci-contract-check.cjs && 
 新增未解析 = { 当前 to.sym === null 的符号级边 } − { 基线中同样未解析的符号级边 }   ← 符号被删（文件还在）
 ```
 
-**边的身份用 `id`，按集合差比较，不是比条数。** id **不含解析结果**，因此基线取的是「基线中**同样命中**」的边（同为 `dangling` / 同为未解析），不是基线全量边——否则 `resolved → dangling` 的同 id 边会被误判成「基线里已存在」而**漏报**。
+**边的身份 = 内容键，不是 `id`（本批修订）**：`from.file` + `kind` + `specifier` + `field` + `fragment`（= 「这处引用是什么」，**不含行号 / 列号、也不含包含它的那个声明**）；同一内容键内先按 `id` 精确配对，再按「当前独有 − 基线独有」的**条数差**判新增。⇒ ① 插几行导致的**行号平移不算新增**；② 声明**改名**也不算新增；③ 真新引入一处（同键条数 +1）照报。**旧口径留痕**：v1.0.0 用边 `id` 当身份，而 `id` 里含行号 ⇒ 纯平移整片误报（实测 `src/service.ts` 7 条未解析边整体平移被判成 7 条新增；全历史扫描 84 个提交里只有这一个提交的判定因此改变，其余 65 个逐字节相同、0 个报得更多）。**不得为了消掉平移而放宽判定**：真新增一处仍然报（同键条数 +1），这条由 `tests/impact-gate-e2e.mjs` 钉住。内容键同样**不含解析结果**，因此基线取的是「基线中**同样命中**」的边（同为 `dangling` / 同为未解析），不是基线全量边——否则 `resolved → dangling` 的同键边会被误判成「基线里已存在」而**漏报**。**已知边界**：同键内**同时**「修好一处 + 坏掉另一处」净差为 0 ⇒ 不报；同键多出 N 条时点名只保证**条数正确**（给出同键内按行列序靠后的 N 条）——未解析边不记录被引用的名字（`to.sym` 为 `null`），无位置身份下这两件事在产物里不可区分。
 
 **「未解析」的精确口径**（用图自己的词表，不另造）：`to.sym === null` 的符号级边，**但排除** `status === 'external'` 与 `to.state === 'outside'`——仓库外的裸模块说明符（`node:fs`、`ajv`…）与库类型（Program 刻意 `noLib` + `types: []`）本来就「仓库外、无仓库内符号」，属**已按设计处置**；算进来会让门禁在健康仓库上**恒红**。**保留** `status === 'unresolved'`（`symbol-not-found-in-program` / `declaration-out-of-scope`）——那才是该报的。
 

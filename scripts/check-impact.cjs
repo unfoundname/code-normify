@@ -5,7 +5,9 @@
  * 判据（两项，任一非空 ⇒ 退出码 1）：
  *   新增悬空   = { 当前 status === 'dangling' 的边 } − { 基线中同为 dangling 的边 }   ← 文件被删 / 改名
  *   新增未解析 = { 当前 to.sym === null 的符号级边 } − { 基线中同样未解析的符号级边 }   ← 符号被删（文件还在）
- *   边的身份用 `id`（形如 README.md:309:110:markdown-link:./docs/SPEC.zh-CN.md），按集合差比较。
+ *   边的身份 = **内容键**（= 「这处引用是什么」，**不含行号 / 列号、也不含包含它的那个声明**）；
+ *   同一内容键内先按 `id` 精确配对、再按同键内的条数差判新增
+ *   （见 siteKeyOf / diffBySiteKey，以及那里的「旧口径留痕」）。
  *
  * 棘轮本质：更早提交引入的悬空在基线与当前里都存在 ⇒ 不构成「新增」，不报（历史存量不追溯）。
  *
@@ -88,10 +90,21 @@ check 链位置（npm 脚本 \`check\` 的实际顺序，环名照抄）：
 判据（棘轮：只拦本次改动**新引入**的）：
   新增悬空   = { 当前 status === 'dangling' 的边 } − { 基线中同为 dangling 的边 }   ← 文件被删 / 改名
   新增未解析 = { 当前 to.sym === null 的符号级边 } − { 基线中同样未解析的符号级边 }   ← 符号被删（文件还在）
-  边的身份用 \`id\`（形如 README.md:309:110:markdown-link:./docs/SPEC.zh-CN.md），按集合差比较；
-  · 边的 id **不含解析结果**（文件级边尾部是 specifier；符号级边只到 from 的行:列 + kind），
-    目标被删 / 改名 / 符号被删时 id 不变 ⇒ 基线取的是「基线中**同样命中**」的边（同为 dangling /
-    同为未解析），不是基线全量边；否则 resolved→dangling 的同 id 边会被误判成「基线里已存在」而漏报。
+  边的身份 = **内容键**，**不含行号 / 列号，也不含包含它的那个声明**：
+  \`from.file\` + \`kind\` + \`specifier\` + \`field\` + \`fragment\`（= 「这处引用是什么」）。
+  判定分两步，都在同一内容键内做：① \`id\` 两侧都在 ⇒ 同一处引用、连行列都没动 ⇒ 抵掉；
+  ② 同键内「当前独有」比「基线独有」多出的条数 = 新增。
+  ⇒ **只在文件里插了几行导致的平移不算新增**，**声明改名也不算新增**，
+  真新引入一处（同键条数 +1）照样报。
+  · 内容键同样**不含解析结果**（status / reason / resolved / to.\*）：目标被删 / 改名 / 符号被删时
+    内容键不变 ⇒ 基线取的是「基线中**同样命中**」的边（同为 dangling / 同为未解析），不是基线全量边；
+    否则 resolved→dangling 的同键边会被误判成「基线里已存在」而漏报。
+  · **旧口径留痕**：v1.0.0 曾直接用边 \`id\` 作身份，而行号在 \`id\` 里
+    （形如 README.md:309:110:markdown-link:./docs/SPEC.zh-CN.md）⇒ 同一个引用只要行号平移就被算成
+    「另一条边」，纯平移的提交会整片误报成新增。详见 siteKeyOf 的「旧口径留痕」。
+  · 已知边界：同一内容键内**同时**「修好一处 + 坏掉另一处」时净差为 0，会被算成没新增；
+    同键内多出 N 条时，点名只能给出该键内按行列序靠后的 N 条（条数一定正确）。
+    两点都是「平移不误报」必须付的代价（未解析边不记录被引用的名字）。
   任一非空 ⇒ 退出码 1，逐条点名（边 id + from 的行:列 + kind + 目标）。
   · 「未解析」的精确口径（用图自己的词表，不另造）：to.sym === null 的符号级边，**但排除
     status === 'external' / to.state === 'outside'** —— 仓库外的裸模块说明符（node:fs、ajv…）
@@ -262,19 +275,105 @@ function describeEdge(edge, side) {
 }
 
 /**
- * 集合差：当前**命中**集合 − 基线**命中**集合（**边的身份 = id**，按集合差比较）。
+ * 边身份的**内容键** = 「这处引用是什么」。同一个键 = 同一处引用，行号挪了也还是它。
+ *
+ * 进键的字段（都是**引用本身**的内容，与「落在文件的第几行」「包含它的声明叫什么」无关）：
+ *   `from.file`（哪个文件里的引用）、`kind`（引用方式）、
+ *   `specifier` / `field` / `fragment`（指向什么：说明符 / 消歧键 / 锚点）。
+ * 刻意**不进键**的三类：
+ *   · **位置**：`id` 里的 `from.line:from.column`、`from.sym` 尾部的 `@行:列`、符号级边的
+ *     `to.line` / `to.column` —— 它们会随「前面插了几行」整体平移，与「有没有新引用」无关。
+ *   · **包含它的那个声明**（`from.sym` 里的 `<name>@行:列`）—— 声明**改名**时这处引用一个字都没动，
+ *     键却会变（实测：`tests/impact-gate-e2e.mjs` 用例 2 把 `src/engine/graph.ts` 的导出函数改名，
+ *     该文件里**同一个**未解析的返回类型注解 `type-reference` 就被误报成新增；把 `<name>@行:列`
+ *     算进键正是那次的根因）。声明的位置会漂、名字会改，**两者都不是引用的身份**。
+ *   · **判定结果**：`status` / `reason` / `resolved` / `to.file` / `to.state` —— 两侧都已按同一命中
+ *     口径筛过（同为 dangling / 同为未解析），再把结果算进身份，会让「同一处引用换了失败原因」
+ *     冒充新增（例如原本 `declaration-out-of-scope` 的引用，其局部声明被删后变成
+ *     `symbol-not-found-in-program`，引用本身并没有变新）。
+ *
+ * **旧口径留痕（本函数唯一的修订动机）**：v1.0.0 直接用边 `id` 当身份，而文件级 / 符号级边的 `id`
+ * 都是 `<from.file>:<from.line>:<from.column>:<kind>[:<field|specifier>]` ⇒ **行号在身份里** ⇒
+ * 同一个引用只要行号平移，就被算成「另一条边」。实测形状：`src/service.ts` 顶部插 3 行、函数体内
+ * 再插 3 行，7 条未解析边整体平移（列号 / 声明名 / 原因一字未变），却在纯平移的提交上报出 7 条
+ * 「新增未解析」。**平移不是新引用**，所以位置从此不进身份。
+ *
+ * 粒度边界（**写下来，不假装没有**）：内容键能用的字段只有这些 —— 位置会漂、声明名会改，所以
+ * 判定粒度落在「**每个文件的每种 kind + 说明符**」。同一个键内**同时**「修好一处 + 坏掉另一处」
+ * 时净差为 0，会被算成没新增（符号级未解析边不记录被引用的名字，`to.sym` 为 null，无位置身份下
+ * 这两件事在产物里不可区分）。这是「平移与改名都不误报」必须付的代价。
+ */
+function siteKeyOf(edge) {
+  const from = edge && typeof edge.from === 'object' && edge.from ? edge.from : {};
+  return JSON.stringify([
+    typeof from.file === 'string' ? from.file : null,
+    typeof edge.kind === 'string' ? edge.kind : null,
+    edge.specifier === undefined ? null : edge.specifier,
+    edge.field === undefined ? null : edge.field,
+    edge.fragment === undefined ? null : edge.fragment,
+  ]);
+}
+
+/** 文件内顺序（行、列，最后退回 id）：只用来在「同键多出的那几条」里稳定地挑，不影响判据。 */
+function byPositionThenId(a, b) {
+  const al = a.from?.line ?? -1;
+  const bl = b.from?.line ?? -1;
+  if (al !== bl) return al - bl;
+  const ac = a.from?.column ?? -1;
+  const bc = b.from?.column ?? -1;
+  if (ac !== bc) return ac - bc;
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
+/**
+ * 差集：当前**命中**集合 − 基线**命中**集合（**身份 = siteKeyOf；同一身份内按条数差判新增**）。
+ *
  * 两个参数必须都是「按同一命中口径筛过」的集合（当前 dangling vs 基线 dangling；当前未解析 vs 基线未解析）：
  * 棘轮只拦本次改动**新引入**的破坏，历史存量（基线与当前都命中）一律不报。
  * 若基线传未筛过的全量边，则同 id 边永远算「基线里已存在」，
  * 目标被删导致的 resolved→dangling（id 不变）会被永久漏报 —— 这正是本门禁要拦的头号场景。
+ * （两条基准路径 —— 默认 `HEAD^..HEAD` 与 `--staged` `HEAD..index` —— **都只走这一个函数**，
+ *  口径不会分成两份；它们读的图不同，判据相同。）
+ *
+ * 算法（两步，都在**同一内容键**内做）：
+ *   ① 精确配对：`id` 两侧都在 ⇒ 同一处引用、连行列都没动 ⇒ 直接抵掉（先配 id 是为了让点名更准）；
+ *   ② 条数差：同键内「当前独有」的条数 > 「基线独有」的条数 ⇒ 多出的那几条 = 新增。
+ *      ⇒ **纯平移**（只有 ① 落空、条数相等）新增 0；**真新引入一处**（同键条数 +1）新增 1；
+ *      **同一符号被引用两次、其中一处新增**（同键 2 → 3）新增 1。
+ * 已知边界（**写下来，不假装没有**）：① 同键内**同时**「修好一处 + 坏掉另一处」时净差为 0，会被算成
+ * 没新增 —— 符号级未解析边不记录被引用的名字（`to.sym` 为 null），无位置身份下这两件事在产物里
+ * 不可区分；② 同键内多出 N 条时，点名只能给出该键内**按行列序靠后的 N 条**（无法断定是哪一条新增 ——
+ * 同样是「不记录被引用名字」所致），但**条数一定正确**。两点都是「平移不误报」必须付的代价，
+ * 边界写在这里而不是藏起来。
  * 返回按 id 升序，保证输出确定性。
  */
-function diffByIds(hit, baselineById) {
+function diffBySiteKey(hit, baselineById) {
+  const groups = new Map(); // 内容键 → { base: [], curr: [] }
+  const groupOf = (key) => {
+    let group = groups.get(key);
+    if (!group) {
+      group = { base: [], curr: [] };
+      groups.set(key, group);
+    }
+    return group;
+  };
+  for (const edge of baselineById.values()) groupOf(siteKeyOf(edge)).base.push(edge);
+  for (const edge of hit.values()) groupOf(siteKeyOf(edge)).curr.push(edge);
+
   const out = [];
-  for (const id of [...hit.keys()].sort()) {
-    if (!baselineById.has(id)) out.push(hit.get(id));
+  for (const key of [...groups.keys()].sort()) {
+    const group = groups.get(key);
+    const baseIds = new Set(group.base.map((e) => e.id));
+    const currIds = new Set(group.curr.map((e) => e.id));
+    const onlyCurr = group.curr.filter((e) => !baseIds.has(e.id));       // ① 没配上 id 的当前边
+    const onlyBase = group.base.filter((e) => !currIds.has(e.id)).length; // ① 没配上 id 的基线边
+    const surplus = onlyCurr.length - onlyBase;                          // ② 条数差 = 新增条数
+    if (surplus <= 0) continue;
+    // 取文件内靠后的 surplus 条：取法固定（先按 id 精确配对、再按行列序留尾），因此同一输入必然同一输出。
+    const ordered = [...onlyCurr].sort(byPositionThenId);
+    out.push(...ordered.slice(ordered.length - surplus));
   }
-  return out;
+  return out.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
 
 function parseArgs(argv) {
@@ -373,11 +472,11 @@ function main() {
   // 新增悬空 = { 当前 status === 'dangling' 的边 } − { 基线中 status === 'dangling' 的边 }
   const danglingNow = new Map([...currEdges].filter(([, e]) => e.status === 'dangling'));
   const danglingBase = new Map([...baseEdges].filter(([, e]) => e.status === 'dangling'));
-  const newlyDangling = diffByIds(danglingNow, danglingBase);
+  const newlyDangling = diffBySiteKey(danglingNow, danglingBase);
   // 新增未解析 = { 当前未解析的符号级边 } − { 基线中未解析的符号级边 }（同一口径 isUnresolvedSymbolEdge）
   const unresolvedNow = new Map([...currSyms].filter(([, e]) => isUnresolvedSymbolEdge(e)));
   const unresolvedBase = new Map([...baseSyms].filter(([, e]) => isUnresolvedSymbolEdge(e)));
-  const newlyUnresolved = diffByIds(unresolvedNow, unresolvedBase);
+  const newlyUnresolved = diffBySiteKey(unresolvedNow, unresolvedBase);
 
   const ok = newlyDangling.length === 0 && newlyUnresolved.length === 0;
   const payload = {
