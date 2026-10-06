@@ -870,7 +870,7 @@ npm pack
 1. 单方向引用：只存 `parent`、只存出向 `deps`；反向关系全由索引导出。
 2. 单一事实源：API 只在叶子存一次；聚合/统计/索引全是派生数据。
 3. 派生优于存储：`depth/tree/children/aggregate/api_index/outline` 不进源。
-4. fail-closed：任何 error 不产产物；诊断必带 subject/evidence/supportedFixes。
+4. fail-closed：任何 error 不产产物；诊断的 `code`/`severity`/`message` 必填，`subject`/`evidence`/`supportedFixes` **能给出时就给出**（口径见 §5.3：确实没有可执行修复时 `supportedFixes` 在运行时缺席）。**留痕（旧文案，已作废）**：本条曾无条件写「诊断必带 subject/evidence/supportedFixes」——那比类型契约更强（`Diagnostic` 里这三栏都是可选的）。
 5. 人机共读：Markdown 源 + JSON 产物 + HTML 视图。
 6. 增量优于全量：只重建脏子树，但全项目校验永远 0 error。
 7. 不发明新格式：Markdown + JSON，规避 grep tax。

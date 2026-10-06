@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "f8ea8c099793eca1854e079a0b8ecf663da8cb8e017eee7cc151964124d4ad87",
+    "universe_hash": "ca7c0b668a2db68e8df3c0fa5efde0ea80b2b4df7bcc53096b76addb351540f2",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1502,
+    "tracked_total": 1503,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 166
+      "scanned_total": 167
     },
     "analysis": {
       "mode": "typescript",
@@ -92,7 +92,7 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "自指条目（本产物自身的 bytes / lines）固定写 null —— 这是【处置选择】，不是\"没有不动点\"：实测把这两个量迭代写回，第 3 次即收敛（不动点存在）。因此这里写 null 是为了让产物写入幂等、而不是因为\"自指在数学上不可能稳定\"。（本条 = 图数据文件自己（ledger/references.json）那一行；只豁免这两个派生量，其余字段照常登记。）",
     "node_states": {
-      "indexed": 1502
+      "indexed": 1503
     },
     "edge_kinds": {
       "anchor": 3,
@@ -268,7 +268,7 @@
       "id": "docs/SPEC.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 63101,
+      "bytes": 63447,
       "lines": 890,
       "edge_out": 1,
       "edge_in": 9
@@ -12307,6 +12307,15 @@
       "edge_in": 0
     },
     {
+      "id": "ledger/change-log/20261006T230853Z-6c3d2e9.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2515,
+      "lines": 75,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
       "id": "ledger/change-log/README.md",
       "lang": "md",
       "state": "indexed",
@@ -12625,7 +12634,7 @@
       "id": "lib/engine/reference.js",
       "lang": "js",
       "state": "indexed",
-      "bytes": 11397,
+      "bytes": 12325,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -12634,7 +12643,7 @@
       "id": "lib/engine/reference.js.map",
       "lang": "other",
       "state": "indexed",
-      "bytes": 6304,
+      "bytes": 6395,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -12823,7 +12832,7 @@
       "id": "lib/tools.js",
       "lang": "js",
       "state": "indexed",
-      "bytes": 81683,
+      "bytes": 81744,
       "lines": null,
       "edge_out": 0,
       "edge_in": 1
@@ -13381,8 +13390,8 @@
       "id": "src/engine/reference.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 12284,
-      "lines": 185,
+      "bytes": 13212,
+      "lines": 192,
       "edge_out": 5,
       "edge_in": 2
     },
@@ -13480,7 +13489,7 @@
       "id": "src/tools.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 92194,
+      "bytes": 92255,
       "lines": 1838,
       "edge_out": 24,
       "edge_in": 5
@@ -26931,13 +26940,13 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/reference.ts#ERRORS_REFERENCE@63:7",
+      "id": "src/engine/reference.ts#ERRORS_REFERENCE@69:7",
       "file": "src/engine/reference.ts",
       "name": "ERRORS_REFERENCE",
       "decl_kind": "variable",
       "exported": false,
       "scope": null,
-      "line": 63,
+      "line": 69,
       "column": 7,
       "origin": "source"
     },
@@ -26964,13 +26973,13 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/reference.ts#HelpResult@154:18",
+      "id": "src/engine/reference.ts#HelpResult@161:18",
       "file": "src/engine/reference.ts",
       "name": "HelpResult",
       "decl_kind": "interface",
       "exported": true,
       "scope": null,
-      "line": 154,
+      "line": 161,
       "column": 18,
       "origin": "source"
     },
@@ -27008,35 +27017,35 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/reference.ts#resolveHelp@165:17",
+      "id": "src/engine/reference.ts#resolveHelp@172:17",
       "file": "src/engine/reference.ts",
       "name": "resolveHelp",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 165,
+      "line": 172,
       "column": 17,
       "origin": "source"
     },
     {
-      "id": "src/engine/reference.ts#toolReference@131:17",
+      "id": "src/engine/reference.ts#toolReference@138:17",
       "file": "src/engine/reference.ts",
       "name": "toolReference",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 131,
+      "line": 138,
       "column": 17,
       "origin": "source"
     },
     {
-      "id": "src/engine/reference.ts#topicReference@83:17",
+      "id": "src/engine/reference.ts#topicReference@90:17",
       "file": "src/engine/reference.ts",
       "name": "topicReference",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 83,
+      "line": 90,
       "column": 17,
       "origin": "source"
     },
@@ -44214,13 +44223,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/reference.ts:83:39:type-reference",
+      "id": "src/engine/reference.ts:90:39:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/reference.ts",
-        "line": 83,
+        "line": 90,
         "column": 39,
-        "sym": "src/engine/reference.ts#topicReference@83:17"
+        "sym": "src/engine/reference.ts#topicReference@90:17"
       },
       "to": {
         "sym": "src/engine/reference.ts#HelpTopic@14:13",
@@ -44237,13 +44246,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/reference.ts:83:68:type-reference",
+      "id": "src/engine/reference.ts:90:68:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/reference.ts",
-        "line": 83,
+        "line": 90,
         "column": 68,
-        "sym": "src/engine/reference.ts#topicReference@83:17"
+        "sym": "src/engine/reference.ts#topicReference@90:17"
       },
       "to": {
         "sym": "src/engine/reference.ts#ToolCatalogEntry@16:18",
@@ -44260,13 +44269,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/reference.ts:102:79:type-reference",
+      "id": "src/engine/reference.ts:109:79:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/reference.ts",
-        "line": 102,
+        "line": 109,
         "column": 79,
-        "sym": "src/engine/reference.ts#topicReference@83:17"
+        "sym": "src/engine/reference.ts#topicReference@90:17"
       },
       "to": {
         "sym": null,
@@ -44283,13 +44292,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/reference.ts:131:38:type-reference",
+      "id": "src/engine/reference.ts:138:38:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/reference.ts",
-        "line": 131,
+        "line": 138,
         "column": 38,
-        "sym": "src/engine/reference.ts#toolReference@131:17"
+        "sym": "src/engine/reference.ts#toolReference@138:17"
       },
       "to": {
         "sym": "src/engine/reference.ts#ToolCatalogEntry@16:18",
@@ -44306,13 +44315,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/reference.ts:134:63:type-reference",
+      "id": "src/engine/reference.ts:141:63:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/reference.ts",
-        "line": 134,
+        "line": 141,
         "column": 63,
-        "sym": "src/engine/reference.ts#toolReference@131:17"
+        "sym": "src/engine/reference.ts#toolReference@138:17"
       },
       "to": {
         "sym": null,
@@ -44329,13 +44338,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/reference.ts:156:13:type-reference",
+      "id": "src/engine/reference.ts:163:13:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/reference.ts",
-        "line": 156,
+        "line": 163,
         "column": 13,
-        "sym": "src/engine/reference.ts#HelpResult@154:18"
+        "sym": "src/engine/reference.ts#HelpResult@161:18"
       },
       "to": {
         "sym": "src/engine/types.ts#Diagnostic@213:18",
@@ -44352,13 +44361,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/reference.ts:157:15:type-reference",
+      "id": "src/engine/reference.ts:164:15:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/reference.ts",
-        "line": 157,
+        "line": 164,
         "column": 15,
-        "sym": "src/engine/reference.ts#HelpResult@154:18"
+        "sym": "src/engine/reference.ts#HelpResult@161:18"
       },
       "to": {
         "sym": "src/engine/types.ts#Diagnostic@213:18",
@@ -44375,13 +44384,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/reference.ts:165:74:type-reference",
+      "id": "src/engine/reference.ts:172:74:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/reference.ts",
-        "line": 165,
+        "line": 172,
         "column": 74,
-        "sym": "src/engine/reference.ts#resolveHelp@165:17"
+        "sym": "src/engine/reference.ts#resolveHelp@172:17"
       },
       "to": {
         "sym": "src/engine/reference.ts#ToolCatalogEntry@16:18",
@@ -44398,18 +44407,18 @@
       "type_only": true
     },
     {
-      "id": "src/engine/reference.ts:165:95:type-reference",
+      "id": "src/engine/reference.ts:172:95:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/reference.ts",
-        "line": 165,
+        "line": 172,
         "column": 95,
-        "sym": "src/engine/reference.ts#resolveHelp@165:17"
+        "sym": "src/engine/reference.ts#resolveHelp@172:17"
       },
       "to": {
-        "sym": "src/engine/reference.ts#HelpResult@154:18",
+        "sym": "src/engine/reference.ts#HelpResult@161:18",
         "file": "src/engine/reference.ts",
-        "line": 154,
+        "line": 161,
         "column": 18,
         "state": "indexed"
       },
@@ -44421,13 +44430,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/reference.ts:178:59:type-reference",
+      "id": "src/engine/reference.ts:185:59:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/reference.ts",
-        "line": 178,
+        "line": 185,
         "column": 59,
-        "sym": "src/engine/reference.ts#resolveHelp@165:17"
+        "sym": "src/engine/reference.ts#resolveHelp@172:17"
       },
       "to": {
         "sym": "src/engine/reference.ts#HelpTopic@14:13",
@@ -54872,9 +54881,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/reference.ts#resolveHelp@165:17",
+        "sym": "src/engine/reference.ts#resolveHelp@172:17",
         "file": "src/engine/reference.ts",
-        "line": 165,
+        "line": 172,
         "column": 17,
         "state": "indexed"
       },

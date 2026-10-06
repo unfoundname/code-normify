@@ -924,7 +924,7 @@ export function createNormifyTools(env: ToolEnv, getHelpCatalog?: () => readonly
         };
     });
     register('normify_validate', {
-        description: '全项目校验（L2，零容忍）：结构/叶子/API/边/多树/文件映射/仓库证据。返回全部诊断（含 subject/evidence/supportedFixes）。',
+        description: '全项目校验（L2，零容忍）：结构/叶子/API/边/多树/文件映射/仓库证据。返回全部诊断（`subject`/`evidence`/`supportedFixes` 能给出时就给出，`code`/`severity`/`message` 必填）。',
         behavior: 'read',
         parameters: params({
             repoRoot: strOpt('仓库根目录（提供则校验 source 存在性与 fingerprint 一致性）'),

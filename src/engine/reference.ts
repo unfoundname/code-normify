@@ -60,8 +60,15 @@ const FLOW_REFERENCE = [
     '  一条 L1 失败会整批不落盘，连带错误用 dep/target-dropped 指出根因。',
 ].join('\n');
 
+// 留痕（旧文案，已作废）——原文逐字：'常见诊断码与修法（节选）：每条诊断都会带 subject（出错路径）与
+// supportedFixes（具体修法），以运行时诊断为准；'。**那句是无条件说法，不成立**：`Diagnostic` 里 subject /
+// evidence / supportedFixes 三栏都是可选的，且实现里有一批诊断有意传空 supportedFixes（`diag()` 丢弃空数组 ⇒
+// 该栏在运行时缺席）。实测反证（跑 normify 真实调用）：`normify_validate` 在叶子模块 apis 为空时给出的
+// `api/leaf-empty` warning 只带 code/severity/message/subject/evidence —— `hasOwnProperty('supportedFixes')`
+// 为 false。故按「能给出时就给出」改写（口径与 SPEC §5.3 一致）。
 const ERRORS_REFERENCE = [
-    '常见诊断码与修法（节选）：每条诊断都会带 subject（出错路径）与 supportedFixes（具体修法），以运行时诊断为准；',
+    '常见诊断码与修法（节选）：诊断**能给出时就给出** `subject`（出错对象）与 `supportedFixes`（可执行的修法）——',
+    '  **确实没有可执行修复时后者缺席**（空数组会被丢弃）；`code`/`severity`/`message` 才是必填三栏。以运行时诊断为准；',
     '  structure/uid-format             uid 必须是 8 位小写 hex（不要用 slug 派生）',
     '  structure/id-format              id 为小写点分路径，段名 ^[a-z0-9][a-z0-9-]*$，深度不限',
     '  structure/parent-mismatch        parent 必须等于 id 去掉最后一段；根模块 parent=null',
