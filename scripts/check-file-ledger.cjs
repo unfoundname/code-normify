@@ -222,7 +222,11 @@ const CHECK_HELP_DETAILS = {
   ],
   'exempt-gitignore-cross-check': [
     '· 判据 1（交集）：本清单命中的**已跟踪**路径若同时被真 .gitignore 覆盖（`git check-ignore --no-index`，',
-    '  尊重 `!` 反选）→ error。理由：它根本不在台账宇宙里，为它写豁免等于把忽略规则当成了豁免依据。',
+    '  尊重 `!` 反选）→ error。理由：**已跟踪文件本来就不受 ignore 约束** —— 命中忽略规则**不会**把它移出索引，',
+    '  `git ls-files -- <路径>` 照样列出它（本批实测：把 `README.md` 写进 `.gitignore` 后 `git check-ignore --no-index -v`',
+    '  命中该规则，而 `git ls-files -- README.md` 仍列出、`git ls-files` 总条数不变），所以它**仍然是台账宇宙的一员**；',
+    '  为它写豁免等于**把忽略规则当成了豁免依据**，是语义碰撞。**旧文案写"它根本不在台账宇宙里"，与本项自己的前提',
+    '  "本清单命中的**已跟踪**路径"自相矛盾（已跟踪 = 在 `git ls-files` 里 = 在台账宇宙里），已作废。**',
     '· 判据 2（折叠误伤）：只靠 `core.ignoreCase` 折叠才命中的路径 → error。本会话真实事故：',
     '  `*review*.md` 在 core.ignoreCase=true 下命中 `preview.md`（preview 含子串 review）。',
     '· 判据 3（放行了本该 git add 的普通文件）：本清单命中的路径若「未被忽略、也不在 git 索引里」→ error。',
