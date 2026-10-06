@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "ff091707df93c272de27927739786e4371de81e055caf6f7f8a56944e63be12d",
+    "universe_hash": "10390ec92f4c9b9fe31f81c2ec0846ce8bfcce0107ee31a7b27e108c95e5d83e",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1478,
+    "tracked_total": 1480,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 142
+      "scanned_total": 144
     },
     "analysis": {
       "mode": "typescript",
@@ -92,7 +92,7 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "图数据文件自己（ledger/references.json）那一行的 bytes / lines 恒为 null：它们是自指的（产物大小依赖上一次写出的自己），记了就没有不动点、幂等当场失效；其余字段照常登记。",
     "node_states": {
-      "indexed": 1478
+      "indexed": 1480
     },
     "edge_kinds": {
       "anchor": 3,
@@ -12091,11 +12091,29 @@
       "edge_in": 0
     },
     {
+      "id": "ledger/change-log/20261006T114132Z-2009944.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 8733,
+      "lines": 260,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T114136Z-c97e3bd.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2492,
+      "lines": 75,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
       "id": "ledger/change-log/README.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 10381,
-      "lines": 129,
+      "bytes": 13487,
+      "lines": 165,
       "edge_out": 0,
       "edge_in": 0
     },
@@ -12994,8 +13012,8 @@
       "id": "scripts/generate-reference-graph.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 66123,
-      "lines": 1238,
+      "bytes": 66278,
+      "lines": 1240,
       "edge_out": 6,
       "edge_in": 3
     },
@@ -16571,11 +16589,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:92:20:require:node:fs",
+      "id": "scripts/generate-reference-graph.cjs:94:20:require:node:fs",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 92,
+        "line": 94,
         "column": 20
       },
       "to": {
@@ -16593,11 +16611,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:93:22:require:node:path",
+      "id": "scripts/generate-reference-graph.cjs:95:22:require:node:path",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 93,
+        "line": 95,
         "column": 22
       },
       "to": {
@@ -16615,11 +16633,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:94:24:require:node:crypto",
+      "id": "scripts/generate-reference-graph.cjs:96:24:require:node:crypto",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 94,
+        "line": 96,
         "column": 24
       },
       "to": {
@@ -16637,11 +16655,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:95:31:require:node:child_process",
+      "id": "scripts/generate-reference-graph.cjs:97:31:require:node:child_process",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 95,
+        "line": 97,
         "column": 31
       },
       "to": {
@@ -16659,11 +16677,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:98:22:require:./reference-graph-core.cjs",
+      "id": "scripts/generate-reference-graph.cjs:100:22:require:./reference-graph-core.cjs",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 98,
+        "line": 100,
         "column": 22
       },
       "to": {
@@ -16681,11 +16699,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:101:24:require:./file-ledger-core.cjs",
+      "id": "scripts/generate-reference-graph.cjs:103:24:require:./file-ledger-core.cjs",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 101,
+        "line": 103,
         "column": 24
       },
       "to": {

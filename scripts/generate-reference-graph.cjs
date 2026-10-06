@@ -55,7 +55,9 @@
  * 扫描面（产边的文件）：已跟踪 + 文本扩展名 + 不在 `EXCLUDED_PREFIXES` 内。
  *   · 排除 `examples/`：目标工程示例产物，占工作区行数的绝大部分且几乎不改（设计稿 P9 的取舍）；
  *   · 排除 `lib/`：`src/` 的编译产物，它里面的 import 是派生出来的，不是新事实（可再生成性由 check:libsync 保证）。
- *   节点表仍然是**全量**的（1,403 条已跟踪文件一条不少），只是被排除的目录不产边、也没有行数。
+ *   节点表仍然是**全量**的（`git ls-files` 的每一条都在，不在此写死条数——它随每次提交变化；
+ *   现值取数：`git ls-files | Measure-Object -Line` 或读产物的 `meta.tracked_total`），
+ *   只是被排除的目录不产边、也没有行数。
  *
  * `--check` 的三条红线（第二条与第三条与 `scripts/check-file-ledger.cjs` 的 `ledger-index-drift` **对称**）：
  *   ① 索引 blob 与重算结果不一致 → `--check` exit 1（既有行为）；

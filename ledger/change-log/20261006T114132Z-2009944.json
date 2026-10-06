@@ -1,0 +1,259 @@
+{
+  "schema_version": 1,
+  "kind": "commit",
+  "commit": "2009944c270ebf02d2296bc7909f6f2f8a7cde98",
+  "commit_parent": "342f522ce8e128310361761ab021e358529eabbd",
+  "cas_digest": null,
+  "change_id": null,
+  "created_at": "2026-10-06T11:41:32Z",
+  "generator": "scripts/generate-change-log.cjs",
+  "generator_version": "1.0.0",
+  "graph_schema_version": 2,
+  "from_snapshot": {
+    "basis": "commit",
+    "rev": "342f522ce8e128310361761ab021e358529eabbd",
+    "tree": "d76aeff24457abe5128d95ae4b98b12f4d2a846b",
+    "universe_hash": "24a9f2ceb1d38b0c8efe86e4efec4602c12dc21b6aa253048cb57c9ad9bc48e7",
+    "tracked_total": 1476,
+    "files": 1476,
+    "edges": 498,
+    "analysis_mode": "typescript"
+  },
+  "to_snapshot": {
+    "basis": "commit",
+    "rev": "2009944c270ebf02d2296bc7909f6f2f8a7cde98",
+    "tree": "9762137c31b3966e30ed66b95dabd4dea7234970",
+    "universe_hash": "5d5b79845cb08775305b72601e5854b56d6cc754cdf3de5cb57b811ef56f79c0",
+    "tracked_total": 1477,
+    "files": 1477,
+    "edges": 498,
+    "analysis_mode": "typescript"
+  },
+  "degradation": {
+    "status": "complete",
+    "reasons": [],
+    "note": "两侧快照都完整重建：本次差在**文件层**是完整的（节点 = 全量已跟踪文件，边 = 扫描面产出的全部边）。数组为空 = 真的没有差异。"
+  },
+  "files": {
+    "added": [
+      "ledger/change-log/20261006T103220Z-fdc9aed.json"
+    ],
+    "removed": [],
+    "state_changed": []
+  },
+  "edges": {
+    "added": [
+      ".github/workflows/ci.yml:212:9:ci-target:scripts[\"check:graph\"]→check:graph",
+      ".github/workflows/ci.yml:233:9:ci-target:scripts[\"check:changes\"]→check:changes",
+      ".github/workflows/ci.yml:275:9:ci-target:scripts[\"check:impact\"]→check:impact",
+      ".github/workflows/ci.yml:288:9:ci-target:scripts[\"test:render\"]→test:render",
+      ".github/workflows/ci.yml:292:24:ci-target:lib/index.js",
+      ".github/workflows/ci.yml:293:24:ci-target:lib/tools.js",
+      ".github/workflows/ci.yml:294:24:ci-target:lib/mcp.js"
+    ],
+    "removed": [
+      ".github/workflows/ci.yml:211:9:ci-target:scripts[\"check:graph\"]→check:graph",
+      ".github/workflows/ci.yml:232:9:ci-target:scripts[\"check:changes\"]→check:changes",
+      ".github/workflows/ci.yml:274:9:ci-target:scripts[\"check:impact\"]→check:impact",
+      ".github/workflows/ci.yml:287:9:ci-target:scripts[\"test:render\"]→test:render",
+      ".github/workflows/ci.yml:291:24:ci-target:lib/index.js",
+      ".github/workflows/ci.yml:292:24:ci-target:lib/tools.js",
+      ".github/workflows/ci.yml:293:24:ci-target:lib/mcp.js"
+    ],
+    "status_changed": []
+  },
+  "affected_referrers": [
+    {
+      "edge": ".github/workflows/ci.yml:211:9:ci-target:scripts[\"check:graph\"]→check:graph",
+      "file": ".github/workflows/ci.yml",
+      "line": 211,
+      "column": 9,
+      "kind": "ci-target",
+      "target": "package.json",
+      "target_state": "indexed",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": ".github/workflows/ci.yml:212:9:ci-target:scripts[\"check:graph\"]→check:graph",
+      "file": ".github/workflows/ci.yml",
+      "line": 212,
+      "column": 9,
+      "kind": "ci-target",
+      "target": "package.json",
+      "target_state": "indexed",
+      "edge_status": "resolved",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": ".github/workflows/ci.yml:232:9:ci-target:scripts[\"check:changes\"]→check:changes",
+      "file": ".github/workflows/ci.yml",
+      "line": 232,
+      "column": 9,
+      "kind": "ci-target",
+      "target": "package.json",
+      "target_state": "indexed",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": ".github/workflows/ci.yml:233:9:ci-target:scripts[\"check:changes\"]→check:changes",
+      "file": ".github/workflows/ci.yml",
+      "line": 233,
+      "column": 9,
+      "kind": "ci-target",
+      "target": "package.json",
+      "target_state": "indexed",
+      "edge_status": "resolved",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": ".github/workflows/ci.yml:274:9:ci-target:scripts[\"check:impact\"]→check:impact",
+      "file": ".github/workflows/ci.yml",
+      "line": 274,
+      "column": 9,
+      "kind": "ci-target",
+      "target": "package.json",
+      "target_state": "indexed",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": ".github/workflows/ci.yml:275:9:ci-target:scripts[\"check:impact\"]→check:impact",
+      "file": ".github/workflows/ci.yml",
+      "line": 275,
+      "column": 9,
+      "kind": "ci-target",
+      "target": "package.json",
+      "target_state": "indexed",
+      "edge_status": "resolved",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": ".github/workflows/ci.yml:287:9:ci-target:scripts[\"test:render\"]→test:render",
+      "file": ".github/workflows/ci.yml",
+      "line": 287,
+      "column": 9,
+      "kind": "ci-target",
+      "target": "package.json",
+      "target_state": "indexed",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": ".github/workflows/ci.yml:288:9:ci-target:scripts[\"test:render\"]→test:render",
+      "file": ".github/workflows/ci.yml",
+      "line": 288,
+      "column": 9,
+      "kind": "ci-target",
+      "target": "package.json",
+      "target_state": "indexed",
+      "edge_status": "resolved",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": ".github/workflows/ci.yml:291:24:ci-target:lib/index.js",
+      "file": ".github/workflows/ci.yml",
+      "line": 291,
+      "column": 24,
+      "kind": "ci-target",
+      "target": "lib/index.js",
+      "target_state": "indexed",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": ".github/workflows/ci.yml:292:24:ci-target:lib/index.js",
+      "file": ".github/workflows/ci.yml",
+      "line": 292,
+      "column": 24,
+      "kind": "ci-target",
+      "target": "lib/index.js",
+      "target_state": "indexed",
+      "edge_status": "resolved",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": ".github/workflows/ci.yml:292:24:ci-target:lib/tools.js",
+      "file": ".github/workflows/ci.yml",
+      "line": 292,
+      "column": 24,
+      "kind": "ci-target",
+      "target": "lib/tools.js",
+      "target_state": "indexed",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": ".github/workflows/ci.yml:293:24:ci-target:lib/mcp.js",
+      "file": ".github/workflows/ci.yml",
+      "line": 293,
+      "column": 24,
+      "kind": "ci-target",
+      "target": "lib/mcp.js",
+      "target_state": "indexed",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": ".github/workflows/ci.yml:293:24:ci-target:lib/tools.js",
+      "file": ".github/workflows/ci.yml",
+      "line": 293,
+      "column": 24,
+      "kind": "ci-target",
+      "target": "lib/tools.js",
+      "target_state": "indexed",
+      "edge_status": "resolved",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": ".github/workflows/ci.yml:294:24:ci-target:lib/mcp.js",
+      "file": ".github/workflows/ci.yml",
+      "line": 294,
+      "column": 24,
+      "kind": "ci-target",
+      "target": "lib/mcp.js",
+      "target_state": "indexed",
+      "edge_status": "resolved",
+      "classification": "edge-added",
+      "needs_change": false
+    }
+  ],
+  "counts": {
+    "files_added": 1,
+    "files_removed": 0,
+    "files_state_changed": 0,
+    "edges_added": 7,
+    "edges_removed": 7,
+    "edges_status_changed": 0,
+    "affected_referrers": 14,
+    "needs_change": 0
+  },
+  "handling": {
+    "status": "pending",
+    "by": null,
+    "at": null,
+    "note": null
+  },
+  "summary": "提交 2009944（ci/docs/ledger：两处「复述活值」的快照改成「取数命令 + 口径」+ 补 fdc9aed 记录（覆盖率 63/63））：文件 +1/−0/±0 · 边 +7/−7/±0 · 受影响引用方 14 条（需改 0 条）",
+  "omitted": [
+    "declarations（符号级节点差，增量 3）",
+    "type-reference 边（增量 3）",
+    "传递闭包（affected_referrers 只到直接引用方，depth 恒 1；增量 5）",
+    "查询接口（增量 5）",
+    "cas-write 观测点（设计稿 §4.1 的第二个观测点，本批不实现）"
+  ]
+}

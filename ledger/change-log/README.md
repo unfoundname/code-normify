@@ -44,15 +44,36 @@ npm run check:changes                                # = 生成器 --check：结
 `check:changes` 只校验**已存在**的记录 ✗ —— 它**对覆盖率零信息量**。覆盖率要自己算：
 
 ```powershell
+# 只数 kind=commit 的记录：schema.json 不是记录，它没有 kind / to_snapshot（与上一节的口径一致）
 $recorded = Get-ChildItem ledger/change-log/*.json | ForEach-Object {
-  (Get-Content $_ -Raw | ConvertFrom-Json).to_snapshot.rev
-}
+  Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json
+} | Where-Object { $_.kind -eq 'commit' } | ForEach-Object { $_.to_snapshot.rev }
 $all = git rev-list HEAD
-"应有(除 HEAD 自身) $(($all | Select-Object -Skip 1).Count) / 实有 $(($all | Select-Object -Skip 1 | Where-Object { $recorded -contains $_ }).Count)"
+$hit = $all | Where-Object { $recorded -contains $_ }
+# 口径① 含 HEAD：应有 = 全部提交；**判断「缺不缺提交」用这一套**
+"含 HEAD：应有 $($all.Count) / 实有 $($hit.Count) / 缺 $($all.Count - $hit.Count)"
+# 口径② 除 HEAD：应有 = 去掉当前 HEAD
+$rest = $all | Select-Object -Skip 1
+$restHit = $rest | Where-Object { $recorded -contains $_ }
+"除 HEAD：应有 $($rest.Count) / 实有 $($restHit.Count) / 缺 $($rest.Count - $restHit.Count)"
 ```
 
-**稳态口径**：**「HEAD 之前的每个提交都有一条记录」，永远差 HEAD 这一位** ——
-一条记录若记录它自己所在的提交，就会改变那棵树的哈希，自指不可能成立。
+**两套口径都要报，并写明差别**（只报一套会得出自相矛盾的结论）：
+
+- **含 HEAD**：应有 = `git rev-list HEAD` 的全部提交。**这一套才是判断「缺不缺提交」的口径** ——
+  执行者**跑在提交【之前】**，所以开工时当前 HEAD **也**还没有记录，它是**真缺口**（见下面的批量补齐规则）。
+- **除 HEAD**：应有 = 去掉当前 HEAD。它唯一成立的场合是「本批已经提交完、且不打算再补」——
+  此时「稳态」才真的是「只差刚产生的这一位」。**单独拿它当唯一口径会推出「K=1 且缺的是 HEAD」这种自相矛盾**：
+  上一批就是这样漏掉 `2009944`（= 当时的 `HEAD^`）的 —— 历史每批都只补到 `HEAD~2`，
+  **于是每批都把自己的父提交永久留在缺口里**（滚动差 1），而「除 HEAD」那套口径永远看不见它。
+
+**批量补齐的规则**：做提交型批次时，**补齐所有尚无记录的提交** —— 注意你跑在提交【之前】，
+那时「本批自己那个提交」还不存在，所以**开工时的 HEAD 也要补**。终态是：**提交之后只差"本批新产生的那一个"**。
+（只补 `HEAD~2` 而跳过 `HEAD^`，会让每个批次都把父提交永久留在缺口里。）
+
+**稳态口径**：**「HEAD 之前的每个提交都有一条记录」** ——
+一条记录若记录它自己所在的提交，就会改变那棵树的哈希，自指不可能成立；
+所以「只差一位」说的是**提交之后**的稳态，不是**开工时**的缺口清单。
 
 ## 记录里有什么（本批 = **文件层**）
 
@@ -101,12 +122,27 @@ README.md 仍链接它）就是这种形状，本目录里的那条记录就是�
 要现值，直接看目录：
 
 ```powershell
-Get-ChildItem ledger/change-log/*.json | Measure-Object | Select-Object -ExpandProperty Count   # 条数
-Get-ChildItem ledger/change-log/*.json | ForEach-Object { (Get-Content $_ -Raw | ConvertFrom-Json).to_snapshot.rev }  # 覆盖到哪些提交
+# 目录下的 json 文件数（含 schema.json，不是记录数）
+Get-ChildItem ledger/change-log/*.json | Measure-Object | Select-Object -ExpandProperty Count
+# 真正的记录数（只数 kind=commit 的）
+Get-ChildItem ledger/change-log/*.json |
+  ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json } |
+  Where-Object { $_.kind -eq 'commit' } | Measure-Object | Select-Object -ExpandProperty Count
+# 覆盖到哪些提交（同样排除 schema.json：它不是记录）
+Get-ChildItem ledger/change-log/*.json |
+  ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json } |
+  Where-Object { $_.kind -eq 'commit' } | ForEach-Object { $_.to_snapshot.rev }
 ```
 
+> **两条命令的数不一样，别混用**：第一条数的是**目录里的 json 文件**（`schema.json` 也在内），
+> 第二条才是**记录数**。生成器自己的口径就是后者 —— `scripts/generate-change-log.cjs` 里写着
+> 「记录目录下的记录文件（**排除 schema.json**）」，记录数只认 `kind: "commit"` 的那些。
+
 历史上最早的两条是 `20261005T183940Z-ed404e5.json` 与 `20261005T183954Z-10766d1.json`（**只作留痕**）；
-`e56dcff` 之后的提交由「每次提交型批次补齐所有尚无记录、且不是本批自己那个提交的提交」这条规则续记。
+`e56dcff` 之后的提交由「**补齐所有尚无记录的提交**」这条规则续记（完整表述见上一节「覆盖率怎么算」）。
+**旧表述「每次提交型批次补齐所有尚无记录、且不是本批自己那个提交的提交」是错的**（留痕，不删）——
+它把开工时真正的缺口（当前 HEAD）当成「本批自己那个、不需要补」，再加上只补到 `HEAD~2`，
+于是每个批次都把自己的父提交永久留在缺口里；`2009944` 就是这样被漏掉的。
 
 那两条留痕记录记下的差（**只作留痕，不是全量清单**；全量按上面的命令现取）：
 
