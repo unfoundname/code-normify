@@ -20,6 +20,7 @@ const path = require('node:path');
 const REL = 'ledger/references.json';
 const EXIT = { ok: 0, usage: 2, unreadable: 3, unsupported: 4, notfound: 5 };
 const DEFAULT_SYMBOL_ROWS = 40; // 仅人类可读输出的显示上限；--json 与计数始终是全量
+const DEFAULT_IMPACT_DEPTH = 8; // impact 的反向 BFS 深度上限（含多少层引用方）
 
 function byteCompare(a, b) {
   return Buffer.compare(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'));
@@ -52,16 +53,20 @@ function usage() {
 }
 
 function parseArgs(argv) {
-  const opts = { root: process.cwd(), json: false, help: false, limit: DEFAULT_SYMBOL_ROWS, positional: [] };
+  const opts = { root: process.cwd(), json: false, help: false, limit: DEFAULT_SYMBOL_ROWS, depth: DEFAULT_IMPACT_DEPTH, positional: [] };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--help' || arg === '-h') opts.help = true;
     else if (arg === '--json') opts.json = true;
-    else if (arg === '--root' || arg === '--limit') {
+    else if (arg === '--root' || arg === '--limit' || arg === '--depth') {
       i += 1;
       if (i >= argv.length) throw new UsageError(`缺少 ${arg} 的值`);
       if (arg === '--root') opts.root = argv[i];
-      else {
+      else if (arg === '--depth') {
+        const n = Number(argv[i]);
+        if (!Number.isInteger(n) || n < 1) throw new UsageError(`--depth 需要正整数，收到：${argv[i]}`);
+        opts.depth = n;
+      } else {
         const n = Number(argv[i]);
         if (!Number.isInteger(n) || n < 0) throw new UsageError(`--limit 需要非负整数，收到：${argv[i]}`);
         opts.limit = n;
@@ -284,6 +289,145 @@ function renderHuman(report, opts, symbolRowsForDisplay) {
   return lines.join('\n');
 }
 
+/** 读图基准与工作区/索引是否一致：返回原因数组（空 = 一致）。口径与 buildReport 内联版本相同。 */
+function basisReasons(loaded) {
+  const reasons = [];
+  if (loaded.basis === 'worktree') {
+    reasons.push(`索引里没有 ${REL}（git show :${REL} 失败），已回退工作区文件：结果可能与索引版不一致。`);
+  } else if (loaded.worktreeBytes !== null && loaded.worktreeBytes !== loaded.indexBytes) {
+    reasons.push(
+      `索引版与工作区版 ${REL} 字节不一致（索引 ${loaded.indexBytes} 字节 / 工作区 ${loaded.worktreeBytes} 字节）：结果以索引版为准，可能与工作区现状不符。`,
+    );
+  }
+  return reasons;
+}
+
+/** 反向邻接表：to.file -> 引用它的边（文件级 edges[] 与符号级 symbol_edges[] 合流）。 */
+function buildReverseIndex(artifact) {
+  const map = new Map();
+  const add = (layer, e) => {
+    const toFile = e && e.to && e.to.file;
+    const fromFile = e && e.from && e.from.file;
+    if (typeof toFile !== 'string' || typeof fromFile !== 'string') return;
+    if (!map.has(toFile)) map.set(toFile, []);
+    map.get(toFile).push({
+      layer,
+      from_file: fromFile,
+      line: e.from.line,
+      column: e.from.column,
+      kind: e.kind,
+      edge_id: e.id,
+    });
+  };
+  for (const e of artifact.edges || []) add('file', e);
+  for (const e of artifact.symbol_edges || []) add('symbol', e);
+  return map;
+}
+
+/**
+ * 反向闭包：从 target 出发沿「谁引用了它」逐层传递，文件级与符号级两层同时走。
+ * 一个文件只记它第一次出现的深度（最浅深度），深度与文件顺序都确定性排序。
+ */
+function reverseClosure(artifact, target, maxDepth) {
+  const rev = buildReverseIndex(artifact);
+  const seen = new Set([target]);
+  const levels = [];
+  let frontier = [target];
+  for (let depth = 1; depth <= maxDepth && frontier.length > 0; depth += 1) {
+    const via = new Map();
+    for (const cur of frontier) {
+      for (const row of rev.get(cur) || []) {
+        if (seen.has(row.from_file)) continue;
+        if (!via.has(row.from_file)) via.set(row.from_file, []);
+        via.get(row.from_file).push(row);
+      }
+    }
+    if (via.size === 0) break;
+    const files = sortRows(
+      [...via.keys()].map((file) => ({
+        file,
+        via: sortRows(
+          via.get(file),
+          (r) => `${r.layer}:${r.from_file}:${String(r.line).padStart(12, '0')}:${String(r.column).padStart(12, '0')}:${r.kind}:${r.edge_id}`,
+        ),
+      })),
+      (r) => r.file,
+    );
+    for (const f of files) seen.add(f.file);
+    levels.push({ depth, files });
+    frontier = files.map((f) => f.file);
+  }
+  const closure = [...seen].filter((f) => f !== target).sort(byteCompare);
+  return { levels, closure };
+}
+
+/** impact 报告：反向闭包 + 按深度分组的受影响文件。只做闭包与分层，不做分类/分区/义务项。 */
+function buildImpactReport(opts, target, loaded) {
+  const { levels, closure } = reverseClosure(loaded.artifact, target, opts.depth);
+  const layerEdges = (layer) =>
+    levels.reduce((n, l) => n + l.files.reduce((m, f) => m + f.via.filter((v) => v.layer === layer).length, 0), 0);
+  const affectedEdges = levels.reduce((n, l) => n + l.files.reduce((m, f) => m + f.via.length, 0), 0);
+
+  const reasons = basisReasons(loaded);
+  const gaps = [
+    '反向闭包只沿 to.file 走文件级 edges[] 与符号级 symbol_edges[]；文件内边（同一文件内部的引用/依赖）未展开。',
+    '未做三档分类、派生产物分区、gate: 义务项、path[]、cycles[]、informational 与截断标注：本版只有反向闭包与按深度打印。',
+    `闭包深度上限 --depth ${opts.depth}：更深的层未展开，closure 可能不完整。`,
+  ];
+  const diverged = reasons.length > 0;
+  if (diverged) reasons.push(...gaps);
+  const completeness = diverged ? 'stale' : 'partial';
+  assertCompletenessInvariant(completeness, gaps);
+
+  return {
+    query: 'impact',
+    kind: 'file',
+    target,
+    unsupported: false,
+    basis: loaded.basis,
+    completeness,
+    reasons: diverged ? reasons : gaps,
+    gaps,
+    empty_referrers_reading: emptyReading(completeness),
+    max_depth: opts.depth,
+    actual_depth: levels.length,
+    counts: {
+      affected_files: closure.length,
+      affected_edges: affectedEdges,
+      file_layer_edges: layerEdges('file'),
+      symbol_layer_edges: layerEdges('symbol'),
+    },
+    by_depth: levels.map((l) => ({
+      depth: l.depth,
+      files: l.files.map((f) => ({
+        file: f.file,
+        via: f.via.map((v) => `${v.from_file}:${v.line}:${v.column}`),
+      })),
+    })),
+    closure,
+  };
+}
+
+function renderImpactHuman(report) {
+  const c = report.counts;
+  const lines = [
+    `谁（间接）引用 ${report.target}：按深度分组的受影响文件（反向闭包）`,
+    `basis=${report.basis}  completeness=${report.completeness}  unsupported=false  depth<=${report.max_depth}（实际 ${report.actual_depth} 层）`,
+    `原因/缺口 reasons：`,
+    ...report.reasons.map((r) => `  - ${r}`),
+    `闭包合计：${c.affected_files} 个文件，${c.affected_edges} 条边（文件级 ${c.file_layer_edges} / 符号级 ${c.symbol_layer_edges}）`,
+  ];
+  if (report.by_depth.length === 0) lines.push('  （无：图里没有任何文件引用它）');
+  for (const level of report.by_depth) {
+    lines.push(`深度 ${level.depth}：${level.files.length} 个文件`);
+    for (const f of level.files) {
+      lines.push(`  ${f.file}  <- ${f.via.length ? f.via.join('  ') : '（无）'}`);
+    }
+  }
+  lines.push(``, `空列表怎么读：${report.empty_referrers_reading}`);
+  return lines.join('\n');
+}
+
 function main() {
   let opts;
   try {
@@ -301,8 +445,8 @@ function main() {
     process.exit(EXIT.usage);
   }
   const [query, target] = opts.positional;
-  if (query !== 'who-references') {
-    process.stderr.write(`未实现的查询：${query}（本版只有 who-references）\n`);
+  if (query !== 'who-references' && query !== 'impact') {
+    process.stderr.write(`未实现的查询：${query}（本版只有 who-references、impact）\n`);
     process.exit(EXIT.usage);
   }
   if (!target) {
@@ -382,6 +526,13 @@ function main() {
         symbol_referrers: [],
       },
     );
+  }
+
+  if (query === 'impact') {
+    const report = buildImpactReport(opts, norm, loaded);
+    if (opts.json) process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+    else process.stdout.write(`${renderImpactHuman(report)}\n`);
+    process.exit(EXIT.ok);
   }
 
   const report = buildReport(opts, norm, loaded);
