@@ -12,6 +12,8 @@
  *   3. 负例(ii)：新增一个**无归属且未豁免的已提交文件** → 门禁 **exit 1**（报 unowned-file），
  *      且生成器**不**把它写进 accounted（棘轮的牙齿：跑一次 ledger:gen 洗不白）；
  *   4. 负例(iii)：豁免清单里写一条 `**` → 门禁 **exit 1**（报 exempt-too-broad-no-literal，回归）；
+ *      该条命中**判据 1**（归一化后无字面量）⇒ 编译期 `re` 置空、**不参与匹配**（文件落回 accounted/unowned）。
+ *      与**判据 3**（动态命中率）区分：判据 3 命中的模式**仍参与分类**（文件仍按 exempt 计），只在匹配之后照报 error；
  *   5. 负例(iv)：手工把一条**在索引里**的路径写进 accounted + `git add` → 门禁 **exit 1**
  *      （报 accounted-added-vs-head），生成器 --check 也 **exit 1**；
  *   6. 真实事故复现：`.gitignore` 里的 `*review*.md`（本仓 `examples/bilibili-pi-full/.gitignore` 里的真实规则）
@@ -88,6 +90,16 @@ function expectContains(name, text, needle) {
   checked += 1;
   if (text.includes(needle)) pass(name, `命中「${needle}」`);
   else fail(name, `输出里找不到「${needle}」`);
+}
+/** 断言输出命中一条**关键短语正则**（用于「语义要对、措辞可微调」的文案断言）。
+ *  为什么需要它：这类文案会被限定语插入式地收窄（3556198 就在「被判过宽的模式不参与匹配」中间插入了
+ *  「（静态判据 1/2）」），整句子串断言会被**无害的措辞调整**打红——红的不是行为，是断言跟得太死。
+ *  这里只钉语义核心（判过宽 … 不参与匹配），允许中间插入限定语。 */
+function expectMatches(name, text, re) {
+  checked += 1;
+  const m = text.match(re);
+  if (m) pass(name, `命中「${m[0]}」`);
+  else fail(name, `输出里找不到匹配 ${re} 的片段`);
 }
 function expectNotContains(name, text, needle) {
   checked += 1;
@@ -270,7 +282,11 @@ function main() {
   r = runTool(GATE, ['--root', FIX]);
   expect('4 负例(iii)：`**` 豁免 → 门禁 exit 1', r.status, 1);
   expectContains('4 负例(iii)：报 exempt-too-broad-no-literal', r.out, '[exempt-too-broad-no-literal]');
-  expectContains('4 负例(iii)：说明该模式不参与匹配', r.out, '被判过宽的模式不参与匹配');
+  // 判据 1（无字面量）命中 ⇒ 编译期 `re` 置空、**不参与匹配**，它本该吞掉的文件落回 accounted/unowned。
+  // **留痕（旧期望，已作废）**：原断言整句 `'被判过宽的模式不参与匹配'`——3556198 在该句中间插入了
+  // 「（静态判据 1/2）」限定语，子串断言因此失效（是**旧期望跟不上新文案**，行为没变：本场景就是判据 1）。
+  // 现改为钉语义核心，允许中间插入限定语（判据 3 那条另有说法：仍参与分类，只照报 error）。
+  expectMatches('4 负例(iii)：说明判据 1/2 命中的模式不参与匹配（仍报 error）', r.out, /判过宽[^。\n]{0,40}不参与匹配/);
   resetFixture();
 
   // ---- 4b. 豁免条目缺 reason → exit 1（豁免必须写明理由，缺理由等于静默放宽门禁） ----

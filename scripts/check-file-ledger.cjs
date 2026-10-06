@@ -56,7 +56,10 @@
  *     ② 通配字符（`*` `?`）占比 > PATTERN_MAX_WILDCARD_RATIO（默认 50%）→ error；
  *     ③ 单条模式命中率 > PATTERN_MAX_HIT_RATIO（默认 50% 宇宙）→ error，除非该条目显式写了
  *        `broad_confirmed=true`（人工确认这条模式确实要覆盖过半已跟踪文件）。
- *     被判过宽的模式**不参与匹配**（宁可红不假绿）：它本该吞掉的文件会落回 accounted / unowned；
+ *     **判据 1/2** 命中的模式**不参与匹配**（编译期 `re` 置空，宁可红不假绿）：它本该吞掉的文件会落回 accounted / unowned；
+ *     **判据 3** 命中的模式**仍参与分类**（命中率只能在匹配之后算出来，见 3b）：它命中的文件仍按 exempt 计，
+ *     **不会**落回 accounted / unowned —— 3b 只照报 error，不回头改写分类结果。
+ *     **留痕（旧文案，已作废）**：原无条件写「被判过宽的模式不参与匹配」——对判据 3 是错的。
  *   · 未命中的条目 → warning（未命中的豁免等于**永久空白特权**：它会无声地放过未来匹配该模式的路径）。
  *
  * accounted 的判据（v2 起是对象数组，每条 { path, accounted_at, basis }）：
@@ -224,7 +227,10 @@ const CHECK_HELP_DETAILS = {
     '  **别拿 `**/*` 当本判据的例子**：它归一化后没有任何字面量，实测先被**判据 1** 拦下（kind=`no-literal`），根本走不到这里。',
     `· 判据 3（可人工确认）：单条模式命中率 > ${PATTERN_MAX_HIT_RATIO * 100}% 台账宇宙 → error，`,
     `  除非该条目显式写了 \`${PATTERN_BROAD_CONFIRM_FIELD}=true\`（人工确认它确实要覆盖过半已跟踪文件）。`,
-    '· 被判过宽的模式**不参与匹配**：它本该吞掉的文件会落回 accounted/unowned，绝不静默放过。',
+    '· **判据 1/2** 命中的模式**不参与匹配**（编译期 `re` 置空）：它本该吞掉的文件会落回 accounted/unowned，绝不静默放过。',
+    '· **判据 3** 命中的模式**仍参与分类**（命中率只能在匹配之后算出来）：它命中的文件仍按 `exempt` 计，',
+    '  **不会**落回 accounted/unowned —— 但本条照报 error（**不是假绿**）；3b 只报 error，不回头改写分类结果。',
+    '  **留痕（旧文案，已作废）**：原无条件写「被判过宽的模式**不参与匹配**」——对判据 3 是错的。',
   ],
   'exempt-gitignore-cross-check': [
     '· 判据 1（交集）：本清单命中的**已跟踪**路径若同时被真 .gitignore 覆盖（`git check-ignore --no-index`，',
@@ -391,7 +397,8 @@ function printHelp() {
     `  2. 通配字符（* ?）占比 > ${PATTERN_MAX_WILDCARD_RATIO * 100}% → error（不可豁免），例：\`a**\`（通配 2 / 长度 3 = 67%；\`**/*\` 不属本判据——它没有字面量，先被判据 1 拦下）；`,
     `  3. 单条模式命中率 > ${PATTERN_MAX_HIT_RATIO * 100}% 台账宇宙 → error，除非该条目写了`,
     `     broad_confirmed=true（人工确认它确实要覆盖过半已跟踪文件）。`,
-    '  被判过宽的模式不参与匹配，它本该吞掉的文件会落回 accounted/unowned（宁可红不假绿）。',
+    '  判据 1/2 命中的模式不参与匹配，它本该吞掉的文件会落回 accounted/unowned（宁可红不假绿）；',
+    '  判据 3 命中的模式**仍参与分类**（它命中的文件仍按 exempt 计），只在匹配之后照报 error。',
     '',
     '豁免模式语义（与标准 glob 的差异，必须知道）：',
     '  `**` 至少匹配一层（编译成 `.*`），所以 `**/*.md` **不**匹配根级 c.md，只匹配带目录段的路径；',
@@ -1831,7 +1838,8 @@ function printHuman(ctx) {
     out.push('');
     out.push(
       `豁免条目: ${ctx.exemptMatchers.length} 条（其中 ${ctx.invalidPatterns.length} 条写法非法、` +
-        `${ctx.broadPatterns.length} 条被判过宽而不参与匹配）· 本次命中 ${s.exempt.length} 个文件 · ` +
+        `${ctx.broadPatterns.length} 条被判过宽：判据 1/2 的不参与匹配，判据 3 的仍参与分类但照报 error）· ` +
+        `本次命中 ${s.exempt.length} 个文件 · ` +
         `未命中 ${ctx.unusedPatterns.length} 条`,
     );
     out.push(
