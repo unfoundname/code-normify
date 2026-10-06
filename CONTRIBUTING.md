@@ -129,7 +129,7 @@ node scripts/refs-query.cjs impact <仓库相对路径>
 - **符号 id 输入**（形如 `src/tools.ts#Name@1:2`）：以 `unsupported` 拒绝（退出码 4）；符号级信息只在文件查询结果的 `symbol_referrers[]` 里出现。
 - **其它查询**：`what-references`、`change-impact` 未实现；本版只有 `who-references` 与 `impact` 两条。
 - **`impact` 内部尚未做**：`informational`、截断标注（**三档分类与 `type_only` 标注已做**，见 `impact --json` 的 `buckets[]`：必须改 / 需复核 / 记录，一个文件只进一个档，空档也照列 0 条）。
-- **文件内边**（同一文件内部的引用/依赖，即 `symbol_edges[]` 中 `cross_file=false` 的那些）**在产物里存在、照列**，但**反向遍历不使用它们**——两端是同一个文件，它已在已见集里，带不来新文件（自环推进不了闭包），也不计入闭包边数；文件级 `edges[]` 的 `type_only` 现已如实表达该边所在语句是否为**纯类型语句**（`import type …` / `export type … from`；`import { type X }` 行内修饰、`require(…)` / `import(…)` 与无 TypeScript 时的正则回退一律按运行时），但本版 `who-references` 的运行时/类型拆分仍只数 `symbol_edges[]`；`impact` 的 `type_only` 档内标注同样只看 via（把该文件牵进闭包的那组边，即它指向上一层的**出边**，人类可读输出里标作「出边 N 条（指向上一层；不是入边数）」）中符号级层的那些边，**且只覆盖本次统计到的这些边**：不排除其它运行时代码经未统计路径间接触及目标——标注文案里明写「**不要据此跳过测试**」。
+- **文件内边**（同一文件内部的引用/依赖，即 `symbol_edges[]` 中 `cross_file=false` 的那些）**在产物里存在、照列**，但**反向遍历不使用它们**——两端是同一个文件，它已在已见集里，带不来新文件（自环推进不了闭包），也不计入闭包边数；文件级 `edges[]` 的 `type_only` 现已如实表达该边所在语句是否为**纯类型语句**（`import type …` / `export type … from`；`import { type X }` 行内修饰、`require(…)` / `import(…)` 与无 TypeScript 时的正则回退一律按运行时），但本版 `who-references` 的运行时/类型拆分仍只数 `symbol_edges[]`；`impact` 的 `type_only` 档内标注按**可达性**判（不看 via）：在「目标 ∪ 闭包」内只沿**运行时边**（`import` / `export-from` / `require` / `dynamic-import` / `package-field` / `ci-target`，以及符号级边；`type_only=true` 的纯类型语句与 `markdown-link` / `anchor` 这类**纯文字引用**不算）走，从这个文件**能否到达目标**——到不了才标「仅类型级影响」，到得了不标；标注用的闭包**按图产物全深度展开、不受 `--depth` 截断影响**（展示用的 `by_depth` / `closure` 仍受 `--depth` 限制），但仍不排除产物之外 / 未统计到的路径间接触及目标——标注文案里明写「**不要据此跳过测试**」。
 
 ## 修改与验证
 1. 改 `src/engine/`（框架无关核心）或 `src/tools.ts` / `src/index.ts`（DSH 适配层）。

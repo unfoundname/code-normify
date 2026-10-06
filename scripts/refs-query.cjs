@@ -51,13 +51,13 @@ function usage() {
     '                            需复核 needs_review —— kind ∈ ci-target/package-field/anchor/markdown-link（要人看一眼）',
     '                            记录   record       —— 其余边，只登记',
     '                          三档在人类可读与 --json 里恒存在，空档也照列（0 条），「没有」与「没做」不混。',
-    '                          档内另有正交标注 type_only（**不是第四档**），只看 via 中符号级层的那些边（via = 把该文件',
-    '                          牵进闭包的那组边，即它指向上一层的**出边**，见下面每行的「出边 N 条」；文件级 edges[] 的',
-    '                          type_only 现已如实表达 import type / export type … from——但本标注的口径未变，仍只数符号',
-    '                          级层的边）：这些边全为 type_only=true ⇒ 给出**有边界**的「仅类型级',
-    '                          影响」标注——只声明本次统计到的这些边均为类型级，**不排除**其它运行时代码经未统计路径',
-    '                          间接触及目标，并明写「不要据此跳过测试」；via 中没有符号级边（或目标不是 .ts/.tsx）⇒',
-    '                          「不可判」；存在运行时符号级边则不标——「不标」不等于「没有类型级影响」。',
+    '                          档内另有正交标注 type_only（**不是第四档**），判据是**可达性**：在「目标 ∪ 闭包」内只沿',
+    '                          **运行时边**（import / export-from / require / dynamic-import / package-field / ci-target，',
+    '                          以及符号级边；type_only=true 的纯类型语句与 markdown-link / anchor 这类纯文字引用不算）走，',
+    '                          从这个文件**能否到达目标**：到不了 ⇒ 给出**有边界**的「仅类型级影响」标注（闭包按图产物',
+    '                          **全深度展开**，不受 --depth 截断影响，但产物之外 / 未统计到的路径仍可能触及目标，标注里',
+    '                          明写「不要据此跳过测试」）；到得了 ⇒ 不标；目标不是 .ts/.tsx ⇒「不可判」——',
+    '                          「不标」不等于「没有类型级影响」。',
     '',
     '选项：',
     '  --json          以 JSON 输出（含全部符号级边；确定性、无绝对路径/耗时）',
@@ -247,7 +247,7 @@ function buildReport(opts, target, loaded) {
   const gaps = [
     '直接引用方只数文件级边（edges[]）；符号级边另列在 symbol_referrers[]，其中包含文件内边（同一文件内部的引用/依赖，cross_file=false）——这些边在产物里存在、照列，只是不计入直接引用方计数。',
     '未实现符号 id 输入：目标只能是文件路径；符号 id 会以 unsupported 拒绝。',
-    '文件级 edges[] 的 type_only 现已如实表达「该边所在语句是否为纯类型语句」（import type / export type … from；require()/import() 与无 TypeScript 时的正则回退一律按运行时），但本版的运行时/类型拆分仍只数 symbol_edges[]（counts 里的 runtime_refs / type_refs 就取自符号级层）；impact 的 type_only 档内标注同样只依据 via（把该文件牵进闭包的那组边，即它指向上一层的出边）中符号级层的那些边，且只覆盖本次统计到的这些边，不排除其它运行时代码间接触及目标。',
+    '文件级 edges[] 的 type_only 现已如实表达「该边所在语句是否为纯类型语句」（import type / export type … from；require()/import() 与无 TypeScript 时的正则回退一律按运行时），但本版的运行时/类型拆分仍只数 symbol_edges[]（counts 里的 runtime_refs / type_refs 就取自符号级层）；impact 的 type_only 档内标注不吃这一套，它按**可达性**判：在「目标 ∪ 完整闭包」内只沿运行时边走，从该文件到目标没有运行时路径才标（闭包按图产物全深度展开，不受 --depth 截断影响），仍不排除图产物之外的引用间接触及目标。',
     '未实现 what-references、change-impact 等其它查询；本版只有 who-references 与 impact 两条查询（impact = 反向闭包 + 按深度打印 + 每个受影响文件的最短引用链 path[] + 闭包子图内的环 cycles[]/self_loops[] + 三档分类 buckets[] 与其中的 type_only 标注 + 派生产物分区 + gate: 义务项；impact 尚未做 informational 与截断标注）。',
   ];
   if (diverged) reasons.push(...gaps);
@@ -667,44 +667,150 @@ function bucketOfEdge(row) {
 }
 
 const ANNOTATION_TYPE_ONLY =
-  '仅类型级影响（只限本次统计到的这些边）：这些边均为类型级引用，删改后至少需过 tsc；但不排除其它运行时代码经未统计路径间接触及目标——不要据此跳过测试';
+  '仅类型级影响：在「目标 ∪ 完整闭包」内只沿运行时边走，从这个文件到目标没有路径；删改后至少需过 tsc，但图产物之外的引用、未统计到的路径仍可能间接触及目标——不要据此跳过测试';
 const ANNOTATION_UNDETERMINABLE = '不可判';
 /** 目标以 .ts/.tsx 结尾才谈得上「类型级 / 运行时」之分。 */
 const TS_TARGET = /\.tsx?$/;
 
 /**
- * 正交标注 type_only——**不是第四档，是档内标注**。只看 via（把该文件牵进闭包的那组边，
- * 即它指向上一层、链上更靠近目标的那一层的**出边**）中符号级层的那些边：
- * 文件级 edges[] 的 type_only 现已如实表达「该边所在语句是否为纯类型语句」（`import type` / `export type … from`；
- * `require(…)` / `import(…)` 与无 TypeScript 时的正则回退一律按运行时），但它描述的是**语句**而不是符号：
- * 同一个文件往往由多条边牵进来，「这个文件是被哪个符号、以什么方式引用的」只有符号级层答得出，
- * 因此本标注的口径**仍是只看符号级层**（改口径要连同「多边牵入」一起处理，是另一批的事，不在这里顺手改）。
- * 三态：
- *   - via 中有符号级边且全部 type_only === true ⇒ 给出**有边界**的 ANNOTATION_TYPE_ONLY：只声明这些边是
- *     类型级，不排除其它运行时代码经未统计路径间接触及目标，并明写「不要据此跳过测试」
- *     （这些边之外仍可能有运行时路径，删掉目标不等于可以跳过验证）；
- *   - via 中有符号级边且存在 type_only === false ⇒ 有运行时影响，**不标**；
- *   - via 中没有任何符号级边 ⇒ 不可判（符号层给不出依据，别把「不标」读成「没有类型级影响」）；
- *   - 目标本身不是 .ts/.tsx ⇒ 不可判（文档/JSON/CI 没有类型/运行时之分）。
+ * 「运行时边」判据——**会导致目标被「加载或执行」的边**。这是**封闭枚举**：产物里出现的每个 kind 都在此
+ * 显式归类；遇到未归类的 kind 直接抛错（本仓「无静默 null」的同族要求：判据不许有静默默认值）。
+ *
+ * **被否掉的替代方案**：「凡 type_only !== true 的边都算运行时」。它对**文档**说假话——`markdown-link` /
+ * `anchor` 的 type_only 是 false（它们确实不是「纯类型语句」），于是一份文档里指向源码文件的一句文字链接
+ * 会被判成「存在运行时路径」。判据必须是「会不会加载 / 执行目标」，不是「这条语句是不是纯类型语句」。
+ *
+ * 三档归类（覆盖产物里实际出现的全部 9 个 kind——file 层 import / export-from / require / dynamic-import /
+ * ci-target / package-field / anchor / markdown-link，symbol 层 import / export-from / type-reference）：
+ *   code   代码级引用（含全部符号级边）：**只有当这条边本身不是纯类型语句时**才会加载 / 执行目标。
+ *          `import type …` / `export type … from` 编译后整句消失；`type-reference` 来自 TypeReferenceNode
+ *          （产物里恒为 type_only=true），删掉目标只会让 tsc 变红。故 type_only !== true 才算运行时。
+ *   always npm / CI 会**真的执行**它：`package-field`（如 npm 包清单里的 bin 指向该文件）、`ci-target`
+ *          （CI 步骤会跑它）——与「只是提到这个路径」有本质区别。
+ *   never  **只是文字引用**：一份文档链接到某个源码文件（markdown-link）、或在文档内跳转（anchor），
+ *          **不会加载、也不会执行它**。
  */
-function typeOnlyAnnotation(target, viaRows) {
+const RUNTIME_EDGE_POLICY = new Map([
+  ['import', 'code'],
+  ['export-from', 'code'],
+  ['require', 'code'],
+  ['dynamic-import', 'code'],
+  ['type-reference', 'code'],
+  ['package-field', 'always'],
+  ['ci-target', 'always'],
+  ['markdown-link', 'never'],
+  ['anchor', 'never'],
+]);
+
+/**
+ * 单条边是否为运行时边。**未归类的 kind 抛错**：判据是封闭枚举，新增 kind 必须在这里显式归类，
+ * 不许静默默认——默认「是」会把文档链接说成运行时依赖，默认「否」更会把运行时依赖说成「不必跑测试」。
+ */
+function isRuntimeEdge(edge) {
+  const policy = RUNTIME_EDGE_POLICY.get(edge.kind);
+  if (policy === undefined) {
+    const fromFile = edge && edge.from && edge.from.file;
+    throw new Error(
+      `未归类的边 kind：${JSON.stringify(edge && edge.kind)}（from=${typeof fromFile === 'string' ? fromFile : '?'}）——` +
+        '运行时边判据是封闭枚举，新增 kind 必须在 RUNTIME_EDGE_POLICY 里显式归类，不许有静默默认值',
+    );
+  }
+  if (policy === 'always') return true;
+  if (policy === 'never') return false;
+  return edge.type_only !== true;
+}
+
+/**
+ * 运行时边邻接索引：from_file -> Set(to_file)。**只读**，不参与闭包推进 / 计数 / 环检测 / path 回溯。
+ * 每次 impact 建一份（产物约 1.8k 条边），供闭包内每个文件做一次可达性 BFS。
+ * 端点缺失的边（外部模块、未解析符号）不进索引——它们给不出「谁能加载谁」的事实；
+ * 但 **kind 归类先于端点检查**：端点缺失不能成为放过一个未归类 kind 的理由。
+ */
+function buildRuntimeAdjacency(artifact) {
+  const adj = new Map();
+  const add = (edge) => {
+    const runtime = isRuntimeEdge(edge); // 先判 kind：未归类即抛错，不因为端点缺失而被跳过
+    const fromFile = edge && edge.from && edge.from.file;
+    const toFile = edge && edge.to && edge.to.file;
+    if (typeof fromFile !== 'string' || typeof toFile !== 'string') return;
+    if (!runtime) return;
+    if (!adj.has(fromFile)) adj.set(fromFile, new Set());
+    adj.get(fromFile).add(toFile);
+  };
+  for (const e of artifact.edges || []) add(e);
+  for (const e of artifact.symbol_edges || []) add(e);
+  return adj;
+}
+
+/**
+ * 在 nodes 内、只沿运行时边，判断 from 能否到达 target（BFS）。只读邻接索引，不写任何闭包状态。
+ * 把节点限制在 nodes（= target ∪ 闭包）**不会漏掉任何路径**：任何一条 from → … → target 的运行时路径，
+ * 其中间节点都（传递地）引用 target，按定义都在反向闭包里——所以「在 target ∪ 闭包内可达」与
+ * 「在整个图里可达」等价。**但这条等价性只在闭包完整时成立**：nodes 若被 --depth 截断，
+ * 中间节点可能落在闭包外，于是产出一个假的「到不了」（见 buildImpactReport 里的完整闭包）。
+ */
+function reachesTargetWithin(from, target, adj, nodes) {
+  if (from === target) return true;
+  if (!nodes.has(from)) return false;
+  const seen = new Set([from]);
+  const queue = [from];
+  for (let head = 0; head < queue.length; head += 1) {
+    for (const next of adj.get(queue[head]) || []) {
+      if (seen.has(next) || !nodes.has(next)) continue;
+      if (next === target) return true;
+      seen.add(next);
+      queue.push(next);
+    }
+  }
+  return false;
+}
+
+/**
+ * 正交标注 type_only——**不是第四档，是档内标注**。
+ * 判据（本版改口径）：在「**target ∪ 完整闭包**」内、只沿**运行时边**（见 RUNTIME_EDGE_POLICY）走，
+ * **从这个文件能否到达目标**——回答的就是「该文件到目标有没有运行时路径」这个问题本身。
+ *
+ * 为什么不再看 via：旧判据是「via（把该文件牵进闭包的那组边，即它指向上一层的出边）里的符号级行是否
+ * 全部 type_only === true」，它答的是「这个文件**被牵进来的那一步**是不是类型级的」，
+ * **答不出**「该文件到目标有没有运行时路径」——同一个文件可由多条边、多条路径牵入，
+ * 只看其中一步会同时漏报（另一条路径就是运行时的）与误报。
+ *
+ * 为什么必须用完整闭包：展示用的闭包有深度上限 --depth（默认 8）。在截断集合里做 BFS，会把「路径长于
+ * 上限」的文件判成「没有运行时路径」——那是假话，而且**默认配置下就会发生**。故标注另用无深度上限的那份闭包。
+ *
+ * 判据边界（照实说）：只看**图产物里的边**。产物之外的引用、生成器没统计到的路径，仍可能让该文件在
+ * 运行时触及目标，所以标注文案明写「不要据此跳过测试」。
+ *
+ * 三态：
+ *   - 到不了 target ⇒ type_only / no-runtime-path-in-closure + **有边界**的 ANNOTATION_TYPE_ONLY；
+ *   - 到得了 target ⇒ runtime / runtime-path-exists，**不标**（真有运行时路径，删改会真的跑坏东西）；
+ *   - 目标本身不是 .ts/.tsx ⇒ undeterminable / target-not-typescript（文档/JSON/CI 没有类型/运行时之分）。
+ *
+ * ★ 有意的行为变化：旧版「via 里没有任何符号级边 ⇒ undeterminable / no-symbol-layer-edge」这一支**取消**。
+ *   新判据不依赖「有没有符号级边」：只被文件级 import 牵进来的文件照样能回答「能不能到达目标」，
+ *   再标「不可判」是拿工具的输入形态当结论。取值集合因此变为
+ *   {target-not-typescript, no-runtime-path-in-closure, runtime-path-exists}。
+ */
+function typeOnlyAnnotation(target, file, runtimeAdj, closureNodes) {
   if (!TS_TARGET.test(target)) {
     return { state: 'undeterminable', reason: 'target-not-typescript', text: ANNOTATION_UNDETERMINABLE };
   }
-  const symbolRows = viaRows.filter((v) => v.layer === 'symbol');
-  if (symbolRows.length === 0) {
-    return { state: 'undeterminable', reason: 'no-symbol-layer-edge', text: ANNOTATION_UNDETERMINABLE };
+  if (reachesTargetWithin(file, target, runtimeAdj, closureNodes)) {
+    return { state: 'runtime', reason: 'runtime-path-exists', text: null };
   }
-  const typeRefs = symbolRows.filter((v) => v.type_only === true).length;
-  if (typeRefs === symbolRows.length) {
-    return { state: 'type_only', reason: 'all-symbol-layer-edges-type-only', text: ANNOTATION_TYPE_ONLY };
-  }
-  return { state: 'runtime', reason: 'has-runtime-symbol-layer-edge', text: null };
+  return { state: 'type_only', reason: 'no-runtime-path-in-closure', text: ANNOTATION_TYPE_ONLY };
 }
 
 /** impact 报告：反向闭包 + 按深度分组的受影响文件（每个文件一条最短引用链 path[]）+ 派生产物分区（build-artifact）+ 门禁义务项分区（gate:）。 */
 function buildImpactReport(opts, target, loaded) {
   const { levels, closure, parent } = reverseClosure(loaded.artifact, target, opts.depth);
+  // type_only 标注的判据是「该文件到目标有没有运行时路径」，它必须建立在**完整闭包**上：展示口径受 --depth
+  // （默认 8）截断，在截断集合里做可达性 BFS 会把「路径长于上限」的文件判成「没有运行时路径」——那是假话，
+  // 而且默认配置下就会发生。所以另算一份**无深度上限**的反向闭包，只喂给标注判据：
+  //   · levels / by_depth / closure / counts / cycles / path **一律仍用 opts.depth 的那一份**，一个都不改；
+  //   · 成本 = 反向 BFS 一遍全图（files[] 约 1415 个节点），可忽略。
+  const annotationNodes = new Set([target, ...reverseClosure(loaded.artifact, target, Number.POSITIVE_INFINITY).closure]);
+  const runtimeAdj = buildRuntimeAdjacency(loaded.artifact);
   const fileIndex = new Map((loaded.artifact.files || []).map((f) => [f.id, f]));
   const derived = derivedArtifacts(target, fileIndex);
   const gates = gateObligations(derived, loaded.artifact);
@@ -721,6 +827,7 @@ function buildImpactReport(opts, target, loaded) {
   });
 
   // 三档分类：只读 levels 里已经算好的 via（BFS 推进时用的边），不新增遍历、不改 closure/环/任何计数。
+  // type_only 标注另算（可读性：它吃完整闭包与运行时边索引，与分档用的 via 无关）。
   const bucketFiles = new Map(IMPACT_BUCKETS.map((b) => [b.key, []]));
   for (const level of levels) {
     for (const f of level.files) {
@@ -735,7 +842,7 @@ function buildImpactReport(opts, target, loaded) {
         depth: level.depth,
         via_edges: f.via.length,
         kinds: [...new Set(f.via.map((v) => v.kind))].sort(byteCompare),
-        type_only: typeOnlyAnnotation(target, f.via),
+        type_only: typeOnlyAnnotation(target, f.file, runtimeAdj, annotationNodes),
       });
     }
   }
@@ -752,7 +859,7 @@ function buildImpactReport(opts, target, loaded) {
   const gaps = [
     '反向闭包只沿 to.file 走文件级 edges[] 与符号级 symbol_edges[]；文件内边（同一文件内部的引用/依赖）不推进遍历——两端是同一个文件，它已在已见集里，带不来新文件（自环推进不了闭包），也不计入闭包边数——但这些边在产物里存在（symbol_edges[] 中 cross_file=false 的那些）。',
     '三档分类 buckets[]：先按边分档（边悬空，或 kind ∈ 代码级引用 ⇒ 必须改；kind ∈ ci-target/package-field/anchor/markdown-link ⇒ 需复核；其余 ⇒ 记录），再把文件归入它 via 中那些边的最高档（via = 把该文件牵进闭包的那组边，即它指向上一层的出边），因此一个文件只出现在一个档里；三档恒存在，空档照列（0 条），「没有」与「没做」不混。',
-    'type_only 是档内**正交标注**，不是第四档，且只看 via（把该文件牵进闭包的那组边，即它指向上一层的出边）中符号级层的那些边：文件级 edges[] 的 type_only 现已如实表达 import type / export type … from（require()/import() 与正则回退一律按运行时），但它描述的是语句、答不出「哪些符号被引用」，故本标注的口径未变、仍只数符号级层；via 中没有符号级边（或目标不是 .ts/.tsx）一律标「不可判」——「不标」只代表存在运行时符号级影响，不代表没有类型级影响。标注本身**有边界**：只声明本次统计到的这些边是类型级，不排除其它运行时代码经未统计路径间接触及目标——不要据此跳过测试。',
+    'type_only 是档内**正交标注**，不是第四档：判据是**可达性**——在「target ∪ 完整闭包」内只沿运行时边（import / export-from / require / dynamic-import / package-field / ci-target，以及符号级边；type_only=true 的纯类型语句与 markdown-link / anchor 这类纯文字引用不算）走，从这个文件能否到达目标；到不了 ⇒ 给出有边界的「仅类型级影响」标注，到得了 ⇒ 不标，目标不是 .ts/.tsx ⇒ 「不可判」——「不标」只代表存在到得了目标的运行时路径，不代表没有类型级影响。标注用的闭包**按图产物全深度展开、不受 --depth 截断影响**（展示用的 by_depth/closure 仍受 --depth 限制，见下一条），否则路径长于上限的文件会被说成「没有运行时路径」。标注自身**有边界**：只声明图产物里的边如此，不排除产物之外或未统计到的路径间接触及目标——不要据此跳过测试。',
     '未做 informational 与截断标注（三档分类与 type_only 标注已做，见 buckets[]）。',
     'cycles[] 只在闭包子图（target ∪ 闭包文件）内求强连通分量，不是全图 SCC：闭包之外的环不报（换个 target 才看得到）；环用的也是文件级/符号级反向边，文件内边（两端同文件）带不来新节点、进不了 size>1 的分量；自环单列在 self_loops[]（只含文件级自环，即 edges[] 里 from.file === to.file 的边；同文件内部的符号边不算），不混进 size>1 的分量。',
     'path[] 只给一条最短链（BFS 首达即定型）：同一文件存在多条等价最短链时只列首达的那条；链上每跳用的边（layer/kind/行:列）在 path_edges[] 里。',
