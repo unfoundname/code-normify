@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "6e0ecc3c7f6e410acc09ffa17107cf9155124bec760998a8b928f7f6891195c3",
+    "universe_hash": "888f771a24eedafb573602125e1c9ad891ba2e054c6f8f323bead3eaa1d5be4d",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1414,
+    "tracked_total": 1415,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 78
+      "scanned_total": 79
     },
     "analysis": {
       "mode": "typescript",
@@ -92,21 +92,21 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "图数据文件自己（ledger/references.json）那一行的 bytes / lines 恒为 null：它们是自指的（产物大小依赖上一次写出的自己），记了就没有不动点、幂等当场失效；其余字段照常登记。",
     "node_states": {
-      "indexed": 1414
+      "indexed": 1415
     },
     "edge_kinds": {
       "anchor": 3,
       "ci-target": 17,
       "dynamic-import": 1,
       "export-from": 19,
-      "import": 315,
+      "import": 320,
       "markdown-link": 35,
-      "package-field": 49,
+      "package-field": 51,
       "require": 52
     },
     "edge_status": {
-      "external": 182,
-      "resolved": 309
+      "external": 187,
+      "resolved": 311
     },
     "omitted": [
       "函数内局部变量与参数（设计稿 §10 增量 4）",
@@ -124,8 +124,8 @@
       "id": ".github/workflows/ci.yml",
       "lang": "yaml",
       "state": "indexed",
-      "bytes": 30819,
-      "lines": 286,
+      "bytes": 31691,
+      "lines": 292,
       "edge_out": 17,
       "edge_in": 0
     },
@@ -160,7 +160,7 @@
       "id": "CONTRIBUTING.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 50706,
+      "bytes": 51405,
       "lines": 145,
       "edge_out": 1,
       "edge_in": 0
@@ -12337,9 +12337,9 @@
       "id": "package.json",
       "lang": "json",
       "state": "indexed",
-      "bytes": 3586,
-      "lines": 94,
-      "edge_out": 49,
+      "bytes": 3673,
+      "lines": 95,
+      "edge_out": 51,
       "edge_in": 13
     },
     {
@@ -12784,6 +12784,15 @@
       "edge_in": 1
     },
     {
+      "id": "tests/impact-gate-e2e.mjs",
+      "lang": "js",
+      "state": "indexed",
+      "bytes": 35841,
+      "lines": 609,
+      "edge_out": 5,
+      "edge_in": 2
+    },
+    {
       "id": "tests/mcp-e2e.mjs",
       "lang": "js",
       "state": "indexed",
@@ -13113,11 +13122,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:265:9:ci-target:scripts[\"check:impact\"]→check:impact",
+      "id": ".github/workflows/ci.yml:271:9:ci-target:scripts[\"check:impact\"]→check:impact",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 265,
+        "line": 271,
         "column": 9
       },
       "to": {
@@ -13135,11 +13144,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:278:9:ci-target:scripts[\"test:render\"]→test:render",
+      "id": ".github/workflows/ci.yml:284:9:ci-target:scripts[\"test:render\"]→test:render",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 278,
+        "line": 284,
         "column": 9
       },
       "to": {
@@ -13157,11 +13166,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:282:24:ci-target:lib/index.js",
+      "id": ".github/workflows/ci.yml:288:24:ci-target:lib/index.js",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 282,
+        "line": 288,
         "column": 24
       },
       "to": {
@@ -13179,11 +13188,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:283:24:ci-target:lib/tools.js",
+      "id": ".github/workflows/ci.yml:289:24:ci-target:lib/tools.js",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 283,
+        "line": 289,
         "column": 24
       },
       "to": {
@@ -13201,11 +13210,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:284:24:ci-target:lib/mcp.js",
+      "id": ".github/workflows/ci.yml:290:24:ci-target:lib/mcp.js",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 284,
+        "line": 290,
         "column": 24
       },
       "to": {
@@ -14565,6 +14574,28 @@
       "type_only": false
     },
     {
+      "id": "package.json:71:5:package-field:scripts[\"test\"]→tests/impact-gate-e2e.mjs",
+      "kind": "package-field",
+      "from": {
+        "file": "package.json",
+        "line": 71,
+        "column": 5
+      },
+      "to": {
+        "file": "tests/impact-gate-e2e.mjs",
+        "line": null,
+        "column": null,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": "tests/impact-gate-e2e.mjs",
+      "resolved": "tests/impact-gate-e2e.mjs",
+      "fragment": null,
+      "field": "scripts[\"test\"]",
+      "status": "resolved",
+      "type_only": false
+    },
+    {
       "id": "package.json:71:5:package-field:scripts[\"test\"]→tests/mcp-e2e.mjs",
       "kind": "package-field",
       "from": {
@@ -14785,11 +14816,33 @@
       "type_only": false
     },
     {
-      "id": "package.json:77:5:package-field:scripts[\"test:changelog\"]→tests/change-log-e2e.mjs",
+      "id": "package.json:77:5:package-field:scripts[\"test:impact\"]→tests/impact-gate-e2e.mjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
         "line": 77,
+        "column": 5
+      },
+      "to": {
+        "file": "tests/impact-gate-e2e.mjs",
+        "line": null,
+        "column": null,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": "tests/impact-gate-e2e.mjs",
+      "resolved": "tests/impact-gate-e2e.mjs",
+      "fragment": null,
+      "field": "scripts[\"test:impact\"]",
+      "status": "resolved",
+      "type_only": false
+    },
+    {
+      "id": "package.json:78:5:package-field:scripts[\"test:changelog\"]→tests/change-log-e2e.mjs",
+      "kind": "package-field",
+      "from": {
+        "file": "package.json",
+        "line": 78,
         "column": 5
       },
       "to": {
@@ -14807,11 +14860,11 @@
       "type_only": false
     },
     {
-      "id": "package.json:78:5:package-field:scripts[\"check:refs\"]→scripts/check-references.cjs",
+      "id": "package.json:79:5:package-field:scripts[\"check:refs\"]→scripts/check-references.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
-        "line": 78,
+        "line": 79,
         "column": 5
       },
       "to": {
@@ -14829,11 +14882,11 @@
       "type_only": false
     },
     {
-      "id": "package.json:79:5:package-field:scripts[\"check:docs\"]→scripts/check-doc-snippets.cjs",
+      "id": "package.json:80:5:package-field:scripts[\"check:docs\"]→scripts/check-doc-snippets.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
-        "line": 79,
+        "line": 80,
         "column": 5
       },
       "to": {
@@ -14851,11 +14904,11 @@
       "type_only": false
     },
     {
-      "id": "package.json:80:5:package-field:scripts[\"check:libsync\"]→scripts/check-lib-sync.cjs",
+      "id": "package.json:81:5:package-field:scripts[\"check:libsync\"]→scripts/check-lib-sync.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
-        "line": 80,
+        "line": 81,
         "column": 5
       },
       "to": {
@@ -14873,11 +14926,11 @@
       "type_only": false
     },
     {
-      "id": "package.json:81:5:package-field:scripts[\"check:examples\"]→scripts/check-examples.cjs",
+      "id": "package.json:82:5:package-field:scripts[\"check:examples\"]→scripts/check-examples.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
-        "line": 81,
+        "line": 82,
         "column": 5
       },
       "to": {
@@ -14895,11 +14948,11 @@
       "type_only": false
     },
     {
-      "id": "package.json:82:5:package-field:scripts[\"check:ledger\"]→scripts/check-file-ledger.cjs",
+      "id": "package.json:83:5:package-field:scripts[\"check:ledger\"]→scripts/check-file-ledger.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
-        "line": 82,
+        "line": 83,
         "column": 5
       },
       "to": {
@@ -14917,11 +14970,11 @@
       "type_only": false
     },
     {
-      "id": "package.json:83:5:package-field:scripts[\"check:ledger:gen\"]→scripts/generate-file-ledger.cjs",
+      "id": "package.json:84:5:package-field:scripts[\"check:ledger:gen\"]→scripts/generate-file-ledger.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
-        "line": 83,
+        "line": 84,
         "column": 5
       },
       "to": {
@@ -14939,11 +14992,11 @@
       "type_only": false
     },
     {
-      "id": "package.json:84:5:package-field:scripts[\"check:graph\"]→scripts/generate-reference-graph.cjs",
+      "id": "package.json:85:5:package-field:scripts[\"check:graph\"]→scripts/generate-reference-graph.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
-        "line": 84,
+        "line": 85,
         "column": 5
       },
       "to": {
@@ -14961,11 +15014,11 @@
       "type_only": false
     },
     {
-      "id": "package.json:85:5:package-field:scripts[\"check:changes\"]→scripts/generate-change-log.cjs",
+      "id": "package.json:86:5:package-field:scripts[\"check:changes\"]→scripts/generate-change-log.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
-        "line": 85,
+        "line": 86,
         "column": 5
       },
       "to": {
@@ -14983,11 +15036,11 @@
       "type_only": false
     },
     {
-      "id": "package.json:86:5:package-field:scripts[\"check:impact\"]→scripts/check-impact.cjs",
+      "id": "package.json:87:5:package-field:scripts[\"check:impact\"]→scripts/check-impact.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
-        "line": 86,
+        "line": 87,
         "column": 5
       },
       "to": {
@@ -15005,11 +15058,11 @@
       "type_only": false
     },
     {
-      "id": "package.json:87:5:package-field:scripts[\"ledger:gen\"]→scripts/generate-file-ledger.cjs",
+      "id": "package.json:88:5:package-field:scripts[\"ledger:gen\"]→scripts/generate-file-ledger.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
-        "line": 87,
+        "line": 88,
         "column": 5
       },
       "to": {
@@ -15027,11 +15080,11 @@
       "type_only": false
     },
     {
-      "id": "package.json:88:5:package-field:scripts[\"graph:gen\"]→scripts/generate-reference-graph.cjs",
+      "id": "package.json:89:5:package-field:scripts[\"graph:gen\"]→scripts/generate-reference-graph.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
-        "line": 88,
+        "line": 89,
         "column": 5
       },
       "to": {
@@ -15049,11 +15102,11 @@
       "type_only": false
     },
     {
-      "id": "package.json:89:5:package-field:scripts[\"changelog:gen\"]→scripts/generate-change-log.cjs",
+      "id": "package.json:90:5:package-field:scripts[\"changelog:gen\"]→scripts/generate-change-log.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
-        "line": 89,
+        "line": 90,
         "column": 5
       },
       "to": {
@@ -15071,11 +15124,11 @@
       "type_only": false
     },
     {
-      "id": "package.json:90:5:package-field:scripts[\"check\"]→ci-contract-check.cjs",
+      "id": "package.json:91:5:package-field:scripts[\"check\"]→ci-contract-check.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
-        "line": 90,
+        "line": 91,
         "column": 5
       },
       "to": {
@@ -15093,11 +15146,11 @@
       "type_only": false
     },
     {
-      "id": "package.json:91:5:package-field:scripts[\"refs:query\"]→scripts/refs-query.cjs",
+      "id": "package.json:92:5:package-field:scripts[\"refs:query\"]→scripts/refs-query.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
-        "line": 91,
+        "line": 92,
         "column": 5
       },
       "to": {
@@ -22768,6 +22821,116 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
+      "type_only": false
+    },
+    {
+      "id": "tests/impact-gate-e2e.mjs:35:16:import:node:fs",
+      "kind": "import",
+      "from": {
+        "file": "tests/impact-gate-e2e.mjs",
+        "line": 35,
+        "column": 16
+      },
+      "to": {
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": "outside"
+      },
+      "cross_file": false,
+      "specifier": "node:fs",
+      "resolved": null,
+      "fragment": null,
+      "field": null,
+      "status": "external",
+      "type_only": false
+    },
+    {
+      "id": "tests/impact-gate-e2e.mjs:36:16:import:node:os",
+      "kind": "import",
+      "from": {
+        "file": "tests/impact-gate-e2e.mjs",
+        "line": 36,
+        "column": 16
+      },
+      "to": {
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": "outside"
+      },
+      "cross_file": false,
+      "specifier": "node:os",
+      "resolved": null,
+      "fragment": null,
+      "field": null,
+      "status": "external",
+      "type_only": false
+    },
+    {
+      "id": "tests/impact-gate-e2e.mjs:37:18:import:node:path",
+      "kind": "import",
+      "from": {
+        "file": "tests/impact-gate-e2e.mjs",
+        "line": 37,
+        "column": 18
+      },
+      "to": {
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": "outside"
+      },
+      "cross_file": false,
+      "specifier": "node:path",
+      "resolved": null,
+      "fragment": null,
+      "field": null,
+      "status": "external",
+      "type_only": false
+    },
+    {
+      "id": "tests/impact-gate-e2e.mjs:38:27:import:node:child_process",
+      "kind": "import",
+      "from": {
+        "file": "tests/impact-gate-e2e.mjs",
+        "line": 38,
+        "column": 27
+      },
+      "to": {
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": "outside"
+      },
+      "cross_file": false,
+      "specifier": "node:child_process",
+      "resolved": null,
+      "fragment": null,
+      "field": null,
+      "status": "external",
+      "type_only": false
+    },
+    {
+      "id": "tests/impact-gate-e2e.mjs:39:31:import:node:url",
+      "kind": "import",
+      "from": {
+        "file": "tests/impact-gate-e2e.mjs",
+        "line": 39,
+        "column": 31
+      },
+      "to": {
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": "outside"
+      },
+      "cross_file": false,
+      "specifier": "node:url",
+      "resolved": null,
+      "fragment": null,
+      "field": null,
+      "status": "external",
       "type_only": false
     },
     {

@@ -260,8 +260,14 @@ jobs:
         #   impact-schema-version-mismatch（两边 schema_version 不一致——图与门禁必须同一次提交一起改）、
         #   impact-graph-malformed（顶层非对象 / edges 或 symbol_edges 不是数组）。
         # 另有 exit 2 = 命令行用法错误（未知开关 / `--root` 缺参数）；`--root` 指向非 git 仓库根同样 exit 1 拒绝，不回退。
-        # **暂无回归测试**：本步**没有**对应夹具用例（tests/impact-gate-e2e.mjs 属后续批次）；上面这些判据与四条
-        # fail-closed 诊断码目前只由 `node scripts/check-impact.cjs --help` 自述，**尚未被自动化用例锁住**。
+        # **回归用例**：`npm test` 里的 tests/impact-gate-e2e.mjs（9 组 75 条断言；临时夹具用 `git checkout-index`
+        # 物化真仓库、图用真生成器重算、跑完自删）——覆盖上面每条判据与四条 fail-closed 诊断码，包括：
+        # 删被引用文件（点名边 id）、删导出符号（新增未解析那一半）、删无人引用文件与只改内容两条反例、
+        # **棘轮不追溯历史存量**（C1 引入悬空 → C2 无关改动 ⇒ 在 C2 上 exit 0）、`external`/`outside` 符号边不算未解析、
+        # `--staged`（HEAD..index）与默认基准（HEAD^..HEAD）的差别、8a–8e 四条诊断码各一。
+        # **含「测试的测试」**（变异测试）：把上面「同为 dangling / 同为未解析」这两行还原成修复前的「基线全量边」
+        # 写法 ⇒ 用例 1 的场景必须由 exit 1 变成 exit 0，用例随之报红；改回 ⇒ 全绿。不真改坏一次，就无法证明
+        # 这条用例抓得住那个漏报 bug（改坏只发生在夹具目录的副本上，真仓库的实现文件一个字都不改）。
         run: npm run check:impact
       - name: Portability guard (no Windows-only path juggling)
         # 教训：tests 里曾用 pathname.replace(/^\//,'') 拼 file URL —— Windows 正常（/F:/…），
