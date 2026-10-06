@@ -967,7 +967,7 @@ function buildImpactReport(opts, target, loaded) {
   // （默认 8）截断，在截断集合里做可达性 BFS 会把「路径长于上限」的文件判成「没有运行时路径」——那是假话，
   // 而且默认配置下就会发生。所以另算一份**无深度上限**的反向闭包，只喂给标注判据：
   //   · levels / by_depth / closure / counts / cycles / path **一律仍用 opts.depth 的那一份**，一个都不改；
-  //   · 成本 = 反向 BFS 一遍全图（files[] 约 1415 个节点），可忽略。
+  //   · 成本 = 反向 BFS 一遍全图（节点数不在此复述；要现值跑 `node scripts/generate-reference-graph.cjs --check`），可忽略。
   const annotationNodes = new Set([target, ...reverseClosure(loaded.artifact, target, Number.POSITIVE_INFINITY).closure]);
   const runtimeAdj = buildRuntimeAdjacency(loaded.artifact);
   const fileIndex = new Map((loaded.artifact.files || []).map((f) => [f.id, f]));

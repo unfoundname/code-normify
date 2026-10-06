@@ -92,7 +92,8 @@ jobs:
         # git 快照（`git status --porcelain -z`，含 --ignored 条目）求差，任何新增/修改/删除——**包括
         # 被忽略路径的变化**——都算 error（example-mutated-repo）。拦的是两类历史事故：「文档/示例
         # 声称能用、实际早崩」（CI 从不执行示例）与「跑个示例顺手改坏工作区」。
-        # 依赖上面 Build 步骤的 lib/ 产物，故排在这里；耗时约 30–60 秒（3 条示例实测合计 ~32 秒），
+        # 依赖上面 Build 步骤的 lib/ 产物，故排在这里；耗时随机器负载变化，不在此复述
+        # （取数：node scripts/check-examples.cjs 的 "示例总耗时" 行；历史观测 ~20–32 s），
         # 单列一步是为了红了能一眼看出是「示例」还是「单测」。
         run: npm run check:examples
       - name: File ledger generator check (ratchet — no auto-add, no rot)
@@ -139,7 +140,8 @@ jobs:
         #   条数不变照样红（实测）。三态：HEAD 里有台账且 schema_version 匹配 → 正常比对；**HEAD 里没有该文件
         #   （首次引入）/ 仓库尚无提交 → 本项跳过、退出码 0**（一次性初始化：基线由本次提交建立）；HEAD 里有
         #   却读不出 / 不是合法 JSON / schema_version 不匹配 / 缺 accounted 数组 → error（fail-closed）。
-        # planned 与 owned 严格分离（否则覆盖率假绿）：声明存在 ≠ 已拥有。当前仓库的 1924 条声明全部指向
+        # planned 与 owned 严格分离（否则覆盖率假绿）：声明存在 ≠ 已拥有。声明条数不在此复述
+        # （取数：node scripts/check-file-ledger.cjs --json 读 declaredRefs）；当前仓库的声明全部指向
         # **不存在的目标路径**（计划态），所以 owned = 0、覆盖率必须报 0.00%；报告把 planned / owned /
         # existing-file / existing-dir / declared-untracked 分开回显，绝不合并成一个「覆盖率」。
         # 判定基准是 **git 索引**（`git ls-files`）而不是工作区磁盘列举；被忽略文件不在台账宇宙内，理由写在

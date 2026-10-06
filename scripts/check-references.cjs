@@ -1183,7 +1183,8 @@ function checkWorkflowRuns(ctx) {
  *         `npm run build:*`）—— 含 `*` 的通配写法整体跳过，不做前缀猜测；
  *       - 规范化后不是「ASCII 字母/数字开头」的占位（如 `npm run 某脚本`、`npm run <脚本>`）；
  *       - 单个大写字母占位（如 `npm run X`）。
- *   · 同一 (文件, 脚本名) 只报一次：本仓 `check:refs` 已有 714 条 warning，重复上报会把报告
+ *   · 同一 (文件, 脚本名) 只报一次：【本仓该数值的现值不在此复述】（它随文档与改动变化），
+ *     取数：`node scripts/check-references.cjs --json` 读 `summary.warnings`；重复上报会把报告
  *     推到大几千，反而稀释真正要看的东西。
  *
  * 零命中 fail-closed：整轮扫到的候选 token 数为 0 ⇒ 判定扫描器失效（md 读不到 / 抽取规则被改错 /

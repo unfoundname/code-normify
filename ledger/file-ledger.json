@@ -6,15 +6,15 @@
     "gate": "scripts/check-file-ledger.cjs",
     "exempt_file": "ledger/exempt.gitignore",
     "universe": "git ls-files —— 索引只定义**待清点的全集**，绿灯的唯一依据是台账里有条目（owned / exempt / accounted 三条来路）；「在 HEAD 里 / 已在 git 索引里」**不是**绿灯理由。台账宇宙 = 已跟踪文件，不含被忽略文件与被跟踪之外的磁盘文件。",
-    "tracked_total": 1482,
-    "universe_hash": "fc02a7c88de94aa778dc81d21ab8feb88a0b4ddbcd5265860379a6050d069141",
+    "tracked_total": 1483,
+    "universe_hash": "c36076874f5e4775e40defa77ee695b3832b145d7c81529601a95cd37d1dc127",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
     "byte_basis": "台账以 git 索引（git ls-files）为**判定基准**：文件的「存在」与「归属」都以索引条目为准，另用 lstat 区分普通文件与目录（目录不算普通文件）。工作区与索引不一致时以索引为准（仓库既有约定：compare git index, not worktree）。注意：索引只定义待清点的全集，不是绿灯依据。",
     "coverage_basis": "owned 只统计「被模块 source.path 精确声明且该路径是仓库里真实存在的普通文件」；planned 声明（声明存在但目标不存在）单独计数，绝不计入 owned，否则覆盖率会从 0% 假性跳到 100%。",
     "accounted_basis": "accounted = **已清点记账的正账**（不是欠账）：每条必须带 accounted_at（清点日期）与 basis（清点依据），依据为空即 error；清单**只减不增**——判据是与 HEAD 版台账比集合包含，任何新增即 error（挡住「手工把路径写进清单 + git add」这条洗白路径）。",
     "known_divergences": [
       "引擎按文件系统读取模块（src/engine/store.ts:92-96 递归 walk <projectDir>/modules 下所有 .md），台账按 git ls-files 取宇宙。二者在这些情形下不一致：(1) 被 .gitignore 覆盖的模块文件（历史上 examples/bilibili-pi-full 下有两个被 `*review*.md` 规则命中的模块文件）；(2) 磁盘上有但未 git add 的新模块文件。台账以索引为准，不一致时由本门禁的 tracked-mismatch / ledger-index-drift / ledger-missing 三项检查报出，不静默忽略——该事故现由 exempt-gitignore-cross-check 与真 .gitignore 交叉校验拦住（豁免命中 ∩ .gitignore 覆盖、以及仅靠 core.ignoreCase 折叠命中的路径都报 error）。",
-      "台账不覆盖被忽略文件（当前 4336 条，其中 node_modules/ 4315）：它们不在 git 索引里，也不是本台账的「已跟踪文件」宇宙；被忽略文件的存在性与内容由 git 忽略规则与各自的生成流程负责，本台账不假装覆盖它们。"
+      "台账不覆盖被忽略文件（条数不在此复述；取数：git ls-files --others --ignored --exclude-standard | Measure-Object -Line）：它们不在 git 索引里，也不是本台账的「已跟踪文件」宇宙；被忽略文件的存在性与内容由 git 忽略规则与各自的生成流程负责，本台账不假装覆盖它们。"
     ]
   },
   "accounted": [

@@ -1177,7 +1177,7 @@
   - **v2 语义校准（本轮）** → 四态 `owned` / `exempt` / `accounted` / `unowned`；豁免抽成独立文件（gitignore 语法 + 每条必填 reason + 未命中告警 + 过宽判据）；`accounted` 每条带 `accounted_at` + `basis`（缺依据 → `accounted-invalid`/error）；与真 `.gitignore` 交叉校验（交集 / 折叠误伤 / 放行本该 `git add` 的普通文件，都是 error）；`--help` 与 `CONTRIBUTING.md` 写明「绿灯依据 = 台账里有条目」「在 HEAD 里不是绿灯理由」「`accounted` 不是欠账，是已记账的正账」。
 - **本轮实测口径（2026-10-05，命令照抄可复现）**：
   - `node scripts/check-file-ledger.cjs --json` → `trackedTotal: 1402`、`states: {owned: 0, exempt: 1373, accounted: 29, unowned: 0}`、`statesSum: 1402`、`exempt.total: 19`、`exempt.gitignoreCrossCheck: {交集 0 / 折叠误伤 0 / 放行本该 git add 的普通文件 0}`、`moduleCoverage.percent: 0`。`.github/workflows/ci.yml` 的 File ledger guard 注释快照行与之一致（1,402 / 0 / 1,373 / 29 / 0，豁免 19 条）。
-  - `git ls-files --others --ignored --exclude-standard` → **4336**（其中 `node_modules/` 4315）；台账 `meta.known_divergences` 的自述数与之一致。
+  - `git ls-files --others --ignored --exclude-standard` → **4336**（其中 `node_modules/` 4315）；台账 `meta.known_divergences` 的那条**现在只写取数口径、不再自述条数**（旧版自述 4336 / 4315，已改；本行两个数保留为 2026-10-05 的实测留痕）。
 - **仍遗留（明确记账）**：
   - **P4（`accounted` 条目依据失效时报 error 还是 warning）**：本轮实现取**折中**，与第 11 节 P4 的推荐值 (a) 不同，如实记账——**字段缺失 / 空依据 → error**（`accounted-invalid`），**条目腐烂**（已 `owned` / 已豁免 / 已从索引消失 / 重复）**仍为 warning**（`accounted-removable`，报告回显"还可再减 N 条"）。理由：腐烂是清单卫生问题，条目本身的依据仍在；把它做成 error 会让"把一条已记账路径改成豁免"这类合法动作直接变红。
   - 行级内容溯源**整套作废**（§8.1），不再实现。
