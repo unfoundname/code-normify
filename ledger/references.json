@@ -12427,8 +12427,8 @@
       "id": "scripts/generate-file-ledger.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 45186,
-      "lines": 799,
+      "bytes": 44855,
+      "lines": 793,
       "edge_out": 5,
       "edge_in": 2
     },

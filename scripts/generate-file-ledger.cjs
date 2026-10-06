@@ -108,12 +108,6 @@ const LEDGER_SCHEMA_VERSION = core.LEDGER_SCHEMA_VERSION;
 const PROJECT_PREFIX = 'normify-';
 const PROJECT_DIR_EXCLUDES = ['skills/'];
 
-/**
- * 豁免模式「命中率超阈值」的人工确认字段（与 core.EXEMPT_BROAD_CONFIRM_FIELD 同名同义）。
- * 生成器只**保留**它，绝不自动生成：这个字段的语义就是「人按下了确认键」，机器代按等于取消确认。
- */
-const BROAD_CONFIRM_FIELD = core.EXEMPT_BROAD_CONFIRM_FIELD;
-
 const relPosix = core.relPosix;
 const absOf = core.absOf;
 const byCodePoint = core.byCodePoint;
