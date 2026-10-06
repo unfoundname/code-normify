@@ -329,11 +329,11 @@
 | `fragment` | string\|null | 锚点片段（URL 解码后） |
 | `field` | string\|null | `package.json` 的字段路径（`main` / `exports["."]` / `scripts["build"]`） |
 | `status` | enum（见下） | 解析结果 |
-| `type_only` | boolean | **文件层恒为 `false`**：纯类型引用是符号级信息（增量 3），这里不写 `null`，免得被读成「不知道」 |
+| `type_only` | boolean | 该边**所在语句**是否为纯类型级（`import type …` / `export type … from`）：为 `true` 时这条边运行时不会加载目标。**保守边界（猜错的方向是「谎称不必跑测试」，故宁可当运行时）**：`import { type X }`（行内修饰符）、`require(…)` / `import(…)`、以及拿不到 TypeScript 时的正则回退一律记 `false`。不写 `null`，免得被读成「不知道」 |
 
 **`status` 枚举与 §2.4 草案的差异（诚实记录）**：草案给的是 `resolved｜unresolved｜external｜ambiguous｜dangling` 五值；本批**新增 3 个**——`untracked`（目标在磁盘上、不在索引里）、`ignored`（目标被忽略规则覆盖）、`case-mismatch`（大小写与索引不一致）。理由：这三类在既有门禁里**本来就有各自的诊断码**（`untracked-reference` / 被忽略目标逐条列出 / `path-case-mismatch`），图必须与它口径一致，否则「门禁红、图说 resolved」就会出现两份真相；把 `untracked` 压成 `unresolved` 会让查图的人看不到这一类。`unresolved` 在本批专指「锚点目标不是可读的 Markdown」。
 
-**JSON Schema 草案**（draft 2020-12；`json` 代码块不参与文档示例编译门禁）——**这是 v1 的草案，保留原样**：增量 3 升到 `schema_version: 2` 时**只加了两个顶层数组**（`declarations` / `symbol_edges`），`meta` / `files` / `edges` 的 required 与 properties **一字未改**（实测见 §2.8）；v2 的两个新数组字段表也在 §2.8。因此读这份草案时请把 `schema_version` 的 `const: 1` 读成"v1 当时的形状"，当前产物的值是 `2`：
+**JSON Schema 草案**（draft 2020-12；`json` 代码块不参与文档示例编译门禁）——**这是 v1 的草案，保留原样**：增量 3 升到 `schema_version: 2` 时**只加了两个顶层数组**（`declarations` / `symbol_edges`），`meta` / `files` / `edges` 的 required 与 properties 当时**一字未改**（实测见 §2.8）；**此后有一处已改**：`edges[].type_only` 由 `{"const": false}` 改为 `{"type": "boolean"}`（文件级边如实表达纯类型语句，见上表），因此下面草案里的 `"type_only": { "const": false }` 只记录 v1 当时的形状、**不再描述当前产物**（当前产物的 `schema_version` 仍是 `2`，这一处收窄没有随版本号一起升——读产物请以本节字段表与 §2.8 为准）。v2 的两个新数组字段表在 §2.8。因此读这份草案时请把 `schema_version` 的 `const: 1` 读成"v1 当时的形状"，当前产物的值是 `2`：
 
 ```json
 {

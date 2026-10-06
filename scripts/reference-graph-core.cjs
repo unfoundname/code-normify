@@ -810,15 +810,17 @@ function scriptKindFor(ts, rel) {
  *   · 说明符来自字符串字面量节点，天然跨行；
  *   · 注释与模板字符串里的文本不是节点，不会被误报——
  *     例如 tests/branch-e2e.mjs 里写进临时夹具的模板字符串源码。
- * 返回 [{ spec, index }]（index 为文件内字符偏移，用于定位行列）。
+ * 返回 [{ spec, index, kind, typeOnly }]（index 为文件内字符偏移，用于定位行列；
+ * typeOnly = 这条说明符所在语句是**纯类型级**的：`import type …` / `export type … from`）。
  */
 function collectSpecifiersWithKinds(ts, rel, text) {
   const source = ts.createSourceFile(rel, text, ts.ScriptTarget.Latest, true, scriptKindFor(ts, rel));
   const out = [];
 
-  const pushLiteral = (node, kind) => {
+  const pushLiteral = (node, kind, typeOnly) => {
     if (!node || !ts.isStringLiteralLike(node)) return;
-    out.push({ spec: node.text, index: node.getStart(source), kind });
+    // typeOnly 由调用方按语法节点判定（见 visit）；这里只负责把它带上，不在这里猜结构。
+    out.push({ spec: node.text, index: node.getStart(source), kind, typeOnly: Boolean(typeOnly) });
   };
   const importLikeCallKind = (node) => {
     if (!ts.isCallExpression(node) || node.arguments.length === 0) return null;
@@ -830,11 +832,20 @@ function collectSpecifiersWithKinds(ts, rel, text) {
   };
 
   const visit = (node) => {
-    if (ts.isImportDeclaration(node)) pushLiteral(node.moduleSpecifier, 'import');
-    else if (ts.isExportDeclaration(node)) pushLiteral(node.moduleSpecifier, 'export-from');
-    else {
+    if (ts.isImportDeclaration(node)) {
+      // `import type { X } from '…'`：整个 import 子句标了 type ⇒ 这条说明符运行时不会被加载。
+      // 注意 `import { type X } from '…'`（行内 type 修饰符）**不算**：语句本身仍是运行时导入，
+      // 只有部分绑定是类型——判成纯类型会让人误以为「删了不用跑测试」，方向更危险，故从保守。
+      pushLiteral(node.moduleSpecifier, 'import', node.importClause && node.importClause.isTypeOnly);
+    } else if (ts.isExportDeclaration(node)) {
+      // `export type { X } from '…'`：整个导出声明标了 type（`export { type X } from` 同理不算）。
+      pushLiteral(node.moduleSpecifier, 'export-from', node.isTypeOnly);
+    } else {
       const kind = importLikeCallKind(node);
-      if (kind) pushLiteral(node.arguments[0], kind);
+      // require(…) / import(…) 在这条分支上都是 CallExpression ⇒ 运行时加载，恒 false。
+      // （纯类型位置的 `type T = import('./x.js').T` 是 ImportTypeNode，根本不走这条分支、也不产边；
+      //   这里刻意不引入「按位置猜类型性」的逻辑——把边当运行时是保守方向，猜错的方向更危险。）
+      if (kind) pushLiteral(node.arguments[0], kind, false);
     }
     ts.forEachChild(node, visit);
   };
@@ -917,6 +928,9 @@ function maskSource(text) {
 /**
  * 降级实现（带 kind）：在掩码后的源码上找 import/export/require 的起始关键字位置。
  * kind 由命中的关键字分支判定（正则的四个分支各自要求不同的关键字/括号，见 MODULE_SPECIFIER_FALLBACK）。
+ * typeOnly **一律 false**：正则算不出「纯类型级」——`import type { X }` 与 `import { type X }` 的差别、
+ * `export type … from` 里的 type 位置，全都在它看不见的结构里；猜错的方向是「谎称不必跑测试」，
+ * 比不猜更坏。因此无 TypeScript 时这些边一律按**运行时**处理（保守）。
  */
 function collectSpecifiersWithRegexKinds(text) {
   const masked = maskSource(text);
@@ -960,7 +974,7 @@ function collectSpecifiersWithRegexKinds(text) {
         : /\bexport\b/.test(hit)
           ? 'export-from'
           : 'import';
-    out.push({ spec: value, index: j + 1, kind });
+    out.push({ spec: value, index: j + 1, kind, typeOnly: false });
     MODULE_SPECIFIER_FALLBACK.lastIndex = k + 1;
   }
   return out;
@@ -980,7 +994,8 @@ function collectModuleSpecifiers(ctx, ts, rel) {
 
 /**
  * 与 collectModuleSpecifiers 同源、但保留 kind（图生成器用）：
- * 返回 `[{ spec, index, kind }]`，kind ∈ { import, export-from, require, dynamic-import }。
+ * 返回 `[{ spec, index, kind, typeOnly }]`，kind ∈ { import, export-from, require, dynamic-import }；
+ * typeOnly = 该说明符所在语句是否为纯类型级（正则回退时**恒 false**，理由见 collectSpecifiersWithRegexKinds）。
  */
 function collectModuleSpecifiersKinds(ctx, ts, rel) {
   const text = readTextOrReport(ctx, rel);

@@ -320,7 +320,10 @@ function makeEdgeCollector(fromFile) {
         fragment: edge.fragment === undefined ? null : edge.fragment,
         field: edge.field === undefined ? null : edge.field,
         status: edge.status,
-        type_only: false, // 文件层无法判断「纯类型引用」——那是增量 3 的符号级信息，这里如实置 false
+        // 文件级边的 type_only 由说明符自带：`import type …` / `export type … from` 为 true，
+        // 其余（含 `import { type X }` 行内修饰、`require(…)`、`import(…)`）为 false。
+        // 非模块说明符类边（markdown-link / package-field / ci-target / anchor）不传该字段 ⇒ false。
+        type_only: edge.type_only === true,
       });
     },
   };
@@ -328,7 +331,7 @@ function makeEdgeCollector(fromFile) {
 
 /** 模块说明符 → 边（source 文件：.ts/.tsx/.mts/.cts/.js/.jsx/.mjs/.cjs）。 */
 function collectModuleEdges(ctx, ts, rel, text, collector) {
-  for (const { spec, index, kind } of core.collectModuleSpecifiersKinds(ctx, ts, rel)) {
+  for (const { spec, index, kind, typeOnly } of core.collectModuleSpecifiersKinds(ctx, ts, rel)) {
     const from = { file: rel, ...core.positionAt(ctx, rel, text, index) };
     if (!spec.startsWith('.')) {
       // 裸模块名 / node: 内置 / URL / 绝对路径：不是仓库内的文件引用（与门禁同一条边界）。
@@ -339,6 +342,8 @@ function collectModuleEdges(ctx, ts, rel, text, collector) {
         specifier: spec,
         resolved: null,
         status: 'external',
+        // 外部目标同样如实记：`import type { X } from 'ajv'` 也是纯类型语句。
+        type_only: typeOnly,
       });
       continue;
     }
@@ -351,6 +356,7 @@ function collectModuleEdges(ctx, ts, rel, text, collector) {
       specifier: spec,
       resolved: resolution.candidate,
       status: STATUS_OF_INDEX_STATE[indexState] || 'ambiguous',
+      type_only: typeOnly,
     });
   }
 }

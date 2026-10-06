@@ -160,7 +160,7 @@
       "id": "CONTRIBUTING.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 51405,
+      "bytes": 51631,
       "lines": 145,
       "edge_out": 1,
       "edge_in": 0
@@ -214,7 +214,7 @@
       "id": "docs/DESIGN-code-graph.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 180026,
+      "bytes": 180751,
       "lines": 1331,
       "edge_out": 0,
       "edge_in": 0
@@ -12427,8 +12427,8 @@
       "id": "scripts/generate-reference-graph.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 64769,
-      "lines": 1223,
+      "bytes": 65179,
+      "lines": 1229,
       "edge_out": 6,
       "edge_in": 3
     },
@@ -12436,8 +12436,8 @@
       "id": "scripts/reference-graph-core.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 95972,
-      "lines": 2123,
+      "bytes": 97759,
+      "lines": 2138,
       "edge_out": 3,
       "edge_in": 2
     },
@@ -12445,8 +12445,8 @@
       "id": "scripts/refs-query.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 49148,
-      "lines": 992,
+      "bytes": 49911,
+      "lines": 994,
       "edge_out": 3,
       "edge_in": 1
     },
@@ -16397,7 +16397,7 @@
       "fragment": null,
       "field": null,
       "status": "external",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/adapters/mcp.ts:4:34:import:../tools.js",
@@ -16419,7 +16419,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/adapters/promptmanager.ts:1:64:import:../execution.js",
@@ -16507,7 +16507,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/branches.ts:1:98:import:../execution.js",
@@ -16551,7 +16551,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/branches.ts:3:40:import:node:crypto",
@@ -16771,7 +16771,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/branches.ts:13:56:import:./types.js",
@@ -16793,7 +16793,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/changes.ts:1:53:import:node:fs/promises",
@@ -16881,7 +16881,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/changes.ts:5:22:import:./diag.js",
@@ -17145,7 +17145,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/compile.ts:1:22:import:node:path",
@@ -17255,7 +17255,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/compile.ts:6:76:import:./validate.js",
@@ -17453,7 +17453,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/diag.ts:1:33:import:./types.js",
@@ -17475,7 +17475,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/edit.ts:1:64:import:../execution.js",
@@ -17761,7 +17761,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/edit.ts:14:29:import:node:fs",
@@ -17783,7 +17783,7 @@
       "fragment": null,
       "field": null,
       "status": "external",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/frontmatter.ts:1:52:import:yaml",
@@ -17849,7 +17849,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/frontmatter.ts:4:41:import:./ids.js",
@@ -18311,7 +18311,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/graph.ts:19:37:import:./validate.js",
@@ -18333,7 +18333,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/graph.ts:28:29:export-from:./manifest.js",
@@ -18377,7 +18377,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/ids.ts:2:22:import:node:path",
@@ -18443,7 +18443,7 @@
       "fragment": null,
       "field": null,
       "status": "external",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/layout.ts:3:31:import:node:path",
@@ -18509,7 +18509,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/layout.ts:6:22:import:./diag.js",
@@ -18751,7 +18751,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/reference.ts:7:32:import:./frontmatter.js",
@@ -18839,7 +18839,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/reference.ts:11:22:import:./diag.js",
@@ -18993,7 +18993,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/render.ts:7:29:import:./manifest.js",
@@ -19081,7 +19081,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/store.ts:3:29:import:node:fs",
@@ -19103,7 +19103,7 @@
       "fragment": null,
       "field": null,
       "status": "external",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/store.ts:4:78:import:node:fs/promises",
@@ -19345,7 +19345,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/engine/validate.ts:2:71:import:./ids.js",
@@ -19631,7 +19631,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/index.ts:4:15:export-from:./engine/types.js",
@@ -19785,7 +19785,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/index.ts:11:40:export-from:./engine/graph.js",
@@ -19807,7 +19807,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/index.ts:12:153:export-from:./engine/branches.js",
@@ -19851,7 +19851,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/index.ts:14:65:export-from:./adapters/promptmanager.js",
@@ -19917,7 +19917,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/index.ts:17:38:export-from:./engine/branches.js",
@@ -19939,7 +19939,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/index.ts:18:66:export-from:./execution.js",
@@ -19961,7 +19961,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/mcp.ts:2:25:import:node:path",
@@ -20313,7 +20313,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/service.ts:8:64:import:./engine/graph.js",
@@ -20357,7 +20357,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/service.ts:10:138:import:./engine/branches.js",
@@ -20401,7 +20401,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/service.ts:12:40:import:./adapters/promptmanager.js",
@@ -20489,7 +20489,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/service.ts:16:33:import:./engine/validate.js",
@@ -20731,7 +20731,7 @@
       "fragment": null,
       "field": null,
       "status": "external",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/tools.ts:9:38:import:./engine/types.js",
@@ -21061,7 +21061,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/tools.ts:25:186:import:./engine/types.js",
@@ -21083,7 +21083,7 @@
       "fragment": null,
       "field": null,
       "status": "resolved",
-      "type_only": false
+      "type_only": true
     },
     {
       "id": "src/workspace.ts:1:69:import:node:fs/promises",

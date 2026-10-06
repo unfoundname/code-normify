@@ -52,8 +52,9 @@ function usage() {
     '                            记录   record       —— 其余边，只登记',
     '                          三档在人类可读与 --json 里恒存在，空档也照列（0 条），「没有」与「没做」不混。',
     '                          档内另有正交标注 type_only（**不是第四档**），只看 via 中符号级层的那些边（via = 把该文件',
-    '                          牵进闭包的那组边，即它指向上一层的**出边**，见下面每行的「出边 N 条」；产物里文件级',
-    '                          edges[] 的 type_only 恒为 false）：这些边全为 type_only=true ⇒ 给出**有边界**的「仅类型级',
+    '                          牵进闭包的那组边，即它指向上一层的**出边**，见下面每行的「出边 N 条」；文件级 edges[] 的',
+    '                          type_only 现已如实表达 import type / export type … from——但本标注的口径未变，仍只数符号',
+    '                          级层的边）：这些边全为 type_only=true ⇒ 给出**有边界**的「仅类型级',
     '                          影响」标注——只声明本次统计到的这些边均为类型级，**不排除**其它运行时代码经未统计路径',
     '                          间接触及目标，并明写「不要据此跳过测试」；via 中没有符号级边（或目标不是 .ts/.tsx）⇒',
     '                          「不可判」；存在运行时符号级边则不标——「不标」不等于「没有类型级影响」。',
@@ -246,7 +247,7 @@ function buildReport(opts, target, loaded) {
   const gaps = [
     '直接引用方只数文件级边（edges[]）；符号级边另列在 symbol_referrers[]，其中包含文件内边（同一文件内部的引用/依赖，cross_file=false）——这些边在产物里存在、照列，只是不计入直接引用方计数。',
     '未实现符号 id 输入：目标只能是文件路径；符号 id 会以 unsupported 拒绝。',
-    '文件级 edges[] 的 type_only 恒为 false（产物口径），故运行时/类型拆分只对 symbol_edges[] 有效；impact 的 type_only 档内标注同样只依据 via（把该文件牵进闭包的那组边，即它指向上一层的出边）中符号级层的那些边，且只覆盖本次统计到的这些边，不排除其它运行时代码间接触及目标。',
+    '文件级 edges[] 的 type_only 现已如实表达「该边所在语句是否为纯类型语句」（import type / export type … from；require()/import() 与无 TypeScript 时的正则回退一律按运行时），但本版的运行时/类型拆分仍只数 symbol_edges[]（counts 里的 runtime_refs / type_refs 就取自符号级层）；impact 的 type_only 档内标注同样只依据 via（把该文件牵进闭包的那组边，即它指向上一层的出边）中符号级层的那些边，且只覆盖本次统计到的这些边，不排除其它运行时代码间接触及目标。',
     '未实现 what-references、change-impact 等其它查询；本版只有 who-references 与 impact 两条查询（impact = 反向闭包 + 按深度打印 + 每个受影响文件的最短引用链 path[] + 闭包子图内的环 cycles[]/self_loops[] + 三档分类 buckets[] 与其中的 type_only 标注 + 派生产物分区 + gate: 义务项；impact 尚未做 informational 与截断标注）。',
   ];
   if (diverged) reasons.push(...gaps);
@@ -674,9 +675,10 @@ const TS_TARGET = /\.tsx?$/;
 /**
  * 正交标注 type_only——**不是第四档，是档内标注**。只看 via（把该文件牵进闭包的那组边，
  * 即它指向上一层、链上更靠近目标的那一层的**出边**）中符号级层的那些边：
- * 产物口径里文件级 edges[] 的 type_only 恒为 false（写 `import type { X } from '..'` 也判成 false，
- * 见 generate-reference-graph.cjs:323），若把文件级边也算进来，「全部 via 边都是类型级」将永远不成立，
- * 标注会退化成永不出现的死代码。
+ * 文件级 edges[] 的 type_only 现已如实表达「该边所在语句是否为纯类型语句」（`import type` / `export type … from`；
+ * `require(…)` / `import(…)` 与无 TypeScript 时的正则回退一律按运行时），但它描述的是**语句**而不是符号：
+ * 同一个文件往往由多条边牵进来，「这个文件是被哪个符号、以什么方式引用的」只有符号级层答得出，
+ * 因此本标注的口径**仍是只看符号级层**（改口径要连同「多边牵入」一起处理，是另一批的事，不在这里顺手改）。
  * 三态：
  *   - via 中有符号级边且全部 type_only === true ⇒ 给出**有边界**的 ANNOTATION_TYPE_ONLY：只声明这些边是
  *     类型级，不排除其它运行时代码经未统计路径间接触及目标，并明写「不要据此跳过测试」
@@ -750,7 +752,7 @@ function buildImpactReport(opts, target, loaded) {
   const gaps = [
     '反向闭包只沿 to.file 走文件级 edges[] 与符号级 symbol_edges[]；文件内边（同一文件内部的引用/依赖）不推进遍历——两端是同一个文件，它已在已见集里，带不来新文件（自环推进不了闭包），也不计入闭包边数——但这些边在产物里存在（symbol_edges[] 中 cross_file=false 的那些）。',
     '三档分类 buckets[]：先按边分档（边悬空，或 kind ∈ 代码级引用 ⇒ 必须改；kind ∈ ci-target/package-field/anchor/markdown-link ⇒ 需复核；其余 ⇒ 记录），再把文件归入它 via 中那些边的最高档（via = 把该文件牵进闭包的那组边，即它指向上一层的出边），因此一个文件只出现在一个档里；三档恒存在，空档照列（0 条），「没有」与「没做」不混。',
-    'type_only 是档内**正交标注**，不是第四档，且只看 via（把该文件牵进闭包的那组边，即它指向上一层的出边）中符号级层的那些边：产物口径里文件级 edges[] 的 type_only 恒为 false（写 `import type` 也判成 false），把它算进来标注会永不出现；via 中没有符号级边（或目标不是 .ts/.tsx）一律标「不可判」——「不标」只代表存在运行时符号级影响，不代表没有类型级影响。标注本身**有边界**：只声明本次统计到的这些边是类型级，不排除其它运行时代码经未统计路径间接触及目标——不要据此跳过测试。',
+    'type_only 是档内**正交标注**，不是第四档，且只看 via（把该文件牵进闭包的那组边，即它指向上一层的出边）中符号级层的那些边：文件级 edges[] 的 type_only 现已如实表达 import type / export type … from（require()/import() 与正则回退一律按运行时），但它描述的是语句、答不出「哪些符号被引用」，故本标注的口径未变、仍只数符号级层；via 中没有符号级边（或目标不是 .ts/.tsx）一律标「不可判」——「不标」只代表存在运行时符号级影响，不代表没有类型级影响。标注本身**有边界**：只声明本次统计到的这些边是类型级，不排除其它运行时代码经未统计路径间接触及目标——不要据此跳过测试。',
     '未做 informational 与截断标注（三档分类与 type_only 标注已做，见 buckets[]）。',
     'cycles[] 只在闭包子图（target ∪ 闭包文件）内求强连通分量，不是全图 SCC：闭包之外的环不报（换个 target 才看得到）；环用的也是文件级/符号级反向边，文件内边（两端同文件）带不来新节点、进不了 size>1 的分量；自环单列在 self_loops[]（只含文件级自环，即 edges[] 里 from.file === to.file 的边；同文件内部的符号边不算），不混进 size>1 的分量。',
     'path[] 只给一条最短链（BFS 首达即定型）：同一文件存在多条等价最短链时只列首达的那条；链上每跳用的边（layer/kind/行:列）在 path_edges[] 里。',
