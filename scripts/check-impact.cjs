@@ -76,6 +76,15 @@ const USAGE = `check-impact v${VERSION} — 变更影响门禁（棘轮式：只
                   非仓库根（不存在 / 不是 git 根）一律拒绝（退出码 1，与既有门禁实测一致）
   -h, --help      打印本帮助（不读图、不判定，退出码 0）
 
+读 / 写：
+  读：git 对象里的图产物 —— 基线 \`git show HEAD^:${REL}\`（--staged 时 \`git show HEAD:${REL}\`）、
+      当前 \`git show HEAD:${REL}\`（--staged 时索引 blob \`git show :${REL}\`）；
+      **不读工作区磁盘上的那份图**（图的「新鲜度 / 完整性」由上一环 check:graph 判定，见下）。
+  写：不写任何文件（结论只走 stdout / stderr；--json 也只写 stdout）。
+
+check 链位置（npm 脚本 \`check\` 的实际顺序，环名照抄）：
+  第 13 环 \`npm run check:impact\`（= 本脚本）——前一环是第 12 环 \`npm run check:changes\`，本环是链尾。
+
 判据（棘轮：只拦本次改动**新引入**的）：
   新增悬空   = { 当前 status === 'dangling' 的边 } − { 基线中同为 dangling 的边 }   ← 文件被删 / 改名
   新增未解析 = { 当前 to.sym === null 的符号级边 } − { 基线中同样未解析的符号级边 }   ← 符号被删（文件还在）

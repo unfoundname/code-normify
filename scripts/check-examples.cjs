@@ -819,6 +819,15 @@ function printHelp() {
     '  1  存在 error 级违规（示例失败 / 超时 / 改了仓库 / 清单缺文件 / 构建产物缺失 / 无 git 快照能力）',
     '  2  命令行用法错误（未知参数等）',
     '',
+    '读 / 写：',
+    `  读：INCLUDE 清单里的示例（逐个 spawn）、lib/ 构建产物（基线 ${REQUIRED_BUILD_ARTIFACTS.join(' / ')} + 示例引用到的 lib/**）、`,
+    '      每个示例运行前后的 git 快照（含 --ignored）；',
+    '  写：不写仓库内任何文件（自净性断言：运行前后快照必须零差异；示例只允许写 os.tmpdir()）。',
+    '',
+    'check 链位置（npm 脚本 `check` 的实际顺序，环名照抄）：',
+    '  第 8 环 `npm run check:examples`（= 本脚本）——前一环是第 7 环 `npm run check:libsync`，',
+    '  后一环是第 9 环 `npm run check:ledger:gen`。',
+    '',
     '纳入清单（INCLUDE，写死在脚本里，逐条跑；同一路径可以有多条不同 argv 的模式）：',
     ...INCLUDE.map(
       (entry, i) =>
