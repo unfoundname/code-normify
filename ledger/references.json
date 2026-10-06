@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "6caeeaeb42d60f6a8bdc671098ee0a70eec1a10f2732aaa8e1763059c32cf056",
+    "universe_hash": "fbd1b3143863ab4d848d62665b31a1ad6f4390858e3218bf9ef1b52912e5123a",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1412,
+    "tracked_total": 1413,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 76
+      "scanned_total": 77
     },
     "analysis": {
       "mode": "typescript",
@@ -92,7 +92,7 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "图数据文件自己（ledger/references.json）那一行的 bytes / lines 恒为 null：它们是自指的（产物大小依赖上一次写出的自己），记了就没有不动点、幂等当场失效；其余字段照常登记。",
     "node_states": {
-      "indexed": 1412
+      "indexed": 1413
     },
     "edge_kinds": {
       "anchor": 3,
@@ -101,12 +101,12 @@
       "export-from": 19,
       "import": 315,
       "markdown-link": 35,
-      "package-field": 47,
-      "require": 46
+      "package-field": 48,
+      "require": 49
     },
     "edge_status": {
-      "external": 176,
-      "resolved": 306
+      "external": 179,
+      "resolved": 307
     },
     "omitted": [
       "函数内局部变量与参数（设计稿 §10 增量 4）",
@@ -160,8 +160,8 @@
       "id": "CONTRIBUTING.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 41205,
-      "lines": 100,
+      "bytes": 45779,
+      "lines": 142,
       "edge_out": 1,
       "edge_in": 0
     },
@@ -12337,9 +12337,9 @@
       "id": "package.json",
       "lang": "json",
       "state": "indexed",
-      "bytes": 3460,
-      "lines": 92,
-      "edge_out": 47,
+      "bytes": 3509,
+      "lines": 93,
+      "edge_out": 48,
       "edge_in": 12
     },
     {
@@ -12431,6 +12431,15 @@
       "lines": 2123,
       "edge_out": 3,
       "edge_in": 2
+    },
+    {
+      "id": "scripts/refs-query.cjs",
+      "lang": "js",
+      "state": "indexed",
+      "bytes": 27928,
+      "lines": 659,
+      "edge_out": 3,
+      "edge_in": 1
     },
     {
       "id": "skills/normify-gen/SKILL.md",
@@ -15031,6 +15040,28 @@
       "type_only": false
     },
     {
+      "id": "package.json:90:5:package-field:scripts[\"refs:query\"]→scripts/refs-query.cjs",
+      "kind": "package-field",
+      "from": {
+        "file": "package.json",
+        "line": 90,
+        "column": 5
+      },
+      "to": {
+        "file": "scripts/refs-query.cjs",
+        "line": null,
+        "column": null,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": "scripts/refs-query.cjs",
+      "resolved": "scripts/refs-query.cjs",
+      "fragment": null,
+      "field": "scripts[\"refs:query\"]",
+      "status": "resolved",
+      "type_only": false
+    },
+    {
       "id": "scripts/check-doc-snippets.cjs:43:20:require:node:fs",
       "kind": "require",
       "from": {
@@ -15992,6 +16023,72 @@
       },
       "cross_file": false,
       "specifier": "node:child_process",
+      "resolved": null,
+      "fragment": null,
+      "field": null,
+      "status": "external",
+      "type_only": false
+    },
+    {
+      "id": "scripts/refs-query.cjs:17:34:require:node:child_process",
+      "kind": "require",
+      "from": {
+        "file": "scripts/refs-query.cjs",
+        "line": 17,
+        "column": 34
+      },
+      "to": {
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": "outside"
+      },
+      "cross_file": false,
+      "specifier": "node:child_process",
+      "resolved": null,
+      "fragment": null,
+      "field": null,
+      "status": "external",
+      "type_only": false
+    },
+    {
+      "id": "scripts/refs-query.cjs:18:20:require:node:fs",
+      "kind": "require",
+      "from": {
+        "file": "scripts/refs-query.cjs",
+        "line": 18,
+        "column": 20
+      },
+      "to": {
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": "outside"
+      },
+      "cross_file": false,
+      "specifier": "node:fs",
+      "resolved": null,
+      "fragment": null,
+      "field": null,
+      "status": "external",
+      "type_only": false
+    },
+    {
+      "id": "scripts/refs-query.cjs:19:22:require:node:path",
+      "kind": "require",
+      "from": {
+        "file": "scripts/refs-query.cjs",
+        "line": 19,
+        "column": 22
+      },
+      "to": {
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": "outside"
+      },
+      "cross_file": false,
+      "specifier": "node:path",
       "resolved": null,
       "fragment": null,
       "field": null,
