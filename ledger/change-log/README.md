@@ -49,6 +49,7 @@ $recorded = Get-ChildItem ledger/change-log/*.json | ForEach-Object {
   Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json
 } | Where-Object { $_.kind -eq 'commit' } | ForEach-Object { $_.to_snapshot.rev }
 $all = git rev-list HEAD
+if ($LASTEXITCODE -ne 0) { throw "git rev-list 失败 —— 拿不到判据，不得判绿" }
 $hit = $all | Where-Object { $recorded -contains $_ }
 # 口径① 含 HEAD：应有 = 全部提交；**判断「缺不缺提交」用这一套**
 "含 HEAD：应有 $($all.Count) / 实有 $($hit.Count) / 缺 $($all.Count - $hit.Count)"
@@ -57,6 +58,11 @@ $rest = $all | Select-Object -Skip 1
 $restHit = $rest | Where-Object { $recorded -contains $_ }
 "除 HEAD：应有 $($rest.Count) / 实有 $($restHit.Count) / 缺 $($rest.Count - $restHit.Count)"
 ```
+
+**`git rev-list` 失败必须抛错，不得让它退化成 0/0/0**（本仓红线：**拿不到判据就不判绿**）。
+不检查 `$LASTEXITCODE` 时，`git rev-list` 一失败就返回空数组 ⇒ 上面两行都会打印「应有 0 / 实有 0 /
+缺 0」——那是**假绿形状**，与「覆盖率 100%」在输出上无法区分。失败注入实测（`$env:GIT_DIR` 指向
+不存在的目录）见本节末。
 
 **两套口径都要报，并写明差别**（只报一套会得出自相矛盾的结论）：
 
@@ -128,7 +134,7 @@ README.md 仍链接它）就是这种形状，本目录里的那条记录就是�
 ```powershell
 # 目录下的 json 文件数（含 schema.json，不是记录数）
 Get-ChildItem ledger/change-log/*.json | Measure-Object | Select-Object -ExpandProperty Count
-# 真正的记录数（只数 kind=commit 的）
+# 提交记录数（**覆盖率口径**：只数 kind=commit 的；生成器检查的是目录里全部记录，见下方说明）
 Get-ChildItem ledger/change-log/*.json |
   ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json } |
   Where-Object { $_.kind -eq 'commit' } | Measure-Object | Select-Object -ExpandProperty Count
@@ -139,8 +145,17 @@ Get-ChildItem ledger/change-log/*.json |
 ```
 
 > **两条命令的数不一样，别混用**：第一条数的是**目录里的 json 文件**（`schema.json` 也在内），
-> 第二条才是**记录数**。生成器自己的口径就是后者 —— `scripts/generate-change-log.cjs` 里写着
-> 「记录目录下的记录文件（**排除 schema.json**）」，记录数只认 `kind: "commit"` 的那些。
+> 第二条才是**「提交记录」数**。生成器的口径**只等于这里的一半**：`scripts/generate-change-log.cjs`
+> 里写着「记录目录下的记录文件（**排除 schema.json**）」——它排除的**只有 `schema.json`**；
+> `checkAll` 会把目录里**每一条**记录都拿去校验，**合法的 `kind: "index"` 记录同样会被检查**
+> （`verifyRecord` 里 `record.kind === 'index'` 有自己的 `stale` 分支）。**「提交记录数」是覆盖率口径，
+> 不是生成器口径**——覆盖率问的是「哪些提交有记录」，而一条记录要成为提交记录只可能来自
+> `kind: "commit"`，所以上面第二条命令才过滤 `kind`；生成器**没有**按 `kind` 过滤这一步。
+> **留痕（旧说法，已作废）**：原文把两者等同，写「生成器自己的口径就是后者……记录数只认
+> `kind: "commit"` 的那些」——实测反例：夹具目录里放一条合法的 `kind:"index"` 记录，
+> `generate-change-log.cjs --check` 回显「**1 条记录全部通过**」（这 1 条正是 index 记录）；
+> 把它的 `to_snapshot.tracked_total` 改错，同一条命令 **exit 1** 并点名该文件
+> （「重算结果与记录不一致：字段 `to_snapshot.tracked_total`」）。
 
 历史上最早的两条是 `20261005T183940Z-ed404e5.json` 与 `20261005T183954Z-10766d1.json`（**只作留痕**）；
 `e56dcff` 之后的提交由「**补齐所有尚无记录的提交**」这条规则续记（完整表述见上一节「覆盖率怎么算」）。

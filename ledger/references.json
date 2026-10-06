@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "abec62402e91a4ede017139438b815d648269f2c872dda42b75998fd2fda4414",
+    "universe_hash": "c5416f2d82e808a60ae4525240518c7e65218f9914cce56a78f88bc746b16a94",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1492,
+    "tracked_total": 1493,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 156
+      "scanned_total": 157
     },
     "analysis": {
       "mode": "typescript",
@@ -92,7 +92,7 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "自指条目（本产物自身的 bytes / lines）固定写 null —— 这是【处置选择】，不是\"没有不动点\"：实测把这两个量迭代写回，第 3 次即收敛（不动点存在）。因此这里写 null 是为了让产物写入幂等、而不是因为\"自指在数学上不可能稳定\"。（本条 = 图数据文件自己（ledger/references.json）那一行；只豁免这两个派生量，其余字段照常登记。）",
     "node_states": {
-      "indexed": 1492
+      "indexed": 1493
     },
     "edge_kinds": {
       "anchor": 3,
@@ -160,8 +160,8 @@
       "id": "CONTRIBUTING.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 59843,
-      "lines": 170,
+      "bytes": 62561,
+      "lines": 172,
       "edge_out": 1,
       "edge_in": 0
     },
@@ -214,8 +214,8 @@
       "id": "docs/DESIGN-code-graph.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 225939,
-      "lines": 1353,
+      "bytes": 231264,
+      "lines": 1361,
       "edge_out": 0,
       "edge_in": 0
     },
@@ -223,7 +223,7 @@
       "id": "docs/HANDOFF-code-graph.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 124594,
+      "bytes": 126668,
       "lines": 1100,
       "edge_out": 0,
       "edge_in": 0
@@ -12217,11 +12217,20 @@
       "edge_in": 0
     },
     {
+      "id": "ledger/change-log/20261006T171254Z-df70cb3.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2431,
+      "lines": 75,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
       "id": "ledger/change-log/README.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 13910,
-      "lines": 169,
+      "bytes": 15550,
+      "lines": 184,
       "edge_out": 0,
       "edge_in": 0
     },
@@ -13057,8 +13066,8 @@
       "id": "scripts/check-file-ledger.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 102086,
-      "lines": 2015,
+      "bytes": 102711,
+      "lines": 2020,
       "edge_out": 5,
       "edge_in": 1
     },

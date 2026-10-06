@@ -1350,8 +1350,10 @@ function runLedgerChecks(ctx) {
 
   // ---- 3. 四态归属（与生成器**共用** core.classifyTracked，保证两道门禁逐字一致） ----
   // 每条豁免先过三道闸：静态过宽（不可豁免）→ 写法合法 → 编译成正则。
-  // 被判过宽/非法的模式 **re 置空、不参与匹配**：它本该吞掉的文件会落回 accounted/unowned，
+  // 被判**静态**过宽/非法的模式 **re 置空、不参与匹配**：它本该吞掉的文件会落回 accounted/unowned，
   // 绝不出现「模式被拒但文件照样被放过」的中间态。
+  // **判据 3（动态命中率）不适用这句话**：命中率只能在分类之后算（见下面 3b），命中的模式**仍然参与分类**，
+  // 它命中的文件仍按 exempt 计 —— 3b 只负责照报 error，不回头改写分类结果。
   ctx.exemptMatchers = core.buildExemptMatchers(ctx.exemptEntries, { ignoreCase: ctx.ignoreCaseRaw === 'true' });
   for (const m of ctx.exemptMatchers) {
     if (m.error) ctx.invalidPatterns.push({ index: m.entry.index, entry: m.entry, error: m.error });
@@ -1591,7 +1593,10 @@ function emitViolations(ctx) {
       target: p.entry.pattern,
       message:
         `豁免模式过宽（${kind}）：${p.breadth.message}。` +
-        '被判过宽的模式不参与匹配，本次判定按「该模式不存在」进行。',
+        (kind === 'hit-ratio'
+          ? '**本模式仍然参与了本次分类**（命中率只能在匹配之后算出来，见本文件上方的判据 ③ 分支）：' +
+            '它命中的文件仍按 `exempt` 计，**不会**落回 `accounted`/`unowned`；但本条仍是 error —— 过宽不被静默放过。'
+          : '被判过宽（静态判据 1/2）的模式不参与匹配，本次判定按「该模式不存在」进行。'),
       hint:
         kind === 'hit-ratio'
           ? `若这条模式确实需要覆盖过半已跟踪文件，请在 ${exemptRel}:${p.entry.line} 的条目上显式写 ` +
