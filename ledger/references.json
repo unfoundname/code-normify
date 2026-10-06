@@ -96,17 +96,17 @@
     },
     "edge_kinds": {
       "anchor": 3,
-      "ci-target": 16,
+      "ci-target": 17,
       "dynamic-import": 1,
       "export-from": 19,
       "import": 315,
       "markdown-link": 35,
-      "package-field": 48,
+      "package-field": 49,
       "require": 52
     },
     "edge_status": {
       "external": 182,
-      "resolved": 307
+      "resolved": 309
     },
     "omitted": [
       "函数内局部变量与参数（设计稿 §10 增量 4）",
@@ -124,9 +124,9 @@
       "id": ".github/workflows/ci.yml",
       "lang": "yaml",
       "state": "indexed",
-      "bytes": 26076,
-      "lines": 249,
-      "edge_out": 16,
+      "bytes": 30819,
+      "lines": 286,
+      "edge_out": 17,
       "edge_in": 0
     },
     {
@@ -160,8 +160,8 @@
       "id": "CONTRIBUTING.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 46818,
-      "lines": 143,
+      "bytes": 50351,
+      "lines": 145,
       "edge_out": 1,
       "edge_in": 0
     },
@@ -12337,10 +12337,10 @@
       "id": "package.json",
       "lang": "json",
       "state": "indexed",
-      "bytes": 3509,
-      "lines": 93,
-      "edge_out": 48,
-      "edge_in": 12
+      "bytes": 3586,
+      "lines": 94,
+      "edge_out": 49,
+      "edge_in": 13
     },
     {
       "id": "scripts/check-doc-snippets.cjs",
@@ -12376,7 +12376,7 @@
       "bytes": 23120,
       "lines": 433,
       "edge_out": 3,
-      "edge_in": 0
+      "edge_in": 1
     },
     {
       "id": "scripts/check-lib-sync.cjs",
@@ -13069,11 +13069,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:207:9:ci-target:scripts[\"check:graph\"]→check:graph",
+      "id": ".github/workflows/ci.yml:208:9:ci-target:scripts[\"check:graph\"]→check:graph",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 207,
+        "line": 208,
         "column": 9
       },
       "to": {
@@ -13091,11 +13091,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:228:9:ci-target:scripts[\"check:changes\"]→check:changes",
+      "id": ".github/workflows/ci.yml:229:9:ci-target:scripts[\"check:changes\"]→check:changes",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 228,
+        "line": 229,
         "column": 9
       },
       "to": {
@@ -13113,11 +13113,33 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:241:9:ci-target:scripts[\"test:render\"]→test:render",
+      "id": ".github/workflows/ci.yml:265:9:ci-target:scripts[\"check:impact\"]→check:impact",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 241,
+        "line": 265,
+        "column": 9
+      },
+      "to": {
+        "file": "package.json",
+        "line": null,
+        "column": null,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": "check:impact",
+      "resolved": "package.json",
+      "fragment": null,
+      "field": "scripts[\"check:impact\"]",
+      "status": "resolved",
+      "type_only": false
+    },
+    {
+      "id": ".github/workflows/ci.yml:278:9:ci-target:scripts[\"test:render\"]→test:render",
+      "kind": "ci-target",
+      "from": {
+        "file": ".github/workflows/ci.yml",
+        "line": 278,
         "column": 9
       },
       "to": {
@@ -13135,11 +13157,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:245:24:ci-target:lib/index.js",
+      "id": ".github/workflows/ci.yml:282:24:ci-target:lib/index.js",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 245,
+        "line": 282,
         "column": 24
       },
       "to": {
@@ -13157,11 +13179,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:246:24:ci-target:lib/tools.js",
+      "id": ".github/workflows/ci.yml:283:24:ci-target:lib/tools.js",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 246,
+        "line": 283,
         "column": 24
       },
       "to": {
@@ -13179,11 +13201,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:247:24:ci-target:lib/mcp.js",
+      "id": ".github/workflows/ci.yml:284:24:ci-target:lib/mcp.js",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 247,
+        "line": 284,
         "column": 24
       },
       "to": {
@@ -14961,11 +14983,33 @@
       "type_only": false
     },
     {
-      "id": "package.json:86:5:package-field:scripts[\"ledger:gen\"]→scripts/generate-file-ledger.cjs",
+      "id": "package.json:86:5:package-field:scripts[\"check:impact\"]→scripts/check-impact.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
         "line": 86,
+        "column": 5
+      },
+      "to": {
+        "file": "scripts/check-impact.cjs",
+        "line": null,
+        "column": null,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": "scripts/check-impact.cjs",
+      "resolved": "scripts/check-impact.cjs",
+      "fragment": null,
+      "field": "scripts[\"check:impact\"]",
+      "status": "resolved",
+      "type_only": false
+    },
+    {
+      "id": "package.json:87:5:package-field:scripts[\"ledger:gen\"]→scripts/generate-file-ledger.cjs",
+      "kind": "package-field",
+      "from": {
+        "file": "package.json",
+        "line": 87,
         "column": 5
       },
       "to": {
@@ -14983,11 +15027,11 @@
       "type_only": false
     },
     {
-      "id": "package.json:87:5:package-field:scripts[\"graph:gen\"]→scripts/generate-reference-graph.cjs",
+      "id": "package.json:88:5:package-field:scripts[\"graph:gen\"]→scripts/generate-reference-graph.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
-        "line": 87,
+        "line": 88,
         "column": 5
       },
       "to": {
@@ -15005,11 +15049,11 @@
       "type_only": false
     },
     {
-      "id": "package.json:88:5:package-field:scripts[\"changelog:gen\"]→scripts/generate-change-log.cjs",
+      "id": "package.json:89:5:package-field:scripts[\"changelog:gen\"]→scripts/generate-change-log.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
-        "line": 88,
+        "line": 89,
         "column": 5
       },
       "to": {
@@ -15027,11 +15071,11 @@
       "type_only": false
     },
     {
-      "id": "package.json:89:5:package-field:scripts[\"check\"]→ci-contract-check.cjs",
+      "id": "package.json:90:5:package-field:scripts[\"check\"]→ci-contract-check.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
-        "line": 89,
+        "line": 90,
         "column": 5
       },
       "to": {
@@ -15049,11 +15093,11 @@
       "type_only": false
     },
     {
-      "id": "package.json:90:5:package-field:scripts[\"refs:query\"]→scripts/refs-query.cjs",
+      "id": "package.json:91:5:package-field:scripts[\"refs:query\"]→scripts/refs-query.cjs",
       "kind": "package-field",
       "from": {
         "file": "package.json",
-        "line": 90,
+        "line": 91,
         "column": 5
       },
       "to": {

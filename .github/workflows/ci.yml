@@ -197,11 +197,12 @@ jobs:
         # 传递闭包与查询接口（增量 5）、变更影响门禁（增量 6）；也**没有**新增「图与真实不一致就红」的
         # **语义**判定（属增量 6）——但上面②③两条**基准对称**的判定已在增量 2 落地（新增诊断码或降级词时
         # 必须同步改本注释与 CONTRIBUTING.md）。
-        # 快照（2026-10-05）：节点 1,412（全 indexed）· 边 482（import 315 / require 46 / export-from 19 /
-        # dynamic-import 1 / markdown-link 35 / package-field 47 / ci-target 16 / anchor 3）· 扫描面 76 个文件
-        # （排除 examples/ 与 lib/）· 产物 1,482,684 B（LF 归一化后；sha256 随内容而定，不在此写死）·
-        # 单次全量重算 ≈1.7 s（热态中位数，端到端进程计时）。符号级：声明 402 / 符号边 1,347（已解析 989 /
-        # 无符号 358，原因码 4 类）· 跨文件 756 · 无静默 null 0 条 · Program 28 个源文件（仓库外 0 个）。
+        # 快照（2026-10-06，接入 check:impact 时按实测重写；旧值 1,412 / 482 / 76 已过期）：节点 1,414（全 indexed）·
+        # 边 491（import 315 / require 52 / export-from 19 / dynamic-import 1 / markdown-link 35 / package-field 49 /
+        # ci-target 17 / anchor 3）· 扫描面 78 个文件（排除 examples/ 与 lib/）· 产物 1,487,949 B（LF 归一化后；
+        # sha256 随内容而定，不在此写死）· 单次全量重算 ≈1.5–2.1 s（本轮实测 3 次：1,474 / 1,820 / 2,128 ms，端到端计时）。
+        # 符号级：声明 402 / 符号边 1,347（已解析 989 / 无符号 358，原因码 4 类）· 跨文件 756 · 无静默 null 0 条 ·
+        # Program 28 个源文件（仓库外 0 个）。
         # 该脚本仍在扩充，**新增边 kind / 改扫描面或字段时必须同步改本注释与 CONTRIBUTING.md**。
         # 回归用例：`npm test` 里的 tests/reference-graph-e2e.mjs。
         run: npm run check:graph
@@ -226,6 +227,42 @@ jobs:
         # **新增字段 / 改降级判据 / 改记录目录时必须同步改本注释与 CONTRIBUTING.md**。
         # 回归用例：`npm test` 里的 tests/change-log-e2e.mjs。
         run: npm run check:changes
+      - name: Change impact guard (ratchet: only newly introduced dangling / unresolved)
+        # 变更影响门禁（scripts/check-impact.cjs v1.0.0，`check` 链第 13 环，链上紧随 check:changes 之后）：
+        # 判定本次改动是否**新引入**了断掉的引用。口径以 `node scripts/check-impact.cjs --help` 自述为准。
+        # **判据**（棘轮：只拦本次改动**新引入**的，按**边 id 作集合差**，不是比条数）：
+        #   新增悬空   = { 当前 status === 'dangling' 的边 } − { 基线中同为 dangling 的边 }   ← 文件被删 / 改名
+        #   新增未解析 = { 当前 to.sym === null 的符号级边 } − { 基线中同样未解析的符号级边 }   ← 符号被删（文件还在）
+        # 边的身份用 `id`（形如 README.md:309:110:markdown-link:./docs/SPEC.zh-CN.md）；id **不含解析结果**，
+        # 所以基线取的是「基线中**同样命中**」的边（同为 dangling / 同为未解析），不是基线全量边——否则
+        # resolved→dangling 的同 id 边会被当成「基线里已存在」而漏报。任一非空 ⇒ exit 1 并逐条点名
+        # （边 id + from 的行:列 + kind + 目标）。
+        # 「未解析」用**图自己的词表**，不另造：`to.sym === null` 的符号级边，**但排除** status === 'external' /
+        # to.state === 'outside'——仓库外的裸模块说明符（node:fs、ajv…）与库类型（Program 刻意 noLib + types:[]）
+        # 本来就「仓库外、无仓库内符号」，属**已按设计处置**，算进来会让门禁在健康仓库上恒红；**保留**
+        # status === 'unresolved'（symbol-not-found-in-program / declaration-out-of-scope）——这才是该报的。
+        # 「悬空」同样只认文件级边的 status === 'dangling'（目标文件不在索引里）。
+        # **两种基准**（输出里的 basis 字段写明本次比的是哪一对）：
+        #   默认（无开关）basis = "HEAD^..HEAD"  基线 = `git show HEAD^:ledger/references.json`，当前 = HEAD 版（CI / 提交后）
+        #   `--staged`    basis = "HEAD..index"  基线 = HEAD 版，当前 = 索引 blob（提交前本地自查）
+        # **为什么不比 HEAD vs 索引**：新克隆或 CI 检出后索引 == HEAD，那样比会**恒绿**，恰好放过它唯一要抓的
+        # 那种提交；而 HEAD^ 与 HEAD 分属前后两次提交，本次引入的悬空 / 未解析出现在 HEAD 而不在 HEAD^ ⇒ 构成「新增」。
+        # **棘轮**：只拦**新增**，**不追溯历史存量**——更早提交引入的悬空在 HEAD^ 与 HEAD 里都存在，不构成新增，不报。
+        # **v1 没有豁免机制**（有意）：本仓「残留零容忍」——正确做法永远是**改掉引用**（删掉引用、或补回目标），
+        # 不是给门禁开白名单；因此没有 `--allow-*` / 基线冻结 / 注释抑制之类机制。历史存量由上面的棘轮自动放过。
+        # **前提（本步不重复那个职责）**：图必须**新鲜且完整**——这件事由链上**先于本步**的 `check:graph` 判定
+        # （索引 blob 与重算结果是否一致、索引-工作区是否漂移、降级状态是否 unknown）。本步假定手上这份图是新鲜的，
+        # 只做「新增破坏」的棘轮判定；图陈旧或降级导致的问题由 check:graph 报，**不在这里兜底**（图产物里没有
+        # degradation 字段，本步不读它，也不去找它）。
+        # **fail-closed**（拿不到基线 / 图就**不判绿**；四条诊断码各 exit 1，人类可读输出为 `[诊断码]` 开头的行）：
+        #   impact-baseline-unavailable（HEAD^ 不存在 = 根提交 / 基线无图产物 / 读不出 / JSON 非法）、
+        #   impact-current-graph-unavailable（HEAD 版或索引版缺失 / 读不出 / JSON 非法）、
+        #   impact-schema-version-mismatch（两边 schema_version 不一致——图与门禁必须同一次提交一起改）、
+        #   impact-graph-malformed（顶层非对象 / edges 或 symbol_edges 不是数组）。
+        # 另有 exit 2 = 命令行用法错误（未知开关 / `--root` 缺参数）；`--root` 指向非 git 仓库根同样 exit 1 拒绝，不回退。
+        # **暂无回归测试**：本步**没有**对应夹具用例（tests/impact-gate-e2e.mjs 属后续批次）；上面这些判据与四条
+        # fail-closed 诊断码目前只由 `node scripts/check-impact.cjs --help` 自述，**尚未被自动化用例锁住**。
+        run: npm run check:impact
       - name: Portability guard (no Windows-only path juggling)
         # 教训：tests 里曾用 pathname.replace(/^\//,'') 拼 file URL —— Windows 正常（/F:/…），
         # Linux 上 pathname 以 / 开头、去掉后变成相对路径，被解析成 <cwd>/home/runner/… 而 ERR_MODULE_NOT_FOUND。
