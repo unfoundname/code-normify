@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "ca7c0b668a2db68e8df3c0fa5efde0ea80b2b4df7bcc53096b76addb351540f2",
+    "universe_hash": "8bb91ea209fbe1788e23bad4ceaaff7dee64b029094498062e9d8bbc2686a7bb",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1503,
+    "tracked_total": 1504,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 167
+      "scanned_total": 168
     },
     "analysis": {
       "mode": "typescript",
@@ -92,7 +92,7 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "自指条目（本产物自身的 bytes / lines）固定写 null —— 这是【处置选择】，不是\"没有不动点\"：实测把这两个量迭代写回，第 3 次即收敛（不动点存在）。因此这里写 null 是为了让产物写入幂等、而不是因为\"自指在数学上不可能稳定\"。（本条 = 图数据文件自己（ledger/references.json）那一行；只豁免这两个派生量，其余字段照常登记。）",
     "node_states": {
-      "indexed": 1503
+      "indexed": 1504
     },
     "edge_kinds": {
       "anchor": 3,
@@ -12316,6 +12316,15 @@
       "edge_in": 0
     },
     {
+      "id": "ledger/change-log/20261006T232028Z-fd7366c.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2422,
+      "lines": 75,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
       "id": "ledger/change-log/README.md",
       "lang": "md",
       "state": "indexed",
@@ -12832,7 +12841,7 @@
       "id": "lib/tools.js",
       "lang": "js",
       "state": "indexed",
-      "bytes": 81744,
+      "bytes": 82405,
       "lines": null,
       "edge_out": 0,
       "edge_in": 1
@@ -12841,7 +12850,7 @@
       "id": "lib/tools.js.map",
       "lang": "other",
       "state": "indexed",
-      "bytes": 74989,
+      "bytes": 75054,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -13489,8 +13498,8 @@
       "id": "src/tools.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 92255,
-      "lines": 1838,
+      "bytes": 92916,
+      "lines": 1843,
       "edge_out": 24,
       "edge_in": 5
     },
@@ -28865,13 +28874,13 @@
       "origin": "source"
     },
     {
-      "id": "src/tools.ts#registerTools@1834:17",
+      "id": "src/tools.ts#registerTools@1839:17",
       "file": "src/tools.ts",
       "name": "registerTools",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 1834,
+      "line": 1839,
       "column": 17,
       "origin": "source"
     },
@@ -49338,9 +49347,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/tools.ts#registerTools@1834:17",
+        "sym": "src/tools.ts#registerTools@1839:17",
         "file": "src/tools.ts",
-        "line": 1834,
+        "line": 1839,
         "column": 17,
         "state": "indexed"
       },
@@ -58276,11 +58285,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:933:21:type-reference",
+      "id": "src/tools.ts:938:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 933,
+        "line": 938,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58299,11 +58308,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:945:21:type-reference",
+      "id": "src/tools.ts:950:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 945,
+        "line": 950,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58322,11 +58331,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:961:21:type-reference",
+      "id": "src/tools.ts:966:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 961,
+        "line": 966,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58345,11 +58354,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:969:22:type-reference",
+      "id": "src/tools.ts:974:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 969,
+        "line": 974,
         "column": 22,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58368,11 +58377,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1018:25:type-reference",
+      "id": "src/tools.ts:1023:25:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1018,
+        "line": 1023,
         "column": 25,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58391,11 +58400,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1019:27:type-reference",
+      "id": "src/tools.ts:1024:27:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1019,
+        "line": 1024,
         "column": 27,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58414,11 +58423,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1020:36:type-reference",
+      "id": "src/tools.ts:1025:36:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1020,
+        "line": 1025,
         "column": 36,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58437,11 +58446,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1022:25:type-reference",
+      "id": "src/tools.ts:1027:25:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1022,
+        "line": 1027,
         "column": 25,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58460,11 +58469,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1077:21:type-reference",
+      "id": "src/tools.ts:1082:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1077,
+        "line": 1082,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58483,11 +58492,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1081:22:type-reference",
+      "id": "src/tools.ts:1086:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1081,
+        "line": 1086,
         "column": 22,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58506,11 +58515,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1082:21:type-reference",
+      "id": "src/tools.ts:1087:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1082,
+        "line": 1087,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58529,11 +58538,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1106:21:type-reference",
+      "id": "src/tools.ts:1111:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1106,
+        "line": 1111,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58552,11 +58561,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1109:22:type-reference",
+      "id": "src/tools.ts:1114:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1109,
+        "line": 1114,
         "column": 22,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58575,11 +58584,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1121:21:type-reference",
+      "id": "src/tools.ts:1126:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1121,
+        "line": 1126,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58598,11 +58607,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1136:21:type-reference",
+      "id": "src/tools.ts:1141:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1136,
+        "line": 1141,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58621,11 +58630,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1138:22:type-reference",
+      "id": "src/tools.ts:1143:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1138,
+        "line": 1143,
         "column": 22,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58644,11 +58653,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1146:44:type-reference",
+      "id": "src/tools.ts:1151:44:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1146,
+        "line": 1151,
         "column": 44,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58667,11 +58676,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1146:70:type-reference",
+      "id": "src/tools.ts:1151:70:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1146,
+        "line": 1151,
         "column": 70,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58690,11 +58699,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1172:21:type-reference",
+      "id": "src/tools.ts:1177:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1172,
+        "line": 1177,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58713,11 +58722,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1192:21:type-reference",
+      "id": "src/tools.ts:1197:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1192,
+        "line": 1197,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58736,11 +58745,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1194:22:type-reference",
+      "id": "src/tools.ts:1199:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1194,
+        "line": 1199,
         "column": 22,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58759,11 +58768,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1211:21:type-reference",
+      "id": "src/tools.ts:1216:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1211,
+        "line": 1216,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58782,11 +58791,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1245:21:type-reference",
+      "id": "src/tools.ts:1250:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1245,
+        "line": 1250,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58805,11 +58814,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1266:21:type-reference",
+      "id": "src/tools.ts:1271:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1266,
+        "line": 1271,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58828,11 +58837,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1289:21:type-reference",
+      "id": "src/tools.ts:1294:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1289,
+        "line": 1294,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58851,11 +58860,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1291:22:type-reference",
+      "id": "src/tools.ts:1296:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1291,
+        "line": 1296,
         "column": 22,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58874,11 +58883,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1349:23:type-reference",
+      "id": "src/tools.ts:1354:23:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1349,
+        "line": 1354,
         "column": 23,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58897,11 +58906,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1394:28:type-reference",
+      "id": "src/tools.ts:1399:28:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1394,
+        "line": 1399,
         "column": 28,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58920,11 +58929,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1430:27:type-reference",
+      "id": "src/tools.ts:1435:27:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1430,
+        "line": 1435,
         "column": 27,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58943,11 +58952,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1469:21:type-reference",
+      "id": "src/tools.ts:1474:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1469,
+        "line": 1474,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58966,11 +58975,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1496:21:type-reference",
+      "id": "src/tools.ts:1501:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1496,
+        "line": 1501,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58989,11 +58998,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1537:21:type-reference",
+      "id": "src/tools.ts:1542:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1537,
+        "line": 1542,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59012,11 +59021,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1571:21:type-reference",
+      "id": "src/tools.ts:1576:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1571,
+        "line": 1576,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59035,11 +59044,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1609:21:type-reference",
+      "id": "src/tools.ts:1614:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1609,
+        "line": 1614,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59058,11 +59067,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1623:22:type-reference",
+      "id": "src/tools.ts:1628:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1623,
+        "line": 1628,
         "column": 22,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59081,11 +59090,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1663:21:type-reference",
+      "id": "src/tools.ts:1668:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1663,
+        "line": 1668,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59104,11 +59113,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1693:21:type-reference",
+      "id": "src/tools.ts:1698:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1693,
+        "line": 1698,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59127,11 +59136,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1703:20:type-reference",
+      "id": "src/tools.ts:1708:20:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1703,
+        "line": 1708,
         "column": 20,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59150,11 +59159,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1720:23:type-reference",
+      "id": "src/tools.ts:1725:23:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1720,
+        "line": 1725,
         "column": 23,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59173,11 +59182,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1736:21:type-reference",
+      "id": "src/tools.ts:1741:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1736,
+        "line": 1741,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59196,11 +59205,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1766:21:type-reference",
+      "id": "src/tools.ts:1771:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1766,
+        "line": 1771,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59219,11 +59228,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1771:20:type-reference",
+      "id": "src/tools.ts:1776:20:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1771,
+        "line": 1776,
         "column": 20,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59242,11 +59251,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1791:21:type-reference",
+      "id": "src/tools.ts:1796:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1791,
+        "line": 1796,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59265,11 +59274,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1810:21:type-reference",
+      "id": "src/tools.ts:1815:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1810,
+        "line": 1815,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59288,11 +59297,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1829:21:type-reference",
+      "id": "src/tools.ts:1834:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1829,
+        "line": 1834,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59311,13 +59320,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1834:41:type-reference",
+      "id": "src/tools.ts:1839:41:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1834,
+        "line": 1839,
         "column": 41,
-        "sym": "src/tools.ts#registerTools@1834:17"
+        "sym": "src/tools.ts#registerTools@1839:17"
       },
       "to": {
         "sym": "src/tools.ts#NormifyToolRegistration@76:13",
@@ -59334,13 +59343,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1834:71:type-reference",
+      "id": "src/tools.ts:1839:71:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1834,
+        "line": 1839,
         "column": 71,
-        "sym": "src/tools.ts#registerTools@1834:17"
+        "sym": "src/tools.ts#registerTools@1839:17"
       },
       "to": {
         "sym": "src/tools.ts#ToolEnv@27:18",
