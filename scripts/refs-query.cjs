@@ -232,7 +232,7 @@ function buildReport(opts, target, loaded) {
   }
   const diverged = reasons.length > 0;
   const gaps = [
-    '只覆盖文件级边（edges[]）：文件内边（同一文件内部的引用/依赖）未展开。',
+    '直接引用方只数文件级边（edges[]）；符号级边另列在 symbol_referrers[]，其中包含文件内边（同一文件内部的引用/依赖，cross_file=false）——这些边在产物里存在、照列，只是不计入直接引用方计数。',
     '未实现符号 id 输入：目标只能是文件路径；符号 id 会以 unsupported 拒绝。',
     '文件级 edges[] 的 type_only 恒为 false（产物口径），故运行时/类型拆分只对 symbol_edges[] 有效。',
     '未实现 what-references、change-impact 等其它查询；本版只有 who-references 与 impact 两条查询（impact = 反向闭包 + 按深度打印 + 每个受影响文件的最短引用链 path[] + 闭包子图内的环 cycles[]/self_loops[] + 派生产物分区 + gate: 义务项；尚未做三档分类、informational 与截断标注）。',
@@ -424,7 +424,10 @@ function cycleEdgeKey(e) {
  * 必须收「两端都在闭包内」的全部反向边，而不是只收推进时用到的那些边：BFS 对已见文件会 continue，
  * 闭环的那条边往往正是被 continue 掉的一条（例：target=src/service.ts 时，service.ts 引用 promptmanager.ts
  * 的那条边不是推进边），只收推进边就检测不出环。
- * from === to 的自环单独返回，不混进 size > 1 的分量。
+ * 自环只认**文件级**边（edges[]，layer === 'file'）里 from.file === to.file 的情形，单独返回，不混进 size > 1 的分量。
+ * 同文件内部的符号边（layer === 'symbol' 且 from.file === to.file）**不算自环**：删掉该文件时这条边两端一起消失，
+ * 与「删除影响」无关，列出来是噪音，还会被误读成「这个文件引用自己、需要处理」；
+ * 它也进不了 edges（两端同文件，形不成 size > 1 的分量），因此既不进 self_loops 也不进 cycles。
  */
 function closureSubgraph(rev, target, closure) {
   const nodes = sortRows([target, ...closure], (n) => n);
@@ -443,8 +446,13 @@ function closureSubgraph(rev, target, closure) {
         column: row.column,
         edge_id: row.edge_id,
       };
-      if (row.from_file === to) selfLoops.push(edge);
-      else edges.push(edge);
+      // 自环只算文件级的（layer === 'file'，即来自 edges[]）；同文件内部的符号边（layer === 'symbol'）不算自环，
+      // 也不进 edges——两端同文件，既形不成 size > 1 的分量，也与「删掉该文件的影响」无关。
+      if (row.from_file === to) {
+        if (row.layer === 'file') selfLoops.push(edge);
+        continue;
+      }
+      edges.push(edge);
     }
   }
   return { nodes, edges: sortRows(edges, cycleEdgeKey), selfLoops: sortRows(selfLoops, cycleEdgeKey) };
@@ -621,9 +629,9 @@ function buildImpactReport(opts, target, loaded) {
 
   const reasons = basisReasons(loaded);
   const gaps = [
-    '反向闭包只沿 to.file 走文件级 edges[] 与符号级 symbol_edges[]；文件内边（同一文件内部的引用/依赖）未展开。',
+    '反向闭包只沿 to.file 走文件级 edges[] 与符号级 symbol_edges[]；文件内边（同一文件内部的引用/依赖）不推进遍历——两端是同一个文件，它已在已见集里，带不来新文件（自环推进不了闭包），也不计入闭包边数——但这些边在产物里存在（symbol_edges[] 中 cross_file=false 的那些）。',
     '未做三档分类、informational 与截断标注。',
-    'cycles[] 只在闭包子图（target ∪ 闭包文件）内求强连通分量，不是全图 SCC：闭包之外的环不报（换个 target 才看得到）；环用的也是文件级/符号级反向边，文件内边未展开；自环单列在 self_loops[]，不混进 size>1 的分量。',
+    'cycles[] 只在闭包子图（target ∪ 闭包文件）内求强连通分量，不是全图 SCC：闭包之外的环不报（换个 target 才看得到）；环用的也是文件级/符号级反向边，文件内边（两端同文件）带不来新节点、进不了 size>1 的分量；自环单列在 self_loops[]（只含文件级自环，即 edges[] 里 from.file === to.file 的边；同文件内部的符号边不算），不混进 size>1 的分量。',
     'path[] 只给一条最短链（BFS 首达即定型）：同一文件存在多条等价最短链时只列首达的那条；链上每跳用的边（layer/kind/行:列）在 path_edges[] 里。',
     `闭包深度上限 --depth ${opts.depth}：更深的层未展开，closure 可能不完整。`,
   ];
@@ -702,7 +710,9 @@ function renderImpactHuman(report) {
     lines.push(`  环 ${i + 1}：${cyc.size} 个文件（UTF-8 字节序）  ${cyc.files.join('  |  ')}`);
     for (const e of cyc.edges) lines.push(`    边 ${e.from}:${e.line}:${e.column}  ${e.layer}:${e.kind}  ->  ${e.to}`);
   });
-  lines.push(`自环（某文件引用自己，不计入上面的环）：${c.self_loops} 个`);
+  lines.push(
+    `自环（只含文件级自环：edges[] 里 from.file === to.file，即某文件引用自己；同文件内部的符号边不算，两者都不计入上面的环）：${c.self_loops} 个`,
+  );
   if (report.self_loops.length === 0) lines.push('  （无）');
   for (const e of report.self_loops) lines.push(`  ${e.from}:${e.line}:${e.column}  ${e.layer}:${e.kind}  ->  ${e.to}`);
   lines.push(``, `派生产物（由 src/ 路径推导，仅列图 files[] 中真实存在者；来源 build-artifact）：${report.derived_artifacts.length} 个`);

@@ -12436,8 +12436,8 @@
       "id": "scripts/refs-query.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 37428,
-      "lines": 845,
+      "bytes": 38899,
+      "lines": 855,
       "edge_out": 3,
       "edge_in": 1
     },
