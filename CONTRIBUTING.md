@@ -86,6 +86,48 @@
 
 - **改动记录落点**：`ledger/change-log/`（目录 + Schema + 命名 + 降级契约 + 纪律，见该目录的 `README.md`）。它**不叫** `changes/`：`changes/` 是**目标工程**的数据目录名（`ChangeData`，本仓库不存在它），而记录里的 `change_id` 是指回目标工程 `changes/<id>.json` 的**可选外键**——同名会让一个词有两个所指。本仓库没有该目录 ⇒ `change_id` 恒为 `null`，生成器的 `--change-id` 只在文件真的存在时才写（fail-closed：外键不得凭空写）。
 
+## 引用查询（`refs-query`）
+
+`scripts/refs-query.cjs` 是引用图产物 `ledger/references.json` 的**只读查询层**：它不重新分析源码、不建 TypeScript Program，只回答「谁引用我」。它是**给人用的接口，不是门禁**，**不在 `npm run check` 链里**（链上管引用的是 `check:refs` 与 `check:graph`；查询结果再可疑也不拦提交）。
+
+```bash
+npm run refs:query -- who-references <仓库相对路径>
+npm run refs:query -- impact <仓库相对路径>
+npm run refs:query -- impact src/tools.ts --json
+# 等价直调（不经 npm，输出完全相同）：
+node scripts/refs-query.cjs who-references <仓库相对路径>
+node scripts/refs-query.cjs impact <仓库相对路径>
+```
+
+- `who-references <路径>` —— **谁直接引用这个文件**：文件级边 `edges[]`（`来源:行:列` + `kind` + `status`）与符号级边 `symbol_edges[]`（另按运行时 `runtime_refs` / 类型 `type_refs` 拆分计数）。
+- `impact <路径>` —— **谁（间接）引用这个文件**：反向闭包**按深度分组**（每层列出受影响文件，并标出牵动它的 `来源:行:列`），另加两个分区：
+  - **派生产物**（`source=build-artifact`）：由 `src/<rel>.ts` 推导 `lib/<rel>.js`、`lib/<rel>.js.map`、`lib/types/<rel>.d.ts` 三条候选，**只列图 `files[]` 里真实存在的**，绝不凭想象造路径；非 `src/` 下的目标或非 `.ts` 的目标（文档、脚本、工作流等）直接判空——所以 `impact docs/SPEC.zh-CN.md` 的派生产物必然是 0，不会凭空造出 `lib/SPEC.js`。
+  - **门禁义务项**（`source=gate:`）：全部由图里的既有事实推导，**不写死任何清单**——只要派生产物含 `lib/` 前缀就要求跑 `npm run check:libsync`；图里指向这些派生产物的既有边逐条列出，并说明产物缺失会红在哪一环（例如 `ci-target` 边 `.github/workflows/ci.yml:246` → `lib/tools.js`，就是 CI 里那句 `node --check lib/tools.js`）。义务项**不进闭包**：它们不是引用方，也不冒充引用边。
+
+选项：`--json`（机器可读、含全部符号级边、确定性——无绝对路径与耗时，可安全做逐字节比对）、`--depth <n>`（`impact` 的闭包深度上限，默认 8）、`--limit <n>`（人类可读输出里符号级边的显示上限，默认 40，0 = 全部）、`--root <dir>`（必须是 git 仓库根，否则 fail-closed 拒绝）。退出码：0 成功 / 2 参数或根不合法 / 3 读不到图 / 4 输入不受支持 / 5 目标不在图里。
+
+**读取基准**：优先 git 索引版图（`git show :ledger/references.json`），索引里取不到才回退工作区文件，真正用的是哪一份写在输出的 `basis` 字段里。
+
+### `completeness` 四态怎么读
+
+`completeness` 是**动态四态**，**不要只看引用方列表是否为空**：
+
+| 取值 | 含义 | 空引用方列表能读作「没人引用它」吗 |
+| --- | --- | --- |
+| `complete` | 无任何缺口 | ✅ **只有这一态可以这样读** |
+| `partial` | 图能读，但有**已知缺口**（`reasons[]` / `gaps[]` 逐条列明） | ❌ 空只代表「本查询没看到引用」 |
+| `stale` | 索引版与工作区版图不一致，或索引里没有图、已回退工作区版：结果可能与现状不符 | ❌ 同上 |
+| `unknown` | 读不到图 / 输入不受支持（符号 id）/ 目标不在图：**不判绿** | ❌ 同上 |
+
+**红线：`complete` 与 `gaps.length > 0` 不得同时成立**（脚本内是抛错级不变量，违反即非零退出，不降级、不静默继续，也不写出一份自相矛盾的报告）。本版 `complete` **不可达**（取值只会是 `partial` / `stale` / `unknown`），该断言是给未来新增 `complete` 分支的护栏，**不要删**。人类可读输出的末尾都会打印一行「空列表怎么读」，直接照它读即可。
+
+### 未实现（如实列出，别当成已支持）
+
+- **符号 id 输入**（形如 `src/tools.ts#Name@1:2`）：以 `unsupported` 拒绝（退出码 4）；符号级信息只在文件查询结果的 `symbol_referrers[]` 里出现。
+- **其它查询**：`what-references`、`change-impact` 未实现；本版只有 `who-references` 与 `impact` 两条。
+- **`impact` 内部尚未做**：三档分类、`path[]`、`cycles[]`、`informational`、截断标注。
+- **文件内边**（同一文件内部的引用/依赖）未展开；文件级 `edges[]` 的 `type_only` 恒为 `false`（产物口径），故运行时/类型拆分只对 `symbol_edges[]` 有效。
+
 ## 修改与验证
 1. 改 `src/engine/`（框架无关核心）或 `src/tools.ts` / `src/index.ts`（DSH 适配层）。
 2. `npm run typecheck` 通过后再 `npm run build`。

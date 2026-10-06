@@ -86,6 +86,7 @@
     "ledger:gen": "node scripts/generate-file-ledger.cjs",
     "graph:gen": "node scripts/generate-reference-graph.cjs",
     "changelog:gen": "node scripts/generate-change-log.cjs",
-    "check": "npm run typecheck && npm run build && npm test && node ci-contract-check.cjs && npm run check:refs && npm run check:docs && npm run check:libsync && npm run check:examples && npm run check:ledger:gen && npm run check:ledger && npm run check:graph && npm run check:changes"
+    "check": "npm run typecheck && npm run build && npm test && node ci-contract-check.cjs && npm run check:refs && npm run check:docs && npm run check:libsync && npm run check:examples && npm run check:ledger:gen && npm run check:ledger && npm run check:graph && npm run check:changes",
+    "refs:query": "node scripts/refs-query.cjs"
   }
 }
