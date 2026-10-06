@@ -10,7 +10,8 @@
 
 **所有数字都附出处**，写法是「数值（命令）」。凡是**我没有亲自跑过**、从别处抄来的数字，一律标 `（转述，未复核）`。
 
-**快照时点**：2026-10-06，仓库根 `<repo-root>`，开工前 `HEAD = 790e626`（`git log --oneline -4`），`git status --porcelain` 输出为空。
+**快照时点**：2026-10-06，仓库根 `<repo-root>`。**本版同步时的实测值**：`HEAD = 9adf069`（`git log --oneline -4` = `9adf069` / `06f4bca` / `b91fe50` / `b4fddb3`），`git status --porcelain` 输出为空。
+**留痕**：本文档初次落地（提交 `b4fddb3`）时的 `HEAD` 是 `790e626`——下文凡标「本批」的历史记账都指那一次；凡标「本版同步」的是本次（`9adf069`）重测的值。
 
 **一个必须理解的前提**：本文档自身是**被图扫描的文件**。加入本文档前，图的值是「节点 1,415 · 边 498 · 扫描面 79」（`node scripts/generate-reference-graph.cjs --check`）；加入后是「节点 1,416 · 边 498 · 扫描面 80」（`node scripts/generate-reference-graph.cjs`，同一条命令加 `--check` 复检）。**本文档正文里给出的都是加入后的现值**，除非明确标了「加入前」。
 
@@ -53,6 +54,9 @@ git rev-parse "ed404e5^{tree}"
 git rev-parse "ed404e5^^{tree}"
 git rev-parse "10766d1^{tree}"
 git rev-parse "10766d1^^{tree}"
+node scripts/check-references.cjs --json
+node scripts/generate-file-ledger.cjs --check
+Select-String -Path docs/HANDOFF-code-graph.zh-CN.md -Pattern "\.(cjs|json|ts|md|yml|mjs)\:[0-9]+"
 ```
 
 **没有跑过** `npm test`、`npm run check`、`tests/impact-gate-e2e.mjs`（见 §4.6：这三条我明确没跑，跑法与代价写在那里）。
@@ -120,7 +124,7 @@ node scripts/generate-file-ledger.cjs        # = npm run ledger:gen
 git add ledger/file-ledger.json
 ```
 
-生成器**只重算机器可算的部分**（`tracked_total` / `universe_hash`），实测它这次只动了这两处：`accounted` 仍 29 条（**棘轮只减不增**，实测回显 `棘轮基线 = HEAD 版台账（790e626 共 29 条）` / `剔除的**非基线**条目 0 条`），`exempt` 由 1386 变为 1387（**因为本文档命中了已有的 `docs/**` 模式，不是新增了豁免**——生成器绝不自动新增豁免）。
+生成器**只重算机器可算的部分**（`tracked_total` / `universe_hash`），实测它这次只动了这两处：`accounted` 仍 29 条（**棘轮只减不增**，实测回显 `棘轮基线 = HEAD 版台账（790e626 共 29 条）` / `剔除的**非基线**条目 0 条`——**本版同步实测**该回显已随 HEAD 前移变成 `棘轮基线 = HEAD 版台账（9adf069 共 29 条）`，条数不变），`exempt` 由 1386 变为 1387（**因为本文档命中了已有的 `docs/**` 模式，不是新增了豁免**——生成器绝不自动新增豁免）。
 
 ---
 
@@ -157,7 +161,7 @@ git cat-file -s ":ledger/references.json"
 
 ### 2.2 `files[]` 字段契约
 
-键名集合实测（`node -e "..."`，1629 行脚本无关，取自产物本身）：
+键名集合实测（`node -e "..."`，取自产物本身；括号里原本写着「1629 行脚本无关」——**本版同步实测**：本仓没有任何文件是 1,629 行，写出该产物的 `scripts/generate-reference-graph.cjs` 是 **1,229 行**，这句话的意思应是「与脚本行数无关」，故照实改正）：
 
 ```text
 id, lang, state, bytes, lines, edge_out, edge_in
@@ -180,7 +184,7 @@ id, lang, state, bytes, lines, edge_out, edge_in
 
 ### 2.3 `lines` 的三条口径（**最容易读错的一栏**）
 
-1. **算式**：`lines = text.split('\n').length`，源码位置 `scripts/generate-reference-graph.cjs:613`。⇒ **末尾带换行的文件会比可见行数多 1**。实测：字符串 `"a\nb\n"` 的 `split('\n').length` = 3（可见 2 行）；`"a\nb"` = 2（可见 2 行）。本文档自身也适用：`docs/DESIGN-code-graph.zh-CN.md` 的 `lines` = 1332，而它文件末尾有换行，因此**可见行数 = 1331**（`Get-Content docs/DESIGN-code-graph.zh-CN.md | Measure-Object -Line` 报 1331——注意 `Measure-Object -Line` 与 `lines` 字段相差 1 是**预期**，不是数据错）。
+1. **算式**：`lines = text.split('\n').length`，源码位置 `scripts/generate-reference-graph.cjs:613`（**本版同步实测**：该行仍是 `lines: self || text === undefined ? null : text.split('\n').length,`，未漂移）。⇒ **末尾带换行的文件会比可见行数多 1**。实测：字符串 `"a\nb\n"` 的 `split('\n').length` = 3（可见 2 行）；`"a\nb"` = 2（可见 2 行）。本文档自身也适用：`docs/DESIGN-code-graph.zh-CN.md` 的 `lines` = 1332，而它文件末尾有换行，因此**可见行数 = 1331**（`Get-Content docs/DESIGN-code-graph.zh-CN.md | Measure-Object -Line` **实测报 1046**——**注意这个 cmdlet 数的是非空行，不是可见行数**：该文档 1331 个可见行里有 285 行是空行，1331 − 285 = 1046。旧版此处写「报 1331」是**把 `Measure-Object -Line` 当成了行数计数器**，本版照实改正；要数可见行用 `(Get-Content <文件>).Count`）。
 
 2. **`lines` 只对「扫描面内」的文件有值**。实测：`files[]` 里 `lines !== null` 的只有 **79** 条（= 扫描面 80 个文件 − 自指的 `ledger/references.json`），其余 **1337** 条为 `null`。对比 `bytes`：只有 **1** 条为 `null`（就是自指的 `ledger/references.json`）。
    ⇒ **`lines: null` 的含义是「这个文件没被解析过」，不是「0 行」，也不是「未知内容」。** 想知道扫描面外文件的行数，`git cat-file blob :<path>` 自己数，或把它加进扫描面（§8.2）。
@@ -291,14 +295,15 @@ id, kind, from, to, cross_file, specifier, resolved, status, reason, type_only
 
 | 出现位置 | 判据 | 依据 |
 | --- | --- | --- |
-| `edges[].type_only` 与 `symbol_edges[].type_only`（**产物字段**） | **语法级**：该边所在语句**是不是纯类型语句**（`import type` / `export type … from`）。`require()` / `import()` 与「拿不到 TypeScript 时的正则回退」一律按运行时 | `scripts/refs-query.cjs:273`（`who-references` 的 `gaps[2]` 原文） |
+| `edges[].type_only` 与 `symbol_edges[].type_only`（**产物字段**） | **语法级**：该边所在语句**是不是纯类型语句**（`import type` / `export type … from`）。`require()` / `import()` 与「拿不到 TypeScript 时的正则回退」一律按运行时 | `scripts/refs-query.cjs:277`（`who-references` 的 `gaps[2]` 原文；**本版同步实测行号**，旧版写 `:273` 已漂移） |
 | `refs-query impact` 的 `buckets[].files[].type_only`（**查询期标注**） | **可达性**：在「目标 ∪ 全量无界反向闭包」内，只沿**运行时边**走，从这个文件**能否到达目标**；到不了 ⇒ 标「仅类型级影响」 | `scripts/refs-query.cjs --help` 的 `impact` 段与 `reasons[]` 第 3 条 |
 
 **可达性口径的精确表述**（`refs-query.cjs --help` 原文照抄）：运行时边 = `import` / `export-from` / `require` / `dynamic-import` / `package-field` / `ci-target`，**以及符号级边**；`type_only=true` 的纯类型语句与 `markdown-link` / `anchor` 这类纯文字引用**不算**。走得到 ⇒ 不标；走不到 ⇒ 标注；**目标不是 `.ts` / `.tsx` ⇒ 「不可判」**——「不标」不等于「没有类型级影响」。
 
-**闭包展开深度**：标注用的闭包**按图产物全深度展开，不受 `--depth` 截断影响**（`scripts/refs-query.cjs:885`）。理由是硬的：展示用的闭包有深度上限，在截断集合里做可达性 BFS，会把「路径长于上限」的文件判成「没有运行时路径」——那是假话。
+**闭包展开深度**：标注用的闭包**按图产物全深度展开，不受 `--depth` 截断影响**（`scripts/refs-query.cjs:909`——`impact` 的 `gaps[2]` 原文；**本版同步实测行号**，旧版写 `:885` 已漂移）。理由是硬的：展示用的闭包有深度上限，在截断集合里做可达性 BFS，会把「路径长于上限」的文件判成「没有运行时路径」——那是假话。
 
-> **口径的内部张力（诚实记账）**：同一个词 `type_only` 在产物里是「这条边是不是纯类型语句」，在 `impact` 标注里是「这个文件到目标有没有运行时路径」。两者**不是同一个量**，一个文件可以同时在 `edges[]` 里带若干 `type_only=true` 的边、又被标为「非纯类型影响」。`scripts/refs-query.cjs:273` 自己点破了这一点（原文：`impact 的 type_only 档内标注不吃这一套`）。
+> **口径的内部张力（诚实记账）**：同一个词 `type_only` 在产物里是「这条边是不是纯类型语句」，在 `impact` 标注里是「这个文件到目标有没有运行时路径」。两者**不是同一个量**，一个文件可以同时在 `edges[]` 里带若干 `type_only=true` 的边、又被标为「非纯类型影响」。`scripts/refs-query.cjs:909` 自己点破了这一点（**本版同步实测**原文开头：`type_only 是档内**正交标注**，不是第四档：判据是**可达性**`）。
+> **引文留痕**：本节旧版引用的是 `scripts/refs-query.cjs:273` 的 `who-references` 的 `gaps[2]`，原文末句为 `impact 的 type_only 档内标注不吃这一套`。提交 `9adf069` 把 `who-references` 的 `gaps[]` 改成只讲它自己（不再夹带 `impact` 的文字），**该句已不存在**；同义表述现由 `impact` 自己那份 `gaps[2]` 承担（即上面引的 `:909`），故改引它。
 
 ### 2.9 `meta.omitted`（**活字段，当前有 3 条已过期**）
 
@@ -321,7 +326,7 @@ id, kind, from, to, cross_file, specifier, resolved, status, reason, type_only
 
 ## 3. 查询接口
 
-**入口**：`scripts/refs-query.cjs`（1,341 行，`git cat-file -s :scripts/refs-query.cjs` 口径见 `files[].bytes`）。**不在门禁链上**——查询结果再可疑也不拦提交（`CONTRIBUTING.md:93`）。
+**入口**：`scripts/refs-query.cjs`（**1,384 行**——`files[].lines` 口径的实测值，即索引 blob 的 `text.split('\n').length`；**本版同步改正**：旧版写 1,341 是 `790e626` 时的值，`06f4bca` / `9adf069` 两批改动把它推到 1,384。字节数见 `files[].bytes`，可用 `git cat-file -s :scripts/refs-query.cjs` 复测）。**不在门禁链上**——查询结果再可疑也不拦提交（`CONTRIBUTING.md:93`，**本版同步实测该行仍是「不在 `npm run check` 链里」的口径**）。
 
 **三条子命令**（以 `node scripts/refs-query.cjs --help` 实测为准）：`who-references` / `impact` / `locals`。
 
@@ -347,6 +352,8 @@ basis=index  completeness=partial  unsupported=false
   …（人类可读输出只显示前 40 条；--json 或 --limit 0 可看全部 431 条）
 ```
 
+**本版同步实测**：上面是**计数部分的逐字摘要**（各行与现值逐字相同）。实际输出在 `basis=` 行与「直接引用方：」之间**还有一段 `原因/缺口 reasons：` 清单**（= `--json` 的 `reasons[]` / `gaps[]`，共 4 条，内容见 §3.4）——摘要里略去了它，逐字全文请自己跑一遍。
+
 **元字段**（`--json`，实测）：
 
 ```json
@@ -354,7 +361,7 @@ basis=index  completeness=partial  unsupported=false
  "counts":{"file_edges":25,"referrer_files":18,"symbol_edges":431,"runtime_refs":41,"type_refs":390}}
 ```
 
-`--json` 顶层键实测 13 个：`query, kind, target, unsupported, basis, completeness, reasons, gaps, empty_referrers_reading, counts, direct_referrers, symbol_referrers`。
+`--json` 顶层键实测 13 个：`query, kind, target, unsupported, basis, completeness, reasons, gaps, empty_referrers_reading, truncated, counts, direct_referrers, symbol_referrers`（**本版同步实测**：第 10 个 `truncated` 是 `06f4bca` 新加的；`who-references` 是单层查询、不吃 `--depth`，故它**恒为 `false`**）。
 
 **读法**：`direct_referrers` 只数**文件级**边；`symbol_referrers`（431 条）含 `cross_file=false` 的**文件内边**，所以它比 `direct_referrers` 大得多，**两者不可相加**。
 
@@ -379,6 +386,8 @@ basis=index  completeness=partial  unsupported=false  depth<=8（实际 3 层）
 门禁义务项：1 条 —— 执行 npm run check:libsync
 ```
 
+**本版同步实测**：上面各行数字与现值**逐项相同**（闭包 24 / 502 / 43 / 459，各深度 18 / 5 / 1，三档 24 / 0 / 0，环 1 个、自环 0、派生产物 3、门禁义务 1）。同样地，实际输出在 `depth<=8…` 行之后**先有一段 `原因/缺口 reasons：` 清单**（7 条，= `--json` 的 `gaps[]`，§7.3 引了其中两条），摘要里略去了它。
+
 **元字段**（`--json`，实测）：
 
 ```json
@@ -389,7 +398,7 @@ basis=index  completeness=partial  unsupported=false  depth<=8（实际 3 层）
            "must_change_files":24,"needs_review_files":0,"record_files":0}}
 ```
 
-`--json` 顶层键实测 19 个：`query, kind, target, unsupported, basis, completeness, reasons, gaps, empty_referrers_reading, max_depth, actual_depth, counts, by_depth, buckets, closure, paths, derived_artifacts, gate_obligations, cycles, self_loops`。
+`--json` 顶层键实测 **21** 个：`query, kind, target, unsupported, basis, completeness, reasons, gaps, empty_referrers_reading, max_depth, actual_depth, truncated, counts, by_depth, buckets, closure, paths, derived_artifacts, gate_obligations, cycles, self_loops`。**本版同步改正**：旧版写「19 个」、实际列了 20 个键；`06f4bca` 又加了 `truncated`（恒在）与 `truncated_reason`（**只在被截断时出现**）——故被截断时是 22 个键（实测 `impact src/engine/types.ts --depth 1 --json` → 22 个，多出 `truncated_reason="depth-limit"`）
 
 **三档 `buckets[]`**（恒存在三档，空档照列 0 条，「没有」与「没做」不混）：
 
@@ -438,23 +447,23 @@ locals：src/engine/types.ts（只读该文件本身：ts.createSourceFile 语�
 
 `who-references` 与 `impact` 的 `completeness` **实测恒为 `partial`**（`--json` 的 `completeness` 字段；`diverged` 时为 `stale`；错误路径为 `unknown`）。
 
-源码依据：`scripts/refs-query.cjs:277` 与 `:893` 两处都是 `const completeness = diverged ? 'stale' : 'partial';`——**没有第三条分支**。⇒
-- `'complete'` 这两个查询**取不到**；`emptyReading('complete')`（`scripts/refs-query.cjs:199-200`）是**死分支**；
-- 「`completeness === 'complete'` 与 `gaps.length > 0` 不得同时成立」这条抛错级不变量（`:206-214`）对这两条查询**永不触发**；
+源码依据：`scripts/refs-query.cjs:281` 与 `:919` 两处都是 `const completeness = diverged ? 'stale' : 'partial';`——**没有第三条分支**（**本版同步实测行号**：旧版写 `:277` 与 `:893` 已漂移）。⇒
+- `'complete'` 这两个查询**取不到**；`emptyReading('complete')`（`scripts/refs-query.cjs:202-206`，`complete` 分支在 `:203-204`；**本版同步实测**）是**死分支**；
+- 「`completeness === 'complete'` 与 `gaps.length > 0` 不得同时成立」这条抛错级不变量（`:209-220`；**本版同步实测**）对这两条查询**永不触发**；
 - 因此 `empty_referrers_reading` 恒为「空引用方列表 ≠ 没人引用它：…」。**空结果永远不能读成「没人引用」**，这不是措辞保守，是当前实现的确定行为。
 
-**另一处口径瑕疵（实测）**：`who-references` 的 `gaps[]` 是**照抄 `impact` 的缺口清单**——实测其 `gaps[3]` 里含有 `impact 尚未做 informational 与截断标注` 这类**只属于 `impact` 的描述**。读 `who-references` 的 `gaps` 时不要把整段都当成它自己的缺口。
+**历史瑕疵（已修，`9adf069`）**：`who-references` 的 `gaps[]` 曾经是**照抄 `impact` 的缺口清单**——旧版 `gaps[3]` 里含 `impact 尚未做 informational 与截断标注` 这类**只属于 `impact` 的描述**，读 `who-references` 的人会被带偏。**本版同步实测现状**：`who-references` 的 `gaps[]` 现为 4 条（`scripts/refs-query.cjs:274-279`），逐条只讲它自己（文件级/符号级计数口径、单层不推进、未实现的其它查询），`impact` 的口径留在 `impact` 自己的 `gaps[]`（`:906-916`）与 `--help` 里。
 
 ### 3.5 错误路径（实测退出码）
 
 | 命令 | 退出码 | stderr 原文 |
 | --- | --- | --- |
-| `node scripts/refs-query.cjs who-references docs/NOPE.md` | `5` | `目标不在图里：docs/NOPE.md（不在 files[] 的 1415 个节点中）` |
+| `node scripts/refs-query.cjs who-references docs/NOPE.md` | `5` | `目标不在图里：docs/NOPE.md（不在 files[] 的 1416 个节点中）` |
 | `node scripts/refs-query.cjs who-references "src/engine/types.ts#Module@140:18"` | `4` | `本版未实现符号 id 输入：…（只支持文件路径；符号级信息只在输出里的 symbol_edges[] 出现）` |
 | `node scripts/refs-query.cjs locals README.md` | `4` | `locals 只支持源码扩展名（.ts .tsx .mts .cts .js .jsx .mjs .cjs）：README.md` |
 | `node scripts/refs-query.cjs bogus x` | `2` | `未实现的查询：bogus（本版只有 who-references、impact、locals）` |
 
-**注意第一行的 `1415`**：那是**加入本文档之前**的节点数。本文档加入后节点数是 1416。这类「嵌在人类可读消息里的活数字」随仓库增长自动更新（它不是写死的常量），但你**在旧输出里看到的数字未必是现值**——报错消息里的数字要按当下重测。
+**注意第一行的 `1416` 是现值，不是常量**：本文档**加入之前**节点数是 1415（§1.2 有记账），所以**旧输出里看到的数字未必是现值**。这类「嵌在人类可读消息里的活数字」随仓库增长自动更新（它不是写死的常量，`files[]` 少一个/多一个它就跟著变）——报错消息里的数字要按当下重测。**本版同步实测**：四条命令的退出码依次为 `5` / `4` / `4` / `2`，与上表逐条一致；只有第一行的节点数由 1415 变成 1416，故照实改写。
 
 ---
 
@@ -515,15 +524,15 @@ npm run typecheck && npm run build && npm test && node ci-contract-check.cjs && 
 3. **引用了未纳入 git 索引的路径**（磁盘上有、索引里没有）——以 `git ls-files` 为权威，**不是磁盘存在性**。被 `.gitignore` 覆盖的目标跳过不报，但**逐条列出**（文件:行 → 目标 → 命中的忽略规则）。
 4. **指向 git 历史中已删除的文件**——用 `git log --diff-filter=D --name-only` 取清单（图的 `meta.history_basis` 实测 = 37 条历史删除路径），在工作区文本里搜完整路径。
 
-**现值**：`✔ 0 error / 700 warning —— 门禁通过`（`node scripts/check-references.cjs`，退出码 0）。**这 700 条 warning 是存量 + 本文档新增，门禁只拦 error。**
+**现值**：`✔ 0 error / 714 warning —— 门禁通过`（`node scripts/check-references.cjs`，**本版同步实测**，退出码 0）。**旧版此处写 700**——差额全部来自两处、都不是真实残留：`9adf069` 给 `scripts/refs-query.cjs` 加的两行注释（`:956` 提到 `src/index.ts`、`:957` 提到 `src/engine/types.ts`，命中同一条 basename 规则）先带来 `700 → 702`；**本版同步**给本文档补写「已修 / 留痕」与 §7.11 时，正文提到的 basename 次数增加，本文档自身由 51 条涨到 **63** 条，合计 `702 → 714`。**这 714 条 warning 是存量 + 本文档新增，门禁只拦 error。**
 
-**全部 700 条 warning 是同一个 type**（`--json` 的 `violations[]` 实测：`{"deleted-file-basename-mention": 700}`）。其中 **51 条由本文档贡献**——原因见 §7.9，不是本文档写错了路径。
+**全部 714 条 warning 是同一个 type**（`--json` 的 `violations[]` 实测：`{"deleted-file-basename-mention": 714}`，`summary.errors` = 0）。其中 **63 条由本文档贡献**——原因见 §7.9，不是本文档写错了路径。
 
 ### 4.4 `check:docs` 的扫描面与两条「新增文档会被拦」的规则
 
 **扫描面**（`node scripts/check-doc-snippets.cjs` 实测回显）：`README.md` · `README_EN.md` · `docs/**` 下**所有 `.md`** · `skills/**` · `docs/RELEASE-*.md`。
 
-⇒ **本文件 `docs/HANDOFF-code-graph.zh-CN.md` 自动进入这道门禁的扫描面**（它是 `docs/` 下的 `.md`）。现值：`围栏代码块: 46 · 参与编译: 2 … ✔ 0 error / 0 warning`。
+⇒ **本文件 `docs/HANDOFF-code-graph.zh-CN.md` 自动进入这道门禁的扫描面**（它是 `docs/` 下的 `.md`）。现值（**本版同步实测**）：`围栏代码块: 78 · 参与编译: 2 … ✔ 0 error / 0 warning`（旧版写「围栏代码块: 46」——那之后本仓新增了 `docs/SPEC.zh-CN.md` 等文档，扫描面里的围栏块总数随之变化；本版同步又给 §7.11 加了一个 `powershell` 块，故 77 → 78。该数**不是本文档自己的块数**，是整条扫描面的合计）。
 
 两条会拦住新文档的规则（源码依据 `scripts/check-doc-snippets.cjs:78-88`）：
 - `CODE_LANGS = {js, javascript, mjs, cjs, ts, typescript, tsx, jsx}`——**这类语言标记的块里出现包 `import`/`require` 却没被编译 ⇒ error**。因此新文档里的示例**不要**用 `ts` / `js` 标记去写包导入（用 `powershell` / `text` / `json` 之类标记即可，它们不是 code lang，直接跳过）。
@@ -534,10 +543,10 @@ npm run typecheck && npm run build && npm test && node ci-contract-check.cjs && 
 | 命令 | 退出码 | 关键输出 |
 | --- | --- | --- |
 | `node scripts/generate-reference-graph.cjs --check` | `0` | `与重新生成的结果一致（比较基准 = git 索引 blob）` / `降级状态 = complete` / `节点 1416 · 边 498 · 扫描面 80 个文件 · universe 1416 条` / `符号级 = 声明 402 · 符号边 1347（schema_version 2）` |
-| `node scripts/check-file-ledger.cjs` | `0` | `✔ 0 error / 0 warning —— 门禁通过`；`台账宇宙: git ls-files 1416 条`；`四态归属: owned 0 · exempt 1387 · accounted 29 · unowned 0`；`accounted 棘轮: 基线 = HEAD 版台账（790e626 共 29 条）· 相对基线新增 0 条` |
+| `node scripts/check-file-ledger.cjs` | `0` | `✔ 0 error / 0 warning —— 门禁通过`；`台账宇宙: git ls-files 1416 条`；`四态归属: owned 0 · exempt 1387 · accounted 29 · unowned 0`；`accounted 棘轮: 基线 = HEAD 版台账（9adf069 共 29 条）· 相对基线新增 0 条`（**本版同步实测**：四态计数与旧版逐项相同；棘轮基线里的提交号旧版写 `790e626`，现随 HEAD 前移为 `9adf069`，条数仍 29） |
 | `node scripts/generate-file-ledger.cjs --check` | `1` → 修后 `0` | 修前：`台账 tracked_total=1415 · 重算 tracked_total=1416`（见 §1.2）；跑 `node scripts/generate-file-ledger.cjs` + `git add` 后转绿 |
 | `node scripts/check-impact.cjs` | `0` | `basis: "HEAD^..HEAD"`；`结论：通过（新增悬空 0，新增未解析 0）` |
-| `node scripts/check-references.cjs` | `0` | `✔ 0 error / 700 warning —— 门禁通过`（其中 51 条由本文档贡献，见 §7.9） |
+| `node scripts/check-references.cjs` | `0` | `✔ 0 error / 714 warning —— 门禁通过`（**本版同步实测**；旧版写 700）——其中 63 条由本文档贡献，见 §7.9 |
 | `node scripts/check-doc-snippets.cjs` | `0` | `✔ 0 error / 0 warning —— 门禁通过` |
 | `node scripts/generate-change-log.cjs --check` | `0` | `2 条记录全部通过（Schema 校验 + 重算逐字段复核）`；`降级状态分布 = {"complete":2}` |
 
@@ -575,7 +584,7 @@ npm run typecheck && npm run build && npm test && node ci-contract-check.cjs && 
 
 **不提供豁免（v1 有意）**：没有 `--allow-*` / 基线冻结 / 注释抑制。本仓「残留零容忍」——正确做法永远是改掉引用（删掉引用、或补回目标），不是给门禁开白名单。
 
-**同一条棘轮也在台账侧**：`check:ledger` 的 `accounted` 清单**只减不增**（实测输出：`accounted 棘轮: 基线 = HEAD 版台账（790e626 共 29 条）· 相对基线新增 0 条 · 已减 0 条——只允许集合缩小`）。
+**同一条棘轮也在台账侧**：`check:ledger` 的 `accounted` 清单**只减不增**（实测输出：`accounted 棘轮: 基线 = HEAD 版台账（790e626 共 29 条）· 相对基线新增 0 条 · 已减 0 条——只允许集合缩小`；**本版同步实测**基线提交号已前移为 `9adf069`，条数与「新增 0 / 已减 0」不变）。
 
 ---
 
@@ -665,7 +674,7 @@ git rev-parse "10766d1^^{tree}"
 两条记录的 `degradation` 实测均为 `{"status":"complete","reasons":[]}`（`--check` 回显 `降级状态分布 = {"complete":2}`）。两条是**真实历史**的记录（`--commit <rev>` 现算），不是手写的示例。
 
 **关于这两条记录的三个时点事实**（均实测）：
-1. 它们描述的提交（`ed404e5`、`10766d1`）**不在当前 `HEAD` 的 4 条最近提交里**（`git log --oneline -4` 实测为 `790e626` / `8c30684` / `d32f5fc` / `f31b1a9`）。这是正常的：记录**只增不改**，历史记录留在目录里。
+1. 它们描述的提交（`ed404e5`、`10766d1`）**不在当前 `HEAD` 的 4 条最近提交里**（`git log --oneline -4` 实测为 `9adf069` / `06f4bca` / `b91fe50` / `b4fddb3`——**本版同步实测**；旧版此处记的是当时的 `790e626` / `8c30684` / `d32f5fc` / `f31b1a9`，两个列表里都没有那两条记录描述的提交，结论不变）。这是正常的：记录**只增不改**，历史记录留在目录里。
 2. 两条记录的**规模各不相同，且都远小于今天**：`ed404e5` 的 `from_snapshot` = `{files:127, edges:227}` / `to_snapshot` = `{files:127, edges:227}`；`10766d1` 的 `from_snapshot` = `{files:1400, edges:440, tracked_total:1400}` / `to_snapshot` = `{files:1402, edges:444, tracked_total:1402}`（`node -e` 读两条记录实测）。今天图的值是 **1416 / 498**（§0.2）。**不要拿记录里的规模当现值**。
 3. `ed404e5` 的 `files` / `edges` 两侧相同而只有 `state_changed` / `status_changed` 非空——这正是 §5.4 那条「为什么必须有两栏」的活样本：删除一个**仍被引用**的文件，节点数与边数都不变，变的只是状态。
 
@@ -741,11 +750,13 @@ node scripts/generate-reference-graph.cjs --check  # ④ 必须 exit 0
 
 **灰在哪**：人类可读输出把它渲染成「（3 跳）」，**读起来像是「只有 3 跳这一条路」**。实际上 `path_edges[]` 里也只记首达那条链上每跳用的边。要做「这个文件到目标的所有路径」，当前接口**给不了**——**未验证**是否存在别的子命令能给出（`--help` 只列了三条查询，无第四条）。
 
-### 7.2 `via` 未去重（**实测到极端例子**）
+### 7.2 `via` 未去重（**已修，`9adf069`**）
 
-`via[]` 的元素是字符串 `"<file>:<line>:<column>"`，**不含 kind / layer**。
+> **状态**：本条**已修**。修法见 `scripts/refs-query.cjs:954-961`（展示用 `via[]` 按字符串**保序去重**，注释里写明「只去重展示，不动计数」）；**边数**改由 `buckets[].files[].via_edges`（数值）与 `kinds[]` 承担，`by_depth[].files[].via[]` 只留去重后的位置串。底下保留「历史上曾如此」的实测痕迹。
 
-**实测**：`impact src/engine/types.ts` 的 `src/index.ts` 那条，`via.length = 29`，按字符串去重后**只剩 1 个**——29 条符号级边全部落在同一位置 `src/index.ts:4:15`。人类可读输出里那一行就是**同一个 token 重复 29 次**：
+`via[]` 的元素是字符串 `"<file>:<line>:<column>"`（去重前）**不含 kind / layer**——这正是当初必须去重的原因。
+
+**历史实测（旧版，未去重时）**：`impact src/engine/types.ts` 的 `src/index.ts` 那条，`via.length = 29`，按字符串去重后**只剩 1 个**——29 条符号级边全部落在同一位置 `src/index.ts:4:15`。人类可读输出里那一行就是**同一个 token 重复 29 次**：
 
 ```text
 src/index.ts  <- src/index.ts:4:15  src/index.ts:4:15  src/index.ts:4:15 …（共 29 次）
@@ -753,25 +764,37 @@ src/index.ts  <- src/index.ts:4:15  src/index.ts:4:15  src/index.ts:4:15 …（�
 
 **为什么**：`src/index.ts:4` 是一句 `export * from './engine/types.js'`，它一次性把这些名字全部再导出，于是 29 条符号级边的 `from` 位置**完全相同**。`via` 丢掉了 kind/layer，这 29 条边就变得**不可区分**。
 
-**灰在哪**：`via.length` 看着像「有多少条边把我牵进来」，但在再导出场景下它**严重高估**了「不同的引用点」个数。仓里 24 个闭包文件中有 **1 个**（`src/index.ts`）踩到这个（实测：`via.length > 去重后长度` 的文件数 = 1）。
+**本版同步实测（修后现值）**：`impact src/engine/types.ts --json` 里 `src/index.ts` 的 `by_depth[].files[].via` = `["src/index.ts:4:15"]`（**1 条**，已去重）、`buckets[].files[].via_edges` = **29**、`kinds` = `["export-from"]`；**`via.length > 去重后长度` 的文件数 = 0**（24 个闭包文件全查过）。⇒ 展示侧不再有噪音，**边数仍是 29 这个事实**（`via_edges`），两者不再混为一谈。
 
-### 7.3 结果截断：**标注了哪些、没标注哪些**（实测分界）
+**灰在哪（修后仍要读对）**：`via_edges` 看着像「有多少个不同的引用点把我牵进来」，但在再导出场景下它**统计的是边**、不是不同位置——`src/index.ts` 就是 1 个位置 / 29 条边。要「不同引用点」的个数，数去重后的 `via[]`。
+
+### 7.3 结果截断：**标注了哪些、没标注哪些**（一条已修，`06f4bca`）
 
 | 位置 | 是否截断 | 是否标注 |
 | --- | --- | --- |
-| `who-references` 的**符号级边**人类可读列表 | 是（`--limit`，默认 40） | **标注了**：`…（人类可读输出只显示前 40 条；--json 或 --limit 0 可看全部 431 条）`（`scripts/refs-query.cjs:327-329`） |
+| `who-references` 的**符号级边**人类可读列表 | 是（`--limit`，默认 40） | **标注了**：`…（人类可读输出只显示前 40 条；--json 或 --limit 0 可看全部 431 条）`（`scripts/refs-query.cjs:339`；**本版同步实测行号**，旧版写 `:327-329`） |
 | `who-references` 的**文件级**引用方列表 | 否（25 条全列） | —— |
-| `impact` 的人类可读输出 | **无任何切片**（`renderImpactHuman` 里没有 `.slice()`；全脚本只有 `:1334` 一处显示切片） | —— |
-| `impact` 的**闭包**（`--depth` 截断） | 是 | **只标注了上限本身，没标注「这次是否真的被截断」**（见下） |
+| `impact` 的人类可读输出 | **`renderImpactHuman`（`scripts/refs-query.cjs:982`）里没有 `.slice()`**；全脚本的显示切片只有 `:1377`（`symbol_referrers` 的 `--limit`）与 `:1344`（「你是不是想找」的近邻提示取前 5 条）两处（**本版同步实测**） | —— |
+| `impact` 的**闭包**（`--depth` 截断） | 是 | **已修（`06f4bca`）：顶层 `truncated` + `truncated_reason="depth-limit"`，人类可读输出另打一行 `⚠`**（见下） |
 
-**§7.3 的实质问题**：`--depth` 截断闭包时，输出里只有 `depth<=N（实际 M 层）` 与 `counts.affected_files`。
+**历史上曾如此（已修）**：`--depth` 截断闭包时，输出里一度**只有** `depth<=N（实际 M 层）` 与 `counts.affected_files` 两个量：
 
 - `impact ... --depth 1` → `depth<=1（实际 1 层）`，`counts.affected_files = 18`（**被截断**）
 - `impact ... --depth 3` → `depth<=3（实际 3 层）`，`counts.affected_files = 24`（**自然结束**）
 
-**这两种情况在输出形式上不可区分**——`actual_depth === max_depth` 时，你无法判断「闭包到此为止」还是「到达上限被砍」。`counts.affected_files` 也没有带「（未完整展开）」标记。**要看穿它，只能再跑一次 `--depth <更大的值>` 比较 `counts.affected_files` 是否变化。**
+这两种情况**当时在输出形式上不可区分**——`actual_depth === max_depth` 时无法判断「闭包到此为止」还是「到达上限被砍」。**修法（`06f4bca`）**：判据照口径取「处理完最大深度层之后**仍有未被收进结果集的引用者**」，而**不是** `actual_depth === max_depth`（后者分不清「恰好走到第 N 层且再无引用者」与「被砍掉了」——`impact scripts/refs-query.cjs --depth 2` 实测 `actual_depth = max_depth = 2` 但 `truncated=false` 就是这条判据的活样本）。
 
-> **文档说法与实测不符的一处**：`scripts/refs-query.cjs:886` 的 `reasons[]` 第 4 条原文写 `未做 informational 与截断标注`。**「截断标注」这半句与实测不符**：`who-references` 的符号级边列表**是有**截断标注的（上表第一行）。真正没做的是**闭包截断的标注**。照字面读这条 reason 会低估现状。
+**本版同步实测（修后现值）**：
+
+| 命令 | `actual_depth` / `max_depth` | `truncated` | `truncated_reason` | 人类可读 |
+| --- | --- | --- | --- | --- |
+| `impact src/engine/types.ts`（默认 `--depth 8`） | 3 / 8 | `false` | 字段不存在 | `闭包深度上限 --depth 8：本次**没有截断**…` |
+| `impact src/engine/types.ts --depth 3` | 3 / 3 | `false` | 字段不存在 | 同上（两态各自的说法写进 `gaps[]`） |
+| `impact src/engine/types.ts --depth 1` | 1 / 1 | **`true`** | `"depth-limit"` | `⚠ 结果被 --depth 1 截断，仍有未访问的引用者（truncated=true，truncated_reason=depth-limit）：下面的 closure / counts / buckets 都不完整…`（`scripts/refs-query.cjs:988-991`） |
+
+⇒ **现在不需要「再跑一次更大 `--depth` 比较 `counts.affected_files`」**：读 `truncated`（`--json`）或那一行 `⚠`（人类可读）即可。`--help` 也写明了这两个字段与判据（`scripts/refs-query.cjs:63-65`）。
+
+> **旧版此处记的「文档说法与实测不符的一处」也已修（`06f4bca`）**：当时 `scripts/refs-query.cjs:886` 的 `reasons[]` 第 4 条原文写 `未做 informational 与截断标注`，其中「截断标注」半句与当时的实测不符（`who-references` 的符号级边列表本来就有截断标注）。**本版同步实测**该条现为 `scripts/refs-query.cjs:910`：`未做 informational（三档分类、type_only 标注与截断标注已做，见 buckets[] 与顶层 truncated / truncated_reason）。`——两处截断标注都已如实记账。
 
 ### 7.4 `meta.omitted[]` 是**活字段**（§2.9 已逐条列表）
 
@@ -783,47 +806,51 @@ src/index.ts  <- src/index.ts:4:15  src/index.ts:4:15  src/index.ts:4:15 …（�
 
 **同类问题在改动记录里**：两条 `ledger/change-log/*.json` 的 `omitted` 字段同样写着 `"查询接口（增量 5）"`，而它们是那时候写的记录。**记录是只增不改的事实记录，它们的 `omitted` 不得被「修正」**——但**读的时候必须按写作时点读**。
 
-### 7.5 `.github/workflows/ci.yml` 的台账快照**已过期**（**这是本仓刚踩过的坑的复发**）
+### 7.5 `.github/workflows/ci.yml` 的台账快照**曾经过期，已按实测重写（`b91fe50`）**
 
-`.github/workflows/ci.yml:201-206` 的注释块写着「快照（2026-10-06，接入 `check:impact` 时按实测重写；旧值 1,412 / 482 / 76 已过期）」：
+> **状态**：本条**已修**。提交 `b91fe50`（「ci：graph 门禁快照按实测重写（1,416 / 498 / 80，旧值留痕）」）把 `.github/workflows/ci.yml:201-206` 的「快照」注释改成当时的实测值，**旧值以「旧值 1,414 / 491 已过期」的形式留在注释里**（本仓惯例：过期数字记账不删）。底下保留「历史上曾如此」的痕迹与教训。
 
-| 注释里的值 | 现值（`node scripts/generate-reference-graph.cjs --check`） | 差 |
+**本版同步实测（逐项复核）**：`.github/workflows/ci.yml:201-206` 现在写的是「快照（2026-10-06，locals / ci.yml / 设计稿 / 交接文档批次并入后按实测重写；旧值 1,414 / 491 已过期）」，正文各值与当下产物**逐项一致**：
+
+| 注释里的值（现版） | 现值（`node scripts/generate-reference-graph.cjs --check` + `node -e` 直读产物） | 一致？ |
 | --- | --- | --- |
-| 节点 **1,414**（全 `indexed`） | 节点 **1416** | +2 |
-| 边 **491** | 边 **498** | +7 |
-| 扫描面 **78** 个文件 | 扫描面 **80** 个文件 | +2 |
-| 产物 **1,487,949 B** | **未复核**（该值随内容变；用 `git cat-file -s :ledger/references.json` 可测） | —— |
-| `import` **315** | `import` **320** | +5 |
-| `package-field` **49** | `package-field` **51** | +2 |
-| 其余 kind（`require` 52 / `export-from` 19 / `dynamic-import` 1 / `markdown-link` 35 / `ci-target` 17 / `anchor` 3） | 与实测**逐项相同** | 0 |
-| `声明 402 / 符号边 1,347（已解析 989 / 无符号 358）` | 声明 **402** / 符号边 **1347**；`resolved` **989**，`external` 134 + `unresolved` 224 = **358** | **一致** ✓ |
-| `跨文件 756` / `无静默 null 0 条` / `Program 28 个源文件（仓库外 0 个）` | 与实测**逐项相同** | 0 ✓ |
+| 节点 **1,416**（全 `indexed`） | 节点 **1416**（`meta.node_states` = `{"indexed":1416}`） | ✓ |
+| 边 **498** | 边 **498** | ✓ |
+| 扫描面 **80** 个文件 | 扫描面 **80** 个文件 | ✓ |
+| 产物 **1,492,077 B**（LF 归一化后） | `git cat-file -s ":ledger/references.json"` = **1492077** | ✓ |
+| 单次全量重算 **≈1.6 s** | **未复核**（**转述**：那是 `b91fe50` 在它那台机器上的端到端计时；要现值就现跑计时） | —— |
+| kind 逐项（`import` 320 / `require` 52 / `export-from` 19 / `dynamic-import` 1 / `markdown-link` 35 / `package-field` 51 / `ci-target` 17 / `anchor` 3） | `meta.edge_kinds` 与实测**逐项相同** | ✓ |
+| `声明 402 / 符号边 1,347（已解析 989 / 无符号 358）` | 声明 **402** / 符号边 **1347**；`resolved` **989**，`external` 134 + `unresolved` 224 = **358** | ✓ |
+| `跨文件 756` / `Program 28 个源文件` | `cross_file` **756** / `program_source_files` **28**（`program_outside_repo_files` 0） | ✓ |
 
-**结论**：过期的是**文件级**那半张表（节点 / 边 / 扫描面 / `import` / `package-field`），**符号级**那半张仍然准确。
+**历史上曾如此（旧版本条记的过期表）**：重写前那版注释记的是「快照（2026-10-06，接入 `check:impact` 时按实测重写；旧值 1,412 / 482 / 76 已过期）」，其正文与当时的现值差 —— 节点 **1,414** 对 **1416**（+2）、边 **491** 对 **498**（+7）、扫描面 **78** 对 **80**（+2）、`import` **315** 对 **320**（+5）、`package-field` **49** 对 **51**（+2）、产物 **1,487,949 B**（未复核）；而符号级那半张（声明 402 / 符号边 1,347 / 跨文件 756 / 无静默 null 0 / Program 28）**当时就已准确**。⇒ **过期的是文件级那半张**。
 
-**同一段注释里另一句也已过期**：注释自称「旧值 1,412 / 482 / 76 已过期」——而它自己记的 1,414 / 491 / 78 **现在也已过期**。〔旁证：设计稿 `docs/DESIGN-code-graph.zh-CN.md:60` 记的 1,412 是那一批的实测快照，文档里已明确标注为「本批实测」，属**合规的历史快照**，不是过期现值。〕
-
-**这是一个「复发」的坑**：本仓刚在 ≤ 2026-10-06 因为台账快照写过期数字而返工过一次，**改完的那份快照又过期了**。
-
-**三个时点的实测对照**（把「谁带来的漂移」拆开，不笼统归因）：
+**三个时点的实测对照**（把「谁带来的漂移」拆开，不笼统归因；三行都是历史记账，**现值见上表**）：
 
 | 时点 | 节点 | 边 | 扫描面 | 取数命令 |
 | --- | --- | --- | --- | --- |
-| `ci.yml` 快照写下的那一刻（注释自述） | 1,414 | 491 | 78 | ——（**转述，未复核**：注释里的值，本次没在那个提交上重测） |
-| 本批开工前（`HEAD = 790e626`） | 1415 | 498 | 79 | `node scripts/generate-reference-graph.cjs --check` |
-| 本批收口后（含本文档） | 1416 | 498 | 80 | `node scripts/generate-reference-graph.cjs --check` |
+| `ci.yml` 更早那版快照写下的那一刻（注释自述） | 1,414 | 491 | 78 | ——（**转述，未复核**：注释里的值，本次没在那个提交上重测） |
+| 本文档初次落地前（`HEAD = 790e626`） | 1415 | 498 | 79 | `node scripts/generate-reference-graph.cjs --check` |
+| 本文档初次落地后（含本文档） | 1416 | 498 | 80 | `node scripts/generate-reference-graph.cjs --check` |
+| **本版同步（`HEAD = 9adf069`）** | **1416** | **498** | **80** | 同上（**本版同步实测**） |
 
 ⇒ **更早几次提交**带来 `+1` 节点 / `+7` 边 / `+1` 扫描面（`1,414→1,415` / `491→498` / `78→79`）；**本文档**带来 `+1` 节点 / `+0` 边 / `+1` 扫描面（`1,415→1,416` / `498→498` / `79→80`）——本文档刻意不含 Markdown 链接，因此产边为 0（实测本文档节点 `edge_out: 0, edge_in: 0`）。
 
-**根因**：`ci.yml` 的快照是**手写注释**，而图是**机器产物**——两者之间**没有**任何机制保持同步。**改法见 §8.3。** 本次任务范围**不含**改 `ci.yml`，因此**故意留原样**并在此记账。
+**根因与教训（仍然成立）**：`ci.yml` 的快照是**手写注释**，而图是**机器产物**——两者之间**没有**任何机制保持同步，所以它**必然还会再过期**。**改法见 §8.3**，其中最后一条就是「更新 `ci.yml` 的快照行——并且记住本节：手写快照必然会过期」。**本版同步未改 `ci.yml`**（不在本次改动范围内），只是复核了它当下与实测一致。
+
+〔旁证：设计稿 `docs/DESIGN-code-graph.zh-CN.md:60` 记的 1,412 是那一批的实测快照，文档里已明确标注为「本批实测；原稿记的 1,399、增量 2 首批记的 1,402 都是各自批次的快照」，属**合规的历史快照**，不是过期现值——**本版同步实测**该行仍在 `:60`、措辞未变。〕
 
 ### 7.6 `completeness` 恒为 `partial`，`complete` 分支是死代码
 
 见 §3.4（实测）。**这不是「图不完整」的意思**——它是当前实现写死的值。**灰在哪**：一个真正的 `complete`（图完整且新鲜）在当前接口下**无法被表达**，因此使用者永远拿不到「这次可以放心读成『没人引用』」的信号。
 
-### 7.7 `who-references` 的 `gaps[]` 混入了 `impact` 的描述
+### 7.7 `who-references` 的 `gaps[]` 混入了 `impact` 的描述（**已修，`9adf069`**）
 
-见 §3.4 末段（实测）。`who-references` 的 `gaps[3]` 里含 `impact 尚未做 informational 与截断标注` 这类**只属于 `impact` 的文字**。**灰在哪**：`gaps` 不是按查询裁剪的，逐条读会误导。
+> **状态**：本条**已修**。历史上 `who-references` 的 `gaps[]` 是**照抄 `impact` 的缺口清单**：`gaps[2]` 尾部与整个 `gaps[3]` 在讲 `impact` 的反向闭包、`buckets`、`cycles`、`path`、截断标注，其中最刺眼的一条是 `gaps[3]` 里的 `impact 尚未做 informational 与截断标注`——**只属于 `impact` 的文字出现在 `who-references` 的输出里**，逐条读会把人带偏。
+
+**本版同步实测（修后现值）**：`who-references` 的 `gaps[]` 现为 **4 条**（`scripts/refs-query.cjs:274-279`），逐条只讲它自己的边界（文件级/符号级计数口径、单层不推进、未实现的其它查询）；`impact` 的口径留在 `impact` 自己的 `gaps[]`（`scripts/refs-query.cjs:906-916`）与 `--help` 里，**不复述**。人工复核方式见 §7.11：`node scripts/refs-query.cjs who-references src/engine/types.ts --json`，逐个读 `gaps[]` 是否提到别的子命令的字段。
+
+**教训（仍成立）**：`gaps` 必须**按子命令裁剪**；抄一份清单最省事，代价是输出在撒谎。§8.4 的检查清单里保留了这一条。
 
 ### 7.8 其它三条已知边界（口径本身如此，不是缺陷，但必须知道）
 
@@ -833,7 +860,7 @@ src/index.ts  <- src/index.ts:4:15  src/index.ts:4:15  src/index.ts:4:15 …（�
 
 ### 7.9 `check:refs` 的 `deleted-reference` warning 按 **basename** 命中（会被「正常的路径引用」大量触发）
 
-**实测**：`node scripts/check-references.cjs --json` 的 `violations[]` 共 700 条，**全部**是同一个 type（`{"deleted-file-basename-mention": 700}`），全部来自第 4 类检查（`deleted-reference`）。
+**实测**：`node scripts/check-references.cjs --json` 的 `violations[]` 共 **714** 条（**本版同步实测**；旧版写 700），**全部**是同一个 type（`{"deleted-file-basename-mention": 714}`），全部来自第 4 类检查（`deleted-reference`）；`summary.deletedPaths` 实测仍 = **37**（未变）。
 
 **机制**：该检查用 `git log --diff-filter=D --name-only` 取历史删除清单（`summary.deletedPaths` 实测 = **37** 条），然后**在仓库文本里搜这些路径的 basename**。历史删除清单里有一条**曾经位于 `vendor/` 下、如今整个目录都已删除**的 `types.ts`（本条刻意不写完整路径——见下），于是**任何**文本里出现的 `types.ts` 都命中一次：
 
@@ -845,11 +872,11 @@ src/index.ts  <- src/index.ts:4:15  src/index.ts:4:15  src/index.ts:4:15 …（�
 > **写这一节时踩到的坑（值得单记）**：第一版这里把那条已删除文件的**完整路径**照抄了出来，`node scripts/check-references.cjs` 当场从 `0 error / 696 warning` 变成 **`2 error / 699 warning`**、**exit 1**（实测两条 `deleted-file-reference`，`severity: "error"`，`file` 指向本文档）。
 > **区别是硬的**：提到删除文件的 **basename** 只是 `warning`（次级线索），提到 **完整路径** 是 `error`。⇒ **在文档里复述历史删除清单时，不要写出完整路径**——把错误复述进文档，等于把「残留提及」亲手造出来。这与本仓「残留零容忍」是同一条纪律。
 
-**本文档自己就贡献了 51 条**（实测：`docs/HANDOFF-code-graph.zh-CN.md` 贡献 51 条，全部是这个 type）——因为 §3 的三条查询示例都以 `src/engine/types.ts` 为目标，正文里反复出现。**这 51 条不代表本文档写错了路径。**
+**本文档自己就贡献了 63 条**（**本版同步实测**：`docs/HANDOFF-code-graph.zh-CN.md` 贡献 63 条，全部是这个 type；本文档初次落地时是 51 条，本版补写「已修 / 留痕」与 §7.11 后又多了 12 条——**这正是本条要说明的机制：数的是 basename 出现次数，写文档就会涨**）——因为 §3 的三条查询示例都以 `src/engine/types.ts` 为目标，正文里反复出现。**这 63 条不代表本文档写错了路径。**
 
 **灰在哪**：
 - 这类 warning 的数量与「**某个常用 basename 在你文中出现的次数**」成正比，**与真实残留无关**。`types.ts` 是本仓最常见的文件名之一（`files[]` 里 `lang=ts` 的就有 58 个），因此这是一条**高噪声**的次级线索。
-- 门禁**只拦 error**，所以它不影响绿灯；但**拿 warning 数当"健康度指标"会得出错误结论**——本文档加入前后是 649 → 700（`node scripts/check-references.cjs`），差别全部来自这一条规则。
+- 门禁**只拦 error**，所以它不影响绿灯；但**拿 warning 数当"健康度指标"会得出错误结论**——本文档加入时是 **649 → 700**（`node scripts/check-references.cjs`），差别全部来自这一条规则。**本版同步实测现值 714**，拆开是：去掉本文档 **651**（`702 − 51`，与本文档加入前的 649 相比，多出的 2 条来自 `9adf069` 给 `scripts/refs-query.cjs` 加的两行注释——`:956` 提到 `src/index.ts`、`:957` 提到 `src/engine/types.ts`，该文件的命中位置由 1 个涨到 2 个、违规数 1 → 3）+ 本文档 **63**（初次 51 + 本版补写 12）。**这条规则数的是「某个已删除 basename 在文中出现的次数」，与仓库健康度无关。**
 - 精确的「引用已删除文件」判定不靠它：**图里由 `status=dangling` + `to.state=deleted` 表达**，比 basename 次级线索精确得多（`ledger/references.json` 的 `ledger/exempt.gitignore` 豁免理由里也写着同一句话）。
 - 该脚本另有 `allowlisted` 机制（`summary.allowlisted` 实测 = **1865** 条被豁免）：`ledger/references.json` 因为「内容按构造就是仓库里所有被引用的路径」整文件豁免了这类 warning，**本文档不在豁免名单里**。
 
@@ -862,6 +889,35 @@ src/index.ts  <- src/index.ts:4:15  src/index.ts:4:15  src/index.ts:4:15 …（�
 | `ci.yml` 注释里「单次全量重算 ≈1.5–2.1 s（本轮实测 3 次：1,474 / 1,820 / 2,128 ms）」（**转述，未复核**） | 那是别人在那台机器上跑的 3 次计时，本次只跑到 1 次（生成器自报 `耗时 1413 ms`，同一次运行的 `--json` 里另有 `createProgram 121 ms / 符号遍历 159 ms`） | 多跑几次 `node scripts/generate-reference-graph.cjs --json` 读 `timings` |
 | 设计稿里所有标「实测」的设计期数字（如 §2.6 的单条字节数、§9.7 的耗时表） | 本次没复测，且它们是**设计期快照** | 按设计稿 §9.7 每项自带的「测量方法」一列复测 |
 | 「符号级层落地后产物 1,482,686 B」等设计稿数字（**转述，未复核**） | 见上 | 同上 |
+
+### 7.11 文档里的 `文件:行号` 引用**没有任何门禁在管**（**本版同步实测确认**）
+
+**实测结论**：`check-doc-snippets` 与 `check-references` **都不校验**文档正文里的 `文件:行号` 引用是否过期。
+
+- `node scripts/check-doc-snippets.cjs` 只做两类事：把 `ts` / `typescript` 围栏块拿去做编译、核对工具数量与签名断言（§4.4）。正文里的 `<路径>:<行号>` 它**根本不看**。
+- `node scripts/check-references.cjs` 查的是 4 类**引用**（悬空路径 / 模块说明符 / 未跟踪路径 / 已删除文件，§4.3）。它确实会解析 Markdown 链接与 CI / `package.json` 里的路径，但**路径后面跟的行号**不在它的判据里——把 `scripts/refs-query.cjs:273` 这种「位置引用」写成昨天成立、今天已漂移的值，**它一个字都不会报**。
+- 后果是硬的：**行号漂移与引文过期可以一路飘过全链绿灯**。本次同步实测到的漂移（全部由 `06f4bca` / `9adf069` 改 `scripts/refs-query.cjs` 造成，**没有任何一环报红**）：
+  `:273 → :277`（§2.8 两处）、`:885 → :909`（§2.8、§7.3）、`:277` / `:893 → :281` / `:919`（§3.4）、`:199-200 → :202-206` 与 `:206-214 → :209-220`（§3.4）、`:327-329 → :339` 与 `:1334 → :1377`（§7.3）、`:886 → :910`（§7.3）、`:801` / `:831 → :796-797` / `:825-826`（§8.4），外加 `scripts/refs-query.cjs` 的**文件规模**由 1,341 行涨到 **1,384 行**（§3）。`9adf069` 的提交信息里也只能**手工记账**说「需后续批次更新该文档的行号与引文」——因为没工具能替它做。
+
+**人工核对方法（就是本次用的那条，可原文照抄）**：
+
+```powershell
+# ① 列出文档里所有 `路径:数字` 形式的引用（行号 + 该行内容）
+Select-String -Path docs/HANDOFF-code-graph.zh-CN.md -Pattern "\.(cjs|json|ts|md|yml|mjs)\:[0-9]+" |
+  ForEach-Object { "{0}: {1}" -f $_.LineNumber, $_.Line.Trim() }
+
+# ② 补齐"没有冒号"的位置引用与文件规模引用（本次三条正则都跑了）
+Select-String -Path docs/HANDOFF-code-graph.zh-CN.md -Pattern "第 ?[0-9]+(-|–)?[0-9]* ?行"
+Select-String -Path docs/HANDOFF-code-graph.zh-CN.md -Pattern "[0-9,]+ 行"
+
+# ③ 逐条到真实文件里看那一行附近**实际**写了什么（不要靠印象）
+$l = Get-Content scripts/refs-query.cjs
+281..281 | ForEach-Object { "{0}: {1}" -f $_, $l[$_-1] }
+```
+
+**判据**：①/② 列出的每一条，都要在 ③ 里拿到「那句话确实还在这里」的证据；**拿不到 ⇒ 改行号或改引文**（引文整段没了就改写成不依赖具体措辞的描述，并留下「旧引文是什么、何时被谁移除」的痕迹——本仓惯例）。**范围引用**（`第 189-190 行`、`:603-607`）与**文件规模引用**（`1,341 行`）也在核对范围内，它们同样会漂。
+
+**为什么不做成门禁（现阶段取舍）**：这类引用是「人写给人的指路牌」，自动判定要从自然语言里认领「这句话是否还在那里」，误报率高于收益；本仓的选择是**记账 + 写明人工核对方法**，等引用语法稳定下来（例如统一写成机器可解析的形式）再上自动校验。
 
 ---
 
@@ -932,12 +988,12 @@ src/index.ts  <- src/index.ts:4:15  src/index.ts:4:15  src/index.ts:4:15 …（�
 - [ ] **同步改 `--help`**：本仓的 `--help` 是**口径的自述**，不是装饰。`check-impact.cjs --help` 的原文就是「口径以 `--help` 自述为准」。新子命令的选项、退出码、缺口都要写进 `--help`
 - [ ] **元字段对齐**：读图产物的子命令应带 `basis` / `completeness` / `reasons` / `gaps` / `empty_referrers_reading`（实测这三个是 `who-references` / `impact` 的共同字段）。**`locals` 是刻意的例外**（不读图产物 ⇒ 无 `basis` / `completeness`）——若新子命令也不读图，照 `locals` 的形状办，并在 `--help` 里写明
 - [ ] **`completeness` 的既有毛病别复制**（§7.6）：当前是 `diverged ? 'stale' : 'partial'` 写死。新子命令若真能判 `complete`，是**改进**；若不能，就照实说，并让 `empty_referrers_reading` 用 `emptyReading(completeness)` 生成
-- [ ] **`gaps` 要按本子命令裁剪**，不要照抄 `impact` 的（§7.7 就是抄出的事故）
+- [ ] **`gaps` 要按本子命令裁剪**，不要照抄 `impact` 的（§7.7 历史上就是抄出的事故：`who-references` 的 `gaps[]` 曾夹带 `impact` 的文字，已于 `9adf069` 修掉——别把它抄回来）
 - [ ] **退出码复用既有语义**：`2` 参数 / `3` 读不到图 / `4` 输入不受支持 / `5` 目标不在图里
 - [ ] **不新增 MCP 工具**（`CONTRIBUTING.md:93` 与设计稿 §9.3：查询是给人用的接口，不暴露给模型）
 - [ ] **不进门禁链**：查询是只读接口，**不在 `npm run check` 里**——查询结果再可疑也不拦提交
 - [ ] **确定性**：`--json` 不得含绝对路径、时间戳、耗时（本仓的确定性要求，见 `--help` 的 `--json` 说明）；同一输入连跑两次应逐字节相同
-- [ ] 若新子命令能做**可达性判定**（像 `impact` 的 `type_only`）：**必须用全深度闭包**，不能拿 `--depth` 截断后的集合做 BFS（否则会把「路径长于上限」判成「没有路径」，`scripts/refs-query.cjs:801` 与 `:831` 是这条的原始记录）
+- [ ] 若新子命令能做**可达性判定**（像 `impact` 的 `type_only`）：**必须用全深度闭包**，不能拿 `--depth` 截断后的集合做 BFS（否则会把「路径长于上限」判成「没有路径」，`scripts/refs-query.cjs:796-797` 与 `:825-826` 是这条的原始记录；**本版同步实测行号**，旧版写 `:801` 与 `:831`）
 - [ ] 排序一律 **UTF-8 字节序**，**不用** `localeCompare`（`src/engine/manifest.ts:11` 用 `localeCompare` 是本仓一处已知跨平台风险，新代码不得沿用）
 - [ ] 若新子命令改变了 `refs-query.cjs` 的字节数：`node scripts/generate-reference-graph.cjs` → `git add ledger/references.json` → `--check` **exit 0**（`refs-query.cjs` 在扫描面内，它自己的 `lines` / `bytes` 会变）
 
@@ -979,11 +1035,11 @@ git status --porcelain                                 # 必须为空（§6.2）
 | 产物无 `degradation` 字段 | `node -e "console.log(JSON.stringify(require('./ledger/references.json')).includes('degradation'))"` |
 | `meta.omitted` 8 条逐条 | `node -e "console.log(require('./ledger/references.json').meta.omitted)"` |
 | 台账四态 | `node scripts/check-file-ledger.cjs` |
-| `0 error / 700 warning` | `node scripts/check-references.cjs` |
+| `0 error / 714 warning` | `node scripts/check-references.cjs` |
 | `2 条记录全部通过` | `node scripts/generate-change-log.cjs --check` |
 | `tree` 冻结值核对 | `git rev-parse "ed404e5^{tree}"` 等（§5.3 四条） |
 | `who-references` / `impact` / `locals` 的元字段 | `node scripts/refs-query.cjs <子命令> <路径> --json` |
 | `path_hops` / `via` / 闭包 24 文件 | `node scripts/refs-query.cjs impact src/engine/types.ts --json` |
 | `--depth` 截断对照 | `node scripts/refs-query.cjs impact src/engine/types.ts --depth 1` 对比 `--depth 3` |
 | 四个退出码 | `who-references docs/NOPE.md`（5）/ 符号 id（4）/ `locals README.md`（4）/ `bogus x`（2） |
-| `ci.yml` 快照过期 | 对比 `.github/workflows/ci.yml:201-206` 与上表第一行的现值 |
+| `ci.yml` 快照与现值的对照 | 对比 `.github/workflows/ci.yml:201-206` 与上表第一行的现值（**本版同步实测：逐项一致**） |
