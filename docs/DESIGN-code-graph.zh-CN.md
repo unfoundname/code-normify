@@ -702,6 +702,8 @@
 | `handling` | object `{status, by, at, note}` | ✅ | `status ∈ handled \| pending \| waived`；`waived` 必须带 `note` |
 | `summary` | string | ⭕ | 人类可读一行 |
 
+> **下面的 JSON 是示例（不是真实记录）**：`json` 块里不能写行内标注，所以在这里**逐项声明留痕**——`from_snapshot.universe_hash` 与 `declarations.added[0]` / `removed[0]` / `edges.*` / `affected_referers[]` 里的**路径、行列、id 全部是写作时点（改名轮）的留痕，只作留痕、不是现值 —— 旧值一个不删**；现值取数见 §4.6 与 §4.5 的字段表。
+
 ```json
 {
   "schema_version": 1,
@@ -1339,12 +1341,12 @@
 
 **改名的连带影响（已实测，不是推测；时点 = 改名轮，下表每个哈希与计数只作留痕、不是现值 —— 旧值一个不删）**：`scripts/check-file-ledger.cjs` 的 `tracked-mismatch` 检查要求 `ledger/file-ledger.json` 的 `meta.universe_hash` 等于 `sha256(按码点升序排序后的 git ls-files 清单 join('\n') + '\n')`（算法见 `scripts/generate-file-ledger.cjs` 的 `universeHash`，实测 `:535-546`；写作时为 `scripts/generate-file-ledger.cjs:250-261`，已漂移）。本文档改名（删旧路径、增新路径）改变了该清单，实测后果：
 
-| 项 | 实测值（**留痕（时点 = 改名轮；只作留痕，不是现值）；现值取数 = `node -e "console.log(require('./ledger/file-ledger.json').meta.universe_hash, require('./ledger/file-ledger.json').meta.tracked_total)"`**） |
+| 项 | 实测值（**逐行留痕：时点 = 改名轮；只作留痕，不是现值 —— 旧值一个不删**；现值取数 = `node -e "console.log(require('./ledger/file-ledger.json').meta.universe_hash, require('./ledger/file-ledger.json').meta.tracked_total)"`） |
 | --- | --- |
-| 台账里存的 `meta.universe_hash` | `2ccf4b7fcbebabe343254a7732b6153da8e770d2ce0a47ebd26fa51753a3942c` |
-| 改名后按上述算法复算 | `72f515834bc893835595bc4c3d92ff29866ba572c198ab9726366039d6c2c4ae` |
+| 台账里存的 `meta.universe_hash` | **留痕**：`2ccf4b7fcbebabe343254a7732b6153da8e770d2ce0a47ebd26fa51753a3942c` |
+| 改名后按上述算法复算 | **留痕**：`72f515834bc893835595bc4c3d92ff29866ba572c198ab9726366039d6c2c4ae` |
 | 台账门禁输出 | `ERROR ledger/file-ledger.json:1 -> meta.universe_hash [ledger-universe-hash-drift]` → **EXIT 1** |
-| 归因验证（决定性） | 把索引换成"旧路径在、新路径不在"后复算 = `2ccf4b7f…`，**与台账存的值逐字符相同** ⇒ 该漂移由本次改名**唯一造成**，不是并发工作流带来的 |
+| 归因验证（决定性） | **留痕**：把索引换成"旧路径在、新路径不在"后复算 = `2ccf4b7f…`，**与台账存的值逐字符相同** ⇒ 该漂移由本次改名**唯一造成**，不是并发工作流带来的 |
 | `tracked_total` | **留痕**：旧 1399 / 新 1399（**数量不变**，只有哈希变——因为改名是"删一个、加一个"） |
 
 ⇒ **必须重跑 `npm run ledger:gen`** 重新生成台账，否则 `check:ledger` 会红。**改名本身不改台账条目**：`ledger/file-ledger.json` 的豁免模式已含 `docs/**`，新路径无需新增条目（这也是为什么唯一要做的动作就是重跑生成器）。
