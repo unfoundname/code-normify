@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "fe49d5b7fec69b4d2590a9613d6bf342eaaa851d2f4ee448a0b3b9d3452d23f5",
+    "universe_hash": "8be4450160fbaa61b5830e0bd0c91de268d32191225f8a6e2b61ebb1a711e395",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1416,
+    "tracked_total": 1474,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 80
+      "scanned_total": 138
     },
     "analysis": {
       "mode": "typescript",
@@ -92,7 +92,7 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "图数据文件自己（ledger/references.json）那一行的 bytes / lines 恒为 null：它们是自指的（产物大小依赖上一次写出的自己），记了就没有不动点、幂等当场失效；其余字段照常登记。",
     "node_states": {
-      "indexed": 1416
+      "indexed": 1474
     },
     "edge_kinds": {
       "anchor": 3,
@@ -11529,6 +11529,528 @@
       "state": "indexed",
       "bytes": 21368,
       "lines": 651,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T091949Z-b018fe0.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 43750,
+      "lines": 1398,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T091952Z-44cf889.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 80683,
+      "lines": 2649,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T091956Z-7f55f6f.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 3937,
+      "lines": 128,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T091959Z-d016184.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2327,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092004Z-bf8f440.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 12765,
+      "lines": 419,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092009Z-f8e205d.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 4594,
+      "lines": 142,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092013Z-52f1e67.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2785,
+      "lines": 88,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092016Z-fde7f5e.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 19407,
+      "lines": 625,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092020Z-a3ab873.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 33044,
+      "lines": 1084,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092024Z-baa9317.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 6391,
+      "lines": 206,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092028Z-45ec772.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 16968,
+      "lines": 547,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092032Z-91cc103.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 5118,
+      "lines": 169,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092038Z-1b2a3c6.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 230092,
+      "lines": 5316,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092043Z-9a2f167.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 172759,
+      "lines": 5470,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092048Z-6eeba80.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 25866,
+      "lines": 754,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092054Z-607e1a2.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2357,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092101Z-c493e80.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 40352,
+      "lines": 1179,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092108Z-e084047.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 7268,
+      "lines": 232,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092114Z-5c45876.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2350,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092122Z-2c8a82a.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2344,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092128Z-08f7631.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2329,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092135Z-a24c6e1.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 3558,
+      "lines": 116,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092142Z-43ac069.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2343,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092148Z-966040b.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2328,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092154Z-0e0a356.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 4693,
+      "lines": 154,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092203Z-a759461.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2820,
+      "lines": 88,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092211Z-43a2c1f.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2329,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092221Z-d041f1d.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2317,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092229Z-42e2382.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 4707,
+      "lines": 154,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092237Z-b7ff3c5.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2326,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092244Z-168be2d.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2318,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092252Z-1de964f.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2318,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092300Z-8ad10ec.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2356,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092311Z-b6f2215.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2335,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092321Z-69c7deb.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 3601,
+      "lines": 116,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092330Z-365f268.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 13503,
+      "lines": 388,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092340Z-5b6ca01.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 4759,
+      "lines": 154,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092347Z-8b5a074.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2378,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092356Z-7d29b2f.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 24543,
+      "lines": 689,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092405Z-93d067a.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2311,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092415Z-f31b1a9.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2347,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092428Z-d32f5fc.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 4722,
+      "lines": 154,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092439Z-8c30684.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 8658,
+      "lines": 258,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092449Z-790e626.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2359,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092500Z-b4fddb3.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2424,
+      "lines": 75,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092511Z-b91fe50.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2376,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092520Z-06f4bca.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2373,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092531Z-9adf069.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2368,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092542Z-56ea956.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2413,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092551Z-132978a.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2386,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092606Z-7c6d06f.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2364,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092621Z-7511540.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2363,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092630Z-e166e94.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 4715,
+      "lines": 154,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092638Z-5e78029.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 4716,
+      "lines": 154,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092650Z-e651569.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2384,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092658Z-4763b1b.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2353,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092710Z-a4f59ec.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2405,
+      "lines": 73,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261006T092720Z-973d61e.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2381,
+      "lines": 73,
       "edge_out": 0,
       "edge_in": 0
     },

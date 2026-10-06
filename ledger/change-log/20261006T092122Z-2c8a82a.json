@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "kind": "commit",
+  "commit": "2c8a82ab06474719872840675f89a507981d4771",
+  "commit_parent": "5c45876b4c1d99ea0974059533888dfd247e8edc",
+  "cas_digest": null,
+  "change_id": null,
+  "created_at": "2026-10-06T09:21:22Z",
+  "generator": "scripts/generate-change-log.cjs",
+  "generator_version": "1.0.0",
+  "graph_schema_version": 2,
+  "from_snapshot": {
+    "basis": "commit",
+    "rev": "5c45876b4c1d99ea0974059533888dfd247e8edc",
+    "tree": "690291d6a9c38f035b690e79111925119dc5961b",
+    "universe_hash": "6caeeaeb42d60f6a8bdc671098ee0a70eec1a10f2732aaa8e1763059c32cf056",
+    "tracked_total": 1412,
+    "files": 1412,
+    "edges": 482,
+    "analysis_mode": "typescript"
+  },
+  "to_snapshot": {
+    "basis": "commit",
+    "rev": "2c8a82ab06474719872840675f89a507981d4771",
+    "tree": "3fc26856111acdc24feef47490f2d83bcda806f0",
+    "universe_hash": "6caeeaeb42d60f6a8bdc671098ee0a70eec1a10f2732aaa8e1763059c32cf056",
+    "tracked_total": 1412,
+    "files": 1412,
+    "edges": 482,
+    "analysis_mode": "typescript"
+  },
+  "degradation": {
+    "status": "complete",
+    "reasons": [],
+    "note": "两侧快照都完整重建：本次差在**文件层**是完整的（节点 = 全量已跟踪文件，边 = 扫描面产出的全部边）。数组为空 = 真的没有差异。"
+  },
+  "files": {
+    "added": [],
+    "removed": [],
+    "state_changed": []
+  },
+  "edges": {
+    "added": [],
+    "removed": [],
+    "status_changed": []
+  },
+  "affected_referrers": [],
+  "counts": {
+    "files_added": 0,
+    "files_removed": 0,
+    "files_state_changed": 0,
+    "edges_added": 0,
+    "edges_removed": 0,
+    "edges_status_changed": 0,
+    "affected_referrers": 0,
+    "needs_change": 0
+  },
+  "handling": {
+    "status": "pending",
+    "by": null,
+    "at": null,
+    "note": null
+  },
+  "summary": "提交 2c8a82a（修正设计稿中随重算失效的自指行数，并写明两族行数口径）：文件 +0/−0/±0 · 边 +0/−0/±0 · 受影响引用方 0 条（需改 0 条）",
+  "omitted": [
+    "declarations（符号级节点差，增量 3）",
+    "type-reference 边（增量 3）",
+    "传递闭包（affected_referrers 只到直接引用方，depth 恒 1；增量 5）",
+    "查询接口（增量 5）",
+    "cas-write 观测点（设计稿 §4.1 的第二个观测点，本批不实现）"
+  ]
+}

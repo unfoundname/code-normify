@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "kind": "commit",
+  "commit": "52f1e678c780ad2daf0a8ec6d86e49fce633aa39",
+  "commit_parent": "f8e205d0ac671ae5de16a91451895926c472a975",
+  "cas_digest": null,
+  "change_id": null,
+  "created_at": "2026-10-06T09:20:13Z",
+  "generator": "scripts/generate-change-log.cjs",
+  "generator_version": "1.0.0",
+  "graph_schema_version": 2,
+  "from_snapshot": {
+    "basis": "commit",
+    "rev": "f8e205d0ac671ae5de16a91451895926c472a975",
+    "tree": "900d0b47be733e7e47a2cb9575e617851262f256",
+    "universe_hash": "35910c129e7bc000e8926b4f2f21f7277acea27367d474b753fbfe84ef7335fb",
+    "tracked_total": 116,
+    "files": 116,
+    "edges": 184,
+    "analysis_mode": "typescript"
+  },
+  "to_snapshot": {
+    "basis": "commit",
+    "rev": "52f1e678c780ad2daf0a8ec6d86e49fce633aa39",
+    "tree": "c02cde691529b0bba80660d89374e3d2e0813450",
+    "universe_hash": "35910c129e7bc000e8926b4f2f21f7277acea27367d474b753fbfe84ef7335fb",
+    "tracked_total": 116,
+    "files": 116,
+    "edges": 185,
+    "analysis_mode": "typescript"
+  },
+  "degradation": {
+    "status": "complete",
+    "reasons": [],
+    "note": "两侧快照都完整重建：本次差在**文件层**是完整的（节点 = 全量已跟踪文件，边 = 扫描面产出的全部边）。数组为空 = 真的没有差异。"
+  },
+  "files": {
+    "added": [],
+    "removed": [],
+    "state_changed": []
+  },
+  "edges": {
+    "added": [
+      "docs/RELEASE-0.5.1.md:79:61:markdown-link:README.md"
+    ],
+    "removed": [],
+    "status_changed": []
+  },
+  "affected_referrers": [
+    {
+      "edge": "docs/RELEASE-0.5.1.md:79:61:markdown-link:README.md",
+      "file": "docs/RELEASE-0.5.1.md",
+      "line": 79,
+      "column": 61,
+      "kind": "markdown-link",
+      "target": "docs/README.md",
+      "target_state": "missing",
+      "edge_status": "dangling",
+      "classification": "dangling-target",
+      "needs_change": true
+    }
+  ],
+  "counts": {
+    "files_added": 0,
+    "files_removed": 0,
+    "files_state_changed": 0,
+    "edges_added": 1,
+    "edges_removed": 0,
+    "edges_status_changed": 0,
+    "affected_referrers": 1,
+    "needs_change": 1
+  },
+  "handling": {
+    "status": "pending",
+    "by": null,
+    "at": null,
+    "note": null
+  },
+  "summary": "提交 52f1e67（docs: 发布说明补充 Release 附件直链与 SHA-256（移除已过时的 gh 创建步骤））：文件 +0/−0/±0 · 边 +1/−0/±0 · 受影响引用方 1 条（需改 1 条）",
+  "omitted": [
+    "declarations（符号级节点差，增量 3）",
+    "type-reference 边（增量 3）",
+    "传递闭包（affected_referrers 只到直接引用方，depth 恒 1；增量 5）",
+    "查询接口（增量 5）",
+    "cas-write 观测点（设计稿 §4.1 的第二个观测点，本批不实现）"
+  ]
+}

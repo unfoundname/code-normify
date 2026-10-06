@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "kind": "commit",
+  "commit": "5e780296d14eb03055e08d21c2f171e61bb33d29",
+  "commit_parent": "e166e948a9ce52c87ca31589388b8ab01e707615",
+  "cas_digest": null,
+  "change_id": null,
+  "created_at": "2026-10-06T09:26:38Z",
+  "generator": "scripts/generate-change-log.cjs",
+  "generator_version": "1.0.0",
+  "graph_schema_version": 2,
+  "from_snapshot": {
+    "basis": "commit",
+    "rev": "e166e948a9ce52c87ca31589388b8ab01e707615",
+    "tree": "8c925f4bcaa736b2ca18b703dedd647ebacb38cb",
+    "universe_hash": "fe49d5b7fec69b4d2590a9613d6bf342eaaa851d2f4ee448a0b3b9d3452d23f5",
+    "tracked_total": 1416,
+    "files": 1416,
+    "edges": 498,
+    "analysis_mode": "typescript"
+  },
+  "to_snapshot": {
+    "basis": "commit",
+    "rev": "5e780296d14eb03055e08d21c2f171e61bb33d29",
+    "tree": "d6896f03a9ee6397c07bcdc78891f96563140045",
+    "universe_hash": "fe49d5b7fec69b4d2590a9613d6bf342eaaa851d2f4ee448a0b3b9d3452d23f5",
+    "tracked_total": 1416,
+    "files": 1416,
+    "edges": 498,
+    "analysis_mode": "typescript"
+  },
+  "degradation": {
+    "status": "complete",
+    "reasons": [],
+    "note": "两侧快照都完整重建：本次差在**文件层**是完整的（节点 = 全量已跟踪文件，边 = 扫描面产出的全部边）。数组为空 = 真的没有差异。"
+  },
+  "files": {
+    "added": [],
+    "removed": [],
+    "state_changed": []
+  },
+  "edges": {
+    "added": [
+      "scripts/refs-query.cjs:29:34:require:node:child_process",
+      "scripts/refs-query.cjs:30:20:require:node:fs",
+      "scripts/refs-query.cjs:31:22:require:node:path"
+    ],
+    "removed": [
+      "scripts/refs-query.cjs:28:34:require:node:child_process",
+      "scripts/refs-query.cjs:29:20:require:node:fs",
+      "scripts/refs-query.cjs:30:22:require:node:path"
+    ],
+    "status_changed": []
+  },
+  "affected_referrers": [
+    {
+      "edge": "scripts/refs-query.cjs:28:34:require:node:child_process",
+      "file": "scripts/refs-query.cjs",
+      "line": 28,
+      "column": 34,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/refs-query.cjs:29:20:require:node:fs",
+      "file": "scripts/refs-query.cjs",
+      "line": 29,
+      "column": 20,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/refs-query.cjs:29:34:require:node:child_process",
+      "file": "scripts/refs-query.cjs",
+      "line": 29,
+      "column": 34,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/refs-query.cjs:30:20:require:node:fs",
+      "file": "scripts/refs-query.cjs",
+      "line": 30,
+      "column": 20,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/refs-query.cjs:30:22:require:node:path",
+      "file": "scripts/refs-query.cjs",
+      "line": 30,
+      "column": 22,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/refs-query.cjs:31:22:require:node:path",
+      "file": "scripts/refs-query.cjs",
+      "line": 31,
+      "column": 22,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    }
+  ],
+  "counts": {
+    "files_added": 0,
+    "files_removed": 0,
+    "files_state_changed": 0,
+    "edges_added": 3,
+    "edges_removed": 3,
+    "edges_status_changed": 0,
+    "affected_referrers": 6,
+    "needs_change": 0
+  },
+  "handling": {
+    "status": "pending",
+    "by": null,
+    "at": null,
+    "note": null
+  },
+  "summary": "提交 5e78029（refs-query: 漂移判定改为比内容，堵住「等长但内容不同」的漏检）：文件 +0/−0/±0 · 边 +3/−3/±0 · 受影响引用方 6 条（需改 0 条）",
+  "omitted": [
+    "declarations（符号级节点差，增量 3）",
+    "type-reference 边（增量 3）",
+    "传递闭包（affected_referrers 只到直接引用方，depth 恒 1；增量 5）",
+    "查询接口（增量 5）",
+    "cas-write 观测点（设计稿 §4.1 的第二个观测点，本批不实现）"
+  ]
+}

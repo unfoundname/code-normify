@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "kind": "commit",
+  "commit": "69c7deb1a5e5048e0032008b35be9ab35a238979",
+  "commit_parent": "b6f22157a6ee8a66117d19c4cd21ff9c01a32b75",
+  "cas_digest": null,
+  "change_id": null,
+  "created_at": "2026-10-06T09:23:21Z",
+  "generator": "scripts/generate-change-log.cjs",
+  "generator_version": "1.0.0",
+  "graph_schema_version": 2,
+  "from_snapshot": {
+    "basis": "commit",
+    "rev": "b6f22157a6ee8a66117d19c4cd21ff9c01a32b75",
+    "tree": "6642ee51bcbc51db79c9d0dc5ac451f667430362",
+    "universe_hash": "fbd1b3143863ab4d848d62665b31a1ad6f4390858e3218bf9ef1b52912e5123a",
+    "tracked_total": 1413,
+    "files": 1413,
+    "edges": 486,
+    "analysis_mode": "typescript"
+  },
+  "to_snapshot": {
+    "basis": "commit",
+    "rev": "69c7deb1a5e5048e0032008b35be9ab35a238979",
+    "tree": "d81e33747a4aed06fba8eacfbb7af743b4a8efda",
+    "universe_hash": "6e0ecc3c7f6e410acc09ffa17107cf9155124bec760998a8b928f7f6891195c3",
+    "tracked_total": 1414,
+    "files": 1414,
+    "edges": 489,
+    "analysis_mode": "typescript"
+  },
+  "degradation": {
+    "status": "complete",
+    "reasons": [],
+    "note": "两侧快照都完整重建：本次差在**文件层**是完整的（节点 = 全量已跟踪文件，边 = 扫描面产出的全部边）。数组为空 = 真的没有差异。"
+  },
+  "files": {
+    "added": [
+      "scripts/check-impact.cjs"
+    ],
+    "removed": [],
+    "state_changed": []
+  },
+  "edges": {
+    "added": [
+      "scripts/check-impact.cjs:41:34:require:node:child_process",
+      "scripts/check-impact.cjs:42:20:require:node:fs",
+      "scripts/check-impact.cjs:43:22:require:node:path"
+    ],
+    "removed": [],
+    "status_changed": []
+  },
+  "affected_referrers": [
+    {
+      "edge": "scripts/check-impact.cjs:41:34:require:node:child_process",
+      "file": "scripts/check-impact.cjs",
+      "line": 41,
+      "column": 34,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/check-impact.cjs:42:20:require:node:fs",
+      "file": "scripts/check-impact.cjs",
+      "line": 42,
+      "column": 20,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/check-impact.cjs:43:22:require:node:path",
+      "file": "scripts/check-impact.cjs",
+      "line": 43,
+      "column": 22,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    }
+  ],
+  "counts": {
+    "files_added": 1,
+    "files_removed": 0,
+    "files_state_changed": 0,
+    "edges_added": 3,
+    "edges_removed": 0,
+    "edges_status_changed": 0,
+    "affected_referrers": 3,
+    "needs_change": 0
+  },
+  "handling": {
+    "status": "pending",
+    "by": null,
+    "at": null,
+    "note": null
+  },
+  "summary": "提交 69c7deb（新增 check-impact 变更影响门禁：只拦本次改动新引入的悬空与未解析）：文件 +1/−0/±0 · 边 +3/−0/±0 · 受影响引用方 3 条（需改 0 条）",
+  "omitted": [
+    "declarations（符号级节点差，增量 3）",
+    "type-reference 边（增量 3）",
+    "传递闭包（affected_referrers 只到直接引用方，depth 恒 1；增量 5）",
+    "查询接口（增量 5）",
+    "cas-write 观测点（设计稿 §4.1 的第二个观测点，本批不实现）"
+  ]
+}

@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "kind": "commit",
+  "commit": "5b6ca011590cb6352bec2818305c80d87df56bd5",
+  "commit_parent": "365f2688bb4a497638e0a66ff5a77f09147850d5",
+  "cas_digest": null,
+  "change_id": null,
+  "created_at": "2026-10-06T09:23:40Z",
+  "generator": "scripts/generate-change-log.cjs",
+  "generator_version": "1.0.0",
+  "graph_schema_version": 2,
+  "from_snapshot": {
+    "basis": "commit",
+    "rev": "365f2688bb4a497638e0a66ff5a77f09147850d5",
+    "tree": "a44cfee7a3d85414556ab9d343930926ae15120e",
+    "universe_hash": "6e0ecc3c7f6e410acc09ffa17107cf9155124bec760998a8b928f7f6891195c3",
+    "tracked_total": 1414,
+    "files": 1414,
+    "edges": 491,
+    "analysis_mode": "typescript"
+  },
+  "to_snapshot": {
+    "basis": "commit",
+    "rev": "5b6ca011590cb6352bec2818305c80d87df56bd5",
+    "tree": "f19480755723d035f36acbc9962094d374153694",
+    "universe_hash": "6e0ecc3c7f6e410acc09ffa17107cf9155124bec760998a8b928f7f6891195c3",
+    "tracked_total": 1414,
+    "files": 1414,
+    "edges": 491,
+    "analysis_mode": "typescript"
+  },
+  "degradation": {
+    "status": "complete",
+    "reasons": [],
+    "note": "两侧快照都完整重建：本次差在**文件层**是完整的（节点 = 全量已跟踪文件，边 = 扫描面产出的全部边）。数组为空 = 真的没有差异。"
+  },
+  "files": {
+    "added": [],
+    "removed": [],
+    "state_changed": []
+  },
+  "edges": {
+    "added": [
+      "scripts/check-impact.cjs:42:34:require:node:child_process",
+      "scripts/check-impact.cjs:43:20:require:node:fs",
+      "scripts/check-impact.cjs:44:22:require:node:path"
+    ],
+    "removed": [
+      "scripts/check-impact.cjs:41:34:require:node:child_process",
+      "scripts/check-impact.cjs:42:20:require:node:fs",
+      "scripts/check-impact.cjs:43:22:require:node:path"
+    ],
+    "status_changed": []
+  },
+  "affected_referrers": [
+    {
+      "edge": "scripts/check-impact.cjs:41:34:require:node:child_process",
+      "file": "scripts/check-impact.cjs",
+      "line": 41,
+      "column": 34,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/check-impact.cjs:42:20:require:node:fs",
+      "file": "scripts/check-impact.cjs",
+      "line": 42,
+      "column": 20,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/check-impact.cjs:42:34:require:node:child_process",
+      "file": "scripts/check-impact.cjs",
+      "line": 42,
+      "column": 34,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/check-impact.cjs:43:20:require:node:fs",
+      "file": "scripts/check-impact.cjs",
+      "line": 43,
+      "column": 20,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/check-impact.cjs:43:22:require:node:path",
+      "file": "scripts/check-impact.cjs",
+      "line": 43,
+      "column": 22,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/check-impact.cjs:44:22:require:node:path",
+      "file": "scripts/check-impact.cjs",
+      "line": 44,
+      "column": 22,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    }
+  ],
+  "counts": {
+    "files_added": 0,
+    "files_removed": 0,
+    "files_state_changed": 0,
+    "edges_added": 3,
+    "edges_removed": 3,
+    "edges_status_changed": 0,
+    "affected_referrers": 6,
+    "needs_change": 0
+  },
+  "handling": {
+    "status": "pending",
+    "by": null,
+    "at": null,
+    "note": null
+  },
+  "summary": "提交 5b6ca01（check-impact：--help 的 --root 默认根说明改为与实现一致（默认跟随 CWD））：文件 +0/−0/±0 · 边 +3/−3/±0 · 受影响引用方 6 条（需改 0 条）",
+  "omitted": [
+    "declarations（符号级节点差，增量 3）",
+    "type-reference 边（增量 3）",
+    "传递闭包（affected_referrers 只到直接引用方，depth 恒 1；增量 5）",
+    "查询接口（增量 5）",
+    "cas-write 观测点（设计稿 §4.1 的第二个观测点，本批不实现）"
+  ]
+}

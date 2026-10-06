@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "kind": "commit",
+  "commit": "b91fe50e21d2881a094ad9267edd71a196958cea",
+  "commit_parent": "b4fddb362d04405f015fe00bcf4cf4d1d363141b",
+  "cas_digest": null,
+  "change_id": null,
+  "created_at": "2026-10-06T09:25:11Z",
+  "generator": "scripts/generate-change-log.cjs",
+  "generator_version": "1.0.0",
+  "graph_schema_version": 2,
+  "from_snapshot": {
+    "basis": "commit",
+    "rev": "b4fddb362d04405f015fe00bcf4cf4d1d363141b",
+    "tree": "73e6a5b59642d429a5974d46ba54c46b0f3a26e6",
+    "universe_hash": "fe49d5b7fec69b4d2590a9613d6bf342eaaa851d2f4ee448a0b3b9d3452d23f5",
+    "tracked_total": 1416,
+    "files": 1416,
+    "edges": 498,
+    "analysis_mode": "typescript"
+  },
+  "to_snapshot": {
+    "basis": "commit",
+    "rev": "b91fe50e21d2881a094ad9267edd71a196958cea",
+    "tree": "57ab57129fbd8832cde2e0ec49be2aeda0124aee",
+    "universe_hash": "fe49d5b7fec69b4d2590a9613d6bf342eaaa851d2f4ee448a0b3b9d3452d23f5",
+    "tracked_total": 1416,
+    "files": 1416,
+    "edges": 498,
+    "analysis_mode": "typescript"
+  },
+  "degradation": {
+    "status": "complete",
+    "reasons": [],
+    "note": "两侧快照都完整重建：本次差在**文件层**是完整的（节点 = 全量已跟踪文件，边 = 扫描面产出的全部边）。数组为空 = 真的没有差异。"
+  },
+  "files": {
+    "added": [],
+    "removed": [],
+    "state_changed": []
+  },
+  "edges": {
+    "added": [],
+    "removed": [],
+    "status_changed": []
+  },
+  "affected_referrers": [],
+  "counts": {
+    "files_added": 0,
+    "files_removed": 0,
+    "files_state_changed": 0,
+    "edges_added": 0,
+    "edges_removed": 0,
+    "edges_status_changed": 0,
+    "affected_referrers": 0,
+    "needs_change": 0
+  },
+  "handling": {
+    "status": "pending",
+    "by": null,
+    "at": null,
+    "note": null
+  },
+  "summary": "提交 b91fe50（ci：graph 门禁快照按实测重写（1,416 / 498 / 80，旧值留痕）+ ledger/changes 残留目录核验）：文件 +0/−0/±0 · 边 +0/−0/±0 · 受影响引用方 0 条（需改 0 条）",
+  "omitted": [
+    "declarations（符号级节点差，增量 3）",
+    "type-reference 边（增量 3）",
+    "传递闭包（affected_referrers 只到直接引用方，depth 恒 1；增量 5）",
+    "查询接口（增量 5）",
+    "cas-write 观测点（设计稿 §4.1 的第二个观测点，本批不实现）"
+  ]
+}

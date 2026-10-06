@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "kind": "commit",
+  "commit": "a24c6e1e16341fdcbe227850c56c5609666125fa",
+  "commit_parent": "08f7631908a5234d67d2c7bdc31503ee4e629846",
+  "cas_digest": null,
+  "change_id": null,
+  "created_at": "2026-10-06T09:21:35Z",
+  "generator": "scripts/generate-change-log.cjs",
+  "generator_version": "1.0.0",
+  "graph_schema_version": 2,
+  "from_snapshot": {
+    "basis": "commit",
+    "rev": "08f7631908a5234d67d2c7bdc31503ee4e629846",
+    "tree": "3d84ed1a6928d5daca5a24da671e2b79b5ae63c6",
+    "universe_hash": "6caeeaeb42d60f6a8bdc671098ee0a70eec1a10f2732aaa8e1763059c32cf056",
+    "tracked_total": 1412,
+    "files": 1412,
+    "edges": 482,
+    "analysis_mode": "typescript"
+  },
+  "to_snapshot": {
+    "basis": "commit",
+    "rev": "a24c6e1e16341fdcbe227850c56c5609666125fa",
+    "tree": "8deaa50209821a291b2c31a4981f8c597292c9ac",
+    "universe_hash": "fbd1b3143863ab4d848d62665b31a1ad6f4390858e3218bf9ef1b52912e5123a",
+    "tracked_total": 1413,
+    "files": 1413,
+    "edges": 485,
+    "analysis_mode": "typescript"
+  },
+  "degradation": {
+    "status": "complete",
+    "reasons": [],
+    "note": "两侧快照都完整重建：本次差在**文件层**是完整的（节点 = 全量已跟踪文件，边 = 扫描面产出的全部边）。数组为空 = 真的没有差异。"
+  },
+  "files": {
+    "added": [
+      "scripts/refs-query.cjs"
+    ],
+    "removed": [],
+    "state_changed": []
+  },
+  "edges": {
+    "added": [
+      "scripts/refs-query.cjs:16:34:require:node:child_process",
+      "scripts/refs-query.cjs:17:20:require:node:fs",
+      "scripts/refs-query.cjs:18:22:require:node:path"
+    ],
+    "removed": [],
+    "status_changed": []
+  },
+  "affected_referrers": [
+    {
+      "edge": "scripts/refs-query.cjs:16:34:require:node:child_process",
+      "file": "scripts/refs-query.cjs",
+      "line": 16,
+      "column": 34,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/refs-query.cjs:17:20:require:node:fs",
+      "file": "scripts/refs-query.cjs",
+      "line": 17,
+      "column": 20,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/refs-query.cjs:18:22:require:node:path",
+      "file": "scripts/refs-query.cjs",
+      "line": 18,
+      "column": 22,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    }
+  ],
+  "counts": {
+    "files_added": 1,
+    "files_removed": 0,
+    "files_state_changed": 0,
+    "edges_added": 3,
+    "edges_removed": 0,
+    "edges_status_changed": 0,
+    "affected_referrers": 3,
+    "needs_change": 0
+  },
+  "handling": {
+    "status": "pending",
+    "by": null,
+    "at": null,
+    "note": null
+  },
+  "summary": "提交 a24c6e1（新增 refs-query 查询脚本：按文件路径查 who-references）：文件 +1/−0/±0 · 边 +3/−0/±0 · 受影响引用方 3 条（需改 0 条）",
+  "omitted": [
+    "declarations（符号级节点差，增量 3）",
+    "type-reference 边（增量 3）",
+    "传递闭包（affected_referrers 只到直接引用方，depth 恒 1；增量 5）",
+    "查询接口（增量 5）",
+    "cas-write 观测点（设计稿 §4.1 的第二个观测点，本批不实现）"
+  ]
+}

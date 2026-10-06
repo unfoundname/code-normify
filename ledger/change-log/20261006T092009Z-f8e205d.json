@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "kind": "commit",
+  "commit": "f8e205d0ac671ae5de16a91451895926c472a975",
+  "commit_parent": "bf8f4400f9494bb831f8d9c8eda0a29f942cf3bf",
+  "cas_digest": null,
+  "change_id": null,
+  "created_at": "2026-10-06T09:20:09Z",
+  "generator": "scripts/generate-change-log.cjs",
+  "generator_version": "1.0.0",
+  "graph_schema_version": 2,
+  "from_snapshot": {
+    "basis": "commit",
+    "rev": "bf8f4400f9494bb831f8d9c8eda0a29f942cf3bf",
+    "tree": "5dac4ddb44956854645d4564b66cea62df94dd0c",
+    "universe_hash": "6d6130beade79bf3b54f231b1818b69ca79128555592e47be93f984e771bdcd0",
+    "tracked_total": 115,
+    "files": 115,
+    "edges": 179,
+    "analysis_mode": "typescript"
+  },
+  "to_snapshot": {
+    "basis": "commit",
+    "rev": "f8e205d0ac671ae5de16a91451895926c472a975",
+    "tree": "900d0b47be733e7e47a2cb9575e617851262f256",
+    "universe_hash": "35910c129e7bc000e8926b4f2f21f7277acea27367d474b753fbfe84ef7335fb",
+    "tracked_total": 116,
+    "files": 116,
+    "edges": 184,
+    "analysis_mode": "typescript"
+  },
+  "degradation": {
+    "status": "complete",
+    "reasons": [],
+    "note": "两侧快照都完整重建：本次差在**文件层**是完整的（节点 = 全量已跟踪文件，边 = 扫描面产出的全部边）。数组为空 = 真的没有差异。"
+  },
+  "files": {
+    "added": [
+      "docs/RELEASE-0.5.1.md"
+    ],
+    "removed": [],
+    "state_changed": []
+  },
+  "edges": {
+    "added": [
+      "docs/RELEASE-0.5.1.md:58:119:markdown-link:CHANGELOG.md",
+      "docs/RELEASE-0.5.1.md:58:25:markdown-link:README_EN.md",
+      "docs/RELEASE-0.5.1.md:58:3:markdown-link:README.md",
+      "docs/RELEASE-0.5.1.md:58:51:markdown-link:docs/SPEC.zh-CN.md",
+      "docs/RELEASE-0.5.1.md:58:80:markdown-link:skills/normify-gen/SKILL.md"
+    ],
+    "removed": [],
+    "status_changed": []
+  },
+  "affected_referrers": [
+    {
+      "edge": "docs/RELEASE-0.5.1.md:58:3:markdown-link:README.md",
+      "file": "docs/RELEASE-0.5.1.md",
+      "line": 58,
+      "column": 3,
+      "kind": "markdown-link",
+      "target": "docs/README.md",
+      "target_state": "missing",
+      "edge_status": "dangling",
+      "classification": "dangling-target",
+      "needs_change": true
+    },
+    {
+      "edge": "docs/RELEASE-0.5.1.md:58:25:markdown-link:README_EN.md",
+      "file": "docs/RELEASE-0.5.1.md",
+      "line": 58,
+      "column": 25,
+      "kind": "markdown-link",
+      "target": "docs/README_EN.md",
+      "target_state": "missing",
+      "edge_status": "dangling",
+      "classification": "dangling-target",
+      "needs_change": true
+    },
+    {
+      "edge": "docs/RELEASE-0.5.1.md:58:51:markdown-link:docs/SPEC.zh-CN.md",
+      "file": "docs/RELEASE-0.5.1.md",
+      "line": 58,
+      "column": 51,
+      "kind": "markdown-link",
+      "target": "docs/docs/SPEC.zh-CN.md",
+      "target_state": "missing",
+      "edge_status": "dangling",
+      "classification": "dangling-target",
+      "needs_change": true
+    },
+    {
+      "edge": "docs/RELEASE-0.5.1.md:58:80:markdown-link:skills/normify-gen/SKILL.md",
+      "file": "docs/RELEASE-0.5.1.md",
+      "line": 58,
+      "column": 80,
+      "kind": "markdown-link",
+      "target": "docs/skills/normify-gen/SKILL.md",
+      "target_state": "missing",
+      "edge_status": "dangling",
+      "classification": "dangling-target",
+      "needs_change": true
+    },
+    {
+      "edge": "docs/RELEASE-0.5.1.md:58:119:markdown-link:CHANGELOG.md",
+      "file": "docs/RELEASE-0.5.1.md",
+      "line": 58,
+      "column": 119,
+      "kind": "markdown-link",
+      "target": "docs/CHANGELOG.md",
+      "target_state": "missing",
+      "edge_status": "dangling",
+      "classification": "dangling-target",
+      "needs_change": true
+    }
+  ],
+  "counts": {
+    "files_added": 1,
+    "files_removed": 0,
+    "files_state_changed": 0,
+    "edges_added": 5,
+    "edges_removed": 0,
+    "edges_status_changed": 0,
+    "affected_referrers": 5,
+    "needs_change": 5
+  },
+  "handling": {
+    "status": "pending",
+    "by": null,
+    "at": null,
+    "note": null
+  },
+  "summary": "提交 f8e205d（docs: 添加 v0.5.1 发布说明（可直接粘贴到 GitHub Release / 用 gh 创建））：文件 +1/−0/±0 · 边 +5/−0/±0 · 受影响引用方 5 条（需改 5 条）",
+  "omitted": [
+    "declarations（符号级节点差，增量 3）",
+    "type-reference 边（增量 3）",
+    "传递闭包（affected_referrers 只到直接引用方，depth 恒 1；增量 5）",
+    "查询接口（增量 5）",
+    "cas-write 观测点（设计稿 §4.1 的第二个观测点，本批不实现）"
+  ]
+}

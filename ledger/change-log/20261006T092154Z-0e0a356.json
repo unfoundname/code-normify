@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "kind": "commit",
+  "commit": "0e0a3561c7e6fc6aef8b5f0c8708ba009dd29654",
+  "commit_parent": "966040ba36f02cc50ec10ff584366c3fc7325322",
+  "cas_digest": null,
+  "change_id": null,
+  "created_at": "2026-10-06T09:21:54Z",
+  "generator": "scripts/generate-change-log.cjs",
+  "generator_version": "1.0.0",
+  "graph_schema_version": 2,
+  "from_snapshot": {
+    "basis": "commit",
+    "rev": "966040ba36f02cc50ec10ff584366c3fc7325322",
+    "tree": "ef7d85edc1b3386d2ab9bd3b5000ab918dec43a4",
+    "universe_hash": "fbd1b3143863ab4d848d62665b31a1ad6f4390858e3218bf9ef1b52912e5123a",
+    "tracked_total": 1413,
+    "files": 1413,
+    "edges": 485,
+    "analysis_mode": "typescript"
+  },
+  "to_snapshot": {
+    "basis": "commit",
+    "rev": "0e0a3561c7e6fc6aef8b5f0c8708ba009dd29654",
+    "tree": "aaed99d1d5ce8688429cd1371c6982bea8784d6c",
+    "universe_hash": "fbd1b3143863ab4d848d62665b31a1ad6f4390858e3218bf9ef1b52912e5123a",
+    "tracked_total": 1413,
+    "files": 1413,
+    "edges": 485,
+    "analysis_mode": "typescript"
+  },
+  "degradation": {
+    "status": "complete",
+    "reasons": [],
+    "note": "两侧快照都完整重建：本次差在**文件层**是完整的（节点 = 全量已跟踪文件，边 = 扫描面产出的全部边）。数组为空 = 真的没有差异。"
+  },
+  "files": {
+    "added": [],
+    "removed": [],
+    "state_changed": []
+  },
+  "edges": {
+    "added": [
+      "scripts/refs-query.cjs:17:34:require:node:child_process",
+      "scripts/refs-query.cjs:18:20:require:node:fs",
+      "scripts/refs-query.cjs:19:22:require:node:path"
+    ],
+    "removed": [
+      "scripts/refs-query.cjs:16:34:require:node:child_process",
+      "scripts/refs-query.cjs:17:20:require:node:fs",
+      "scripts/refs-query.cjs:18:22:require:node:path"
+    ],
+    "status_changed": []
+  },
+  "affected_referrers": [
+    {
+      "edge": "scripts/refs-query.cjs:16:34:require:node:child_process",
+      "file": "scripts/refs-query.cjs",
+      "line": 16,
+      "column": 34,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/refs-query.cjs:17:20:require:node:fs",
+      "file": "scripts/refs-query.cjs",
+      "line": 17,
+      "column": 20,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/refs-query.cjs:17:34:require:node:child_process",
+      "file": "scripts/refs-query.cjs",
+      "line": 17,
+      "column": 34,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/refs-query.cjs:18:20:require:node:fs",
+      "file": "scripts/refs-query.cjs",
+      "line": 18,
+      "column": 20,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/refs-query.cjs:18:22:require:node:path",
+      "file": "scripts/refs-query.cjs",
+      "line": 18,
+      "column": 22,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/refs-query.cjs:19:22:require:node:path",
+      "file": "scripts/refs-query.cjs",
+      "line": 19,
+      "column": 22,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    }
+  ],
+  "counts": {
+    "files_added": 0,
+    "files_removed": 0,
+    "files_state_changed": 0,
+    "edges_added": 3,
+    "edges_removed": 3,
+    "edges_status_changed": 0,
+    "affected_referrers": 6,
+    "needs_change": 0
+  },
+  "handling": {
+    "status": "pending",
+    "by": null,
+    "at": null,
+    "note": null
+  },
+  "summary": "提交 0e0a356（refs-query impact 新增派生产物分区与 gate: 义务项）：文件 +0/−0/±0 · 边 +3/−3/±0 · 受影响引用方 6 条（需改 0 条）",
+  "omitted": [
+    "declarations（符号级节点差，增量 3）",
+    "type-reference 边（增量 3）",
+    "传递闭包（affected_referrers 只到直接引用方，depth 恒 1；增量 5）",
+    "查询接口（增量 5）",
+    "cas-write 观测点（设计稿 §4.1 的第二个观测点，本批不实现）"
+  ]
+}

@@ -1,0 +1,231 @@
+{
+  "schema_version": 1,
+  "kind": "commit",
+  "commit": "e084047e354afaae4386e35c1b0bed5227142082",
+  "commit_parent": "c493e80f10811201dec09a7e29d3e783430381f1",
+  "cas_digest": null,
+  "change_id": null,
+  "created_at": "2026-10-06T09:21:08Z",
+  "generator": "scripts/generate-change-log.cjs",
+  "generator_version": "1.0.0",
+  "graph_schema_version": 2,
+  "from_snapshot": {
+    "basis": "commit",
+    "rev": "c493e80f10811201dec09a7e29d3e783430381f1",
+    "tree": "68316f61c8f85665c520ea019733a0746c462e3b",
+    "universe_hash": "6caeeaeb42d60f6a8bdc671098ee0a70eec1a10f2732aaa8e1763059c32cf056",
+    "tracked_total": 1412,
+    "files": 1412,
+    "edges": 482,
+    "analysis_mode": "typescript"
+  },
+  "to_snapshot": {
+    "basis": "commit",
+    "rev": "e084047e354afaae4386e35c1b0bed5227142082",
+    "tree": "2a0d9fe69a50c2d41b0c19ef16a17696cb1ca224",
+    "universe_hash": "6caeeaeb42d60f6a8bdc671098ee0a70eec1a10f2732aaa8e1763059c32cf056",
+    "tracked_total": 1412,
+    "files": 1412,
+    "edges": 482,
+    "analysis_mode": "typescript"
+  },
+  "degradation": {
+    "status": "complete",
+    "reasons": [],
+    "note": "两侧快照都完整重建：本次差在**文件层**是完整的（节点 = 全量已跟踪文件，边 = 扫描面产出的全部边）。数组为空 = 真的没有差异。"
+  },
+  "files": {
+    "added": [],
+    "removed": [],
+    "state_changed": []
+  },
+  "edges": {
+    "added": [
+      "tests/reference-graph-e2e.mjs:46:16:import:node:fs",
+      "tests/reference-graph-e2e.mjs:47:16:import:node:os",
+      "tests/reference-graph-e2e.mjs:48:18:import:node:path",
+      "tests/reference-graph-e2e.mjs:49:20:import:node:crypto",
+      "tests/reference-graph-e2e.mjs:50:27:import:node:child_process",
+      "tests/reference-graph-e2e.mjs:51:31:import:node:url"
+    ],
+    "removed": [
+      "tests/reference-graph-e2e.mjs:40:16:import:node:fs",
+      "tests/reference-graph-e2e.mjs:41:16:import:node:os",
+      "tests/reference-graph-e2e.mjs:42:18:import:node:path",
+      "tests/reference-graph-e2e.mjs:43:20:import:node:crypto",
+      "tests/reference-graph-e2e.mjs:44:27:import:node:child_process",
+      "tests/reference-graph-e2e.mjs:45:31:import:node:url"
+    ],
+    "status_changed": []
+  },
+  "affected_referrers": [
+    {
+      "edge": "tests/reference-graph-e2e.mjs:40:16:import:node:fs",
+      "file": "tests/reference-graph-e2e.mjs",
+      "line": 40,
+      "column": 16,
+      "kind": "import",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "tests/reference-graph-e2e.mjs:41:16:import:node:os",
+      "file": "tests/reference-graph-e2e.mjs",
+      "line": 41,
+      "column": 16,
+      "kind": "import",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "tests/reference-graph-e2e.mjs:42:18:import:node:path",
+      "file": "tests/reference-graph-e2e.mjs",
+      "line": 42,
+      "column": 18,
+      "kind": "import",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "tests/reference-graph-e2e.mjs:43:20:import:node:crypto",
+      "file": "tests/reference-graph-e2e.mjs",
+      "line": 43,
+      "column": 20,
+      "kind": "import",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "tests/reference-graph-e2e.mjs:44:27:import:node:child_process",
+      "file": "tests/reference-graph-e2e.mjs",
+      "line": 44,
+      "column": 27,
+      "kind": "import",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "tests/reference-graph-e2e.mjs:45:31:import:node:url",
+      "file": "tests/reference-graph-e2e.mjs",
+      "line": 45,
+      "column": 31,
+      "kind": "import",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "tests/reference-graph-e2e.mjs:46:16:import:node:fs",
+      "file": "tests/reference-graph-e2e.mjs",
+      "line": 46,
+      "column": 16,
+      "kind": "import",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "tests/reference-graph-e2e.mjs:47:16:import:node:os",
+      "file": "tests/reference-graph-e2e.mjs",
+      "line": 47,
+      "column": 16,
+      "kind": "import",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "tests/reference-graph-e2e.mjs:48:18:import:node:path",
+      "file": "tests/reference-graph-e2e.mjs",
+      "line": 48,
+      "column": 18,
+      "kind": "import",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "tests/reference-graph-e2e.mjs:49:20:import:node:crypto",
+      "file": "tests/reference-graph-e2e.mjs",
+      "line": 49,
+      "column": 20,
+      "kind": "import",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "tests/reference-graph-e2e.mjs:50:27:import:node:child_process",
+      "file": "tests/reference-graph-e2e.mjs",
+      "line": 50,
+      "column": 27,
+      "kind": "import",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "tests/reference-graph-e2e.mjs:51:31:import:node:url",
+      "file": "tests/reference-graph-e2e.mjs",
+      "line": 51,
+      "column": 31,
+      "kind": "import",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    }
+  ],
+  "counts": {
+    "files_added": 0,
+    "files_removed": 0,
+    "files_state_changed": 0,
+    "edges_added": 6,
+    "edges_removed": 6,
+    "edges_status_changed": 0,
+    "affected_referrers": 12,
+    "needs_change": 0
+  },
+  "handling": {
+    "status": "pending",
+    "by": null,
+    "at": null,
+    "note": null
+  },
+  "summary": "提交 e084047（修复符号级层在「.ts 直接在仓库根」时的静默降级，并补根级门禁覆盖）：文件 +0/−0/±0 · 边 +6/−6/±0 · 受影响引用方 12 条（需改 0 条）",
+  "omitted": [
+    "declarations（符号级节点差，增量 3）",
+    "type-reference 边（增量 3）",
+    "传递闭包（affected_referrers 只到直接引用方，depth 恒 1；增量 5）",
+    "查询接口（增量 5）",
+    "cas-write 观测点（设计稿 §4.1 的第二个观测点，本批不实现）"
+  ]
+}
