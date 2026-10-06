@@ -34,7 +34,8 @@
  *   注：图产物里**没有** degradation 字段（刻意不落盘），本门禁不读它，也不去找它。
  *
  * --root 语义与本仓既有门禁一致：必须是 git 仓库根（realpath 相等），
- * 否则退出码 1 拒绝，绝不静默回退到本脚本所在仓库。
+ * 否则退出码 1 拒绝，绝不静默回退；不传 --root 时默认取当前工作目录（CWD），
+ * 因此门禁的是 CWD 所在的 git 仓库（可能是另一个仓库），而不是脚本自身所在的仓库。
  */
 'use strict';
 
@@ -68,9 +69,11 @@ const USAGE = `check-impact v${VERSION} — 变更影响门禁（棘轮式：只
                   当前 = git show :${REL}（未提交、只 git add 的改动）
   默认（无开关）  基准为「HEAD^ .. HEAD」：基线 = git show HEAD^:${REL}
                   当前 = git show HEAD:${REL}
-  --root <dir>    指定被检查的仓库根（默认：本脚本所在仓库的 git 顶层目录）
-                  非仓库根（不存在 / 不是 git 根）一律拒绝（退出码 1，与既有门禁实测一致），
-                  绝不回退到本脚本所在仓库
+  --root <dir>    指定被检查的仓库根（默认：当前工作目录所在的 git 顶层目录）
+                  默认跟随 CWD：从另一个仓库的工作目录运行时，门禁的是那个仓库——
+                  输出里的 root: 行会告诉你门禁的是哪一个；
+                  从子目录运行会被拒绝（不是仓库根 ⇒ 退出码 1），不会静默回退到脚本自身所在的仓库；
+                  非仓库根（不存在 / 不是 git 根）一律拒绝（退出码 1，与既有门禁实测一致）
   -h, --help      打印本帮助（不读图、不判定，退出码 0）
 
 判据（棘轮：只拦本次改动**新引入**的）：
@@ -120,7 +123,8 @@ fail-closed 诊断码（--json 顶层 diagnostic；人类可读输出为 [诊断
   ${DIAG.malformed}           结构不合规：顶层非对象 / edges 或 symbol_edges 不是数组
 
 --root 语义与本仓既有门禁一致：必须是 git 仓库根（realpath 相等），否则退出码 1 拒绝，
-  绝不静默回退到本脚本所在仓库；临时夹具仓库请先 git add 图产物再跑本门禁。
+  绝不静默回退；不传 --root 时默认取当前工作目录（CWD），门禁的是 CWD 所在的 git 仓库；
+  临时夹具仓库请先 git add 图产物再跑本门禁。
 `;
 
 /** --root fail-closed：必须是 git 仓库根（realpath 相等），否则拒绝。 */
@@ -306,7 +310,7 @@ function main() {
     root = resolveRoot(opts.root || process.cwd());
   } catch (err) {
     if (err instanceof RootError) {
-      // --root 指向非 git 目录：fail-closed 拒绝，绝不回退到本脚本所在仓库。
+      // --root 指向非 git 目录：fail-closed 拒绝，绝不回退到当前工作目录（CWD）所在的仓库。
       // 退出码 1（与 check-file-ledger / check-references / generate-reference-graph 实测一致；它们 --help 里写的
       // 「退出码 2」与实际行为不符，本门禁跟实际行为对齐，并在此写明）。
       process.stderr.write(`check-impact：${err.message}\n`);
