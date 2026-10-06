@@ -167,7 +167,17 @@ function resolveRoot(dir) {
   return realTop;
 }
 
-/** 读图产物：索引优先，回退工作区。返回 {artifact, basis, indexBytes, worktreeBytes, indexBuf, workBuf}。 */
+/**
+ * 读图产物：索引优先，回退工作区。返回 `{artifact, basis, indexBytes, worktreeBytes, indexBuf, workBuf, loadError}`。
+ *
+ * ★ 「读不到图」是一族，不是一个点（退出码一律 `3`，见 `--help` 末行）。三种情形的**失败步骤**必须分开报，
+ *   绝不静默、也不给它一个「未捕获栈 + exit 1」的形状：
+ *   · 索引里没有、工作区也没有 → `basis: 'none'`（`loadError` 为 null，由调用方拼既有的那句消息）；
+ *   · 在工作区但**读不出来**（EACCES / EISDIR（路径被目录顶住）/ 截断…）→ `loadError` 带 errno 与人话；
+ *   · 读到了但**不是合法 JSON**（索引版或工作区版）→ `loadError` 说明是**哪一份**解析失败。
+ *   旧实现把后两种直接抛出（`fs.readFileSync` 的 errno 抛出、`parseJson` 的 UsageError 抛出），
+ *   结果是 **exit 1 + 未捕获栈**，与 `--help` 承诺的「3 = 读不到图」不符——这条口径现在在实现里成立。
+ */
 function loadArtifact(root) {
   const abs = path.join(root, REL);
   let indexBuf = null;
@@ -177,12 +187,42 @@ function loadArtifact(root) {
       stdio: ['ignore', 'pipe', 'ignore'],
     });
   } catch {
+    // 「索引里没有这一条」是**正常回退路径**（不是错误）：连路径是目录的情况也在这里被吃掉，交给工作区分支判。
     indexBuf = null;
   }
-  const workBuf = fs.existsSync(abs) ? fs.readFileSync(abs) : null;
+  let workBuf = null;
+  let workError = null;
+  if (fs.existsSync(abs)) {
+    try {
+      workBuf = fs.readFileSync(abs);
+    } catch (err) {
+      // 存在但读不出来：目录顶住（EISDIR）/ 权限（EACCES/EPERM）/ 占用……都不许逃逸成 exit 1。
+      workBuf = null;
+      workError = err;
+    }
+  }
+  // 「存在但读不出来」的人话（存在性由上面的 existsSync 判过，所以这必定不是「没有」而是「读不了」）。
+  const workReadError = workError
+    ? `图产物存在但读不出来（工作区 ${abs}${workError.code ? '，' + workError.code : ''}）：${workError.message || String(workError)}`
+    : null;
+
   if (indexBuf) {
+    const parsed = parseJson(indexBuf, 'git 索引版 ' + REL);
+    if (!parsed.ok) {
+      // 索引版解析不了 ⇒ 退出码 3。**不许**悄悄改用工作区那份：换基准就是换事实（basis 会跟着变），
+      // 而且旧实现正是在这里抛 UsageError 崩成 exit 1。
+      return {
+        artifact: null, basis: 'index', indexBytes: indexBuf.length, worktreeBytes: workBuf ? workBuf.length : null, indexBuf, workBuf,
+        loadError: workReadError ? `${parsed.error}；另：${workReadError}` : parsed.error,
+      };
+    }
+    if (workReadError) {
+      // 索引版可读，但工作区那份「存在却读不出来」⇒ 漂移判据（artifactDrifted）拿不到另一半，
+      // 不能装作「未漂移」（那是静默降级）。同样是「读不到图」，走退出码 3。
+      return { artifact: null, basis: 'index', indexBytes: indexBuf.length, worktreeBytes: null, indexBuf, workBuf: null, loadError: workReadError };
+    }
     return {
-      artifact: parseJson(indexBuf, 'git 索引版 ' + REL),
+      artifact: parsed.value,
       basis: 'index',
       indexBytes: indexBuf.length,
       worktreeBytes: workBuf ? workBuf.length : null,
@@ -190,19 +230,39 @@ function loadArtifact(root) {
       // 被整个读进内存了，这里只是把引用交出去，不额外拷贝、不额外 I/O。
       indexBuf,
       workBuf,
+      loadError: null,
     };
   }
   if (workBuf) {
+    const parsed = parseJson(workBuf, '工作区 ' + abs);
+    if (!parsed.ok) {
+      return { artifact: null, basis: 'worktree', indexBytes: null, worktreeBytes: workBuf.length, indexBuf: null, workBuf, loadError: parsed.error };
+    }
     return {
-      artifact: parseJson(workBuf, '工作区 ' + abs),
+      artifact: parsed.value,
       basis: 'worktree',
       indexBytes: null,
       worktreeBytes: workBuf.length,
       indexBuf: null,
       workBuf,
+      loadError: null,
     };
   }
-  return { artifact: null, basis: 'none', indexBytes: null, worktreeBytes: null, indexBuf: null, workBuf: null };
+  if (workReadError) {
+    return { artifact: null, basis: 'worktree', indexBytes: null, worktreeBytes: null, indexBuf: null, workBuf: null, loadError: workReadError };
+  }
+  return { artifact: null, basis: 'none', indexBytes: null, worktreeBytes: null, indexBuf: null, workBuf: null, loadError: null };
+}
+
+/**
+ * 「读不到图产物」的唯一出口（退出码 `3`）：索引里没有 / 读不出来 / 不是合法 JSON 都走这里。
+ * `--json` 时把**结构化载荷**写到 stdout（保持机器可读：栈绝不进 stdout），同时**照写一行 stderr**——
+ * 失败原因不许因为「机器可读」而消失；非 `--json` 时只有 stderr 那一行。
+ */
+function exitUnreadableArtifact(opts, message, payload) {
+  if (opts && opts.json && payload) process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+  process.stderr.write(`${message}\n`);
+  process.exit(EXIT.unreadable);
 }
 
 /**
@@ -230,13 +290,15 @@ function driftReason(loaded) {
   return `索引版与工作区版 ${REL} **内容不一致**（两边同为 ${loaded.indexBytes} 字节，但逐字节比较不相同）：结果以索引版为准，可能与工作区现状不符。`;
 }
 
+/** 解析图产物的字节：成功 `{ok: true, value}`；失败 `{ok: false, error}`（人话，且**点名是哪一份**）。
+ *  刻意**不再抛异常**：解析失败属「读不到图」，必须由调用方按退出码 3 报出，不许变成未捕获栈 + exit 1。 */
 function parseJson(buf, what) {
   let text = buf.toString('utf8');
   if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
   try {
-    return JSON.parse(text);
+    return { ok: true, value: JSON.parse(text) };
   } catch (err) {
-    throw new UsageError(`图产物不是合法 JSON（${what}）：${err.message}`);
+    return { ok: false, error: `图产物不是合法 JSON（${what}）：${err.message}` };
   }
 }
 
@@ -1597,8 +1659,8 @@ function runSelfCheckMain(opts) {
   }
   const loaded = loadArtifact(root);
   if (!loaded.artifact) {
-    process.stderr.write(`读不到图产物 ${REL}：既不在 git 索引，也不在工作区（${path.join(root, REL)}）。\n`);
-    process.exit(EXIT.unreadable);
+    // --self-check 的载荷形状与三条查询不同（它是断言清单），这里沿用既有形状：只写 stderr 那一行 + 退出码 3。
+    exitUnreadableArtifact(opts, loaded.loadError || `读不到图产物 ${REL}：既不在 git 索引，也不在工作区（${path.join(root, REL)}）。`, null);
   }
   runSelfCheck(opts, loaded);
 }
@@ -1645,21 +1707,24 @@ function main() {
   const loaded = loadArtifact(root);
 
   if (!loaded.artifact) {
+    // 三种「读不到图」共用这一个出口：消息说清**是哪一步**失败（不存在 / 读不出来 / 哪一份不是合法 JSON）。
+    // 不存在那一支的措辞与载荷逐字节照旧（旧行为不变），新增的两支只是把 exit 1 + 未捕获栈改成 exit 3 + 人话。
+    const message = loaded.loadError || `读不到图产物 ${REL}：既不在 git 索引，也不在工作区（${path.join(root, REL)}）`;
     const payload = {
       query,
       kind: 'file',
       target: normalizeTarget(target),
       unsupported: false,
-      basis: 'none',
+      basis: loaded.basis === undefined ? 'none' : loaded.basis,
       completeness: 'unknown',
-      reasons: [`读不到图产物 ${REL}：既不在 git 索引，也不在工作区（${path.join(root, REL)}）。`],
+      reasons: [message],
       gaps: [],
       empty_referrers_reading: emptyReading('unknown'),
       counts: { file_edges: 0, referrer_files: 0, symbol_edges: 0, runtime_refs: 0, type_refs: 0 },
       direct_referrers: [],
       symbol_referrers: [],
     };
-    die(opts, EXIT.unreadable, `读不到图产物 ${REL}：既不在 git 索引，也不在工作区（${path.join(root, REL)}）`, payload);
+    exitUnreadableArtifact(opts, message, payload);
   }
 
   const norm = normalizeTarget(target);

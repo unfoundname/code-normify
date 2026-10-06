@@ -576,6 +576,9 @@ deps:
 
 **warning 级（不阻断）**：叶子 `apis: []`；根 `source: []`；根无子模块（空树）；正文缺失；`--repo-root` 未给定而存在 `source` 时的一致性跳过提示。
 
+**已知例外（有意为之）**：`policy/missing` 在**缺失或不可读**时按 **warning** 报（不是 error-MUST）——
+这是为兼容既有工程而**有意**保留的降级；实现里有一段注释说明该取舍。要收紧需先确认没有依赖它的工程。
+
 ### 5.3 诊断格式（面向 LLM）
 
 每条诊断 MUST 含 `code/severity/message/subject/evidence/supportedFixes`（Archify 模式）：
@@ -794,6 +797,9 @@ npm pack
 ```
 
 在目标项目安装构建包。PromptManager 的受管配置使用 `command = "node"`，`args` 为 `node_modules/@promptmanager/code-normify/lib/mcp.js` 和三个显式 CLI 参数；在执行组启动 cwd 下解析相对路径。完整配置及精确 `mcpBindings` 见 README。library 使用 `@promptmanager/code-normify/service` 并 MUST 显式声明 `execution`（宿主进程内为 `host`，见「宿主执行契约（execution）」），不使用历史 DSH plugin apply。
+
+**已知例外（有意为之）**：`check-doc-snippets` 的**运行时工具数量**在引擎工厂缺失时只报 **warning** ——
+只有"取数整体不可用"（status=unavailable）才是 error。该差别是有意的（引擎工厂属可选面）。
 
 ### 8.3 测试策略
 

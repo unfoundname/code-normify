@@ -985,6 +985,15 @@ Select-String -LiteralPath scripts/refs-query.cjs -Pattern 'filter: isCountedSym
 
 **这条边界的后果与兜底**：只改内容的提交由**别的机制**发现——提交侧记录 `kind: "commit"` 是内容寻址的（结构上不可能 `stale`）；本仓两份产物各有自己的判据（`ledger/references.json` 是**逐字节**、`ledger/file-ledger.json` 是**解析后结构化**），都不靠 `stale`。别把 `stale` 当成内容漂移的探测器。
 
+### 7.13 提交快照的差不是「绝对可重放」的（`needs_change` 会读今天的工作区与进程配置）
+
+**提交快照的差不是"绝对可重放"的**：`needs_change` 判定会读**今天的工作区现状**（文件是否存在/是否被忽略）
+与**进程级 git 配置**（如 `core.excludesFile`）⇒ 同一对基准在**不同工作区状态或不同进程配置**下可能得到不同的 `needs_change`。
+**树的哈希部分（`from/to_snapshot.tree`）不受影响**，仍可逐字复核；受影响的是"这条改动需不需要人工跟进"这一类判定。
+**不要据此声称"同一对基准重算必然同差"** —— 本行历史上那样写过。
+
+**留痕（旧说法，已作废，逐字照抄原处）**：`ledger/change-log/README.md` 曾写「记录**不可变、可复核**（同一对基准重算必然得到同一份差）」；`scripts/generate-change-log.cjs` 的文件头注释曾写「快照来自内容寻址的提交树 ⇒ 同一对基准连跑两次，记录**除 `created_at` 外逐字节相同**」。两处都按上一条口径改成了带条件的表述（条件：**同一工作区状态 + 同一进程 git 配置**）。
+
 ---
 
 ## 8. 想改动时怎么做

@@ -127,8 +127,10 @@ export async function putGraph(dataDir: string, graph: ArchitectureGraph, repoRo
         if (!render.ok) return { ok: false, errors: render.errors, warnings: render.warnings, digest };
         const roots = ['modules', 'renders', 'policy.yml', ...ARTIFACTS];
         const snapshot = await snapshotProject(dataDir, roots);
-        if (await graphDigest(dataDir) !== expected) {
-            return { ok: false, errors: [diag('error', 'graph/conflict', '发布前架构图版本改变')], warnings: [], digest: await graphDigest(dataDir) };
+        // 发布前的 CAS 复核：期望值与当前摘要都进 evidence（与写盘前那次复核同一套字段），digest 复用同一个值。
+        const actual = await graphDigest(dataDir);
+        if (actual !== expected) {
+            return { ok: false, errors: [diag('error', 'graph/conflict', '发布前架构图版本改变', {}, { expected, actual }, ['重新调用 normify_graph_get'])], warnings: [], digest: actual };
         }
         checkExecution(execution, 'publish');
         try {

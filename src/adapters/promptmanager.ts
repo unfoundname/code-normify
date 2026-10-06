@@ -14,7 +14,7 @@ export function projectBranchWorkerPlan(snapshot: BranchPlanningSnapshot, leadRe
 
 /** 固定设计投影到宿主已有 WorkerPlan；不持有 Worker 身份、状态、权限或 Git 句柄。 */
 export async function exportBranchWorkerPlan(dataDir: string, repoRoot: string, requireBilingual: boolean, leadRef: string, execution: NormifyToolExecution = standaloneExecution) {
-    if (!leadRef.trim()) return { ok: false, errors: [diag('error', 'branch/template-ref', '必须明确指定编排组 lead 模板引用')], warnings: [] };
+    if (!leadRef.trim()) return { ok: false, errors: [diag('error', 'branch/template-ref', '必须明确指定编排组 lead 模板引用', { parameter: 'lead_ref' }, { value: leadRef, length: leadRef.length }, ['传入非空的 lead 模板引用：normify_branch_plan_export({ dir, lead_ref: "<模板引用>" })'])], warnings: [] };
     const result = await branchPackets(dataDir, repoRoot, requireBilingual, execution);
     if (!result.ok || !result.plan || !result.packets) return result;
     const workerPlan = projectBranchWorkerPlan({ plan: result.plan, packets: result.packets,

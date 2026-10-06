@@ -170,14 +170,14 @@ export function resolveHelp(topic: string | undefined, catalog: readonly ToolCat
         const name = raw.slice(raw.indexOf(':') + 1).trim();
         const tool = catalog.find(entry => entry.name.toLowerCase() === name.toLowerCase());
         if (tool === undefined) {
-            return { ok: false, errors: [diag('error', 'args/unknown-tool', '未知工具：' + name + '（先用 topic:"tools" 看全部 ' + catalog.length + ' 个工具名）')], warnings: [] };
+            return { ok: false, errors: [diag('error', 'args/unknown-tool', '未知工具：' + name + '（先用 topic:"tools" 看全部 ' + catalog.length + ' 个工具名）', { topic: 'tool:' + name }, { value: name, catalog_size: catalog.length }, ['用 topic:"tools" 列出全部工具名，再以 tool:<工具名> 查询'])], warnings: [] };
         }
         const reference = toolReference(tool);
         return { ok: true, errors: [], warnings: [], topic: 'tool:' + tool.name, title: reference.title, reference: reference.text, topics };
     }
     const selected = (lower === '' ? 'fields' : lower) as HelpTopic;
     if (!HELP_TOPICS.includes(selected)) {
-        return { ok: false, errors: [diag('error', 'args/invalid-topic', '未知主题：' + raw + '（可用：' + HELP_TOPICS.join(' | ') + ' | tool:<工具名>）')], warnings: [] };
+        return { ok: false, errors: [diag('error', 'args/invalid-topic', '未知主题：' + raw + '（可用：' + HELP_TOPICS.join(' | ') + ' | tool:<工具名>）', { topic: raw }, { value: raw, available: [...HELP_TOPICS] }, ['改用可用主题之一：' + HELP_TOPICS.join(' | ') + '，或以 tool:<工具名> 查询'])], warnings: [] };
     }
     const reference = topicReference(selected, catalog);
     return { ok: true, errors: [], warnings: [], topic: selected, title: reference.title, reference: reference.text, topics };

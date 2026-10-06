@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "a50b48a38b4ff084d8c2190c7620ea64001b89a888594468ef624f223e19e032",
+    "universe_hash": "0956da8744374881b88ffb8843c79b66b314745466b5770c4d35279f8089807f",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1500,
+    "tracked_total": 1501,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 164
+      "scanned_total": 165
     },
     "analysis": {
       "mode": "typescript",
@@ -92,7 +92,7 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "自指条目（本产物自身的 bytes / lines）固定写 null —— 这是【处置选择】，不是\"没有不动点\"：实测把这两个量迭代写回，第 3 次即收敛（不动点存在）。因此这里写 null 是为了让产物写入幂等、而不是因为\"自指在数学上不可能稳定\"。（本条 = 图数据文件自己（ledger/references.json）那一行；只豁免这两个派生量，其余字段照常登记。）",
     "node_states": {
-      "indexed": 1500
+      "indexed": 1501
     },
     "edge_kinds": {
       "anchor": 3,
@@ -223,8 +223,8 @@
       "id": "docs/HANDOFF-code-graph.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 131332,
-      "lines": 1113,
+      "bytes": 132517,
+      "lines": 1122,
       "edge_out": 0,
       "edge_in": 0
     },
@@ -268,8 +268,8 @@
       "id": "docs/SPEC.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 61636,
-      "lines": 873,
+      "bytes": 62177,
+      "lines": 879,
       "edge_out": 1,
       "edge_in": 9
     },
@@ -12289,11 +12289,20 @@
       "edge_in": 0
     },
     {
+      "id": "ledger/change-log/20261006T222214Z-70699e4.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 12776,
+      "lines": 390,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
       "id": "ledger/change-log/README.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 16142,
-      "lines": 186,
+      "bytes": 18797,
+      "lines": 213,
       "edge_out": 0,
       "edge_in": 0
     },
@@ -12310,7 +12319,7 @@
       "id": "ledger/exempt.gitignore",
       "lang": "other",
       "state": "indexed",
-      "bytes": 7407,
+      "bytes": 8372,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -12355,7 +12364,7 @@
       "id": "lib/adapters/promptmanager.js",
       "lang": "js",
       "state": "indexed",
-      "bytes": 1726,
+      "bytes": 1902,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -12364,7 +12373,7 @@
       "id": "lib/adapters/promptmanager.js.map",
       "lang": "other",
       "state": "indexed",
-      "bytes": 1747,
+      "bytes": 1859,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -12517,7 +12526,7 @@
       "id": "lib/engine/graph.js",
       "lang": "js",
       "state": "indexed",
-      "bytes": 14161,
+      "bytes": 14387,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -12526,7 +12535,7 @@
       "id": "lib/engine/graph.js.map",
       "lang": "other",
       "state": "indexed",
-      "bytes": 15902,
+      "bytes": 15988,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -12607,7 +12616,7 @@
       "id": "lib/engine/reference.js",
       "lang": "js",
       "state": "indexed",
-      "bytes": 11087,
+      "bytes": 11397,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -12616,7 +12625,7 @@
       "id": "lib/engine/reference.js.map",
       "lang": "other",
       "state": "indexed",
-      "bytes": 6020,
+      "bytes": 6304,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -12805,7 +12814,7 @@
       "id": "lib/tools.js",
       "lang": "js",
       "state": "indexed",
-      "bytes": 80384,
+      "bytes": 81683,
       "lines": null,
       "edge_out": 0,
       "edge_in": 1
@@ -12814,7 +12823,7 @@
       "id": "lib/tools.js.map",
       "lang": "other",
       "state": "indexed",
-      "bytes": 74226,
+      "bytes": 74989,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -13174,8 +13183,8 @@
       "id": "scripts/generate-change-log.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 51905,
-      "lines": 1064,
+      "bytes": 52688,
+      "lines": 1070,
       "edge_out": 6,
       "edge_in": 2
     },
@@ -13210,8 +13219,8 @@
       "id": "scripts/refs-query.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 93206,
-      "lines": 1729,
+      "bytes": 97638,
+      "lines": 1794,
       "edge_out": 3,
       "edge_in": 1
     },
@@ -13237,7 +13246,7 @@
       "id": "src/adapters/promptmanager.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 1848,
+      "bytes": 2024,
       "lines": 25,
       "edge_out": 4,
       "edge_in": 2
@@ -13318,8 +13327,8 @@
       "id": "src/engine/graph.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 14545,
-      "lines": 231,
+      "bytes": 14771,
+      "lines": 233,
       "edge_out": 20,
       "edge_in": 4
     },
@@ -13363,7 +13372,7 @@
       "id": "src/engine/reference.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 11974,
+      "bytes": 12284,
       "lines": 185,
       "edge_out": 5,
       "edge_in": 2
@@ -13462,8 +13471,8 @@
       "id": "src/tools.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 90879,
-      "lines": 1836,
+      "bytes": 92194,
+      "lines": 1838,
       "edge_out": 24,
       "edge_in": 5
     },
@@ -16527,11 +16536,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-change-log.cjs:52:20:require:node:fs",
+      "id": "scripts/generate-change-log.cjs:58:20:require:node:fs",
       "kind": "require",
       "from": {
         "file": "scripts/generate-change-log.cjs",
-        "line": 52,
+        "line": 58,
         "column": 20
       },
       "to": {
@@ -16549,11 +16558,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-change-log.cjs:53:20:require:node:os",
+      "id": "scripts/generate-change-log.cjs:59:20:require:node:os",
       "kind": "require",
       "from": {
         "file": "scripts/generate-change-log.cjs",
-        "line": 53,
+        "line": 59,
         "column": 20
       },
       "to": {
@@ -16571,11 +16580,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-change-log.cjs:54:22:require:node:path",
+      "id": "scripts/generate-change-log.cjs:60:22:require:node:path",
       "kind": "require",
       "from": {
         "file": "scripts/generate-change-log.cjs",
-        "line": 54,
+        "line": 60,
         "column": 22
       },
       "to": {
@@ -16593,11 +16602,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-change-log.cjs:57:26:require:./generate-reference-graph.cjs",
+      "id": "scripts/generate-change-log.cjs:63:26:require:./generate-reference-graph.cjs",
       "kind": "require",
       "from": {
         "file": "scripts/generate-change-log.cjs",
-        "line": 57,
+        "line": 63,
         "column": 26
       },
       "to": {
@@ -16615,11 +16624,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-change-log.cjs:59:24:require:./file-ledger-core.cjs",
+      "id": "scripts/generate-change-log.cjs:65:24:require:./file-ledger-core.cjs",
       "kind": "require",
       "from": {
         "file": "scripts/generate-change-log.cjs",
-        "line": 59,
+        "line": 65,
         "column": 24
       },
       "to": {
@@ -16637,11 +16646,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-change-log.cjs:617:27:require:ajv/dist/2020",
+      "id": "scripts/generate-change-log.cjs:623:27:require:ajv/dist/2020",
       "kind": "require",
       "from": {
         "file": "scripts/generate-change-log.cjs",
-        "line": 617,
+        "line": 623,
         "column": 27
       },
       "to": {
@@ -26220,35 +26229,35 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/graph.ts#effectiveModuleDependencies@161:17",
+      "id": "src/engine/graph.ts#effectiveModuleDependencies@163:17",
       "file": "src/engine/graph.ts",
       "name": "effectiveModuleDependencies",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 161,
+      "line": 163,
       "column": 17,
       "origin": "source"
     },
     {
-      "id": "src/engine/graph.ts#moduleDependencies@152:17",
+      "id": "src/engine/graph.ts#moduleDependencies@154:17",
       "file": "src/engine/graph.ts",
       "name": "moduleDependencies",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 152,
+      "line": 154,
       "column": 17,
       "origin": "source"
     },
     {
-      "id": "src/engine/graph.ts#projectWorkPacket@181:23",
+      "id": "src/engine/graph.ts#projectWorkPacket@183:23",
       "file": "src/engine/graph.ts",
       "name": "projectWorkPacket",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 181,
+      "line": 183,
       "column": 23,
       "origin": "source"
     },
@@ -26297,13 +26306,13 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/graph.ts#workPacket@174:23",
+      "id": "src/engine/graph.ts#workPacket@176:23",
       "file": "src/engine/graph.ts",
       "name": "workPacket",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 174,
+      "line": 176,
       "column": 23,
       "origin": "source"
     },
@@ -28552,13 +28561,13 @@
       "origin": "source"
     },
     {
-      "id": "src/tools.ts#ToolExecutionPayload@636:11",
+      "id": "src/tools.ts#ToolExecutionPayload@638:11",
       "file": "src/tools.ts",
       "name": "ToolExecutionPayload",
       "decl_kind": "interface",
       "exported": false,
       "scope": null,
-      "line": 636,
+      "line": 638,
       "column": 11,
       "origin": "source"
     },
@@ -28618,24 +28627,24 @@
       "origin": "source"
     },
     {
-      "id": "src/tools.ts#argumentDiagnostic@627:10",
+      "id": "src/tools.ts#argumentDiagnostic@629:10",
       "file": "src/tools.ts",
       "name": "argumentDiagnostic",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 627,
+      "line": 629,
       "column": 10,
       "origin": "source"
     },
     {
-      "id": "src/tools.ts#argumentValidator@601:7",
+      "id": "src/tools.ts#argumentValidator@603:7",
       "file": "src/tools.ts",
       "name": "argumentValidator",
       "decl_kind": "variable",
       "exported": false,
       "scope": null,
-      "line": 601,
+      "line": 603,
       "column": 7,
       "origin": "source"
     },
@@ -28651,13 +28660,13 @@
       "origin": "source"
     },
     {
-      "id": "src/tools.ts#createNormifyTools@683:17",
+      "id": "src/tools.ts#createNormifyTools@685:17",
       "file": "src/tools.ts",
       "name": "createNormifyTools",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 683,
+      "line": 685,
       "column": 17,
       "origin": "source"
     },
@@ -28673,13 +28682,13 @@
       "origin": "source"
     },
     {
-      "id": "src/tools.ts#defineNormifyTool@651:17",
+      "id": "src/tools.ts#defineNormifyTool@653:17",
       "file": "src/tools.ts",
       "name": "defineNormifyTool",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 651,
+      "line": 653,
       "column": 17,
       "origin": "source"
     },
@@ -28695,24 +28704,24 @@
       "origin": "source"
     },
     {
-      "id": "src/tools.ts#diagnosticsOut@593:10",
+      "id": "src/tools.ts#diagnosticsOut@595:10",
       "file": "src/tools.ts",
       "name": "diagnosticsOut",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 593,
+      "line": 595,
       "column": 10,
       "origin": "source"
     },
     {
-      "id": "src/tools.ts#enqueueTool@605:16",
+      "id": "src/tools.ts#enqueueTool@607:16",
       "file": "src/tools.ts",
       "name": "enqueueTool",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 605,
+      "line": 607,
       "column": 16,
       "origin": "source"
     },
@@ -28783,13 +28792,13 @@
       "origin": "source"
     },
     {
-      "id": "src/tools.ts#normalizeToolResult@645:10",
+      "id": "src/tools.ts#normalizeToolResult@647:10",
       "file": "src/tools.ts",
       "name": "normalizeToolResult",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 645,
+      "line": 647,
       "column": 10,
       "origin": "source"
     },
@@ -28838,13 +28847,13 @@
       "origin": "source"
     },
     {
-      "id": "src/tools.ts#registerTools@1832:17",
+      "id": "src/tools.ts#registerTools@1834:17",
       "file": "src/tools.ts",
       "name": "registerTools",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 1832,
+      "line": 1834,
       "column": 17,
       "origin": "source"
     },
@@ -28904,13 +28913,13 @@
       "origin": "source"
     },
     {
-      "id": "src/tools.ts#toErrorPayload@584:10",
+      "id": "src/tools.ts#toErrorPayload@586:10",
       "file": "src/tools.ts",
       "name": "toErrorPayload",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 584,
+      "line": 586,
       "column": 10,
       "origin": "source"
     },
@@ -28926,13 +28935,13 @@
       "origin": "source"
     },
     {
-      "id": "src/tools.ts#toolQueues@602:7",
+      "id": "src/tools.ts#toolQueues@604:7",
       "file": "src/tools.ts",
       "name": "toolQueues",
       "decl_kind": "variable",
       "exported": false,
       "scope": null,
-      "line": 602,
+      "line": 604,
       "column": 7,
       "origin": "source"
     },
@@ -30106,9 +30115,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/graph.ts#effectiveModuleDependencies@161:17",
+        "sym": "src/engine/graph.ts#effectiveModuleDependencies@163:17",
         "file": "src/engine/graph.ts",
-        "line": 161,
+        "line": 163,
         "column": 17,
         "state": "indexed"
       },
@@ -30152,9 +30161,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/graph.ts#projectWorkPacket@181:23",
+        "sym": "src/engine/graph.ts#projectWorkPacket@183:23",
         "file": "src/engine/graph.ts",
-        "line": 181,
+        "line": 183,
         "column": 23,
         "state": "indexed"
       },
@@ -41137,13 +41146,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/graph.ts:152:44:type-reference",
+      "id": "src/engine/graph.ts:154:44:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/graph.ts",
-        "line": 152,
+        "line": 154,
         "column": 44,
-        "sym": "src/engine/graph.ts#moduleDependencies@152:17"
+        "sym": "src/engine/graph.ts#moduleDependencies@154:17"
       },
       "to": {
         "sym": "src/engine/types.ts#Module@140:18",
@@ -41160,13 +41169,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/graph.ts:161:53:type-reference",
+      "id": "src/engine/graph.ts:163:53:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/graph.ts",
-        "line": 161,
+        "line": 163,
         "column": 53,
-        "sym": "src/engine/graph.ts#effectiveModuleDependencies@161:17"
+        "sym": "src/engine/graph.ts#effectiveModuleDependencies@163:17"
       },
       "to": {
         "sym": "src/engine/types.ts#Module@140:18",
@@ -41183,13 +41192,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/graph.ts:161:67:type-reference",
+      "id": "src/engine/graph.ts:163:67:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/graph.ts",
-        "line": 161,
+        "line": 163,
         "column": 67,
-        "sym": "src/engine/graph.ts#effectiveModuleDependencies@161:17"
+        "sym": "src/engine/graph.ts#effectiveModuleDependencies@163:17"
       },
       "to": {
         "sym": null,
@@ -41206,13 +41215,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/graph.ts:161:87:type-reference",
+      "id": "src/engine/graph.ts:163:87:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/graph.ts",
-        "line": 161,
+        "line": 163,
         "column": 87,
-        "sym": "src/engine/graph.ts#effectiveModuleDependencies@161:17"
+        "sym": "src/engine/graph.ts#effectiveModuleDependencies@163:17"
       },
       "to": {
         "sym": "src/engine/types.ts#ModuleFile@206:18",
@@ -41229,13 +41238,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/graph.ts:181:50:type-reference",
+      "id": "src/engine/graph.ts:183:50:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/graph.ts",
-        "line": 181,
+        "line": 183,
         "column": 50,
-        "sym": "src/engine/graph.ts#projectWorkPacket@181:23"
+        "sym": "src/engine/graph.ts#projectWorkPacket@183:23"
       },
       "to": {
         "sym": "src/engine/validate.ts#ValidateOutput@20:18",
@@ -41252,13 +41261,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/graph.ts:182:38:type-reference",
+      "id": "src/engine/graph.ts:184:38:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/graph.ts",
-        "line": 182,
+        "line": 184,
         "column": 38,
-        "sym": "src/engine/graph.ts#projectWorkPacket@181:23"
+        "sym": "src/engine/graph.ts#projectWorkPacket@183:23"
       },
       "to": {
         "sym": "src/engine/types.ts#ModuleFile@206:18",
@@ -41275,13 +41284,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/graph.ts:183:19:type-reference",
+      "id": "src/engine/graph.ts:185:19:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/graph.ts",
-        "line": 183,
+        "line": 185,
         "column": 19,
-        "sym": "src/engine/graph.ts#projectWorkPacket@181:23"
+        "sym": "src/engine/graph.ts#projectWorkPacket@183:23"
       },
       "to": {
         "sym": "src/engine/types.ts#Diagnostic@213:18",
@@ -41298,13 +41307,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/graph.ts:195:38:type-reference",
+      "id": "src/engine/graph.ts:197:38:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/graph.ts",
-        "line": 195,
+        "line": 197,
         "column": 38,
-        "sym": "src/engine/graph.ts#projectWorkPacket@181:23"
+        "sym": "src/engine/graph.ts#projectWorkPacket@183:23"
       },
       "to": {
         "sym": "src/engine/types.ts#Module@140:18",
@@ -49265,9 +49274,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/tools.ts#createNormifyTools@683:17",
+        "sym": "src/tools.ts#createNormifyTools@685:17",
         "file": "src/tools.ts",
-        "line": 683,
+        "line": 685,
         "column": 17,
         "state": "indexed"
       },
@@ -49288,9 +49297,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/tools.ts#defineNormifyTool@651:17",
+        "sym": "src/tools.ts#defineNormifyTool@653:17",
         "file": "src/tools.ts",
-        "line": 651,
+        "line": 653,
         "column": 17,
         "state": "indexed"
       },
@@ -49311,9 +49320,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/tools.ts#registerTools@1832:17",
+        "sym": "src/tools.ts#registerTools@1834:17",
         "file": "src/tools.ts",
-        "line": 1832,
+        "line": 1834,
         "column": 17,
         "state": "indexed"
       },
@@ -52094,9 +52103,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/tools.ts#createNormifyTools@683:17",
+        "sym": "src/tools.ts#createNormifyTools@685:17",
         "file": "src/tools.ts",
-        "line": 683,
+        "line": 685,
         "column": 17,
         "state": "indexed"
       },
@@ -52117,9 +52126,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/tools.ts#defineNormifyTool@651:17",
+        "sym": "src/tools.ts#defineNormifyTool@653:17",
         "file": "src/tools.ts",
-        "line": 651,
+        "line": 653,
         "column": 17,
         "state": "indexed"
       },
@@ -52301,9 +52310,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/graph.ts#workPacket@174:23",
+        "sym": "src/engine/graph.ts#workPacket@176:23",
         "file": "src/engine/graph.ts",
-        "line": 174,
+        "line": 176,
         "column": 23,
         "state": "indexed"
       },
@@ -57053,13 +57062,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:584:42:type-reference",
+      "id": "src/tools.ts:586:56:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 584,
-        "column": 42,
-        "sym": "src/tools.ts#toErrorPayload@584:10"
+        "line": 586,
+        "column": 56,
+        "sym": "src/tools.ts#toErrorPayload@586:10"
       },
       "to": {
         "sym": "src/tools.ts#NormifyToolResult@60:18",
@@ -57076,13 +57085,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:593:33:type-reference",
+      "id": "src/tools.ts:595:33:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 593,
+        "line": 595,
         "column": 33,
-        "sym": "src/tools.ts#diagnosticsOut@593:10"
+        "sym": "src/tools.ts#diagnosticsOut@595:10"
       },
       "to": {
         "sym": "src/engine/types.ts#Diagnostic@213:18",
@@ -57099,13 +57108,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:593:57:type-reference",
+      "id": "src/tools.ts:595:57:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 593,
+        "line": 595,
         "column": 57,
-        "sym": "src/tools.ts#diagnosticsOut@593:10"
+        "sym": "src/tools.ts#diagnosticsOut@595:10"
       },
       "to": {
         "sym": "src/engine/types.ts#Diagnostic@213:18",
@@ -57122,13 +57131,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:593:72:type-reference",
+      "id": "src/tools.ts:595:72:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 593,
+        "line": 595,
         "column": 72,
-        "sym": "src/tools.ts#diagnosticsOut@593:10"
+        "sym": "src/tools.ts#diagnosticsOut@595:10"
       },
       "to": {
         "sym": "src/tools.ts#NormifyToolResult@60:18",
@@ -57145,13 +57154,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:602:36:type-reference",
+      "id": "src/tools.ts:604:36:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 602,
+        "line": 604,
         "column": 36,
-        "sym": "src/tools.ts#toolQueues@602:7"
+        "sym": "src/tools.ts#toolQueues@604:7"
       },
       "to": {
         "sym": null,
@@ -57168,13 +57177,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:605:65:type-reference",
+      "id": "src/tools.ts:607:65:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 605,
+        "line": 607,
         "column": 65,
-        "sym": "src/tools.ts#enqueueTool@605:16"
+        "sym": "src/tools.ts#enqueueTool@607:16"
       },
       "to": {
         "sym": null,
@@ -57191,18 +57200,18 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:605:73:type-reference",
+      "id": "src/tools.ts:607:73:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 605,
+        "line": 607,
         "column": 73,
-        "sym": "src/tools.ts#enqueueTool@605:16"
+        "sym": "src/tools.ts#enqueueTool@607:16"
       },
       "to": {
         "sym": null,
         "file": "src/tools.ts",
-        "line": 605,
+        "line": 607,
         "column": 28,
         "state": "indexed"
       },
@@ -57214,13 +57223,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:605:88:type-reference",
+      "id": "src/tools.ts:607:88:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 605,
+        "line": 607,
         "column": 88,
-        "sym": "src/tools.ts#enqueueTool@605:16"
+        "sym": "src/tools.ts#enqueueTool@607:16"
       },
       "to": {
         "sym": "src/execution.ts#NormifyToolExecution@9:18",
@@ -57237,13 +57246,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:605:111:type-reference",
+      "id": "src/tools.ts:607:111:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 605,
+        "line": 607,
         "column": 111,
-        "sym": "src/tools.ts#enqueueTool@605:16"
+        "sym": "src/tools.ts#enqueueTool@607:16"
       },
       "to": {
         "sym": null,
@@ -57260,18 +57269,18 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:605:119:type-reference",
+      "id": "src/tools.ts:607:119:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 605,
+        "line": 607,
         "column": 119,
-        "sym": "src/tools.ts#enqueueTool@605:16"
+        "sym": "src/tools.ts#enqueueTool@607:16"
       },
       "to": {
         "sym": null,
         "file": "src/tools.ts",
-        "line": 605,
+        "line": 607,
         "column": 28,
         "state": "indexed"
       },
@@ -57283,13 +57292,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:627:36:type-reference",
+      "id": "src/tools.ts:629:36:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 627,
+        "line": 629,
         "column": 36,
-        "sym": "src/tools.ts#argumentDiagnostic@627:10"
+        "sym": "src/tools.ts#argumentDiagnostic@629:10"
       },
       "to": {
         "sym": null,
@@ -57306,13 +57315,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:627:50:type-reference",
+      "id": "src/tools.ts:629:50:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 627,
+        "line": 629,
         "column": 50,
-        "sym": "src/tools.ts#argumentDiagnostic@627:10"
+        "sym": "src/tools.ts#argumentDiagnostic@629:10"
       },
       "to": {
         "sym": "src/engine/types.ts#Diagnostic@213:18",
@@ -57329,13 +57338,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:639:14:type-reference",
+      "id": "src/tools.ts:641:14:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 639,
+        "line": 641,
         "column": 14,
-        "sym": "src/tools.ts#ToolExecutionPayload@636:11"
+        "sym": "src/tools.ts#ToolExecutionPayload@638:11"
       },
       "to": {
         "sym": "src/engine/types.ts#Diagnostic@213:18",
@@ -57352,13 +57361,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:640:16:type-reference",
+      "id": "src/tools.ts:642:16:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 640,
+        "line": 642,
         "column": 16,
-        "sym": "src/tools.ts#ToolExecutionPayload@636:11"
+        "sym": "src/tools.ts#ToolExecutionPayload@638:11"
       },
       "to": {
         "sym": "src/engine/types.ts#Diagnostic@213:18",
@@ -57375,13 +57384,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:645:56:type-reference",
+      "id": "src/tools.ts:647:70:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 645,
-        "column": 56,
-        "sym": "src/tools.ts#normalizeToolResult@645:10"
+        "line": 647,
+        "column": 70,
+        "sym": "src/tools.ts#normalizeToolResult@647:10"
       },
       "to": {
         "sym": "src/tools.ts#NormifyToolResult@60:18",
@@ -57398,18 +57407,18 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:646:73:type-reference",
+      "id": "src/tools.ts:648:73:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 646,
+        "line": 648,
         "column": 73,
-        "sym": "src/tools.ts#normalizeToolResult@645:10"
+        "sym": "src/tools.ts#normalizeToolResult@647:10"
       },
       "to": {
-        "sym": "src/tools.ts#ToolExecutionPayload@636:11",
+        "sym": "src/tools.ts#ToolExecutionPayload@638:11",
         "file": "src/tools.ts",
-        "line": 636,
+        "line": 638,
         "column": 11,
         "state": "indexed"
       },
@@ -57421,13 +57430,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:652:10:type-reference",
+      "id": "src/tools.ts:654:10:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 652,
+        "line": 654,
         "column": 10,
-        "sym": "src/tools.ts#defineNormifyTool@651:17"
+        "sym": "src/tools.ts#defineNormifyTool@653:17"
       },
       "to": {
         "sym": "src/tools.ts#ToolEnv@27:18",
@@ -57444,13 +57453,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:653:17:type-reference",
+      "id": "src/tools.ts:655:17:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 653,
+        "line": 655,
         "column": 17,
-        "sym": "src/tools.ts#defineNormifyTool@651:17"
+        "sym": "src/tools.ts#defineNormifyTool@653:17"
       },
       "to": {
         "sym": "src/tools.ts#ToolDef@53:11",
@@ -57467,18 +57476,18 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:654:21:type-reference",
+      "id": "src/tools.ts:656:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 654,
+        "line": 656,
         "column": 21,
-        "sym": "src/tools.ts#defineNormifyTool@651:17"
+        "sym": "src/tools.ts#defineNormifyTool@653:17"
       },
       "to": {
         "sym": null,
         "file": "src/tools.ts",
-        "line": 651,
+        "line": 653,
         "column": 35,
         "state": "indexed"
       },
@@ -57490,13 +57499,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:654:35:type-reference",
+      "id": "src/tools.ts:656:35:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 654,
+        "line": 656,
         "column": 35,
-        "sym": "src/tools.ts#defineNormifyTool@651:17"
+        "sym": "src/tools.ts#defineNormifyTool@653:17"
       },
       "to": {
         "sym": "src/execution.ts#NormifyToolExecution@9:18",
@@ -57513,13 +57522,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:654:60:type-reference",
+      "id": "src/tools.ts:656:60:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 654,
+        "line": 656,
         "column": 60,
-        "sym": "src/tools.ts#defineNormifyTool@651:17"
+        "sym": "src/tools.ts#defineNormifyTool@653:17"
       },
       "to": {
         "sym": null,
@@ -57536,13 +57545,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:655:4:type-reference",
+      "id": "src/tools.ts:657:4:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 655,
+        "line": 657,
         "column": 4,
-        "sym": "src/tools.ts#defineNormifyTool@651:17"
+        "sym": "src/tools.ts#defineNormifyTool@653:17"
       },
       "to": {
         "sym": "src/tools.ts#NormifyTool@68:18",
@@ -57559,18 +57568,18 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:673:70:type-reference",
+      "id": "src/tools.ts:675:70:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 673,
+        "line": 675,
         "column": 70,
-        "sym": "src/tools.ts#defineNormifyTool@651:17"
+        "sym": "src/tools.ts#defineNormifyTool@653:17"
       },
       "to": {
         "sym": null,
         "file": "src/tools.ts",
-        "line": 651,
+        "line": 653,
         "column": 35,
         "state": "indexed"
       },
@@ -57582,13 +57591,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:683:41:type-reference",
+      "id": "src/tools.ts:685:41:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 683,
+        "line": 685,
         "column": 41,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ToolEnv@27:18",
@@ -57605,82 +57614,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:683:82:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/tools.ts",
-        "line": 683,
-        "column": 82,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
-      },
-      "to": {
-        "sym": "src/engine/reference.ts#ToolCatalogEntry@16:18",
-        "file": "src/engine/reference.ts",
-        "line": 16,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/reference.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/tools.ts:683:103:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/tools.ts",
-        "line": 683,
-        "column": 103,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
-      },
-      "to": {
-        "sym": "src/tools.ts#NormifyTool@68:18",
-        "file": "src/tools.ts",
-        "line": 68,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": "src/tools.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/tools.ts:684:18:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/tools.ts",
-        "line": 684,
-        "column": 18,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
-      },
-      "to": {
-        "sym": "src/tools.ts#NormifyTool@68:18",
-        "file": "src/tools.ts",
-        "line": 68,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": "src/tools.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/tools.ts:685:24:type-reference",
+      "id": "src/tools.ts:685:82:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
         "line": 685,
-        "column": 24,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "column": 82,
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/engine/reference.ts#ToolCatalogEntry@16:18",
@@ -57697,13 +57637,82 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:686:44:type-reference",
+      "id": "src/tools.ts:685:103:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/tools.ts",
+        "line": 685,
+        "column": 103,
+        "sym": "src/tools.ts#createNormifyTools@685:17"
+      },
+      "to": {
+        "sym": "src/tools.ts#NormifyTool@68:18",
+        "file": "src/tools.ts",
+        "line": 68,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": "src/tools.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/tools.ts:686:18:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
         "line": 686,
+        "column": 18,
+        "sym": "src/tools.ts#createNormifyTools@685:17"
+      },
+      "to": {
+        "sym": "src/tools.ts#NormifyTool@68:18",
+        "file": "src/tools.ts",
+        "line": 68,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": "src/tools.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/tools.ts:687:24:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/tools.ts",
+        "line": 687,
+        "column": 24,
+        "sym": "src/tools.ts#createNormifyTools@685:17"
+      },
+      "to": {
+        "sym": "src/engine/reference.ts#ToolCatalogEntry@16:18",
+        "file": "src/engine/reference.ts",
+        "line": 16,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/reference.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/tools.ts:688:44:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/tools.ts",
+        "line": 688,
         "column": 44,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ToolDef@53:11",
@@ -57720,18 +57729,18 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:686:69:type-reference",
+      "id": "src/tools.ts:688:69:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 686,
+        "line": 688,
         "column": 69,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": null,
         "file": "src/tools.ts",
-        "line": 686,
+        "line": 688,
         "column": 23,
         "state": "indexed"
       },
@@ -57743,13 +57752,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:686:83:type-reference",
+      "id": "src/tools.ts:688:83:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 686,
+        "line": 688,
         "column": 83,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/execution.ts#NormifyToolExecution@9:18",
@@ -57766,13 +57775,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:686:108:type-reference",
+      "id": "src/tools.ts:688:108:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 686,
+        "line": 688,
         "column": 108,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": null,
@@ -57789,13 +57798,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:690:28:type-reference",
+      "id": "src/tools.ts:692:28:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 690,
+        "line": 692,
         "column": 28,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ProjectArgs@79:11",
@@ -57812,13 +57821,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:690:58:type-reference",
+      "id": "src/tools.ts:692:58:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 690,
+        "line": 692,
         "column": 58,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": null,
@@ -57835,13 +57844,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:690:66:type-reference",
+      "id": "src/tools.ts:692:66:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 690,
+        "line": 692,
         "column": 66,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ProjectRef@85:11",
@@ -57858,13 +57867,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:697:21:type-reference",
+      "id": "src/tools.ts:699:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 697,
+        "line": 699,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#TreeListArgs@95:11",
@@ -57881,13 +57890,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:699:25:type-reference",
+      "id": "src/tools.ts:701:25:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 699,
+        "line": 701,
         "column": 25,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ProjectRef@85:11",
@@ -57904,13 +57913,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:700:20:type-reference",
+      "id": "src/tools.ts:702:20:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 700,
+        "line": 702,
         "column": 20,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#TreeListRow@257:11",
@@ -57927,13 +57936,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:702:26:type-reference",
+      "id": "src/tools.ts:704:26:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 702,
+        "line": 704,
         "column": 26,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/engine/types.ts#ModuleFile@206:18",
@@ -57950,13 +57959,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:718:21:type-reference",
+      "id": "src/tools.ts:720:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 718,
+        "line": 720,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#IdArgs@91:11",
@@ -57973,13 +57982,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:720:22:type-reference",
+      "id": "src/tools.ts:722:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 720,
+        "line": 722,
         "column": 22,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/engine/types.ts#ModuleFile@206:18",
@@ -57996,13 +58005,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:735:21:type-reference",
+      "id": "src/tools.ts:737:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 735,
+        "line": 737,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ModuleListArgs@99:11",
@@ -58019,13 +58028,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:737:22:type-reference",
+      "id": "src/tools.ts:739:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 737,
+        "line": 739,
         "column": 22,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/engine/types.ts#ModuleFile@206:18",
@@ -58042,13 +58051,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:774:21:type-reference",
+      "id": "src/tools.ts:776:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 774,
+        "line": 776,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ProjectInitArgs@119:11",
@@ -58065,13 +58074,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:776:23:type-reference",
+      "id": "src/tools.ts:778:23:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 776,
+        "line": 778,
         "column": 23,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/engine/types.ts#ModuleFile@206:18",
@@ -58088,13 +58097,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:790:27:type-reference",
+      "id": "src/tools.ts:792:27:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 790,
+        "line": 792,
         "column": 27,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": null,
@@ -58111,13 +58120,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:839:21:type-reference",
+      "id": "src/tools.ts:841:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 839,
+        "line": 841,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ModuleUpsertArgs@104:11",
@@ -58134,13 +58143,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:847:25:type-reference",
+      "id": "src/tools.ts:849:25:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 847,
+        "line": 849,
         "column": 25,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/engine/types.ts#ModuleFile@206:18",
@@ -58157,13 +58166,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:852:24:type-reference",
+      "id": "src/tools.ts:854:24:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 852,
+        "line": 854,
         "column": 24,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/engine/types.ts#Module@140:18",
@@ -58180,13 +58189,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:879:21:type-reference",
+      "id": "src/tools.ts:881:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 879,
+        "line": 881,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#IdArgs@91:11",
@@ -58203,13 +58212,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:883:23:type-reference",
+      "id": "src/tools.ts:885:23:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 883,
+        "line": 885,
         "column": 23,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/engine/types.ts#ModuleFile@206:18",
@@ -58226,13 +58235,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:914:21:type-reference",
+      "id": "src/tools.ts:916:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 914,
+        "line": 916,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#IdArgs@91:11",
@@ -58249,13 +58258,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:931:21:type-reference",
+      "id": "src/tools.ts:933:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 931,
+        "line": 933,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#RepoRootArgs@111:11",
@@ -58272,13 +58281,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:943:21:type-reference",
+      "id": "src/tools.ts:945:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 943,
+        "line": 945,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#RepoRootArgs@111:11",
@@ -58295,13 +58304,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:959:21:type-reference",
+      "id": "src/tools.ts:961:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 959,
+        "line": 961,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#SyncArgs@128:11",
@@ -58318,13 +58327,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:967:22:type-reference",
+      "id": "src/tools.ts:969:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 967,
+        "line": 969,
         "column": 22,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/engine/types.ts#ModuleFile@206:18",
@@ -58341,59 +58350,59 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1016:25:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/tools.ts",
-        "line": 1016,
-        "column": 25,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
-      },
-      "to": {
-        "sym": "src/tools.ts#ApiDiffRow@330:11",
-        "file": "src/tools.ts",
-        "line": 330,
-        "column": 11,
-        "state": "indexed"
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": "src/tools.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/tools.ts:1017:27:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/tools.ts",
-        "line": 1017,
-        "column": 27,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
-      },
-      "to": {
-        "sym": "src/tools.ts#ApiDiffRow@330:11",
-        "file": "src/tools.ts",
-        "line": 330,
-        "column": 11,
-        "state": "indexed"
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": "src/tools.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/tools.ts:1018:36:type-reference",
+      "id": "src/tools.ts:1018:25:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
         "line": 1018,
+        "column": 25,
+        "sym": "src/tools.ts#createNormifyTools@685:17"
+      },
+      "to": {
+        "sym": "src/tools.ts#ApiDiffRow@330:11",
+        "file": "src/tools.ts",
+        "line": 330,
+        "column": 11,
+        "state": "indexed"
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": "src/tools.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/tools.ts:1019:27:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/tools.ts",
+        "line": 1019,
+        "column": 27,
+        "sym": "src/tools.ts#createNormifyTools@685:17"
+      },
+      "to": {
+        "sym": "src/tools.ts#ApiDiffRow@330:11",
+        "file": "src/tools.ts",
+        "line": 330,
+        "column": 11,
+        "state": "indexed"
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": "src/tools.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/tools.ts:1020:36:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/tools.ts",
+        "line": 1020,
         "column": 36,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#BreakingApiRow@336:11",
@@ -58410,13 +58419,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1020:25:type-reference",
+      "id": "src/tools.ts:1022:25:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1020,
+        "line": 1022,
         "column": 25,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#TreeSnapshot@346:11",
@@ -58433,13 +58442,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1075:21:type-reference",
+      "id": "src/tools.ts:1077:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1075,
+        "line": 1077,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#SearchArgs@133:11",
@@ -58456,13 +58465,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1079:22:type-reference",
+      "id": "src/tools.ts:1081:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1079,
+        "line": 1081,
         "column": 22,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/engine/types.ts#ModuleFile@206:18",
@@ -58479,13 +58488,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1080:21:type-reference",
+      "id": "src/tools.ts:1082:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1080,
+        "line": 1082,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#SearchHit@264:11",
@@ -58502,13 +58511,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1104:21:type-reference",
+      "id": "src/tools.ts:1106:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1104,
+        "line": 1106,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#DepsFindArgs@138:11",
@@ -58525,13 +58534,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1107:22:type-reference",
+      "id": "src/tools.ts:1109:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1107,
+        "line": 1109,
         "column": 22,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/engine/types.ts#ModuleFile@206:18",
@@ -58548,13 +58557,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1119:21:type-reference",
+      "id": "src/tools.ts:1121:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1119,
+        "line": 1121,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ProjectArgs@79:11",
@@ -58571,13 +58580,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1134:21:type-reference",
+      "id": "src/tools.ts:1136:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1134,
+        "line": 1136,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#IdArgs@91:11",
@@ -58594,13 +58603,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1136:22:type-reference",
+      "id": "src/tools.ts:1138:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1136,
+        "line": 1138,
         "column": 22,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/engine/types.ts#ModuleFile@206:18",
@@ -58617,13 +58626,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1144:44:type-reference",
+      "id": "src/tools.ts:1146:44:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1144,
+        "line": 1146,
         "column": 44,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/engine/types.ts#LayoutData@192:18",
@@ -58640,13 +58649,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1144:70:type-reference",
+      "id": "src/tools.ts:1146:70:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1144,
+        "line": 1146,
         "column": 70,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/engine/types.ts#Diagnostic@213:18",
@@ -58663,13 +58672,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1170:21:type-reference",
+      "id": "src/tools.ts:1172:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1170,
+        "line": 1172,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#IdArgs@91:11",
@@ -58686,13 +58695,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1190:21:type-reference",
+      "id": "src/tools.ts:1192:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1190,
+        "line": 1192,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#LayoutUpsertArgs@142:11",
@@ -58709,13 +58718,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1192:22:type-reference",
+      "id": "src/tools.ts:1194:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1192,
+        "line": 1194,
         "column": 22,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/engine/types.ts#ModuleFile@206:18",
@@ -58732,13 +58741,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1209:21:type-reference",
+      "id": "src/tools.ts:1211:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1209,
+        "line": 1211,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/engine/types.ts#LayoutData@192:18",
@@ -58755,13 +58764,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1243:21:type-reference",
+      "id": "src/tools.ts:1245:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1243,
+        "line": 1245,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#RenderArgs@153:11",
@@ -58778,13 +58787,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1264:21:type-reference",
+      "id": "src/tools.ts:1266:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1264,
+        "line": 1266,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#FingerprintArgs@157:11",
@@ -58801,13 +58810,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1287:21:type-reference",
+      "id": "src/tools.ts:1289:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1287,
+        "line": 1289,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#BriefArgs@162:11",
@@ -58824,13 +58833,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1289:22:type-reference",
+      "id": "src/tools.ts:1291:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1289,
+        "line": 1291,
         "column": 22,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/engine/types.ts#ModuleFile@206:18",
@@ -58847,13 +58856,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1347:23:type-reference",
+      "id": "src/tools.ts:1349:23:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1347,
+        "line": 1349,
         "column": 23,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ImpactSummary@323:11",
@@ -58870,13 +58879,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1392:28:type-reference",
+      "id": "src/tools.ts:1394:28:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1392,
+        "line": 1394,
         "column": 28,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ModuleSuggestion@298:11",
@@ -58893,13 +58902,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1428:27:type-reference",
+      "id": "src/tools.ts:1430:27:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1428,
+        "line": 1430,
         "column": 27,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ChangeSummaryRow@272:11",
@@ -58916,13 +58925,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1467:21:type-reference",
+      "id": "src/tools.ts:1469:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1467,
+        "line": 1469,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ModulePatchArgs@169:11",
@@ -58939,13 +58948,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1494:21:type-reference",
+      "id": "src/tools.ts:1496:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1494,
+        "line": 1496,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ModuleBatchArgs@182:11",
@@ -58962,13 +58971,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1535:21:type-reference",
+      "id": "src/tools.ts:1537:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1535,
+        "line": 1537,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ModuleMoveArgs@188:11",
@@ -58985,13 +58994,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1569:21:type-reference",
+      "id": "src/tools.ts:1571:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1569,
+        "line": 1571,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ModuleRefreshArgs@195:11",
@@ -59008,13 +59017,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1607:21:type-reference",
+      "id": "src/tools.ts:1609:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1607,
+        "line": 1609,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ChangeOpenArgs@203:11",
@@ -59031,13 +59040,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1621:22:type-reference",
+      "id": "src/tools.ts:1623:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1621,
+        "line": 1623,
         "column": 22,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/engine/types.ts#ModuleFile@206:18",
@@ -59054,13 +59063,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1661:21:type-reference",
+      "id": "src/tools.ts:1663:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1661,
+        "line": 1663,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ChangeUpdateArgs@213:11",
@@ -59077,13 +59086,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1691:21:type-reference",
+      "id": "src/tools.ts:1693:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1691,
+        "line": 1693,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ChangeListArgs@218:11",
@@ -59100,13 +59109,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1701:20:type-reference",
+      "id": "src/tools.ts:1703:20:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1701,
+        "line": 1703,
         "column": 20,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ChangeListRow@280:11",
@@ -59123,13 +59132,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1718:23:type-reference",
+      "id": "src/tools.ts:1720:23:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1718,
+        "line": 1720,
         "column": 23,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": null,
@@ -59146,13 +59155,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1734:21:type-reference",
+      "id": "src/tools.ts:1736:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1734,
+        "line": 1736,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ChangeCloseArgs@223:11",
@@ -59169,13 +59178,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1764:21:type-reference",
+      "id": "src/tools.ts:1766:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1764,
+        "line": 1766,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#ProjectArgs@79:11",
@@ -59192,13 +59201,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1769:20:type-reference",
+      "id": "src/tools.ts:1771:20:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1769,
+        "line": 1771,
         "column": 20,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#PolicyGetOutput@287:11",
@@ -59215,13 +59224,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1789:21:type-reference",
+      "id": "src/tools.ts:1791:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1789,
+        "line": 1791,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#PolicyUpsertArgs@231:11",
@@ -59238,13 +59247,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1808:21:type-reference",
+      "id": "src/tools.ts:1810:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1808,
+        "line": 1810,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#CheckArgs@251:11",
@@ -59261,13 +59270,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1827:21:type-reference",
+      "id": "src/tools.ts:1829:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1827,
+        "line": 1829,
         "column": 21,
-        "sym": "src/tools.ts#createNormifyTools@683:17"
+        "sym": "src/tools.ts#createNormifyTools@685:17"
       },
       "to": {
         "sym": "src/tools.ts#HelpArgs@115:11",
@@ -59284,13 +59293,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1832:41:type-reference",
+      "id": "src/tools.ts:1834:41:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1832,
+        "line": 1834,
         "column": 41,
-        "sym": "src/tools.ts#registerTools@1832:17"
+        "sym": "src/tools.ts#registerTools@1834:17"
       },
       "to": {
         "sym": "src/tools.ts#NormifyToolRegistration@76:13",
@@ -59307,13 +59316,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1832:71:type-reference",
+      "id": "src/tools.ts:1834:71:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1832,
+        "line": 1834,
         "column": 71,
-        "sym": "src/tools.ts#registerTools@1832:17"
+        "sym": "src/tools.ts#registerTools@1834:17"
       },
       "to": {
         "sym": "src/tools.ts#ToolEnv@27:18",

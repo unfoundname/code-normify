@@ -581,14 +581,16 @@ function projectParams(_required = false): { project: SchemaNode; dir: SchemaNod
         dir: strOpt('结构数据目录绝对路径（与 project 二选一）'),
     };
 }
-function toErrorPayload(error: unknown): NormifyToolResult {
+/** 工具边界的异常 → 诊断：`subject` 指出是哪个工具/哪类错误（工具名由调用方传入，不靠猜），
+ *  `evidence` 是错误对象自带的可复核字段，`supportedFixes` 给出可执行的下一步。 */
+function toErrorPayload(error: unknown, tool: string): NormifyToolResult {
     if (error instanceof NormifyError || error instanceof WorkspaceError) {
-        return { ok: false, errors: [diag('error', error.code, error.message)], warnings: [] };
+        return { ok: false, errors: [diag('error', error.code, error.message, { tool, error: error.name, code: error.code }, { message: error.message }, ['按 message 指出的输入 / 项目状态修正后重试；该 code 由工具内部校验抛出，不是解析结果'])], warnings: [] };
     }
     if (error instanceof Error) {
-        return { ok: false, errors: [diag('error', 'internal', error.message)], warnings: [] };
+        return { ok: false, errors: [diag('error', 'internal', error.message, { tool, error: error.name }, { name: error.name, message: error.message }, ['这是未预期的内部错误：记录 message 与本次参数后重试；若可复现，按 message 指出的路径 / 字段修正输入'])], warnings: [] };
     }
-    return { ok: false, errors: [diag('error', 'internal', String(error))], warnings: [] };
+    return { ok: false, errors: [diag('error', 'internal', String(error), { tool, error: typeof error }, { value: String(error) }, ['这是未预期的内部错误：记录 message 与本次参数后重试；若可复现，请上报原始值与复现步骤'])], warnings: [] };
 }
 function diagnosticsOut(errors: Diagnostic[], warnings: Diagnostic[]): NormifyToolResult {
     return {
@@ -641,10 +643,10 @@ interface ToolExecutionPayload {
     [key: string]: unknown;
 }
 
-/** 原业务处理器的简短失败转换为公开的完整诊断契约。 */
-function normalizeToolResult(result: { ok: boolean }): NormifyToolResult {
+/** 原业务处理器的简短失败转换为公开的完整诊断契约（工具名进 `subject`，失败原因进 `evidence`）。 */
+function normalizeToolResult(result: { ok: boolean }, tool: string): NormifyToolResult {
     const { error, errors = [], warnings = [], ...payload } = result as ToolExecutionPayload;
-    return { ...payload, ok: result.ok, errors: error === undefined ? errors : [...errors, diag('error', error.code, error.message)], warnings };
+    return { ...payload, ok: result.ok, errors: error === undefined ? errors : [...errors, diag('error', error.code, error.message, { tool, code: error.code }, { message: error.message }, ['按 message 指出的输入 / 项目状态修正后重试；该失败由业务处理器返回，不是参数校验'])], warnings };
 }
 
 /** 新能力复用同一参数校验、错误契约与进程内串行调度边界。 */
@@ -663,18 +665,18 @@ export function defineNormifyTool<A>(
                     ? (definition.parameters.required ?? []).filter(key => args[key] === undefined)
                     : [];
                 if (missing.length > 0)
-                    return { ok: false, errors: [diag('error', 'args/missing', '缺少必填参数: ' + missing.join(', '))], warnings: [] };
+                    return { ok: false, errors: [diag('error', 'args/missing', '缺少必填参数: ' + missing.join(', '), { tool: definition.name }, { missing: [...missing] }, ['补齐这些必填参数后重试：' + missing.join(', ') + '（参数树见 topic:"tool:' + definition.name + '"）'])], warnings: [] };
                 if (!validate(args)) {
                     const errors = (validate.errors ?? []).map(argumentDiagnostic);
                     return { ok: false, errors, warnings: [] };
                 }
                 return await enqueueTool(env.rootDir, async () => {
                     checkExecution(execution);
-                    return normalizeToolResult(await execute(args as A, execution));
+                    return normalizeToolResult(await execute(args as A, execution), definition.name);
                 }, execution);
             }
             catch (error) {
-                return toErrorPayload(error);
+                return toErrorPayload(error, definition.name);
             }
         },
     };
