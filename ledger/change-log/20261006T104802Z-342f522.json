@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "kind": "commit",
+  "commit": "342f522ce8e128310361761ab021e358529eabbd",
+  "commit_parent": "fdc9aed7379187edaa3dd33fd18ca29479913a5c",
+  "cas_digest": null,
+  "change_id": null,
+  "created_at": "2026-10-06T10:48:02Z",
+  "generator": "scripts/generate-change-log.cjs",
+  "generator_version": "1.0.0",
+  "graph_schema_version": 2,
+  "from_snapshot": {
+    "basis": "commit",
+    "rev": "fdc9aed7379187edaa3dd33fd18ca29479913a5c",
+    "tree": "1aa7ca8f60660c4b4bfc1c40e18ab66d350f9ff3",
+    "universe_hash": "fdeca047eed70f11110b8dc6013411d23fc093be9988f7b756261993cf6a70c5",
+    "tracked_total": 1475,
+    "files": 1475,
+    "edges": 498,
+    "analysis_mode": "typescript"
+  },
+  "to_snapshot": {
+    "basis": "commit",
+    "rev": "342f522ce8e128310361761ab021e358529eabbd",
+    "tree": "d76aeff24457abe5128d95ae4b98b12f4d2a846b",
+    "universe_hash": "24a9f2ceb1d38b0c8efe86e4efec4602c12dc21b6aa253048cb57c9ad9bc48e7",
+    "tracked_total": 1476,
+    "files": 1476,
+    "edges": 498,
+    "analysis_mode": "typescript"
+  },
+  "degradation": {
+    "status": "complete",
+    "reasons": [],
+    "note": "两侧快照都完整重建：本次差在**文件层**是完整的（节点 = 全量已跟踪文件，边 = 扫描面产出的全部边）。数组为空 = 真的没有差异。"
+  },
+  "files": {
+    "added": [
+      "ledger/change-log/20261006T101848Z-bc87618.json"
+    ],
+    "removed": [],
+    "state_changed": []
+  },
+  "edges": {
+    "added": [],
+    "removed": [],
+    "status_changed": []
+  },
+  "affected_referrers": [],
+  "counts": {
+    "files_added": 1,
+    "files_removed": 0,
+    "files_state_changed": 0,
+    "edges_added": 0,
+    "edges_removed": 0,
+    "edges_status_changed": 0,
+    "affected_referrers": 0,
+    "needs_change": 0
+  },
+  "handling": {
+    "status": "pending",
+    "by": null,
+    "at": null,
+    "note": null
+  },
+  "summary": "提交 342f522（ledger：补 bc87618 改动记录（覆盖率缺口真正收口：所有「本批之前」的提交至此全部有记录））：文件 +1/−0/±0 · 边 +0/−0/±0 · 受影响引用方 0 条（需改 0 条）",
+  "omitted": [
+    "declarations（符号级节点差，增量 3）",
+    "type-reference 边（增量 3）",
+    "传递闭包（affected_referrers 只到直接引用方，depth 恒 1；增量 5）",
+    "查询接口（增量 5）",
+    "cas-write 观测点（设计稿 §4.1 的第二个观测点，本批不实现）"
+  ]
+}

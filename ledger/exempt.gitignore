@@ -34,7 +34,7 @@
 #   或本文件不在索引里 → ledger-index-drift（error），判定仍按索引版进行。
 # ---------------------------------------------------------------------------
 
-examples/** ## reason=示例项目宇宙：examples/ 下是 normify 工具所描述的**目标工程**（真实工程样例），不是本工具自身的代码，也不被本仓库的模块声明所拥有——本仓库根没有 normify-* 数据目录，6 个数据目录全在 examples/ 下，它们声明的是各自目标工程的路径。按模式豁免，避免把 1249 个示例文件逐个塞进 accounted 清单。本模式命中 1249/1400 个已跟踪文件（89.2%），超过「过宽」判据 3 的 50% 阈值，故人工确认 broad_confirmed=true（判据见 scripts/file-ledger-core.cjs 的 PATTERN_MAX_HIT_RATIO 与 scripts/check-file-ledger.cjs --help）。 ## since=2026-10-05 ## broad_confirmed=true
+examples/** ## reason=示例项目宇宙：examples/ 下是 normify 工具所描述的**目标工程**（真实工程样例），不是本工具自身的代码，也不被本仓库的模块声明所拥有——本仓库根没有 normify-* 数据目录，6 个数据目录全在 examples/ 下，它们声明的是各自目标工程的路径。按模式豁免，避免把 1249 个示例文件逐个塞进 accounted 清单（**该条数是当时的留痕，不是现值**；现值取数：node scripts/check-file-ledger.cjs --json）。本模式在 2026-10-05 那次人工确认时命中 1249/1400 个已跟踪文件（89.2%，**只作留痕，不是现值**），超过「过宽」判据 3 的 50% 阈值，故人工确认 broad_confirmed=true（判据见 scripts/file-ledger-core.cjs 的 PATTERN_MAX_HIT_RATIO 与 scripts/check-file-ledger.cjs --help）。 ## since=2026-10-05 ## broad_confirmed=true
 lib/** ## reason=编译产物：lib/ 是被 git 跟踪的构建产物（由 src/ 经 tsc 生成），归属随源文件走，不单独归属；其可再生性由 scripts/check-lib-sync.cjs 逐字节门禁保证。让产物参与台账会制造第二份真相（同一份归属既在 src/ 又在 lib/）。 ## since=2026-10-05
 tests/** ## reason=验证基础设施：测试文件验证模块行为，本身不被任何架构模块拥有；它们的「归属」是它们断言的那个模块，无法用 source.path 表达。 ## since=2026-10-05
 scripts/** ## reason=门禁与工具脚本：与 tests/ 同属验证基础设施，且本门禁自身就在 scripts/ 下（含门禁与生成器共用的 scripts/file-ledger-core.cjs）——若把门禁自己算作「待归属」，就会形成「台账要求给它自己指定 owner」的自指。 ## since=2026-10-05
