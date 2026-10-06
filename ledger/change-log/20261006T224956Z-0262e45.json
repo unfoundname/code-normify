@@ -1,0 +1,233 @@
+{
+  "schema_version": 1,
+  "kind": "commit",
+  "commit": "0262e453ac87068ba102e860307bf8b8c36cdd71",
+  "commit_parent": "70699e411b01d238d9b06341aa2f42123db45c2d",
+  "cas_digest": null,
+  "change_id": null,
+  "created_at": "2026-10-06T22:49:56Z",
+  "generator": "scripts/generate-change-log.cjs",
+  "generator_version": "1.0.0",
+  "graph_schema_version": 2,
+  "from_snapshot": {
+    "basis": "commit",
+    "rev": "70699e411b01d238d9b06341aa2f42123db45c2d",
+    "tree": "994c224f75f46029531536489145d67c04f99d94",
+    "universe_hash": "a50b48a38b4ff084d8c2190c7620ea64001b89a888594468ef624f223e19e032",
+    "tracked_total": 1500,
+    "files": 1500,
+    "edges": 498,
+    "analysis_mode": "typescript"
+  },
+  "to_snapshot": {
+    "basis": "commit",
+    "rev": "0262e453ac87068ba102e860307bf8b8c36cdd71",
+    "tree": "9b0528155c2ce60849f38931ab3355c3a86b8384",
+    "universe_hash": "0956da8744374881b88ffb8843c79b66b314745466b5770c4d35279f8089807f",
+    "tracked_total": 1501,
+    "files": 1501,
+    "edges": 498,
+    "analysis_mode": "typescript"
+  },
+  "degradation": {
+    "status": "complete",
+    "reasons": [],
+    "note": "两侧快照都完整重建：本次差在**文件层**是完整的（节点 = 全量已跟踪文件，边 = 扫描面产出的全部边）。数组为空 = 真的没有差异。"
+  },
+  "files": {
+    "added": [
+      "ledger/change-log/20261006T222214Z-70699e4.json"
+    ],
+    "removed": [],
+    "state_changed": []
+  },
+  "edges": {
+    "added": [
+      "scripts/generate-change-log.cjs:58:20:require:node:fs",
+      "scripts/generate-change-log.cjs:59:20:require:node:os",
+      "scripts/generate-change-log.cjs:60:22:require:node:path",
+      "scripts/generate-change-log.cjs:623:27:require:ajv/dist/2020",
+      "scripts/generate-change-log.cjs:63:26:require:./generate-reference-graph.cjs",
+      "scripts/generate-change-log.cjs:65:24:require:./file-ledger-core.cjs"
+    ],
+    "removed": [
+      "scripts/generate-change-log.cjs:52:20:require:node:fs",
+      "scripts/generate-change-log.cjs:53:20:require:node:os",
+      "scripts/generate-change-log.cjs:54:22:require:node:path",
+      "scripts/generate-change-log.cjs:57:26:require:./generate-reference-graph.cjs",
+      "scripts/generate-change-log.cjs:59:24:require:./file-ledger-core.cjs",
+      "scripts/generate-change-log.cjs:617:27:require:ajv/dist/2020"
+    ],
+    "status_changed": []
+  },
+  "affected_referrers": [
+    {
+      "edge": "scripts/generate-change-log.cjs:52:20:require:node:fs",
+      "file": "scripts/generate-change-log.cjs",
+      "line": 52,
+      "column": 20,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-change-log.cjs:53:20:require:node:os",
+      "file": "scripts/generate-change-log.cjs",
+      "line": 53,
+      "column": 20,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-change-log.cjs:54:22:require:node:path",
+      "file": "scripts/generate-change-log.cjs",
+      "line": 54,
+      "column": 22,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-change-log.cjs:57:26:require:./generate-reference-graph.cjs",
+      "file": "scripts/generate-change-log.cjs",
+      "line": 57,
+      "column": 26,
+      "kind": "require",
+      "target": "scripts/generate-reference-graph.cjs",
+      "target_state": "indexed",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-change-log.cjs:58:20:require:node:fs",
+      "file": "scripts/generate-change-log.cjs",
+      "line": 58,
+      "column": 20,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-change-log.cjs:59:20:require:node:os",
+      "file": "scripts/generate-change-log.cjs",
+      "line": 59,
+      "column": 20,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-change-log.cjs:59:24:require:./file-ledger-core.cjs",
+      "file": "scripts/generate-change-log.cjs",
+      "line": 59,
+      "column": 24,
+      "kind": "require",
+      "target": "scripts/file-ledger-core.cjs",
+      "target_state": "indexed",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-change-log.cjs:60:22:require:node:path",
+      "file": "scripts/generate-change-log.cjs",
+      "line": 60,
+      "column": 22,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-change-log.cjs:63:26:require:./generate-reference-graph.cjs",
+      "file": "scripts/generate-change-log.cjs",
+      "line": 63,
+      "column": 26,
+      "kind": "require",
+      "target": "scripts/generate-reference-graph.cjs",
+      "target_state": "indexed",
+      "edge_status": "resolved",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-change-log.cjs:65:24:require:./file-ledger-core.cjs",
+      "file": "scripts/generate-change-log.cjs",
+      "line": 65,
+      "column": 24,
+      "kind": "require",
+      "target": "scripts/file-ledger-core.cjs",
+      "target_state": "indexed",
+      "edge_status": "resolved",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-change-log.cjs:617:27:require:ajv/dist/2020",
+      "file": "scripts/generate-change-log.cjs",
+      "line": 617,
+      "column": 27,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-change-log.cjs:623:27:require:ajv/dist/2020",
+      "file": "scripts/generate-change-log.cjs",
+      "line": 623,
+      "column": 27,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    }
+  ],
+  "counts": {
+    "files_added": 1,
+    "files_removed": 0,
+    "files_state_changed": 0,
+    "edges_added": 6,
+    "edges_removed": 6,
+    "edges_status_changed": 0,
+    "affected_referrers": 12,
+    "needs_change": 0
+  },
+  "handling": {
+    "status": "pending",
+    "by": null,
+    "at": null,
+    "note": null
+  },
+  "summary": "提交 0262e45（修复 B15/D4 + 文档收口 B6/D5/D6 与豁免清单注释：图产物读不出统一 exit 3；补齐 9 处诊断三字段；SPEC 写明两处「有意降级」例外；局限与旧承诺按实测改写）：文件 +1/−0/±0 · 边 +6/−6/±0 · 受影响引用方 12 条（需改 0 条）",
+  "omitted": [
+    "declarations（符号级节点差，增量 3）",
+    "type-reference 边（增量 3）",
+    "传递闭包（affected_referrers 只到直接引用方，depth 恒 1；增量 5）",
+    "查询接口（增量 5）",
+    "cas-write 观测点（设计稿 §4.1 的第二个观测点，本批不实现）"
+  ]
+}

@@ -581,7 +581,18 @@ deps:
 
 ### 5.3 诊断格式（面向 LLM）
 
-每条诊断 MUST 含 `code/severity/message/subject/evidence/supportedFixes`（Archify 模式）：
+诊断的**可选字段**：`subject` / `evidence` / `supportedFixes` —— **能给出时就给出**：
+- `subject`：该诊断针对的对象（文件 / 路径 / 字段名等）；
+- `evidence`：判定依据（引文、实测值、被违反的契约条款）；
+- `supportedFixes`：**可执行的修复动作**；**确实没有可执行修复时留空**（空数组会被丢弃，该栏在运行时缺席）。
+
+**（本文档历史上把这三栏写成无条件 MUST —— 那比类型契约更强：类型里三栏是可选，且实现里有一批诊断
+有意留空 `supportedFixes`（没有可执行修复可给）。以本节为准。）**
+
+**留痕（旧原文，已作废）**：本节曾写「每条诊断 MUST 含 `code/severity/message/subject/evidence/supportedFixes`（Archify 模式）」——
+`code` / `severity` / `message` 至今仍是必填（`Diagnostic` 里没有 `?`），`subject` / `evidence` / `supportedFixes` 三栏按上面的**可选字段**办。
+
+字段形状示例（Archify 模式）：
 
 ```json
 {

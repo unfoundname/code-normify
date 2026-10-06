@@ -1243,7 +1243,10 @@ function declaredPathState(ctx, declared) {
 /**
  * `git check-ignore --no-index -v -z --stdin`：一次问清「这批路径各自的**最后一条**匹配规则」。
  * 为什么必须加 `--no-index`：默认 check-ignore 会跳过已跟踪文件，而本项恰恰要问「已跟踪的路径
- * 是否同时被 ignore 规则覆盖」（它根本不在台账宇宙里，为它写豁免就是把忽略规则当豁免依据）。
+ * 是否同时被 ignore 规则覆盖」（命中忽略规则**不会**把它移出索引，它**仍在台账宇宙内**；为它写豁免
+ * 等于把忽略规则当成了豁免依据，与「在不在宇宙里」无关）。**留痕（旧文案，已作废）**：原写「它根本
+ * 不在台账宇宙里，为它写豁免就是把忽略规则当豁免依据」——前半句与本句自己的前提（已跟踪 = 在
+ * `git ls-files` 里）自相矛盾。
  * `-v` 输出 4 个 NUL 分隔字段一组：<source> <lineno> <pattern> <pathname>；`!` 前缀的 pattern
  * 表示这条是**反选**（该路径最终并未被忽略，§7.5 规则 4：反选必须被尊重）。
  * 结构不认识就 fail-closed 报 guard-unavailable：绝不猜格式、也绝不静默当作「没有交集」。
@@ -1629,6 +1632,11 @@ function emitViolations(ctx) {
   }
 
   // exempt-gitignore-cross-check：与真 .gitignore 的三类不一致（error）
+  // 判据 1（交集）的措辞口径：**已跟踪路径命中忽略规则后仍在索引与台账宇宙内**（`git ls-files` 照样列出它，
+  // 忽略匹配不会把它移出索引），所以问题不是「它不在宇宙里」，而是「跟踪清单与忽略清单重叠」——
+  // 重叠本身可能是配置意图，也可能是误配，交人工确认。完整理由见 `--help` 的 `exempt-gitignore-cross-check` 一节。
+  // **留痕（旧文案，已作废）**：本处 hint 原写「不一致：这条路径根本不在台账宇宙里（被忽略文件不进 git 索引），
+  // 为它写豁免等于把忽略规则当成了豁免依据」——首句与本项自己的前提（命中的是**已跟踪**路径）自相矛盾。
   for (const record of ctx.exemptGitignoreIntersection.slice(0, EVIDENCE_LIMIT)) {
     ctx.report({
       check: 'exempt-gitignore-cross-check',
@@ -1642,7 +1650,8 @@ function emitViolations(ctx) {
         `豁免清单放行的路径同时被真 .gitignore 覆盖：${record.path}` +
         `（规则来自 ${record.source}:${record.line} 的 ${record.pattern}）`,
       hint:
-        '不一致：这条路径根本不在台账宇宙里（被忽略文件不进 git 索引），为它写豁免等于把忽略规则当成了豁免依据。' +
+        '这条路径已跟踪，但命中了忽略规则 —— **它仍在索引与台账宇宙内**（忽略匹配不会把它移出索引）；' +
+        '两套规则（跟踪清单 / 忽略清单）重叠本身可能是配置意图，也可能是误配，请人工确认。' +
         `要么收窄 ${exemptRel} 里的模式，要么修正 .gitignore（两边必须只留一个说法）。`,
     });
   }
