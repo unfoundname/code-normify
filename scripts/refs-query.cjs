@@ -5,7 +5,7 @@
  *
  * 实现两条查询：who-references <仓库相对路径>（「谁直接引用我这个文件」）与
  * impact <仓库相对路径>（「谁（间接）引用我」：反向闭包按深度分组，每个受影响文件附一条最短引用链 path[]，
- * 另附派生产物与 gate: 义务项）。
+ * 另附闭包子图内的环 cycles[]/self_loops[]、派生产物与 gate: 义务项）。
  * 数据源只有图产物：本脚本**不重新分析源码、不建 TypeScript Program**。
  * 读取基准：优先 git 索引版（git show :ledger/references.json）；索引里取不到才回退
  * 工作区文件，并把实际用的那一份写进输出的 basis 字段。
@@ -44,7 +44,7 @@ function usage() {
     '查询：',
     '  who-references <路径>   谁直接引用这个文件（读 ledger/references.json）',
     '  impact <路径>           谁（间接）引用这个文件：反向闭包按深度分组，每个受影响文件给出最短引用链',
-    '                          path[]（BFS 最短，形如 A ⇐ B ⇐ 目标），另列派生产物与 gate: 义务项',
+    '                          path[]（BFS 最短，形如 A ⇐ B ⇐ 目标），另列闭包子图内的环 cycles[]/自环、派生产物与 gate: 义务项',
     '',
     '选项：',
     '  --json          以 JSON 输出（含全部符号级边；确定性、无绝对路径/耗时）',
@@ -235,7 +235,7 @@ function buildReport(opts, target, loaded) {
     '只覆盖文件级边（edges[]）：文件内边（同一文件内部的引用/依赖）未展开。',
     '未实现符号 id 输入：目标只能是文件路径；符号 id 会以 unsupported 拒绝。',
     '文件级 edges[] 的 type_only 恒为 false（产物口径），故运行时/类型拆分只对 symbol_edges[] 有效。',
-    '未实现 what-references、change-impact 等其它查询；本版只有 who-references 与 impact 两条查询（impact = 反向闭包 + 按深度打印 + 每个受影响文件的最短引用链 path[] + 派生产物分区 + gate: 义务项；impact 内部已有 path[]，尚未做三档分类、cycles[]、informational 与截断标注）。',
+    '未实现 what-references、change-impact 等其它查询；本版只有 who-references 与 impact 两条查询（impact = 反向闭包 + 按深度打印 + 每个受影响文件的最短引用链 path[] + 闭包子图内的环 cycles[]/self_loops[] + 派生产物分区 + gate: 义务项；尚未做三档分类、informational 与截断标注）。',
   ];
   if (diverged) reasons.push(...gaps);
   const completeness = diverged ? 'stale' : 'partial';
@@ -412,6 +412,110 @@ function renderHopKinds(hops) {
   return `  跳边：${hops.map((h) => `${h.layer}:${h.kind}`).join(' → ')}`;
 }
 
+/** 边的确定性排序键：两端 + 行:列 + 层 + kind + edge_id。 */
+function cycleEdgeKey(e) {
+  return `${e.from}|${e.to}|${String(e.line).padStart(12, '0')}:${String(e.column).padStart(12, '0')}|${e.layer}|${e.kind}|${e.edge_id}`;
+}
+
+/**
+ * 环检测的输入子图：节点 = target ∪ 闭包文件，边 = 两端都落在该节点集内的**反向边**
+ * （方向沿用 buildReverseIndex 的「谁引用了它」口径：from 引用 to，即 from -> to 表示 from 依赖 to）。
+ * 这是独立的一步，只读反向索引与已经算好的 closure，不参与 BFS 推进，因此闭包的层数/文件数/边数一个都不变。
+ * 必须收「两端都在闭包内」的全部反向边，而不是只收推进时用到的那些边：BFS 对已见文件会 continue，
+ * 闭环的那条边往往正是被 continue 掉的一条（例：target=src/service.ts 时，service.ts 引用 promptmanager.ts
+ * 的那条边不是推进边），只收推进边就检测不出环。
+ * from === to 的自环单独返回，不混进 size > 1 的分量。
+ */
+function closureSubgraph(rev, target, closure) {
+  const nodes = sortRows([target, ...closure], (n) => n);
+  const nodeSet = new Set(nodes);
+  const edges = [];
+  const selfLoops = [];
+  for (const to of nodes) {
+    for (const row of rev.get(to) || []) {
+      if (!nodeSet.has(row.from_file)) continue;
+      const edge = {
+        from: row.from_file,
+        to,
+        layer: row.layer,
+        kind: row.kind,
+        line: row.line,
+        column: row.column,
+        edge_id: row.edge_id,
+      };
+      if (row.from_file === to) selfLoops.push(edge);
+      else edges.push(edge);
+    }
+  }
+  return { nodes, edges: sortRows(edges, cycleEdgeKey), selfLoops: sortRows(selfLoops, cycleEdgeKey) };
+}
+
+/**
+ * 强连通分量（Tarjan），只返回 size > 1 的分量，即环；size === 1 的孤立/单点分量不算环（自环由调用方单列）。
+ * 选**迭代版（显式栈）**而不是递归版：递归深度等于 DFS 路径长度，闭包规模随仓库增长，深链上会先撞
+ * RangeError（Maximum call stack size exceeded），那会让整个 impact 崩掉；显式栈把帧放在堆上，深度不再是风险，
+ * 且与递归版逐行等价（子帧出栈时把 low 回传给父帧；出栈瞬间用 low === index 判定分量根）。
+ * 每步只做可达性推进，天然在含环图上终止（入栈节点不再重入 DFS），闭包 BFS 本身也有 visited 集，两处都不靠环检测防死循环。
+ * 分量内按 UTF-8 字节序排序、分量之间按首元素排序，输出与遍历顺序无关，逐字节确定。
+ */
+function findCycles(nodes, edges) {
+  const adj = new Map(nodes.map((n) => [n, []]));
+  for (const e of edges) if (adj.has(e.from) && adj.has(e.to)) adj.get(e.from).push(e.to);
+  for (const [v, list] of adj) {
+    list.sort(byteCompare);
+    adj.set(v, list.filter((w, i) => i === 0 || w !== list[i - 1])); // 平行边去重：SCC 只看可达性
+  }
+  const index = new Map();
+  const low = new Map();
+  const onStack = new Set();
+  const stack = [];
+  const components = [];
+  let counter = 0;
+  for (const root of nodes) {
+    if (index.has(root)) continue;
+    index.set(root, counter);
+    low.set(root, counter);
+    counter += 1;
+    stack.push(root);
+    onStack.add(root);
+    const frames = [{ v: root, next: 0 }];
+    while (frames.length > 0) {
+      const frame = frames[frames.length - 1];
+      const neighbors = adj.get(frame.v) || [];
+      if (frame.next < neighbors.length) {
+        const w = neighbors[frame.next];
+        frame.next += 1;
+        if (!index.has(w)) {
+          index.set(w, counter);
+          low.set(w, counter);
+          counter += 1;
+          stack.push(w);
+          onStack.add(w);
+          frames.push({ v: w, next: 0 });
+        } else if (onStack.has(w)) {
+          low.set(frame.v, Math.min(low.get(frame.v), index.get(w)));
+        }
+      } else {
+        frames.pop();
+        if (low.get(frame.v) === index.get(frame.v)) {
+          const comp = [];
+          let w;
+          do {
+            w = stack.pop();
+            onStack.delete(w);
+            comp.push(w);
+          } while (w !== frame.v);
+          if (comp.length > 1) components.push(comp.sort(byteCompare));
+        }
+        if (frames.length > 0) {
+          const parent = frames[frames.length - 1].v;
+          low.set(parent, Math.min(low.get(parent), low.get(frame.v)));
+        }
+      }
+    }
+  }
+  return sortRows(components, (c) => c[0]);
+}
 
 /**
  * 派生产物推导规则：`src/<rel>.ts` -> `lib/<rel>.js`、`lib/<rel>.js.map`、`lib/types/<rel>.d.ts`。
@@ -508,11 +612,18 @@ function buildImpactReport(opts, target, loaded) {
   const affectedEdges = levels.reduce((n, l) => n + l.files.reduce((m, f) => m + f.via.length, 0), 0);
   // 最短引用链：纯读父指针，不参与闭包推进，因此不影响 closure 与任何计数。
   const paths = new Map(closure.map((file) => [file, shortestPath(parent, target, file)]));
+  // 环检测：同样只读，独立于 BFS 推进（反向索引是纯函数，这里重新构建一份，不动 reverseClosure 的返回值）。
+  const sub = closureSubgraph(buildReverseIndex(loaded.artifact), target, closure);
+  const cycles = findCycles(sub.nodes, sub.edges).map((files) => {
+    const member = new Set(files);
+    return { size: files.length, files, edges: sub.edges.filter((e) => member.has(e.from) && member.has(e.to)) };
+  });
 
   const reasons = basisReasons(loaded);
   const gaps = [
     '反向闭包只沿 to.file 走文件级 edges[] 与符号级 symbol_edges[]；文件内边（同一文件内部的引用/依赖）未展开。',
-    '未做三档分类、cycles[]、informational 与截断标注。',
+    '未做三档分类、informational 与截断标注。',
+    'cycles[] 只在闭包子图（target ∪ 闭包文件）内求强连通分量，不是全图 SCC：闭包之外的环不报（换个 target 才看得到）；环用的也是文件级/符号级反向边，文件内边未展开；自环单列在 self_loops[]，不混进 size>1 的分量。',
     'path[] 只给一条最短链（BFS 首达即定型）：同一文件存在多条等价最短链时只列首达的那条；链上每跳用的边（layer/kind/行:列）在 path_edges[] 里。',
     `闭包深度上限 --depth ${opts.depth}：更深的层未展开，closure 可能不完整。`,
   ];
@@ -540,6 +651,9 @@ function buildImpactReport(opts, target, loaded) {
       symbol_layer_edges: layerEdges('symbol'),
       derived_artifacts: derived.length,
       gate_obligations: gates.length,
+      cycles: cycles.length,
+      cycle_files: cycles.reduce((n, c) => n + c.size, 0),
+      self_loops: sub.selfLoops.length,
     },
     by_depth: levels.map((l) => ({
       depth: l.depth,
@@ -560,6 +674,8 @@ function buildImpactReport(opts, target, loaded) {
     })),
     derived_artifacts: derived,
     gate_obligations: gates,
+    cycles,
+    self_loops: sub.selfLoops,
   };
 }
 
@@ -580,6 +696,15 @@ function renderImpactHuman(report) {
       lines.push(`    path: ${renderChain(f.path)}（${f.path_hops} 跳）${renderHopKinds(f.path_edges)}`);
     }
   }
+  lines.push(``, `环（闭包子图内 size>1 的强连通分量 SCC；自环另列）：${c.cycles} 个`);
+  if (report.cycles.length === 0) lines.push('  （无：闭包子图里没有互相引用的文件组）');
+  report.cycles.forEach((cyc, i) => {
+    lines.push(`  环 ${i + 1}：${cyc.size} 个文件（UTF-8 字节序）  ${cyc.files.join('  |  ')}`);
+    for (const e of cyc.edges) lines.push(`    边 ${e.from}:${e.line}:${e.column}  ${e.layer}:${e.kind}  ->  ${e.to}`);
+  });
+  lines.push(`自环（某文件引用自己，不计入上面的环）：${c.self_loops} 个`);
+  if (report.self_loops.length === 0) lines.push('  （无）');
+  for (const e of report.self_loops) lines.push(`  ${e.from}:${e.line}:${e.column}  ${e.layer}:${e.kind}  ->  ${e.to}`);
   lines.push(``, `派生产物（由 src/ 路径推导，仅列图 files[] 中真实存在者；来源 build-artifact）：${report.derived_artifacts.length} 个`);
   if (report.derived_artifacts.length === 0) lines.push('  （无：该目标没有图里存在的派生产物，不凭空构造路径）');
   for (const d of report.derived_artifacts) {
