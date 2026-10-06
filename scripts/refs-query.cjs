@@ -274,8 +274,8 @@ function buildReport(opts, target, loaded) {
   const gaps = [
     '直接引用方只数文件级边（edges[]）；符号级边另列在 symbol_referrers[]，其中包含文件内边（同一文件内部的引用/依赖，cross_file=false）——这些边在产物里存在、照列，只是不计入直接引用方计数。',
     '未实现符号 id 输入：目标只能是文件路径；符号 id 会以 unsupported 拒绝。',
-    '文件级 edges[] 的 type_only 现已如实表达「该边所在语句是否为纯类型语句」（import type / export type … from；require()/import() 与无 TypeScript 时的正则回退一律按运行时），但本版的运行时/类型拆分仍只数 symbol_edges[]（counts 里的 runtime_refs / type_refs 就取自符号级层）；impact 的 type_only 档内标注不吃这一套，它按**可达性**判：在「目标 ∪ 完整闭包」内只沿运行时边走，从该文件到目标没有运行时路径才标（闭包按图产物全深度展开，不受 --depth 截断影响），仍不排除图产物之外的引用间接触及目标。',
-    '未实现 what-references、change-impact 等其它查询；本版只有 who-references、impact、locals 三条查询（locals = 只解析目标文件自身的语法树，列出形参 params[] / 箭头形参 arrow_params[] / 局部变量 locals[]，**不读图产物、不进图产物**，因此没有 basis 与 completeness，其三条局限见 --help 的「locals 的三条局限」与 --json 的 limitations[]；impact = 反向闭包 + 按深度打印 + 每个受影响文件的最短引用链 path[] + 闭包子图内的环 cycles[]/self_loops[] + 三档分类 buckets[] 与其中的 type_only 标注 + 派生产物分区 + gate: 义务项；impact 尚未做 informational，其截断标注已做——impact 输出顶层带 truncated / truncated_reason，人类可读输出在被截断时另打一行 ⚠）。',
+    '文件级 edges[] 的 type_only 如实表达「该边所在语句是否为纯类型语句」（import type / export type … from；require()/import() 与无 TypeScript 时的正则回退一律按运行时）；但本查询的运行时/类型拆分仍只数 symbol_edges[]——counts 里的 runtime_refs / type_refs 取自 symbol_referrers[] 的 type_only，文件级边不参与这两个计数。',
+    '本查询只列**直接**引用方，不沿引用链继续推进：没有 by_depth / closure / buckets / cycles / path 之类间接结论，要看间接影响请用 impact；也未实现 what-references、change-impact 等其它查询——本版只有 who-references、impact、locals 三条（另两条的口径与局限写在它们各自输出的 gaps[] / reasons[] 与 --help 里，不在这里复述）。',
   ];
   if (diverged) reasons.push(...gaps);
   const completeness = diverged ? 'stale' : 'partial';
@@ -951,7 +951,14 @@ function buildImpactReport(opts, target, loaded) {
       depth: l.depth,
       files: l.files.map((f) => ({
         file: f.file,
-        via: f.via.map((v) => `${v.from_file}:${v.line}:${v.column}`),
+        // via 展示的是「把该文件牵进闭包的那组边」的**位置路径**（from_file:line:column）。同一个位置上常常
+        // 同时挂着一条文件级边和 N 条符号级边（一条 `export … from` / `import …` 带 N 个符号 ⇒ N 条符号边，
+        // 它们与那条文件级边同行同列），原样打印会把**同一条路径重复 N 遍**——实测 src/index.ts:4:15 指向
+        // src/engine/types.ts 的 29 条边（1 文件级 + 28 符号级）会渲染成 29 个一模一样的字符串。
+        // 因此这里按字符串去重（保序，BFS 的确定性顺序不变）。**只去重展示**：edges 计数
+        // （affected_edges / file_layer_edges / symbol_layer_edges）与三档的 via_edges 仍按**边**数统计，
+        // 不在这里改口径——「29 条边」是事实，「29 条相同路径」是噪音。
+        via: [...new Set(f.via.map((v) => `${v.from_file}:${v.line}:${v.column}`))],
         path: paths.get(f.file).chain,
         path_hops: paths.get(f.file).chain.length - 1,
         path_edges: paths.get(f.file).hops,
