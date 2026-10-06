@@ -198,14 +198,15 @@ jobs:
         # 下方“变更影响门禁”一节（即 check 链第 13 环 scripts/check-impact.cjs）。也**没有**新增「图与真实不一致就红」的
         # **语义**判定（属增量 6）——但上面②③两条**基准对称**的判定已在增量 2 落地（新增诊断码或降级词时
         # 必须同步改本注释与 CONTRIBUTING.md）。
-        # 快照（2026-10-06，locals / ci.yml / 设计稿 / 交接文档批次并入后按实测重写；
-        # 旧值 1,414 / 491 已过期）：节点 1,416（全 indexed）· 边 498（import 320 / require 52 / export-from 19 / dynamic-import 1 / markdown-link 35 / package-field 51 / ci-target 17 / anchor 3）·
-        # 扫描面 80 个文件（排除 examples/ 与 lib/）。产物大小随内容而定，不在此写死——
-        # 现值取数：git cat-file -s :ledger/references.json（以【索引】为准，不是工作区）。
-        # sha256 同理：git rev-parse :ledger/references.json
-        # 单次全量重算 ≈1.6 s
-        # 符号级：声明 402 / 符号边 1,347（已解析 989 / 无符号 358）· 跨文件 756 ·
-        # Program 28 个源文件。
+        # 规模与构成：【不在此复述活值】——节点 / 边 / 声明 / 符号边 / 扫描面 / 产物大小都随每次重算变化，
+        # 写死必然过期（本注释历史上就因此错过三次）。要现值，跑取数命令：
+        #   node scripts/generate-reference-graph.cjs --check          规模与一致性（节点 / 边 / 扫描面 / 声明 / 符号边）
+        #   node scripts/generate-reference-graph.cjs --check --json   机器可读：各类 kind 直方图 / degradation / timings
+        #   git cat-file -s :ledger/references.json                    产物字节数（以【索引】为准）
+        # 口径：节点 = `git ls-files` 的全部已跟踪文件；边 = 文件级 8 种 kind
+        # （import / export-from / require / dynamic-import / markdown-link / package-field / ci-target / anchor）；
+        # 声明与符号边 = 符号级层（schema_version 2）；扫描面排除 examples/ 与 lib/。
+        # 历史快照（【只作留痕，不是现值】）：1,412 / 482 / 76 → 1,414 / 491 / 78 → 1,415 / 498 / 79 → 1,416 / 498 / 80。
         # 该脚本仍在扩充，**新增边 kind / 改扫描面或字段时必须同步改本注释与 CONTRIBUTING.md**。
         # 回归用例：`npm test` 里的 tests/reference-graph-e2e.mjs。
         run: npm run check:graph

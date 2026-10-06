@@ -97,6 +97,19 @@ README.md 仍链接它）就是这种形状，本目录里的那条记录就是�
 
 ## 已落盘的记录
 
+记录**只增不改**、文件名形如 `<UTC 时间戳>-<短 rev>.json`。**本小节不再逐个列举**（会随每次补录而过期）——
+要现值，直接看目录：
+
+```powershell
+Get-ChildItem ledger/change-log/*.json | Measure-Object | Select-Object -ExpandProperty Count   # 条数
+Get-ChildItem ledger/change-log/*.json | ForEach-Object { (Get-Content $_ -Raw | ConvertFrom-Json).to_snapshot.rev }  # 覆盖到哪些提交
+```
+
+历史上最早的两条是 `20261005T183940Z-ed404e5.json` 与 `20261005T183954Z-10766d1.json`（**只作留痕**）；
+`e56dcff` 之后的提交由「每次提交型批次补齐所有尚无记录、且不是本批自己那个提交的提交」这条规则续记。
+
+那两条留痕记录记下的差（**只作留痕，不是全量清单**；全量按上面的命令现取）：
+
 | 记录 | 描述的一次提交 | 差（摘要） |
 | --- | --- | --- |
 | `20261005T183940Z-ed404e5.json` | `ed404e5` Delete docs/VIDEO-SCRIPT.zh-CN.md | 文件 ±1（`indexed` → `deleted`）· 边 ±1（`resolved` → `dangling`）· 受影响引用方 1 条（**需改 1 条**：`README.md:486` 仍在链接已删除的 `docs/VIDEO-SCRIPT.zh-CN.md`） |
