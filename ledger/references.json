@@ -124,8 +124,8 @@
       "id": ".github/workflows/ci.yml",
       "lang": "yaml",
       "state": "indexed",
-      "bytes": 31691,
-      "lines": 292,
+      "bytes": 31810,
+      "lines": 293,
       "edge_out": 17,
       "edge_in": 0
     },
@@ -13078,11 +13078,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:208:9:ci-target:scripts[\"check:graph\"]→check:graph",
+      "id": ".github/workflows/ci.yml:209:9:ci-target:scripts[\"check:graph\"]→check:graph",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 208,
+        "line": 209,
         "column": 9
       },
       "to": {
@@ -13100,11 +13100,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:229:9:ci-target:scripts[\"check:changes\"]→check:changes",
+      "id": ".github/workflows/ci.yml:230:9:ci-target:scripts[\"check:changes\"]→check:changes",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 229,
+        "line": 230,
         "column": 9
       },
       "to": {
@@ -13122,11 +13122,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:271:9:ci-target:scripts[\"check:impact\"]→check:impact",
+      "id": ".github/workflows/ci.yml:272:9:ci-target:scripts[\"check:impact\"]→check:impact",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 271,
+        "line": 272,
         "column": 9
       },
       "to": {
@@ -13144,11 +13144,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:284:9:ci-target:scripts[\"test:render\"]→test:render",
+      "id": ".github/workflows/ci.yml:285:9:ci-target:scripts[\"test:render\"]→test:render",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 284,
+        "line": 285,
         "column": 9
       },
       "to": {
@@ -13166,11 +13166,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:288:24:ci-target:lib/index.js",
+      "id": ".github/workflows/ci.yml:289:24:ci-target:lib/index.js",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 288,
+        "line": 289,
         "column": 24
       },
       "to": {
@@ -13188,11 +13188,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:289:24:ci-target:lib/tools.js",
+      "id": ".github/workflows/ci.yml:290:24:ci-target:lib/tools.js",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 289,
+        "line": 290,
         "column": 24
       },
       "to": {
@@ -13210,11 +13210,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:290:24:ci-target:lib/mcp.js",
+      "id": ".github/workflows/ci.yml:291:24:ci-target:lib/mcp.js",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 290,
+        "line": 291,
         "column": 24
       },
       "to": {
