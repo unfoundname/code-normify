@@ -44,7 +44,17 @@ function usage() {
     '查询：',
     '  who-references <路径>   谁直接引用这个文件（读 ledger/references.json）',
     '  impact <路径>           谁（间接）引用这个文件：反向闭包按深度分组，每个受影响文件给出最短引用链',
-    '                          path[]（BFS 最短，形如 A ⇐ B ⇐ 目标），另列闭包子图内的环 cycles[]/自环、派生产物与 gate: 义务项',
+    '                          path[]（BFS 最短，形如 A ⇐ B ⇐ 目标），另列闭包子图内的环 cycles[]/自环、派生产物与 gate: 义务项，',
+    '                          并把闭包文件分成三档 buckets[]（先按边分档，文件取其被牵动边的最高档，一个文件只进一个档）：',
+    '                            必须改 must_change —— 边悬空（status=dangling），或 kind ∈ import/export-from/require/',
+    '                                                   dynamic-import/type-reference（代码级引用，对方编译或运行会坏）',
+    '                            需复核 needs_review —— kind ∈ ci-target/package-field/anchor/markdown-link（要人看一眼）',
+    '                            记录   record       —— 其余边，只登记',
+    '                          三档在人类可读与 --json 里恒存在，空档也照列（0 条），「没有」与「没做」不混。',
+    '                          档内另有正交标注 type_only（**不是第四档**），**只看符号级牵动边**（产物里文件级',
+    '                          edges[] 的 type_only 恒为 false）：全为 type_only=true ⇒「仅类型级影响：删改后至少需过',
+    '                          tsc，但不必跑测试」；没有符号级牵动边（或目标不是 .ts/.tsx）⇒「不可判」；存在运行时',
+    '                          符号级边则不标——「不标」不等于「没有类型级影响」。',
     '',
     '选项：',
     '  --json          以 JSON 输出（含全部符号级边；确定性、无绝对路径/耗时）',
@@ -234,8 +244,8 @@ function buildReport(opts, target, loaded) {
   const gaps = [
     '直接引用方只数文件级边（edges[]）；符号级边另列在 symbol_referrers[]，其中包含文件内边（同一文件内部的引用/依赖，cross_file=false）——这些边在产物里存在、照列，只是不计入直接引用方计数。',
     '未实现符号 id 输入：目标只能是文件路径；符号 id 会以 unsupported 拒绝。',
-    '文件级 edges[] 的 type_only 恒为 false（产物口径），故运行时/类型拆分只对 symbol_edges[] 有效。',
-    '未实现 what-references、change-impact 等其它查询；本版只有 who-references 与 impact 两条查询（impact = 反向闭包 + 按深度打印 + 每个受影响文件的最短引用链 path[] + 闭包子图内的环 cycles[]/self_loops[] + 派生产物分区 + gate: 义务项；尚未做三档分类、informational 与截断标注）。',
+    '文件级 edges[] 的 type_only 恒为 false（产物口径），故运行时/类型拆分只对 symbol_edges[] 有效；impact 的 type_only 档内标注同样只依据符号级牵动边。',
+    '未实现 what-references、change-impact 等其它查询；本版只有 who-references 与 impact 两条查询（impact = 反向闭包 + 按深度打印 + 每个受影响文件的最短引用链 path[] + 闭包子图内的环 cycles[]/self_loops[] + 三档分类 buckets[] 与其中的 type_only 标注 + 派生产物分区 + gate: 义务项；impact 尚未做 informational 与截断标注）。',
   ];
   if (diverged) reasons.push(...gaps);
   const completeness = diverged ? 'stale' : 'partial';
@@ -323,6 +333,11 @@ function buildReverseIndex(artifact) {
       column: e.from.column,
       kind: e.kind,
       edge_id: e.id,
+      // 只增两个**只读事实**字段（悬空状态、类型级标记），供 impact 的三档分档与 type_only 标注使用。
+      // 不参与任何推进/计数：闭包用 seen/via 的键、计数用 rows.length 与 row.layer，
+      // 环与 path_edges 都在别处**重新构造**对象（不 spread 本行），因此这些字段不会渗进既有输出。
+      status: e.status,
+      type_only: e.type_only === true,
     });
   };
   for (const e of artifact.edges || []) add('file', e);
@@ -609,6 +624,75 @@ function gateObligations(derived, artifact) {
   );
 }
 
+/**
+ * 三档分类的档定义。**先按边分档，再把文件归入它「被牵动时所用边」的最高档**——一个文件只出现在一个档里。
+ * 定档只看这条边自身的两个事实：① 目标是否已悬空（status === 'dangling'）；② 边的 kind。
+ * 优先级 必须改 > 需复核 > 记录：一个文件被多条边牵动时取最高档。
+ * kind 是封闭枚举（产物里实际出现：file 层 import / export-from / require / dynamic-import / type-reference /
+ * ci-target / package-field / anchor / markdown-link，symbol 层 import / export-from / type-reference）；
+ * 未列出的 kind 一律落到「记录」，不猜、不擅自升级。三档在人类可读输出与 --json 里都恒存在，空档也照列（0 条）。
+ */
+const IMPACT_BUCKETS = [
+  {
+    key: 'must_change',
+    label: '必须改',
+    why: '边已悬空（status=dangling），或是代码级引用边（import/export-from/require/dynamic-import/type-reference）：目标删改后对方编译或运行会真的坏，必须动手。',
+  },
+  {
+    key: 'needs_review',
+    label: '需复核',
+    why: '边是配置/文档级指向（ci-target/package-field/anchor/markdown-link）：不一定会坏，但必须人工看一眼才能定。',
+  },
+  {
+    key: 'record',
+    label: '记录',
+    why: '其余边：只登记，不构成动作。',
+  },
+];
+/** type-reference 属于「必须改」：别的文件用类型引用你，删掉你它 tsc 会红——必须动手，只是验证强度低（见 type_only 标注）。 */
+const MUST_CHANGE_KINDS = new Set(['import', 'export-from', 'require', 'dynamic-import', 'type-reference']);
+const NEEDS_REVIEW_KINDS = new Set(['ci-target', 'package-field', 'anchor', 'markdown-link']);
+/** 档序即优先级：取下标最小者。 */
+const BUCKET_RANK = new Map(IMPACT_BUCKETS.map((b, i) => [b.key, i]));
+
+/** 单条边的档。只看这条边自己，不看邻居。 */
+function bucketOfEdge(row) {
+  if (row.status === 'dangling') return 'must_change';
+  if (MUST_CHANGE_KINDS.has(row.kind)) return 'must_change';
+  if (NEEDS_REVIEW_KINDS.has(row.kind)) return 'needs_review';
+  return 'record';
+}
+
+const ANNOTATION_TYPE_ONLY = '仅类型级影响：删改后至少需过 tsc，但不必跑测试';
+const ANNOTATION_UNDETERMINABLE = '不可判';
+/** 目标以 .ts/.tsx 结尾才谈得上「类型级 / 运行时」之分。 */
+const TS_TARGET = /\.tsx?$/;
+
+/**
+ * 正交标注 type_only——**不是第四档，是档内标注**。**只看符号级牵动边**：
+ * 产物口径里文件级 edges[] 的 type_only 恒为 false（写 `import type { X } from '..'` 也判成 false，见 :237），
+ * 若把文件级边也算进来，「全部牵动边都是类型级」将永远不成立，标注会退化成永不出现的死代码。
+ * 三态：
+ *   - 有符号级牵动边且全部 type_only === true ⇒ 仅类型级影响（删改后至少需过 tsc，但不必跑测试）；
+ *   - 有符号级牵动边且存在 type_only === false ⇒ 有运行时影响，**不标**；
+ *   - 没有任何符号级牵动边 ⇒ 不可判（符号层给不出依据，别把「不标」读成「没有类型级影响」）；
+ *   - 目标本身不是 .ts/.tsx ⇒ 不可判（文档/JSON/CI 没有类型/运行时之分）。
+ */
+function typeOnlyAnnotation(target, viaRows) {
+  if (!TS_TARGET.test(target)) {
+    return { state: 'undeterminable', reason: 'target-not-typescript', text: ANNOTATION_UNDETERMINABLE };
+  }
+  const symbolRows = viaRows.filter((v) => v.layer === 'symbol');
+  if (symbolRows.length === 0) {
+    return { state: 'undeterminable', reason: 'no-symbol-layer-edge', text: ANNOTATION_UNDETERMINABLE };
+  }
+  const typeRefs = symbolRows.filter((v) => v.type_only === true).length;
+  if (typeRefs === symbolRows.length) {
+    return { state: 'type_only', reason: 'all-symbol-layer-edges-type-only', text: ANNOTATION_TYPE_ONLY };
+  }
+  return { state: 'runtime', reason: 'has-runtime-symbol-layer-edge', text: null };
+}
+
 /** impact 报告：反向闭包 + 按深度分组的受影响文件（每个文件一条最短引用链 path[]）+ 派生产物分区（build-artifact）+ 门禁义务项分区（gate:）。 */
 function buildImpactReport(opts, target, loaded) {
   const { levels, closure, parent } = reverseClosure(loaded.artifact, target, opts.depth);
@@ -627,10 +711,40 @@ function buildImpactReport(opts, target, loaded) {
     return { size: files.length, files, edges: sub.edges.filter((e) => member.has(e.from) && member.has(e.to)) };
   });
 
+  // 三档分类：只读 levels 里已经算好的 via（BFS 推进时用的边），不新增遍历、不改 closure/环/任何计数。
+  const bucketFiles = new Map(IMPACT_BUCKETS.map((b) => [b.key, []]));
+  for (const level of levels) {
+    for (const f of level.files) {
+      let best = null;
+      for (const v of f.via) {
+        const key = bucketOfEdge(v);
+        if (best === null || BUCKET_RANK.get(key) < BUCKET_RANK.get(best)) best = key;
+      }
+      if (best === null) best = 'record';
+      bucketFiles.get(best).push({
+        file: f.file,
+        depth: level.depth,
+        via_edges: f.via.length,
+        kinds: [...new Set(f.via.map((v) => v.kind))].sort(byteCompare),
+        type_only: typeOnlyAnnotation(target, f.via),
+      });
+    }
+  }
+  const buckets = IMPACT_BUCKETS.map((b) => ({
+    key: b.key,
+    label: b.label,
+    why: b.why,
+    count: bucketFiles.get(b.key).length,
+    files: sortRows(bucketFiles.get(b.key), (r) => r.file),
+  }));
+  const bucketCount = (key) => buckets.find((b) => b.key === key).count;
+
   const reasons = basisReasons(loaded);
   const gaps = [
     '反向闭包只沿 to.file 走文件级 edges[] 与符号级 symbol_edges[]；文件内边（同一文件内部的引用/依赖）不推进遍历——两端是同一个文件，它已在已见集里，带不来新文件（自环推进不了闭包），也不计入闭包边数——但这些边在产物里存在（symbol_edges[] 中 cross_file=false 的那些）。',
-    '未做三档分类、informational 与截断标注。',
+    '三档分类 buckets[]：先按边分档（边悬空，或 kind ∈ 代码级引用 ⇒ 必须改；kind ∈ ci-target/package-field/anchor/markdown-link ⇒ 需复核；其余 ⇒ 记录），再把文件归入它被牵动时所用边的最高档，因此一个文件只出现在一个档里；三档恒存在，空档照列（0 条），「没有」与「没做」不混。',
+    'type_only 是档内**正交标注**，不是第四档，且**只看符号级牵动边**：产物口径里文件级 edges[] 的 type_only 恒为 false（写 `import type` 也判成 false），把它算进来标注会永不出现；没有符号级牵动边（或目标不是 .ts/.tsx）一律标「不可判」——「不标」只代表存在运行时符号级影响，不代表没有类型级影响。',
+    '未做 informational 与截断标注（三档分类与 type_only 标注已做，见 buckets[]）。',
     'cycles[] 只在闭包子图（target ∪ 闭包文件）内求强连通分量，不是全图 SCC：闭包之外的环不报（换个 target 才看得到）；环用的也是文件级/符号级反向边，文件内边（两端同文件）带不来新节点、进不了 size>1 的分量；自环单列在 self_loops[]（只含文件级自环，即 edges[] 里 from.file === to.file 的边；同文件内部的符号边不算），不混进 size>1 的分量。',
     'path[] 只给一条最短链（BFS 首达即定型）：同一文件存在多条等价最短链时只列首达的那条；链上每跳用的边（layer/kind/行:列）在 path_edges[] 里。',
     `闭包深度上限 --depth ${opts.depth}：更深的层未展开，closure 可能不完整。`,
@@ -662,6 +776,9 @@ function buildImpactReport(opts, target, loaded) {
       cycles: cycles.length,
       cycle_files: cycles.reduce((n, c) => n + c.size, 0),
       self_loops: sub.selfLoops.length,
+      must_change_files: bucketCount('must_change'),
+      needs_review_files: bucketCount('needs_review'),
+      record_files: bucketCount('record'),
     },
     by_depth: levels.map((l) => ({
       depth: l.depth,
@@ -673,6 +790,7 @@ function buildImpactReport(opts, target, loaded) {
         path_edges: paths.get(f.file).hops,
       })),
     })),
+    buckets,
     closure,
     paths: closure.map((file) => ({
       file,
@@ -702,6 +820,18 @@ function renderImpactHuman(report) {
     for (const f of level.files) {
       lines.push(`  ${f.file}  <- ${f.via.length ? f.via.join('  ') : '（无）'}`);
       lines.push(`    path: ${renderChain(f.path)}（${f.path_hops} 跳）${renderHopKinds(f.path_edges)}`);
+    }
+  }
+  lines.push(
+    ``,
+    `三档分类（先按边分档，文件归入其被牵动时所用边的最高档；优先级 必须改 > 需复核 > 记录，每个文件只出现在一个档里；空档照列，恒为 0 条）：`,
+  );
+  for (const b of report.buckets) {
+    lines.push(`  ${b.label}（${b.count} 条）：${b.why}`);
+    if (b.count === 0) lines.push('    （无）');
+    for (const f of b.files) {
+      const annot = f.type_only.text === null ? '' : `  【${f.type_only.text}】`;
+      lines.push(`    ${f.file}  深度 ${f.depth}  牵动边 ${f.via_edges} 条（kind: ${f.kinds.join(', ')}）${annot}`);
     }
   }
   lines.push(``, `环（闭包子图内 size>1 的强连通分量 SCC；自环另列）：${c.cycles} 个`);
