@@ -90,15 +90,17 @@
 
 ## 引用查询（`refs-query`）
 
-`scripts/refs-query.cjs` 是引用图产物 `ledger/references.json` 的**只读查询层**：它不重新分析源码、不建 TypeScript Program，只回答「谁引用我」。它是**给人用的接口，不是门禁**，**不在 `npm run check` 链里**（链上管引用的是 `check:refs` 与 `check:graph`；查询结果再可疑也不拦提交）。
+`scripts/refs-query.cjs` 是引用图产物 `ledger/references.json` 的**只读查询层**：`who-references` / `impact` 只读图产物，不重新分析源码、不建 TypeScript Program；`locals` 是唯一的例外——它只把**目标文件自己**解析成一棵语法树（`ts.createSourceFile`，不建 Program、不做类型检查），**不读也不写图产物**。三条查询都**只回答「谁引用我 / 我声明了什么」**，都是**给人用的接口，不是门禁**，**不在 `npm run check` 链里**（链上管引用的是 `check:refs` 与 `check:graph`；查询结果再可疑也不拦提交）。
 
 ```bash
 npm run refs:query -- who-references <仓库相对路径>
 npm run refs:query -- impact <仓库相对路径>
 npm run refs:query -- impact src/tools.ts --json
+npm run refs:query -- locals <仓库相对路径>
 # 等价直调（不经 npm，输出完全相同）：
 node scripts/refs-query.cjs who-references <仓库相对路径>
 node scripts/refs-query.cjs impact <仓库相对路径>
+node scripts/refs-query.cjs locals <仓库相对路径>
 ```
 
 - `who-references <路径>` —— **谁直接引用这个文件**：文件级边 `edges[]`（`来源:行:列` + `kind` + `status`）与符号级边 `symbol_edges[]`（另按运行时 `runtime_refs` / 类型 `type_refs` 拆分计数）。
@@ -106,8 +108,10 @@ node scripts/refs-query.cjs impact <仓库相对路径>
   - **环**（`cycles[]` / `self_loops[]`）：`cycles[]` 是**闭包子图内**（target ∪ 闭包文件）size>1 的强连通分量，**不是全图 SCC**——闭包之外的环不报，换个 target 可能看到不同的环；自环（某文件引用自己）单列在 `self_loops[]`，不混进分量。
   - **派生产物**（`source=build-artifact`）：由 `src/<rel>.ts` 推导 `lib/<rel>.js`、`lib/<rel>.js.map`、`lib/types/<rel>.d.ts` 三条候选，**只列图 `files[]` 里真实存在的**，绝不凭想象造路径；非 `src/` 下的目标或非 `.ts` 的目标（文档、脚本、工作流等）直接判空——所以 `impact docs/SPEC.zh-CN.md` 的派生产物必然是 0，不会凭空造出 `lib/SPEC.js`。
   - **门禁义务项**（`source=gate:`）：全部由图里的既有事实推导，**不写死任何清单**——只要派生产物含 `lib/` 前缀就要求跑 `npm run check:libsync`；图里指向这些派生产物的既有边逐条列出，并说明产物缺失会红在哪一环（例如 `ci-target` 边 `.github/workflows/ci.yml:246` → `lib/tools.js`，就是 CI 里那句 `node --check lib/tools.js`）。义务项**不进闭包**：它们不是引用方，也不冒充引用边。
+- `locals <路径>` —— **这个文件里声明了哪些形参 / 箭头形参 / 局部变量**：只把目标文件解析成一棵语法树（`ts.createSourceFile`，**不建 Program、不做类型检查**），输出三个数组 `params[]`（`FunctionDeclaration` / `FunctionExpression` / `MethodDeclaration` / 构造器的形参）、`arrow_params[]`（`ArrowFunction` 的形参）、`locals[]`（**局部变量**），每条 `{ name, line, column }`，**行、列都是 1-based**（取标识符起点，与 `params` 同一套坐标）。局部变量的判据是语法级的：该文件里 `const/let/var` **声明语句**（`VariableStatement`）的标识符，且其**最近外层函数式节点正是某个函数**（模块级变量不算），且**不是该函数的形参**（`function f(a) { var a = 1 }` 里的 `a` 不算）；**不按名字合并去重**——同名不同位置各出一条；解构写法按其中的标识符逐个出（各占自己的位置）。`for (const x of …)` 的循环变量不是 `VariableStatement`，**不在 `locals[]` 里**。它是**文件自身的语法级清单**：不读图产物、不进图产物，因此没有 `basis` / `completeness` 字段；`typescript` 是**惰性** require 的（只有这条查询付这份启动成本，另外两条不付），拿不到 typescript 即 fail-closed 非零退出（**不用正则假装一份清单**）。target 只接受仓库内的相对路径，且扩展名必须是源码（`.ts/.tsx/.mts/.cts/.js/.jsx/.mjs/.cjs`），否则以 `unsupported` 拒绝（退出码 4）——拿 Markdown 之类的文本当 TS 解析只会给出假清单。
+  - **三条局限**（`--help` 与 `--json` 的 `limitations[]` **字字相同**）：`不做作用域分析：同名遮蔽无法判定`、`只覆盖该文件内部`、`语法级不支持 eval / 动态属性`。
 
-选项：`--json`（机器可读、含全部符号级边、确定性——无绝对路径与耗时，可安全做逐字节比对）、`--depth <n>`（`impact` 的闭包深度上限，默认 8）、`--limit <n>`（人类可读输出里符号级边的显示上限，默认 40，0 = 全部）、`--root <dir>`（必须是 git 仓库根，否则 fail-closed 拒绝）。退出码：0 成功 / 2 参数或根不合法 / 3 读不到图 / 4 输入不受支持 / 5 目标不在图里。
+选项：`--json`（机器可读、含全部符号级边、确定性——无绝对路径与耗时，可安全做逐字节比对；`locals` 的 `--json` 输出 `params[]` / `arrow_params[]` / `locals[]` / `limitations[]`）、`--depth <n>`（`impact` 的闭包深度上限，默认 8）、`--limit <n>`（人类可读输出里符号级边的显示上限，默认 40，0 = 全部）、`--root <dir>`（必须是 git 仓库根，否则 fail-closed 拒绝）。退出码：0 成功 / 2 参数或根不合法 / 3 读不到图（`locals` 另含：读不到目标文件 / 拿不到 typescript） / 4 输入不受支持（符号 id；`locals` 的非源码扩展名） / 5 目标不在图里。
 
 **读取基准**：优先 git 索引版图（`git show :ledger/references.json`），索引里取不到才回退工作区文件，真正用的是哪一份写在输出的 `basis` 字段里。
 
@@ -127,7 +131,7 @@ node scripts/refs-query.cjs impact <仓库相对路径>
 ### 未实现（如实列出，别当成已支持）
 
 - **符号 id 输入**（形如 `src/tools.ts#Name@1:2`）：以 `unsupported` 拒绝（退出码 4）；符号级信息只在文件查询结果的 `symbol_referrers[]` 里出现。
-- **其它查询**：`what-references`、`change-impact` 未实现；本版只有 `who-references` 与 `impact` 两条。
+- **其它查询**：`what-references`、`change-impact` 未实现；本版只有 `who-references`、`impact`、`locals` 三条（`locals` 的局限见上一节，不是「分析器」：它只回答语法级的声明清单）。
 - **`impact` 内部尚未做**：`informational`、截断标注（**三档分类与 `type_only` 标注已做**，见 `impact --json` 的 `buckets[]`：必须改 / 需复核 / 记录，一个文件只进一个档，空档也照列 0 条）。
 - **文件内边**（同一文件内部的引用/依赖，即 `symbol_edges[]` 中 `cross_file=false` 的那些）**在产物里存在、照列**，但**反向遍历不使用它们**——两端是同一个文件，它已在已见集里，带不来新文件（自环推进不了闭包），也不计入闭包边数；文件级 `edges[]` 的 `type_only` 现已如实表达该边所在语句是否为**纯类型语句**（`import type …` / `export type … from`；`import { type X }` 行内修饰、`require(…)` / `import(…)` 与无 TypeScript 时的正则回退一律按运行时），但本版 `who-references` 的运行时/类型拆分仍只数 `symbol_edges[]`；`impact` 的 `type_only` 档内标注按**可达性**判（不看 via）：在「目标 ∪ 闭包」内只沿**运行时边**（`import` / `export-from` / `require` / `dynamic-import` / `package-field` / `ci-target`，以及符号级边；`type_only=true` 的纯类型语句与 `markdown-link` / `anchor` 这类**纯文字引用**不算）走，从这个文件**能否到达目标**——到不了才标「仅类型级影响」，到得了不标；标注用的闭包**按图产物全深度展开、不受 `--depth` 截断影响**（展示用的 `by_depth` / `closure` 仍受 `--depth` 限制），但仍不排除产物之外 / 未统计到的路径间接触及目标——标注文案里明写「**不要据此跳过测试**」。
 

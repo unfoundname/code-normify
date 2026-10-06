@@ -3,14 +3,20 @@
 /**
  * refs-query.cjs —— 引用图产物 `ledger/references.json` 的**只读查询层**。
  *
- * 实现两条查询：who-references <仓库相对路径>（「谁直接引用我这个文件」）与
- * impact <仓库相对路径>（「谁（间接）引用我」：反向闭包按深度分组，每个受影响文件附一条最短引用链 path[]，
- * 另附闭包子图内的环 cycles[]/self_loops[]、派生产物与 gate: 义务项）。
- * 数据源只有图产物：本脚本**不重新分析源码、不建 TypeScript Program**。
- * 读取基准：优先 git 索引版（git show :ledger/references.json）；索引里取不到才回退
+ * 实现三条查询：
+ *   · who-references <仓库相对路径>（「谁直接引用我这个文件」）与
+ *     impact <仓库相对路径>（「谁（间接）引用我」：反向闭包按深度分组，每个受影响文件附一条最短引用链 path[]，
+ *     另附闭包子图内的环 cycles[]/self_loops[]、派生产物与 gate: 义务项）——
+ *     这两条的数据源只有图产物：不重新分析源码、不建 TypeScript Program、不读目标文件本身；
+ *   · locals <仓库相对路径>（「这个文件里声明了哪些形参 / 箭头形参 / 局部变量」）——
+ *     只把该文件解析成一棵 TypeScript 语法树（ts.createSourceFile，**不建 Program、不做类型检查**），
+ *     **不读也不写图产物**，因此没有 basis 字段；三条局限见 LOCALS_LIMITATIONS（--help 与 --json 字字相同）。
+ * typescript 是**惰性** require 的：只有 locals 需要语法树，另外两条查询不付这份启动成本。
+ * 读取基准（who-references / impact）：优先 git 索引版（git show :ledger/references.json）；索引里取不到才回退
  * 工作区文件，并把实际用的那一份写进输出的 basis 字段。
  *
- * 退出码：0 成功；2 参数/根不合法；3 读不到图；4 输入不受支持（符号 id）；5 目标不在图里。
+ * 退出码：0 成功；2 参数/根不合法；3 读不到图（locals 另含：读不到目标文件 / 拿不到 typescript）；
+ *         4 输入不受支持（符号 id；locals 的非源码扩展名）；5 目标不在图里。
  * 输出确定性：所有排序按 UTF-8 字节序（Buffer.compare），禁用 localeCompare；
  * JSON 里不含绝对路径、时间戳、耗时。
  */
@@ -18,6 +24,7 @@
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+let ts = null; // typescript 惰性加载：只有 locals 需要语法树（见 loadTypeScriptForLocals）
 
 const REL = 'ledger/references.json';
 const EXIT = { ok: 0, usage: 2, unreadable: 3, unsupported: 4, notfound: 5 };
@@ -40,6 +47,7 @@ function usage() {
   return [
     '用法：node scripts/refs-query.cjs who-references <仓库相对路径> [选项]',
     '      node scripts/refs-query.cjs impact <仓库相对路径> [选项]',
+    '      node scripts/refs-query.cjs locals <仓库相对路径> [选项]',
     '',
     '查询：',
     '  who-references <路径>   谁直接引用这个文件（读 ledger/references.json）',
@@ -58,16 +66,31 @@ function usage() {
     '                          **全深度展开**，不受 --depth 截断影响，但产物之外 / 未统计到的路径仍可能触及目标，标注里',
     '                          明写「不要据此跳过测试」）；到得了 ⇒ 不标；目标不是 .ts/.tsx ⇒「不可判」——',
     '                          「不标」不等于「没有类型级影响」。',
+    '  locals <路径>           这个文件里声明了什么（**只解析该文件自身的语法树**，不读图产物、不进图产物）：',
+    '                          形参 params[] / 箭头形参 arrow_params[] / 局部变量 locals[]，每条 { name, line, column }',
+    '                          （行、列都是 1-based，取标识符起点，与 params 同一套坐标，例：leadRef = 7:75）。',
+    '                          局部变量 = 该文件里 const/let/var 声明语句（VariableStatement）的标识符，且其最近外层',
+    '                          函数式节点正是某个函数（模块级变量不算），形参不算局部变量；**不按名字合并去重**——',
+    '                          同名不同位置各出一条；解构写法按其中的标识符逐个出（各占自己的位置）。',
+    '                          locals 只认源码扩展名（.ts/.tsx/.mts/.cts/.js/.jsx/.mjs/.cjs），其它扩展名以',
+    '                          unsupported 拒绝（退出码 4）——拿 Markdown 之类的文本当 TS 解析只会给出假清单。',
+    '',
+    'locals 的三条局限（必须连结果一起读；--json 里对应 limitations[]，字字相同）：',
+    '  · 不做作用域分析：同名遮蔽无法判定',
+    '  · 只覆盖该文件内部',
+    '  · 语法级不支持 eval / 动态属性',
     '',
     '选项：',
-    '  --json          以 JSON 输出（含全部符号级边；确定性、无绝对路径/耗时）',
+    '  --json          以 JSON 输出（who-references/impact：含全部符号级边；locals：params/arrow_params/locals/',
+    '                  limitations；确定性、无绝对路径/耗时）',
     '  --root <目录>   仓库根，默认当前目录；不是 git 仓库根则非零退出',
     '  --limit <n>     人类可读输出里最多显示多少条符号级边（默认 40，0 = 全部）',
     '  --depth <n>     impact 的反向闭包深度上限（默认 8）',
     '  --help          显示本帮助',
     '',
     '不支持：符号 id 输入（如 src/tools.ts#Name@1:2）——会以 unsupported 拒绝。',
-    '退出码：0 成功 / 2 参数或根不合法 / 3 读不到图 / 4 输入不受支持 / 5 目标不在图里。',
+    '退出码：0 成功 / 2 参数或根不合法 / 3 读不到图（locals 另含：读不到目标文件 / 拿不到 typescript）',
+    '        / 4 输入不受支持（符号 id；locals 的非源码扩展名） / 5 目标不在图里。',
   ].join('\n');
 }
 
@@ -248,7 +271,7 @@ function buildReport(opts, target, loaded) {
     '直接引用方只数文件级边（edges[]）；符号级边另列在 symbol_referrers[]，其中包含文件内边（同一文件内部的引用/依赖，cross_file=false）——这些边在产物里存在、照列，只是不计入直接引用方计数。',
     '未实现符号 id 输入：目标只能是文件路径；符号 id 会以 unsupported 拒绝。',
     '文件级 edges[] 的 type_only 现已如实表达「该边所在语句是否为纯类型语句」（import type / export type … from；require()/import() 与无 TypeScript 时的正则回退一律按运行时），但本版的运行时/类型拆分仍只数 symbol_edges[]（counts 里的 runtime_refs / type_refs 就取自符号级层）；impact 的 type_only 档内标注不吃这一套，它按**可达性**判：在「目标 ∪ 完整闭包」内只沿运行时边走，从该文件到目标没有运行时路径才标（闭包按图产物全深度展开，不受 --depth 截断影响），仍不排除图产物之外的引用间接触及目标。',
-    '未实现 what-references、change-impact 等其它查询；本版只有 who-references 与 impact 两条查询（impact = 反向闭包 + 按深度打印 + 每个受影响文件的最短引用链 path[] + 闭包子图内的环 cycles[]/self_loops[] + 三档分类 buckets[] 与其中的 type_only 标注 + 派生产物分区 + gate: 义务项；impact 尚未做 informational 与截断标注）。',
+    '未实现 what-references、change-impact 等其它查询；本版只有 who-references、impact、locals 三条查询（locals = 只解析目标文件自身的语法树，列出形参 params[] / 箭头形参 arrow_params[] / 局部变量 locals[]，**不读图产物、不进图产物**，因此没有 basis 与 completeness，其三条局限见 --help 的「locals 的三条局限」与 --json 的 limitations[]；impact = 反向闭包 + 按深度打印 + 每个受影响文件的最短引用链 path[] + 闭包子图内的环 cycles[]/self_loops[] + 三档分类 buckets[] 与其中的 type_only 标注 + 派生产物分区 + gate: 义务项；impact 尚未做 informational 与截断标注）。',
   ];
   if (diverged) reasons.push(...gaps);
   const completeness = diverged ? 'stale' : 'partial';
@@ -980,6 +1003,220 @@ function renderImpactHuman(report) {
   return lines.join('\n');
 }
 
+// ───────────────────── locals <文件>：按需展开单文件清单 ─────────────────────
+// 只建语法树（ts.createSourceFile），不建 Program、不做类型检查、不读图产物；
+// 结果只打印，绝不写回 ledger/references.json —— 图里没有的东西不塞进图。
+
+function lcOf(sf, node) {
+  const lc = sf.getLineAndCharacterOfPosition(node.getStart(sf));
+  return { line: lc.line + 1, column: lc.character + 1 };
+}
+
+// ───────────────────── locals <文件>：按需展开单文件清单 ─────────────────────
+// 只建语法树（ts.createSourceFile），不建 Program、不做类型检查、不读图产物；
+// 结果只打印，绝不写回 ledger/references.json —— 图里没有的东西不塞进图。
+// typescript 惰性加载：who-references / impact 不付这份启动成本（约 200ms）。
+
+/**
+ * locals 的三条局限：**同一个字面量数组**同时喂 --help 与 --json 的 limitations[]（两处必须字字一致）。
+ * 措辞是定稿，不要改写——它就是这条查询的诚实边界声明。
+ */
+const LOCALS_LIMITATIONS = [
+  '不做作用域分析：同名遮蔽无法判定',
+  '只覆盖该文件内部',
+  '语法级不支持 eval / 动态属性',
+];
+
+/** locals 认的源码扩展名：拿 Markdown / JSON 之类的文本当 TS 解析，只会给出一份假清单，故一律拒绝。 */
+const LOCALS_SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs']);
+
+/**
+ * 惰性加载仓库自带的 typescript（候选根与 reference-graph-core 的 TYPESCRIPT_CANDIDATE_ROOTS 对齐）。
+ * 失败返回错误文案：locals 拿不到语法树就**什么都回答不了**，绝不用正则假装一份清单（那才是假绿）。
+ */
+function loadTypeScriptForLocals() {
+  const tried = [];
+  for (const base of [__dirname, path.resolve(__dirname, '..')]) {
+    try {
+      const mod = require(require.resolve('typescript', { paths: [base] }));
+      if (mod && typeof mod.createSourceFile === 'function') {
+        ts = mod;
+        return null;
+      }
+      tried.push(`${base}: 模块里没有 createSourceFile`);
+    } catch (err) {
+      tried.push(`${base}: ${(err && err.code) || (err && err.message) || 'require 失败'}`);
+    }
+  }
+  return `拿不到 typescript（locals 需要它做语法解析；试过：${tried.join('；')}）`;
+}
+
+/** 函数式节点：locals 的「最近外层函数」判据只认这些（骨架点名的四类 + 构造器/访问器）。惰性求值，故不缓存 kind 常量。 */
+function isFunctionLikeNode(node) {
+  return (
+    ts.isFunctionDeclaration(node) ||
+    ts.isFunctionExpression(node) ||
+    ts.isArrowFunction(node) ||
+    ts.isMethodDeclaration(node) ||
+    ts.isConstructorDeclaration(node) ||
+    ts.isGetAccessorDeclaration(node) ||
+    ts.isSetAccessorDeclaration(node)
+  );
+}
+
+/** 绑定名（可能是指识符，也可能是解构模式）→ 其中的全部标识符节点；不按名字合并，各留自己的位置。 */
+function bindingIdentifiers(nameNode, out) {
+  if (ts.isIdentifier(nameNode)) {
+    out.push(nameNode);
+    return out;
+  }
+  if (ts.isObjectBindingPattern(nameNode) || ts.isArrayBindingPattern(nameNode)) {
+    for (const el of nameNode.elements) {
+      if (ts.isBindingElement(el)) bindingIdentifiers(el.name, out);
+    }
+  }
+  return out;
+}
+
+function collectParamsMinimal(sf) {
+  const params = [];
+  const arrowParams = [];
+  const sink = (nameNode, kind, into) => {
+    if (!ts.isIdentifier(nameNode)) return;
+    into.push({ name: nameNode.text, declaration_kind: kind, ...lcOf(sf, nameNode) });
+  };
+  const visit = (node) => {
+    if (ts.isArrowFunction(node)) for (const p of node.parameters) sink(p.name, 'arrow_parameter', arrowParams);
+    else if (ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || ts.isMethodDeclaration(node) || ts.isConstructorDeclaration(node)) {
+      for (const p of node.parameters) sink(p.name, 'parameter', params);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+  return { params, arrowParams };
+}
+
+/**
+ * 局部变量：该文件里 VariableStatement（const/let/var 声明语句）的标识符，且其**最近外层函数式节点正是某个函数**
+ * （模块级变量不算局部变量），且这些标识符**不是形参**。
+ * 实现就是那条判据本身：每遇到一个函数式节点 fn，只走 fn 自己的 body，**不下潜进嵌套的函数式节点**
+ * （那些变量属于嵌套函数，由外层的遍历在轮到它时收），再排除 fn 的形参名
+ * （`function f(a) { var a = 1 }` 里的 a 是形参，不是局部变量）。
+ * 不按名字合并去重：同名不同位置各出一条。结果按 (行, 列) 排序——函数嵌套时收集顺序会先外后内，必须显式排序才确定
+ * （Node 的 Array#sort 稳定，同位置不可能重复，因此确定）。
+ */
+function collectLocalsMinimal(sf) {
+  const locals = [];
+  const inspect = (fn) => {
+    const paramNames = new Set();
+    for (const p of fn.parameters) for (const id of bindingIdentifiers(p.name, [])) paramNames.add(id.text);
+    const walk = (node) => {
+      if (ts.isVariableStatement(node)) {
+        for (const decl of node.declarationList.declarations) {
+          for (const id of bindingIdentifiers(decl.name, [])) {
+            if (!paramNames.has(id.text)) locals.push({ name: id.text, ...lcOf(sf, id) });
+          }
+        }
+      }
+      ts.forEachChild(node, (child) => {
+        if (!isFunctionLikeNode(child)) walk(child);
+      });
+    };
+    if (fn.body) walk(fn.body);
+  };
+  const visit = (node) => {
+    if (isFunctionLikeNode(node)) inspect(node);
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+  locals.sort((a, b) => a.line - b.line || a.column - b.column);
+  return locals;
+}
+
+function renderLocalsHuman(report) {
+  const section = (title, rows) => {
+    const out = ['', `${title}：${rows.length} 条`];
+    if (rows.length === 0) out.push('  （无）');
+    for (const r of rows) out.push(`  ${r.line}:${r.column}  ${r.name}`);
+    return out;
+  };
+  return [
+    `locals：${report.target}（只读该文件本身：ts.createSourceFile 语法树；不建 Program、不做类型检查、不读图产物）`,
+    ...section('形参（parameter）', report.params),
+    ...section('箭头形参（arrow_parameter）', report.arrow_params),
+    ...section('局部变量（local）', report.locals),
+    '',
+    '三条局限（连结果一起读）：',
+    ...report.limitations.map((l) => `  · ${l}`),
+  ].join('\n');
+}
+
+/**
+ * locals 的唯一出口。失败一律非零退出，--json 时给结构化错误——
+ * 「读不到 / 拿不到 / 不支持」都不许被伪装成「这个文件里什么都没有」。
+ */
+function runLocalsMinimal(opts, root, target, list) {
+  const fail = (code, error, message) => {
+    if (opts.json) {
+      process.stdout.write(
+        `${JSON.stringify(
+          { query: 'locals', target: list, unsupported: code === EXIT.unsupported, error, message, limitations: LOCALS_LIMITATIONS },
+          null,
+          2,
+        )}\n`,
+      );
+    } else {
+      process.stderr.write(`${message}\n`);
+    }
+    process.exit(code);
+  };
+
+  if (list.includes('#')) {
+    fail(EXIT.unsupported, 'symbol-id-unsupported', `本版未实现符号 id 输入：${target}（locals 只接受文件路径，例如 src/tools.ts）`);
+  }
+  const abs = path.resolve(root, list);
+  const rel = path.relative(root, abs);
+  if (rel === '' || rel.startsWith('..') || path.isAbsolute(rel)) {
+    fail(EXIT.usage, 'target-outside-root', `locals 只接受仓库内的相对路径：${target}`);
+  }
+  if (!LOCALS_SOURCE_EXTENSIONS.has(path.extname(abs).toLowerCase())) {
+    fail(
+      EXIT.unsupported,
+      'unsupported-extension',
+      `locals 只支持源码扩展名（${[...LOCALS_SOURCE_EXTENSIONS].join(' ')}）：${list}`,
+    );
+  }
+
+  let buf;
+  try {
+    buf = fs.readFileSync(abs);
+  } catch (err) {
+    fail(EXIT.unreadable, 'unreadable-target', `读不到目标文件：${list}（${(err && err.code) || err.message}）`);
+  }
+  // 解码不可信就不解析：UTF-16 / NUL 会让语法树与「行:列」静默错位（本仓同族要求：读不到就必须红，不许假绿）。
+  let text = buf.toString('utf8');
+  if (!Buffer.from(text, 'utf8').equals(buf) || text.includes('\u0000')) {
+    fail(EXIT.unreadable, 'undecodable-target', `目标文件不是可信的 UTF-8 文本（UTF-16 BOM 或 NUL 字节）：${list}`);
+  }
+  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1); // BOM 会让第 1 行的列号整体 +1
+
+  const tsError = loadTypeScriptForLocals();
+  if (tsError) fail(EXIT.unreadable, 'typescript-unavailable', tsError);
+
+  const sf = ts.createSourceFile(abs, text, ts.ScriptTarget.Latest, true);
+  const { params, arrowParams } = collectParamsMinimal(sf);
+  const payload = {
+    query: 'locals',
+    target: list,
+    params,
+    arrow_params: arrowParams,
+    locals: collectLocalsMinimal(sf),
+    limitations: LOCALS_LIMITATIONS,
+  };
+  process.stdout.write(opts.json ? `${JSON.stringify(payload, null, 2)}\n` : `${renderLocalsHuman(payload)}\n`);
+  process.exit(EXIT.ok);
+}
+
 function main() {
   let opts;
   try {
@@ -997,8 +1234,8 @@ function main() {
     process.exit(EXIT.usage);
   }
   const [query, target] = opts.positional;
-  if (query !== 'who-references' && query !== 'impact') {
-    process.stderr.write(`未实现的查询：${query}（本版只有 who-references、impact）\n`);
+  if (query !== 'who-references' && query !== 'impact' && query !== 'locals') {
+    process.stderr.write(`未实现的查询：${query}（本版只有 who-references、impact、locals）\n`);
     process.exit(EXIT.usage);
   }
   if (!target) {
@@ -1013,6 +1250,9 @@ function main() {
     process.stderr.write(`${err.message}\n`);
     process.exit(EXIT.usage);
   }
+
+  // locals 只读该文件本身，不读图产物、不进图产物；必须在 loadArtifact 之前分派。
+  if (query === 'locals') runLocalsMinimal(opts, root, target, normalizeTarget(target));
 
   const loaded = loadArtifact(root);
 

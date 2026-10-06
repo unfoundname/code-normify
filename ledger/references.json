@@ -160,8 +160,8 @@
       "id": "CONTRIBUTING.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 51937,
-      "lines": 145,
+      "bytes": 54477,
+      "lines": 149,
       "edge_out": 1,
       "edge_in": 0
     },
@@ -12445,8 +12445,8 @@
       "id": "scripts/refs-query.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 56732,
-      "lines": 1101,
+      "bytes": 69119,
+      "lines": 1341,
       "edge_out": 3,
       "edge_in": 1
     },
@@ -16202,11 +16202,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/refs-query.cjs:18:34:require:node:child_process",
+      "id": "scripts/refs-query.cjs:24:34:require:node:child_process",
       "kind": "require",
       "from": {
         "file": "scripts/refs-query.cjs",
-        "line": 18,
+        "line": 24,
         "column": 34
       },
       "to": {
@@ -16224,11 +16224,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/refs-query.cjs:19:20:require:node:fs",
+      "id": "scripts/refs-query.cjs:25:20:require:node:fs",
       "kind": "require",
       "from": {
         "file": "scripts/refs-query.cjs",
-        "line": 19,
+        "line": 25,
         "column": 20
       },
       "to": {
@@ -16246,11 +16246,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/refs-query.cjs:20:22:require:node:path",
+      "id": "scripts/refs-query.cjs:26:22:require:node:path",
       "kind": "require",
       "from": {
         "file": "scripts/refs-query.cjs",
-        "line": 20,
+        "line": 26,
         "column": 22
       },
       "to": {
