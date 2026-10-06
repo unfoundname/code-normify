@@ -185,7 +185,7 @@ function prepareFixture() {
   git(['config', 'user.email', 'ratchet-e2e@example.invalid']);
   git(['config', 'user.name', 'ratchet-e2e']);
   git(['config', 'core.autocrlf', 'false']);
-  // 大小写折叠语义必须显式（本仓库真实设置就是 true）：真实事故正是在这个前提下发生的。
+  // 大小写折叠语义必须显式（本仓库真实设置就是 true）：折叠误伤那一类形状只在这个前提下才出现。
   git(['config', 'core.ignoreCase', 'true']);
   // 先 git add，再问 ls-files：夹具宇宙必须等于物化出来的文件清单（否则台账 tracked_total 对不上）。
   git(['add', '-A']);

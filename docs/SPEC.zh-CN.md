@@ -237,7 +237,7 @@ Normify 把一个项目（或**多个互相调用的项目**，如一组 MC 模�
 | `source` | array of `{path, line?, end_line?}` | ✅ | repo 相对 POSIX 路径（正斜杠，禁 `..`/`/` 绝对/`\`）；根模块允许 `source: []`（记 notice） |
 | `revision` | string | ✅ | 40 位 git SHA（生成时仓库提交） |
 | `updated_at` | string | ✅ | ISO 8601 |
-| `fingerprint` | string | ✅ | `source` 的确定性指纹（v1 全量哈希）：按 `source.path` 升序，逐个 `update(UTF-8(path)) + update(0x00) + update(文件字节)` 后取 SHA-256；用 `normify_fingerprint` 计算 |
+| `fingerprint` | string | ✅ | `source` 的确定性指纹（v1 全量哈希）：按 `source.path` 升序、**同一 path 只算一次**（实现按去重后的 path 集合逐个处理），逐个 `update(UTF-8(path)) + update(0x00) + update(文件字节)` 后取 SHA-256；用 `normify_fingerprint` 计算 |
 | `state` | string | 可选 | `active`（默认）、`planned`（计划态）、`deprecated`（废弃）；planned 允许 `source` 未落地且 `fingerprint: pending` |
 | `replacement` | string | 可选 | 仅 `state: deprecated`：替代模块 id（必须存在） |
 | `tags` | string[] | 可选 | ≤12 个自由标签，用于检索/分组/开发指引 |
@@ -332,7 +332,7 @@ normify-demo-repo/               # 结构数据目录（工作目录下）
 ```
 
 - 容器模块文件 = `<最后一段>/index.md`；叶子 = `<最后一段>.md`。
-- 映射规则：`id = (modules/ 下相对路径，去文件名，/ → .)`；根文件 `<treeId>/index.md` 的 id = `treeId`（唯一例外）。
+- 映射规则：容器文件 `<最后一段>/index.md` → `id = (modules/ 下相对路径，去掉末尾的 /index.md，/ → .)`；叶子文件 `<最后一段>.md` → `id = (modules/ 下相对路径，去掉 .md 扩展名，/ → .)`；根文件 `<treeId>/index.md` 的 id = `treeId`（后两条在末段为 `index`/无扩展名时可视为同一式的两种写法）。
 - id 段数无固定上限；总长度 ≤4096，如需限制深度应显式配置 policy。
 
 ### 3.6 渲染数据集（renders/，v0.3）
@@ -443,7 +443,7 @@ deps:
 | `forbid-dependency` | `from[]/to[]`（id 模式，`*` 单段、`**` 任意段）、`kind[]?`、`fromState?/toState?` | 禁止匹配的依赖 |
 | `dependency-direction` | `layers[{name,match[]}]`、`allowSameLayer?`、`allowBackward?` | 层顺序即允许方向 |
 | `acyclic` | `scope[]?`、`includeCrossTree?` | 依赖图无环 |
-| `max-depth` | `maxDepth(1..12)`、`scope[]?` | id 段数上限 |
+| `max-depth` | `maxDepth(1..64)`、`scope[]?` | id 段数上限 |
 | `cross-tree` | `mode: forbid / allow / require-to-api` | 跨树依赖策略（require 时必须写 `to_api`） |
 | `naming` | `pattern`（正则）、`scope[]?` | 作用域内 id 段的命名约束 |
 

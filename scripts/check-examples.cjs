@@ -385,8 +385,11 @@ function diffSnapshots(before, after) {
   for (const [rel, entry] of after.worktree) {
     const prev = before.worktree.get(rel);
     if (!prev) {
+      // before 里没有它：可能是新增（??），也可能是「运行前是干净文件、所以两次快照都没列过它，
+      // 现在被删了」——`git status` 不列干净文件，删除态的首次现身就是 ` D`，必须按删除归类，
+      // 否则分类名与下面 diffSnapshots 的注释（deleted-tracked = 示例删了被跟踪文件）不符。
       changes.push({
-        category: entry.xy === '??' ? 'new-untracked' : 'modified-tracked',
+        category: entry.xy === '??' ? 'new-untracked' : isDeletedStatus(entry.xy) ? 'deleted-tracked' : 'modified-tracked',
         path: rel,
         before: null,
         after: entry.xy,

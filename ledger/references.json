@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "9d56bdd1b41099b61e24c01a57d5070aa9aa222c2493d5cfd59000b433f95dfe",
+    "universe_hash": "a50b48a38b4ff084d8c2190c7620ea64001b89a888594468ef624f223e19e032",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1499,
+    "tracked_total": 1500,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 163
+      "scanned_total": 164
     },
     "analysis": {
       "mode": "typescript",
@@ -92,7 +92,7 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "自指条目（本产物自身的 bytes / lines）固定写 null —— 这是【处置选择】，不是\"没有不动点\"：实测把这两个量迭代写回，第 3 次即收敛（不动点存在）。因此这里写 null 是为了让产物写入幂等、而不是因为\"自指在数学上不可能稳定\"。（本条 = 图数据文件自己（ledger/references.json）那一行；只豁免这两个派生量，其余字段照常登记。）",
     "node_states": {
-      "indexed": 1499
+      "indexed": 1500
     },
     "edge_kinds": {
       "anchor": 3,
@@ -160,7 +160,7 @@
       "id": "CONTRIBUTING.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 72998,
+      "bytes": 73093,
       "lines": 184,
       "edge_out": 1,
       "edge_in": 0
@@ -268,7 +268,7 @@
       "id": "docs/SPEC.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 61326,
+      "bytes": 61636,
       "lines": 873,
       "edge_out": 1,
       "edge_in": 9
@@ -12280,6 +12280,15 @@
       "edge_in": 0
     },
     {
+      "id": "ledger/change-log/20261006T214447Z-a2346a5.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 9266,
+      "lines": 286,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
       "id": "ledger/change-log/README.md",
       "lang": "md",
       "state": "indexed",
@@ -12490,7 +12499,7 @@
       "id": "lib/engine/frontmatter.js",
       "lang": "js",
       "state": "indexed",
-      "bytes": 26761,
+      "bytes": 26803,
       "lines": null,
       "edge_out": 0,
       "edge_in": 3
@@ -12598,7 +12607,7 @@
       "id": "lib/engine/reference.js",
       "lang": "js",
       "state": "indexed",
-      "bytes": 11084,
+      "bytes": 11087,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -12796,7 +12805,7 @@
       "id": "lib/tools.js",
       "lang": "js",
       "state": "indexed",
-      "bytes": 80308,
+      "bytes": 80384,
       "lines": null,
       "edge_out": 0,
       "edge_in": 1
@@ -13111,8 +13120,8 @@
       "id": "scripts/check-examples.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 48529,
-      "lines": 1064,
+      "bytes": 48961,
+      "lines": 1067,
       "edge_out": 3,
       "edge_in": 1
     },
@@ -13120,8 +13129,8 @@
       "id": "scripts/check-file-ledger.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 105540,
-      "lines": 2040,
+      "bytes": 106203,
+      "lines": 2044,
       "edge_out": 5,
       "edge_in": 1
     },
@@ -13156,8 +13165,8 @@
       "id": "scripts/file-ledger-core.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 21023,
-      "lines": 462,
+      "bytes": 21398,
+      "lines": 465,
       "edge_out": 2,
       "edge_in": 4
     },
@@ -13174,8 +13183,8 @@
       "id": "scripts/generate-file-ledger.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 44855,
-      "lines": 793,
+      "bytes": 45291,
+      "lines": 798,
       "edge_out": 5,
       "edge_in": 2
     },
@@ -13192,7 +13201,7 @@
       "id": "scripts/reference-graph-core.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 97804,
+      "bytes": 97942,
       "lines": 2138,
       "edge_out": 3,
       "edge_in": 2
@@ -13300,7 +13309,7 @@
       "id": "src/engine/frontmatter.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 28255,
+      "bytes": 28297,
       "lines": 505,
       "edge_out": 6,
       "edge_in": 5
@@ -13354,7 +13363,7 @@
       "id": "src/engine/reference.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 11971,
+      "bytes": 11974,
       "lines": 185,
       "edge_out": 5,
       "edge_in": 2
@@ -13453,7 +13462,7 @@
       "id": "src/tools.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 90803,
+      "bytes": 90879,
       "lines": 1836,
       "edge_out": 24,
       "edge_in": 5
@@ -13525,7 +13534,7 @@
       "id": "tests/file-ledger-ratchet-e2e.mjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 31247,
+      "bytes": 31259,
       "lines": 478,
       "edge_out": 6,
       "edge_in": 2
@@ -16100,11 +16109,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/check-file-ledger.cjs:101:20:require:node:fs",
+      "id": "scripts/check-file-ledger.cjs:102:20:require:node:fs",
       "kind": "require",
       "from": {
         "file": "scripts/check-file-ledger.cjs",
-        "line": 101,
+        "line": 102,
         "column": 20
       },
       "to": {
@@ -16122,11 +16131,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/check-file-ledger.cjs:102:22:require:node:path",
+      "id": "scripts/check-file-ledger.cjs:103:22:require:node:path",
       "kind": "require",
       "from": {
         "file": "scripts/check-file-ledger.cjs",
-        "line": 102,
+        "line": 103,
         "column": 22
       },
       "to": {
@@ -16144,11 +16153,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/check-file-ledger.cjs:103:24:require:node:crypto",
+      "id": "scripts/check-file-ledger.cjs:104:24:require:node:crypto",
       "kind": "require",
       "from": {
         "file": "scripts/check-file-ledger.cjs",
-        "line": 103,
+        "line": 104,
         "column": 24
       },
       "to": {
@@ -16166,11 +16175,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/check-file-ledger.cjs:104:34:require:node:child_process",
+      "id": "scripts/check-file-ledger.cjs:105:34:require:node:child_process",
       "kind": "require",
       "from": {
         "file": "scripts/check-file-ledger.cjs",
-        "line": 104,
+        "line": 105,
         "column": 34
       },
       "to": {
@@ -16188,11 +16197,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/check-file-ledger.cjs:110:22:require:./file-ledger-core.cjs",
+      "id": "scripts/check-file-ledger.cjs:111:22:require:./file-ledger-core.cjs",
       "kind": "require",
       "from": {
         "file": "scripts/check-file-ledger.cjs",
-        "line": 110,
+        "line": 111,
         "column": 22
       },
       "to": {
@@ -16474,11 +16483,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/file-ledger-core.cjs:38:22:require:node:path",
+      "id": "scripts/file-ledger-core.cjs:40:22:require:node:path",
       "kind": "require",
       "from": {
         "file": "scripts/file-ledger-core.cjs",
-        "line": 38,
+        "line": 40,
         "column": 22
       },
       "to": {
@@ -16496,11 +16505,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/file-ledger-core.cjs:39:34:require:node:child_process",
+      "id": "scripts/file-ledger-core.cjs:41:34:require:node:child_process",
       "kind": "require",
       "from": {
         "file": "scripts/file-ledger-core.cjs",
-        "line": 39,
+        "line": 41,
         "column": 34
       },
       "to": {
@@ -16650,11 +16659,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-file-ledger.cjs:91:20:require:node:fs",
+      "id": "scripts/generate-file-ledger.cjs:96:20:require:node:fs",
       "kind": "require",
       "from": {
         "file": "scripts/generate-file-ledger.cjs",
-        "line": 91,
+        "line": 96,
         "column": 20
       },
       "to": {
@@ -16672,11 +16681,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-file-ledger.cjs:92:22:require:node:path",
+      "id": "scripts/generate-file-ledger.cjs:97:22:require:node:path",
       "kind": "require",
       "from": {
         "file": "scripts/generate-file-ledger.cjs",
-        "line": 92,
+        "line": 97,
         "column": 22
       },
       "to": {
@@ -16694,11 +16703,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-file-ledger.cjs:93:24:require:node:crypto",
+      "id": "scripts/generate-file-ledger.cjs:98:24:require:node:crypto",
       "kind": "require",
       "from": {
         "file": "scripts/generate-file-ledger.cjs",
-        "line": 93,
+        "line": 98,
         "column": 24
       },
       "to": {
@@ -16716,11 +16725,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-file-ledger.cjs:94:34:require:node:child_process",
+      "id": "scripts/generate-file-ledger.cjs:99:34:require:node:child_process",
       "kind": "require",
       "from": {
         "file": "scripts/generate-file-ledger.cjs",
-        "line": 94,
+        "line": 99,
         "column": 34
       },
       "to": {
@@ -16738,11 +16747,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-file-ledger.cjs:97:22:require:./file-ledger-core.cjs",
+      "id": "scripts/generate-file-ledger.cjs:102:22:require:./file-ledger-core.cjs",
       "kind": "require",
       "from": {
         "file": "scripts/generate-file-ledger.cjs",
-        "line": 97,
+        "line": 102,
         "column": 22
       },
       "to": {

@@ -31,8 +31,10 @@
  *
  * 大小写语义（与 `core.ignoreCase` 一致，不依赖平台默认、不用 localeCompare）：
  *   · ignoreCase=true 时，模式以 `i` 标志编译（git 在本仓也是折叠匹配：core.ignoreCase=true）；
- *   · 只靠折叠才命中的路径会被单独报出（caseFoldOnly）——`*review*.md` 命中 `preview.md`
- *     就是这一类（preview 含子串 review），本会话真实事故，必须报出而不是静默放宽。
+ *   · 只靠折叠才命中的路径会被单独报出（caseFoldOnly，判据 = matched && !strictMatched）——
+ *     形状如模式 `*REVIEW*.md` 命中 `preview.md`（大小写敏感时不命中）。实测反例：`*review*.md`
+ *     命中 `preview.md` 是**子串**命中，大小写敏感时同样命中（caseFoldOnly=false）；本会话的真实
+ *     事故是这一种子串误伤，与折叠误伤是两种形状，两者都必须报出而不是静默放宽。
  */
 
 const path = require('node:path');
@@ -276,7 +278,8 @@ function buildExemptMatchers(entries, options) {
  *   · matched       最终是否被豁免（最后一条命中的条目不是 `!` 反选）；
  *   · strictMatched 同一判定在**大小写敏感**语义下的结果；
  *   · caseFoldOnly  matched 为真而 strictMatched 为假 —— 只有靠 core.ignoreCase 折叠才命中，
- *                   即 `*review*.md` 命中 `preview.md` 那类事故，调用方必须报出来。
+ *                   如 `*REVIEW*.md` 命中 `preview.md`（而 `*review*.md` 命中 `preview.md` 是子串命中，
+ *                   大小写敏感时同样命中，不属于这一类），调用方必须报出来。
  */
 function matchExemptPath(matchers, rel) {
   let last = null;

@@ -22,7 +22,7 @@
  *   · 已经 owned（被模块 source.path 精确声明且真实存在）的路径不再进清单；
  *   · 已经命中豁免模式的路径不再进清单；
  *   · 已经从 git 索引消失的路径不再进清单（自动剔除腐烂条目）；
- *   · 因此「往清单里手加一条」无法靠生成器洗白：加进来的条目下次生成会被剔除。
+ *   · 因此「往清单里手加一条」无法靠生成器洗白：加进来的条目不会被保留——写盘模式下点名 + 拒绝写盘 + exit 1。
  *
  * **棘轮基线 = HEAD 版台账**（`git show HEAD:ledger/file-ledger.json`）：
  *   原先把「原本就在清单里」理解成「在工作区那份台账里」，于是人只要把一条**已在 git 索引里**、
@@ -67,7 +67,12 @@
  *   两侧比较前统一归一到 LF：行尾是检出配置（core.autocrlf / .gitattributes）的产物，不是台账内容。
  *   Windows 上 core.autocrlf=true 会把工作区台账检出成 CRLF，不归一的话新克隆在第 9 环必然假红，
  *   而 Linux CI 全绿。代价：`--check` 不发现「工作区台账被写成 CRLF」这件事本身（写入侧恒输出 LF，
- *   索引 blob 也恒为 LF），行尾之外的差异（缩进 / 键序 / 空白 / 任何一个数字）仍然逐字符比较。
+ *   索引 blob 也恒为 LF）。
+ *
+ * `--check` 的比较是**索引 blob 解析后的字段比较**（实测：把索引版台账整体重排缩进后 `--check` 仍 exit 0）：
+ *   缩进 / 空白 / 行尾的差异不报红；键序（JSON.parse 保留文件里的键序、重算时原样带出）与任何一个
+ *   字段值的差异仍会报红。写盘模式另有一条**原文比较**（工作区那份 vs 重算序列化结果，只归一行尾），
+ *   缩进不同在那条路径上会让它写盘。
  *
  * `--check` 的比较基准：**git 索引 blob**（`git show :<台账>`），索引里没有该台账时才退回工作区文件。
  *   判据两条——
@@ -633,8 +638,8 @@ function regenerate(root, opts) {
   // ---- 5. 写出目标：**索引版台账里相对基线新增的 accounted 条目一律剔除** ----
   // 为什么改写盘内容也要看索引：只看 HEAD 基线时，手工条目若已 `git add`，
   // 生成器会把它当基线内的存量保留，于是「写盘 → git add → --check」这条链反而把洗白固化了。
-  // 现在输出恒为「基线清单 ∩ 索引版清单 ∩ 当前条件」，手工新增条目在**首次重算**就被剔除并点名。
-  // 注意：绝不因此报 error —— 生成器的职责是重算，拦截由 `--check`（exit 1）与门禁（error）负责。
+  // 现在输出恒为「基线清单 ∩ 索引版清单 ∩ 当前条件」，手工新增条目在**首次重算**就被剔除并点名；
+  // 写盘模式下这还会**拒绝写盘 + exit 1**（见下面的 5a 与 main 的 refused 分支）——不给静默自愈留口子。
   const indexBlobForGuard = readGitBlob(root, `:${LEDGER_REL}`);
   const indexLedger = parseMaybeLedger(indexBlobForGuard.ok ? indexBlobForGuard.text : null);
   // 比较基准本身也要可信：索引版台账里的 accounted 条目缺 accounted_at / basis 时，`--check` 的

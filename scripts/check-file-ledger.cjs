@@ -44,9 +44,10 @@
  *   · 行尾字段约定：`<pattern> ## reason=<非空理由> [ ## since=YYYY-MM-DD ] [ ## broad_confirmed=true|false ]`，
  *     缺 reason / 未知字段 / 值非法 / 不支持的元字符 → exempt-invalid（error，不猜不降级）；
  *   · 它**不**复用真 .gitignore 的规则（已跟踪文件本来就不受 ignore 约束，把忽略规则当豁免依据
- *     是语义碰撞：本会话真实事故 `*review*.md` 在 core.ignoreCase=true 下命中 preview.md）；
+ *     是语义碰撞：本会话真实事故 `*review*.md` 命中 preview.md —— 那是**子串**命中，折叠与否都命中）；
  *   · 大小写语义必须显式：与 `core.ignoreCase` 一致（本仓 true），不用平台默认、不用 localeCompare；
- *     仅靠折叠才命中的路径单独报 error（exempt-case-fold-overmatch）——那正是上面那类事故；
+ *     仅靠折叠才命中的路径单独报 error（exempt-case-fold-overmatch）——那是另一种形状
+ *     （如 `*REVIEW*.md` 命中 `preview.md`：大小写敏感时不命中），与上面的子串事故不是同一类；
  *   · 与真 .gitignore 交叉校验（exempt-gitignore-cross-check，error）：
  *     ① 本清单命中的已跟踪路径 ∩ 真 .gitignore 覆盖（`git check-ignore --no-index`，尊重 `!` 反选）≠ ∅；
  *     ② 仅靠 core.ignoreCase 折叠才命中；
@@ -239,8 +240,9 @@ const CHECK_HELP_DETAILS = {
     '  命中该规则，而 `git ls-files -- README.md` 仍列出、`git ls-files` 总条数不变），所以它**仍然是台账宇宙的一员**；',
     '  为它写豁免等于**把忽略规则当成了豁免依据**，是语义碰撞。**旧文案写"它根本不在台账宇宙里"，与本项自己的前提',
     '  "本清单命中的**已跟踪**路径"自相矛盾（已跟踪 = 在 `git ls-files` 里 = 在台账宇宙里），已作废。**',
-    '· 判据 2（折叠误伤）：只靠 `core.ignoreCase` 折叠才命中的路径 → error。本会话真实事故：',
-    '  `*review*.md` 在 core.ignoreCase=true 下命中 `preview.md`（preview 含子串 review）。',
+    '· 判据 2（折叠误伤）：只靠 `core.ignoreCase` 折叠才命中的路径 → error。形状如',
+    '  `*REVIEW*.md` 命中 `preview.md`（大小写敏感时不命中）。本会话真实事故是另一种形状：',
+    '  `*review*.md` 命中 `preview.md` —— **子串**命中（preview 含 review），大小写敏感时同样命中。',
     '· 判据 3（放行了本该 git add 的普通文件）：本清单命中的路径若「未被忽略、也不在 git 索引里」→ error。',
     '· 为什么必须做：一条本想忽略审阅稿的规则，可能意外变成若干文件的永久豁免依据（上面的真实事故）。',
   ],
@@ -407,11 +409,12 @@ function printHelp() {
     '大小写语义（必须显式，不依赖平台默认）：',
     '  模式匹配与 `core.ignoreCase` 一致（本仓 true）——git 在本仓也是折叠匹配；',
     '  仅靠折叠才命中的路径 → exempt-case-fold-overmatch（error）：',
-    '  `*review*.md` 在 core.ignoreCase=true 下命中 `preview.md`（preview 含子串 review）是本会话真实事故。',
+    '  形状如 `*REVIEW*.md` 命中 `preview.md`（大小写敏感时不命中）。本会话真实事故是子串形状：',
+    '  `*review*.md` 命中 `preview.md`（preview 含子串 review，大小写敏感时同样命中）。',
     '',
     '与真 .gitignore 的交叉校验（exempt-gitignore-cross-check，error）：',
     '  ① 本清单命中的已跟踪路径 ∩ 真 .gitignore 覆盖（`git check-ignore --no-index`，尊重 `!` 反选）≠ ∅；',
-    '  ② 仅靠 core.ignoreCase 折叠才命中（上面的事故形态）；',
+    '  ② 仅靠 core.ignoreCase 折叠才命中（与上面的子串事故是两种形状）；',
     '  ③ 本清单命中的路径「未被忽略、也不在 git 索引里」——本该 git add 的普通文件被豁免静默放行。',
     '  为什么必须做：已跟踪文件本来就不受 ignore 约束，把忽略规则当豁免依据是语义碰撞。',
     '',
@@ -499,7 +502,7 @@ function createContext(opts) {
     exemptFileError: null,
     /** 大小写折叠语义：'true' / 'false' / 'unset'（显式回显，不依赖平台默认）。 */
     ignoreCaseRaw: 'unset',
-    /** 仅靠 core.ignoreCase 折叠才命中的豁免命中（`*review*.md` 命中 `preview.md` 那类事故）。 */
+    /** 仅靠 core.ignoreCase 折叠才命中的豁免命中（如 `*REVIEW*.md` 命中 `preview.md`；`*review*.md` 命中 `preview.md` 是子串命中，不属于这一类）。 */
     exemptCaseFoldOnly: [],
     /** 本清单命中的已跟踪路径 ∩ 真 .gitignore 覆盖（--no-index，已排除 `!` 反选）。 */
     exemptGitignoreIntersection: [],
@@ -1282,7 +1285,7 @@ function gitCheckIgnoreRecords(ctx, paths) {
 /**
  * 交叉校验（exempt-gitignore-cross-check，error）。三类不一致：
  *   ① 交集：本清单命中的**已跟踪**路径 ∩ 真 .gitignore 覆盖（--no-index，排除 `!` 反选）；
- *   ② 折叠误伤：仅靠 core.ignoreCase 折叠才命中（`*review*.md` 命中 `preview.md`）；
+ *   ② 折叠误伤：仅靠 core.ignoreCase 折叠才命中（如 `*REVIEW*.md` 命中 `preview.md`；`*review*.md` 命中 `preview.md` 是子串命中，与折叠无关）；
  *   ③ 放行了本该 git add 的普通文件：本清单命中的路径「未被忽略、也不在 git 索引里」。
  * ② 在 classifyTracked 里收集（判定时就已知），①③ 在这里取数。
  */
@@ -1669,7 +1672,8 @@ function emitViolations(ctx) {
         `豁免模式只靠大小写折叠才命中：${item.pattern}（第 ${item.line} 行）命中 ${item.path}` +
         `——core.ignoreCase=${ctx.ignoreCaseRaw}，大小写敏感时它并不命中。`,
       hint:
-        '本会话真实事故：`*review*.md` 在 core.ignoreCase=true 下命中 `preview.md`（preview 含子串 review）。' +
+        '折叠误伤的形状：`*REVIEW*.md` 命中 `preview.md`（大小写敏感时不命中）。本会话真实事故是子串形状：' +
+        '`*review*.md` 命中 `preview.md`（preview 含子串 review，大小写敏感时同样命中）。' +
         '把模式收窄到不会折叠误伤的写法（限定目录，或把大小写写全），不要依赖折叠语义。',
     });
   }

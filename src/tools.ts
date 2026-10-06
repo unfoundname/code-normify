@@ -556,7 +556,7 @@ function moduleParams(): SchemaNode {
         required: true,
         properties: {
         uid: str('8 位小写 hex 随机串（不变标识，全项目唯一）'),
-        id: str('路径式 id：小写段点分隔，含树名段 ≤ 12 段，如 demo.order.checkout.payment'),
+        id: str('路径式 id：小写段点分隔（段首字符可为字母或数字），深度不限、总长 ≤ 4096，如 demo.order.checkout.payment'),
         parent: { type: ['string', 'null'], description: '父模块 id（= id 去掉最后一段）；根模块传 JSON null', required: true },
         name: l10nParam('模块名（≤60 字符）'),
         description: l10nParam('功能介绍（≤500 字符，刻意精炼）'),
@@ -1271,7 +1271,7 @@ export function createNormifyTools(env: ToolEnv, getHelpCatalog?: () => readonly
             files: sources.map(s => s.path),
             missing: fp.missing,
             not_files: fp.notFiles,
-            algorithm: 'sha256: 按 path 升序，逐个 update(UTF-8(path)) + update(0x00) + update(file bytes)',
+            algorithm: 'sha256: 按 path 升序（同一 path 只算一次），逐个 update(UTF-8(path)) + update(0x00) + update(file bytes)',
         };
     });
     register('normify_brief', {

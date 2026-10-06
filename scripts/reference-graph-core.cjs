@@ -270,7 +270,7 @@ function reportReadFailure(ctx, rel, failure, severity) {
 }
 
 // ---- positionAt / pathState / glob 展开（原 check-references.cjs:1084-1218）----
-/** 1-based 行号 / 列号：按字节偏移换算。 */
+/** 1-based 行号 / 列号：按 **JS 字符串（UTF-16 码元）** 偏移换算——调用方传的是 `indexOf` / 正则 `match.index` 这类字符串下标，不是 UTF-8 字节偏移。 */
 function positionAt(ctx, rel, text, index) {
   let offsets = ctx.lineOffsets.get(rel);
   if (!offsets) {
