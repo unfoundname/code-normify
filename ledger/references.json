@@ -160,7 +160,7 @@
       "id": "CONTRIBUTING.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 50351,
+      "bytes": 50706,
       "lines": 145,
       "edge_out": 1,
       "edge_in": 0
@@ -12445,8 +12445,8 @@
       "id": "scripts/refs-query.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 47531,
-      "lines": 985,
+      "bytes": 49148,
+      "lines": 992,
       "edge_out": 3,
       "edge_in": 1
     },
