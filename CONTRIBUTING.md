@@ -125,7 +125,7 @@ node scripts/refs-query.cjs impact <仓库相对路径>
 
 - **符号 id 输入**（形如 `src/tools.ts#Name@1:2`）：以 `unsupported` 拒绝（退出码 4）；符号级信息只在文件查询结果的 `symbol_referrers[]` 里出现。
 - **其它查询**：`what-references`、`change-impact` 未实现；本版只有 `who-references` 与 `impact` 两条。
-- **`impact` 内部尚未做**：三档分类、`path[]`、`cycles[]`、`informational`、截断标注。
+- **`impact` 内部尚未做**：三档分类、`informational`、截断标注。
 - **文件内边**（同一文件内部的引用/依赖）未展开；文件级 `edges[]` 的 `type_only` 恒为 `false`（产物口径），故运行时/类型拆分只对 `symbol_edges[]` 有效。
 
 ## 修改与验证
