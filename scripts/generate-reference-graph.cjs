@@ -603,8 +603,10 @@ function buildGraph(root, options = {}) {
     const text = textOf.get(entry.rel);
     const size = sizes.get(entry.sha);
     // **自指例外**：图数据文件自己那一行的 bytes / lines 记 null。
-    // 理由可证：记了它，产物内容就依赖「上一次写出的自己有多大」，写出后重算必然得到不同的值——
-    // 那不是幂等，是一个没有不动点的自指（实测：写盘 → git add → --check 立刻红）。
+    // 自指条目（本产物自身的 `bytes`/`lines`）固定写 `null` —— 这是【处置选择】，不是"没有不动点"：
+    // 实测把这两个量迭代写回，第 3 次即收敛（不动点存在）。因此这里写 null 是为了让产物写入幂等、
+    // 而不是因为"自指在数学上不可能稳定"。
+    // 本行历史上写的"记了它就没有不动点、幂等当场失效"是错的（旧说否掉，理由换成上面这条实测）。
     // 只豁免这两个派生量；id / lang / state / edge_* 一律照记，不做整行豁免。
     const self = entry.rel === GRAPH_REL;
     nodes.set(entry.rel, {
@@ -750,8 +752,10 @@ function buildGraph(root, options = {}) {
       edge_id_rule:
         '<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）',
       self_reference:
-        `图数据文件自己（${GRAPH_REL}）那一行的 bytes / lines 恒为 null：它们是自指的（产物大小依赖上一次写出的自己），` +
-        '记了就没有不动点、幂等当场失效；其余字段照常登记。',
+        `自指条目（本产物自身的 bytes / lines）固定写 null —— 这是【处置选择】，不是"没有不动点"：` +
+        '实测把这两个量迭代写回，第 3 次即收敛（不动点存在）。因此这里写 null 是为了让产物写入幂等、' +
+        '而不是因为"自指在数学上不可能稳定"。' +
+        `（本条 = 图数据文件自己（${GRAPH_REL}）那一行；只豁免这两个派生量，其余字段照常登记。）`,
       node_states: countsBy(sortedFiles, (n) => n.state),
       edge_kinds: countsBy(sortedEdges, (e) => e.kind),
       edge_status: countsBy(sortedEdges, (e) => e.status),
