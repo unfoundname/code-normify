@@ -246,6 +246,8 @@ function normalizeTarget(target) {
 
 /** 一条人话结论：空引用方列表到底能不能读作「没人引用」。 */
 function emptyReading(completeness) {
+  // 本版 'complete' 不可达（completeness 的取值只会是 stale / partial / unknown，见 assertCompletenessInvariant 的注释）：
+  // 此分支是给未来新增 complete 分支的护栏，不要删。
   if (completeness === 'complete') {
     return '空引用方列表 = 没人引用它（completeness=complete，可以这样读）。';
   }

@@ -114,9 +114,9 @@
       "import-binding 节点（本批把 import 绑定表达成符号级边的源端，不单独节点化）",
       "非 TS 后缀（.mjs / .cjs / .js / .jsx）的符号级解析（按设计稿 §3.4 退化为文件级）",
       "库类型与 @types（Program 刻意 noLib + types:[]：这类引用记 unresolved / symbol-not-found-in-program）",
-      "传递闭包查询（增量 5）",
-      "查询接口（增量 5）",
-      "变更影响门禁（增量 6）"
+      "传递闭包查询的结果不落盘（能力已由 scripts/refs-query.cjs 的 impact / who-references 提供，属按需查询）",
+      "查询接口的产物不落盘（能力已由 scripts/refs-query.cjs 提供）",
+      "变更影响判定不落盘（能力已由 scripts/check-impact.cjs 提供，它是 check 链第 13 环）"
     ]
   },
   "files": [
@@ -12058,8 +12058,8 @@
       "id": "ledger/change-log/README.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 8300,
-      "lines": 97,
+      "bytes": 8837,
+      "lines": 101,
       "edge_out": 0,
       "edge_in": 0
     },
@@ -12958,7 +12958,7 @@
       "id": "scripts/generate-reference-graph.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 65899,
+      "bytes": 66123,
       "lines": 1238,
       "edge_out": 6,
       "edge_in": 3
@@ -12976,8 +12976,8 @@
       "id": "scripts/refs-query.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 91757,
-      "lines": 1720,
+      "bytes": 91973,
+      "lines": 1722,
       "edge_out": 3,
       "edge_in": 1
     },
