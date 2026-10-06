@@ -200,8 +200,10 @@ jobs:
         # 必须同步改本注释与 CONTRIBUTING.md）。
         # 快照（2026-10-06，locals / ci.yml / 设计稿 / 交接文档批次并入后按实测重写；
         # 旧值 1,414 / 491 已过期）：节点 1,416（全 indexed）· 边 498（import 320 / require 52 / export-from 19 / dynamic-import 1 / markdown-link 35 / package-field 51 / ci-target 17 / anchor 3）·
-        # 扫描面 80 个文件（排除 examples/ 与 lib/）· 产物 1,492,077 B（LF 归一化后；
-        # sha256 随内容而定，不在此写死）· 单次全量重算 ≈1.6 s
+        # 扫描面 80 个文件（排除 examples/ 与 lib/）。产物大小随内容而定，不在此写死——
+        # 现值取数：git cat-file -s :ledger/references.json（以【索引】为准，不是工作区）。
+        # sha256 同理：git rev-parse :ledger/references.json
+        # 单次全量重算 ≈1.6 s
         # 符号级：声明 402 / 符号边 1,347（已解析 989 / 无符号 358）· 跨文件 756 ·
         # Program 28 个源文件。
         # 该脚本仍在扩充，**新增边 kind / 改扫描面或字段时必须同步改本注释与 CONTRIBUTING.md**。

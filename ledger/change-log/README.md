@@ -39,6 +39,21 @@ npm run check:changes                                # = 生成器 --check：结
   时刻）与 `handling`（人工/追加式处理状态）是**人类字段**，不参与复核。
 - **复核不通过一律 exit 1**，并且 `unknown`（基准不可用）**不判绿**：未证伪也未证实 ≠ 通过。
 
+### 覆盖率怎么算（门禁不查这一项）
+
+`check:changes` 只校验**已存在**的记录 ✗ —— 它**对覆盖率零信息量**。覆盖率要自己算：
+
+```powershell
+$recorded = Get-ChildItem ledger/change-log/*.json | ForEach-Object {
+  (Get-Content $_ -Raw | ConvertFrom-Json).to_snapshot.rev
+}
+$all = git rev-list HEAD
+"应有(除 HEAD 自身) $(($all | Select-Object -Skip 1).Count) / 实有 $(($all | Select-Object -Skip 1 | Where-Object { $recorded -contains $_ }).Count)"
+```
+
+**稳态口径**：**「HEAD 之前的每个提交都有一条记录」，永远差 HEAD 这一位** ——
+一条记录若记录它自己所在的提交，就会改变那棵树的哈希，自指不可能成立。
+
 ## 记录里有什么（本批 = **文件层**）
 
 | 栏 | 内容 |
