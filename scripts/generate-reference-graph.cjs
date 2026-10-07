@@ -36,11 +36,24 @@
  * **本批新增：`lib-global-not-in-program` 与 `as const` 假阳性（两条都是「如实记账」，不是放宽）**：
  *   · Program 刻意 `noLib: true`（不把 `node_modules` 拉进来），于是给函数加一句标准类型标注
  *     （`function f(): Promise<void>`）就会多一条「未解析」的 `type-reference`。本批不去给 Program
- *     接 lib（实测：`unresolved` 恒 224、一条没降，却让 Program 28 → 95 个源文件、+约 200ms、
- *     产物 +13.9KB，且 `cross_file` 被 lib 路径污染），而是由**生成器**在**运行时**读已装 typescript
+ *     接 lib（**一次性对照实验的历史快照，不是现值**：`unresolved` 恒 224、一条没降，却让 Program
+ *     28 → 95 个源文件、产物 +13.9KB，且 `cross_file` 被 lib 路径污染），而是由**生成器**在**运行时**读已装 typescript
  *     自带 `lib.*.d.ts` 的顶层全局名，给**同时满足**「kind=type-reference ∧ from 在扫描面内 ∧
  *     名字命中名表」的边打这个新原因码；`scripts/check-impact.cjs` **只**排除这一个原因码
  *     （`declaration-out-of-scope` 等一律继续算红）。
+ *     **接 lib 的耗时增量不写成常数**（**旧值留痕**：此处原写「+约 200ms」，那个数是一次性实测、
+ *     无人复测）：耗时随机器 / 负载 / Node 与 typescript 版本变化，只作**量级留痕**（百毫秒级，
+ *     同机重跑能差数倍），口径与 `scripts/check-lib-sync.cjs` 的「为什么不是逐文件 84 次 `git show`」
+ *     那段相同——机器相关的耗时观测不换算成取数命令，也**不在此复述任何一次实测值**。
+ *     **现值取数（不复述数字）**：现配置的建 Program 耗时 = `node scripts/generate-reference-graph.cjs
+ *     --check --json` 的 `timings.programMs`；规模 = 同一条命令的 `symbolGraph.rootNames` /
+ *     `symbolGraph.programSourceFiles`（产物里叫 `meta.symbol_graph` 的 `root_names_total` /
+ *     `program_source_files`）。**上面那组对照数字今天复现不出来**（本批实测，2026-10-07）：在现在的
+ *     **索引宿主**上把 `noLib` 关掉（= 接 lib），`symbolGraph.programSourceFiles` 与开着 `noLib` 时
+ *     **逐字相等**、lib 文件 **0** 条 ——
+ *     `node_modules` 不在索引里，「仓库外路径一律不可见」（见 `scripts/reference-graph-core.cjs` 的同名段）
+ *     把 lib 挡在门外；当年那个「28 → 95」出自更早那版**会委派默认宿主读磁盘**的宿主。
+ *     要复测那个对照就得换回那一版宿主，故它只作历史留痕，别当现值读。
  *   · TS 把 `as const` 解析成名为 `const` 的 `TypeReferenceNode`（保留字，永远解析不到）⇒ 本批在
  *     **生成器侧**跳过它（不是门禁侧放行 —— 它根本不该是一条引用边），跳过数落进产物自证。
  *   · 名表 `status ≠ loaded` ⇒ 一条边也不归入新原因码（= 旧行为，**不判绿**），且降级写进产物与报告。

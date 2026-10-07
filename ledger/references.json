@@ -180,7 +180,7 @@
       "id": "CONTRIBUTING.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 77798,
+      "bytes": 78313,
       "lines": 184,
       "edge_out": 1,
       "edge_in": 0
@@ -234,7 +234,7 @@
       "id": "docs/DESIGN-code-graph.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 239361,
+      "bytes": 243243,
       "lines": 1363,
       "edge_out": 0,
       "edge_in": 0
@@ -13338,8 +13338,8 @@
       "id": "scripts/generate-reference-graph.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 87777,
-      "lines": 1491,
+      "bytes": 89315,
+      "lines": 1504,
       "edge_out": 6,
       "edge_in": 3
     },
@@ -16937,11 +16937,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:114:20:require:node:fs",
+      "id": "scripts/generate-reference-graph.cjs:127:20:require:node:fs",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 114,
+        "line": 127,
         "column": 20
       },
       "to": {
@@ -16959,11 +16959,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:115:22:require:node:path",
+      "id": "scripts/generate-reference-graph.cjs:128:22:require:node:path",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 115,
+        "line": 128,
         "column": 22
       },
       "to": {
@@ -16981,11 +16981,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:116:24:require:node:crypto",
+      "id": "scripts/generate-reference-graph.cjs:129:24:require:node:crypto",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 116,
+        "line": 129,
         "column": 24
       },
       "to": {
@@ -17003,11 +17003,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:117:31:require:node:child_process",
+      "id": "scripts/generate-reference-graph.cjs:130:31:require:node:child_process",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 117,
+        "line": 130,
         "column": 31
       },
       "to": {
@@ -17025,11 +17025,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:120:22:require:./reference-graph-core.cjs",
+      "id": "scripts/generate-reference-graph.cjs:133:22:require:./reference-graph-core.cjs",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 120,
+        "line": 133,
         "column": 22
       },
       "to": {
@@ -17047,11 +17047,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:123:24:require:./file-ledger-core.cjs",
+      "id": "scripts/generate-reference-graph.cjs:136:24:require:./file-ledger-core.cjs",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 123,
+        "line": 136,
         "column": 24
       },
       "to": {
