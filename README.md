@@ -320,4 +320,4 @@ npm run test:render
 
 ## 来源与许可
 
-本项目由 [yan-mc/dsh-normify](https://github.com/yan-mc/dsh-normify) 派生，保留原有结构引擎、查看器及 MIT 许可。当前派生仓库为 [wishbreeze/code-normify](https://github.com/wishbreeze/code-normify)，0.6.0 将宿主入口迁移为 PromptManager 工具 library 与受管 MCP，0.7.0 增加按可独立验证交付单元划分的分支计划，0.8.0 把 `execution`（host/standalone）变成 `createPromptManagerTools` 的必填项并确立宿主执行契约。原作者归属 **Copyright (c) 2026 yan-mc** 见 [LICENSE](./LICENSE)。
+本项目由 [yan-mc/dsh-normify](https://github.com/yan-mc/dsh-normify) 派生，保留原有结构引擎、查看器及 MIT 许可。当前派生仓库为 [unfoundname/code-normify](https://github.com/unfoundname/code-normify)，0.6.0 将宿主入口迁移为 PromptManager 工具 library 与受管 MCP，0.7.0 增加按可独立验证交付单元划分的分支计划，0.8.0 把 `execution`（host/standalone）变成 `createPromptManagerTools` 的必填项并确立宿主执行契约。原作者归属 **Copyright (c) 2026 yan-mc** 见 [LICENSE](./LICENSE)。
