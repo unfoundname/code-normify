@@ -1509,7 +1509,15 @@ function loadLibGlobals(ts) {
     }
     try {
       // `statements.length === 0` **不是**错误：`lib.es2015.d.ts` 这类文件只有 `/// <reference lib=… />`
-      // 指令、本来就是 0 条语句（实测 99 个文件里 22 个如此）。只有**抛异常**才算解析不了。
+      // 指令、本来就是 0 条语句。只有**抛异常**才算解析不了。
+      // **两个条数都是活值 —— 取数、不复述**（它们随 `node_modules/typescript` 的版本变，本行所在进程读的是
+      // 哪一份也只有它自己知道）：现值取数 ——
+      //   node -e "const m=require('./scripts/reference-graph-core.cjs'),fs=require('fs'),p=require('path'),ts=require('typescript');const d=m.resolveTypeScriptLibDir();const e=fs.readdirSync(d).filter(n=>/^lib\..*\.d\.ts$/.test(n));const z=e.filter(n=>ts.createSourceFile(n,fs.readFileSync(p.join(d,n),'utf8'),ts.ScriptTarget.Latest,false,ts.ScriptKind.TS).statements.length===0);console.log('文件',e.length,'零语句',z.length,'typescript',ts.version)"
+      //   （口径：与下面这行同一个 `LIB_FILE_PATTERN` / 同一个 `createSourceFile`，`setParentNodes=false` 与
+      //   `topLevelGlobalNamesOf` 一致；`resolveTypeScriptLibDir()` 就是本文件解析 lib 目录的那一个函数。）
+      // **留痕（只作留痕，不是现值）**：本行原写「实测 99 个文件里 22 个如此」——那是某一时点读某个 typescript
+      //   版本的数，**无时点、无取数命令、无留痕标记**，读起来像不变量；数本身按上一条命令可复核，但「实测」
+      //   二字没有告诉任何人该在哪一天、用哪条命令重测。故只保留这句留痕、现值一律现取。
       topLevelGlobalNamesOf(ts, name, text, names);
     } catch {
       return reset(LIB_GLOBALS_REASONS.LIB_FILE_UNPARSABLE, ts.version);

@@ -18,6 +18,22 @@ export declare function resolveProject(rootDir: string, args: {
 }): Promise<ProjectRef>;
 export declare function listProjects(rootDir: string): ProjectRef[];
 export declare function listModuleFiles(projectDir: string): Promise<string[]>;
+/**
+ * `modules/` 下的两类结构异常（SPEC §5.2 规则 6 的后半句：「`modules/` 下**无游离文件、无空树目录**」）。
+ *
+ * 为什么必须单独查：`walk`（`listModuleFiles`）**只收 `.md`**——非 `.md` 文件与不含模块文件的目录都被
+ * 静默跳过，于是「modules/ 下有不该有的东西」在 L1/L2 整条链路上**没有任何诊断出口**（那条规则写了，
+ * 但没人实现）。判据只看**磁盘**，与 `listModuleFiles` 同源（引擎按文件系统读模块，不按 git 索引）。
+ *
+ *   游离文件   = `modules/` 下任何**不以 `.md` 结尾**的普通文件（编辑器的临时文件、误落的数据文件……）；
+ *   空树目录   = `modules/` 下任何**子树里一个 `.md` 都没有**的目录（git 不跟踪空目录，所以它只可能
+ *                来自磁盘操作；它下面就算有文件，那些文件也全是游离文件）。
+ * `modules/` 根本身不算「空树目录」（那种情形已由 `structure/no-root` 报出，不重复点名）。
+ */
+export declare function listModuleTreeAnomalies(projectDir: string): Promise<{
+    strayFiles: string[];
+    emptyTreeDirs: string[];
+}>;
 /** 找模块现有文件（容器 index.md 优先，其次叶子 x.md）。 */
 export declare function findModuleFile(projectDir: string, id: string): string | null;
 export declare function loadAllModules(projectDir: string, options?: {

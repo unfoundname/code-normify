@@ -70,8 +70,10 @@ function usage() {
     '                          （判据：处理完最大深度层之后仍有未被收进结果集的引用者；**不是** actual_depth === max_depth），',
     '                          人类可读输出在被截断时另打一行 ⚠ 提示；没截断 ⇒ truncated=false，此时 closure 按图产物已完整展开。',
     '                          档内另有正交标注 type_only（**不是第四档**），判据是**可达性**：在「目标 ∪ 闭包」内只沿',
-    '                          **运行时边**（import / export-from / require / dynamic-import / package-field / ci-target，',
-    '                          以及符号级边；type_only=true 的纯类型语句与 markdown-link / anchor 这类纯文字引用不算）走，',
+    '                          **运行时边**（import / export-from / require / dynamic-import / ci-target，以及符号级边；',
+    '                          package-field **按字段再判**：`types` / `exports[…].types` 是**声明入口**（只有类型检查器读它，',
+    '                          Node 不加载、npm 不执行）⇒ **不算**运行时边，其余 package-field 字段照算；',
+    '                          type_only=true 的纯类型语句与 markdown-link / anchor 这类纯文字引用不算）走，',
     '                          从这个文件**能否到达目标**：到不了 ⇒ 给出**有边界**的「仅类型级影响」标注（闭包按图产物',
     '                          **全深度展开**，不受 --depth 截断影响，但产物之外 / 未统计到的路径仍可能触及目标，标注里',
     '                          明写「不要据此跳过测试」）；到得了 ⇒ 不标；目标不是 .ts/.tsx ⇒「不可判」——',
@@ -908,10 +910,15 @@ const TS_TARGET = /\.tsx?$/;
  *   code   代码级引用（含全部符号级边）：**只有当这条边本身不是纯类型语句时**才会加载 / 执行目标。
  *          `import type …` / `export type … from` 编译后整句消失；`type-reference` 来自 TypeReferenceNode
  *          （产物里恒为 type_only=true），删掉目标只会让 tsc 变红。故 type_only !== true 才算运行时。
- *   always npm / CI 会**真的执行**它：`package-field`（如 npm 包清单里的 bin 指向该文件）、`ci-target`
- *          （CI 步骤会跑它）——与「只是提到这个路径」有本质区别。
+ *   always npm / CI 会**真的执行**它：`ci-target`（CI 步骤会跑它）——与「只是提到这个路径」有本质区别。
  *   never  **只是文字引用**：一份文档链接到某个源码文件（markdown-link）、或在文档内跳转（anchor），
  *          **不会加载、也不会执行它**。
+ *   field  `package-field` 是**一个 kind、两种语义**，必须按 `field` 再判（见 PACKAGE_FIELD_POLICY）：
+ *          `main` / `module` / `browser` / `bin` / `exports` 的运行时条件 / `scripts[…]` / `files` 指向的
+ *          东西会被 Node / npm / CI 加载或执行；`types` / `exports[…].types` 指向的是**声明入口**（`.d.ts`），
+ *          只有 TypeScript 的类型检查器读它。**留痕（旧归类，已否掉）**：`package-field` 原为一律 `always`，
+ *          注释举的例子是 `bin`——`bin` 确实会被执行，但同一个 kind 里 `types` 不会，于是
+ *          `package.json` 的声明入口被一律判成「存在运行时路径」。
  */
 const RUNTIME_EDGE_POLICY = new Map([
   ['import', 'code'],
@@ -919,11 +926,34 @@ const RUNTIME_EDGE_POLICY = new Map([
   ['require', 'code'],
   ['dynamic-import', 'code'],
   ['type-reference', 'code'],
-  ['package-field', 'always'],
+  ['package-field', 'field'],
   ['ci-target', 'always'],
   ['markdown-link', 'never'],
   ['anchor', 'never'],
 ]);
+
+/**
+ * `package-field` 边的**字段叶子名**：`exports[…]["…"]` 取子路径键的最后一段，其余字段取第一个 `.` 之前
+ * 的那一段。例：`types` → `types`；`exports["types"]` → `types`；`exports["./engine/*.types"]` → `types`；
+ * `bin.normify-mcp` → `bin`；`scripts["test"]` → `scripts`。
+ * 口径来自产物里 `field` 的构造（`collectPackageFieldTargets` + `collectExportStrings`），是机器可判的字符串。
+ */
+function packageFieldLeaf(field) {
+  if (typeof field !== 'string') return '';
+  const exportMatch = /^exports\["([\s\S]*)"\]$/.exec(field);
+  const key = exportMatch ? exportMatch[1] : field;
+  const tail = key.split('.').pop();
+  return exportMatch ? tail : key.split('.')[0];
+}
+
+/**
+ * 「声明入口」字段：`types` 与 `exports` 里的 `types` 条件。**只有类型检查器读它们**——Node 运行时永不加载
+ * `.d.ts`，npm / CI 也不执行它，所以它们不构成「运行时可达」。
+ * 判据边界（照实说）：只看**字段名**，不看目标扩展名，也不解析条件对象的运行时条件集合——`node` / `import` /
+ * `require` / `default` 都算运行时，只有 `types` 不算。反过来，一个叫 `types` 的字段指向 `.js` 仍然是声明位
+ * （那是 package.json 写错了，不是本判据该猜的）。
+ */
+const DECLARATION_ENTRY_FIELDS = new Set(['types']);
 
 /**
  * 单条边是否为运行时边。**未归类的 kind 抛错**：判据是封闭枚举，新增 kind 必须在这里显式归类，
@@ -940,6 +970,7 @@ function isRuntimeEdge(edge) {
   }
   if (policy === 'always') return true;
   if (policy === 'never') return false;
+  if (policy === 'field') return !DECLARATION_ENTRY_FIELDS.has(packageFieldLeaf(edge.field));
   return edge.type_only !== true;
 }
 
@@ -1085,7 +1116,7 @@ function buildImpactReport(opts, target, loaded) {
   const gaps = [
     '反向闭包只沿 to.file 走文件级 edges[] 与符号级 symbol_edges[]；文件内边（同一文件内部的引用/依赖）不推进遍历——两端是同一个文件，它已在已见集里，带不来新文件（自环推进不了闭包），也不计入闭包边数——但这些边在产物里存在（symbol_edges[] 中 cross_file=false 的那些）。',
     '三档分类 buckets[]：先按边分档（边悬空，或 kind ∈ 代码级引用 ⇒ 必须改；kind ∈ ci-target/package-field/anchor/markdown-link ⇒ 需复核；其余 ⇒ 记录），再把文件归入它 via 中那些边的最高档（via = 把该文件牵进闭包的那组边，即它指向上一层的出边），因此一个文件只出现在一个档里；三档恒存在，空档照列（0 条），「没有」与「没做」不混。',
-    'type_only 是档内**正交标注**，不是第四档：判据是**可达性**——在「target ∪ 完整闭包」内只沿运行时边（import / export-from / require / dynamic-import / package-field / ci-target，以及符号级边；type_only=true 的纯类型语句与 markdown-link / anchor 这类纯文字引用不算）走，从这个文件能否到达目标；到不了 ⇒ 给出有边界的「仅类型级影响」标注，到得了 ⇒ 不标，目标不是 .ts/.tsx ⇒ 「不可判」——「不标」只代表存在到得了目标的运行时路径，不代表没有类型级影响。标注用的闭包**按图产物全深度展开、不受 --depth 截断影响**（展示用的 by_depth/closure 仍受 --depth 限制，见下一条），否则路径长于上限的文件会被说成「没有运行时路径」。标注自身**有边界**：只声明图产物里的边如此，不排除产物之外或未统计到的路径间接触及目标——不要据此跳过测试。',
+    'type_only 是档内**正交标注**，不是第四档：判据是**可达性**——在「target ∪ 完整闭包」内只沿运行时边（import / export-from / require / dynamic-import / ci-target，以及符号级边；package-field 按字段再判——`types` / `exports[…].types` 是声明入口、不算运行时边，其余 package-field 字段照算；type_only=true 的纯类型语句与 markdown-link / anchor 这类纯文字引用不算）走，从这个文件能否到达目标；到不了 ⇒ 给出有边界的「仅类型级影响」标注，到得了 ⇒ 不标，目标不是 .ts/.tsx ⇒ 「不可判」——「不标」只代表存在到得了目标的运行时路径，不代表没有类型级影响。标注用的闭包**按图产物全深度展开、不受 --depth 截断影响**（展示用的 by_depth/closure 仍受 --depth 限制，见下一条），否则路径长于上限的文件会被说成「没有运行时路径」。标注自身**有边界**：只声明图产物里的边如此，不排除产物之外或未统计到的路径间接触及目标——不要据此跳过测试。',
     '未做 informational（三档分类、type_only 标注与截断标注已做，见 buckets[] 与顶层 truncated / truncated_reason）。',
     'cycles[] 只在闭包子图（target ∪ 闭包文件）内求强连通分量，不是全图 SCC：闭包之外的环不报（换个 target 才看得到）；环用的也是文件级/符号级反向边，文件内边（两端同文件）带不来新节点、进不了 size>1 的分量；自环单列在 self_loops[]（只含文件级自环，即 edges[] 里 from.file === to.file 的边；同文件内部的符号边不算），不混进 size>1 的分量。',
     'path[] 只给一条最短链（BFS 首达即定型）：同一文件存在多条等价最短链时只列首达的那条；链上每跳用的边（layer/kind/行:列）在 path_edges[] 里。',

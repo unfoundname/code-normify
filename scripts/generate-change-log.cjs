@@ -137,6 +137,57 @@ function isShallowRepo(root) {
   return gitTrim(root, ['rev-parse', '--is-shallow-repository']) === 'true';
 }
 
+/**
+ * 一个提交的父提交清单。**fail-closed：拿不到判据就抛错，绝不返回空数组冒充「根提交」。**
+ *
+ * 为什么不能拿 `git rev-parse --verify <commit>^` 的 null 当「根提交」：那条命令失败的**原因不止一种**
+ * ——浅克隆的浅边界、对象库读不出的父提交、git 执行失败，都让它非零退出。把「拿不到」读成「没有父提交」
+ * 等于凭空宣布「这个提交之前什么都没有」：记录会照写 `from_snapshot.basis = "empty-tree"`（schema 里这个
+ * 取值的意思是「根提交的 from 侧」）与 `degradation.status = "complete"` / `reasons: []`，而 `--check` 会
+ * 拿这份伪造的基准重算，逐字段一致 ⇒ **判绿**。这与本仓红线「拿不到判据就不判绿」直接冲突，也与
+ * `scripts/generate-reference-graph.cjs` 的 `readDeletedPaths`（同一条 git 命令失败 ⇒ 抛错，不返回空集合）
+ * 同口径。
+ *
+ * 判别用两条**语义不同**的 git 输出，两者一致才认「根提交」：
+ *   · `git rev-list --parents -n 1 <commit>` = **遍历视图**（尊重浅克隆的 graft）：成功且只回显该提交本身
+ *     ⇒ 视图里没有父提交；**非零退出 ⇒ 拿不到判据（抛错）**。
+ *   · `git cat-file -p <commit>` = **对象视图**（提交对象自己写了几个 `parent` 头）：不尊重 graft，因此
+ *     「遍历视图说没有父提交、对象说有」这种分歧（浅边界）抓得住——那时同样拿不到真正的父提交判据。
+ */
+function readParentCommits(root, commit) {
+  const walked = gitTry(root, ['rev-list', '--parents', '-n', '1', commit]);
+  if (!walked.ok) {
+    throw new Error(
+      `无法获取提交 ${commit} 的父提交清单（git rev-list --parents -n 1 失败）：${walked.err}\n` +
+        '  「拿不到父提交判据」与「这是根提交」是两件事——不得按空树处理（浅克隆请先 git fetch --unshallow）。',
+    );
+  }
+  const fields = walked.out.trim().split(/\s+/).filter(Boolean);
+  if (fields.length === 0) {
+    throw new Error(`git rev-list --parents -n 1 ${commit} 成功但没有任何回显：拿不到父提交判据，不得按空树处理。`);
+  }
+  const traversed = fields.slice(1);
+
+  const object = gitTry(root, ['cat-file', '-p', commit]);
+  if (!object.ok) {
+    throw new Error(`无法读取提交对象 ${commit}（git cat-file -p 失败）：${object.err}\n  拿不到父提交判据，不得按空树处理。`);
+  }
+  const declared = [];
+  for (const line of object.out.split('\n')) {
+    if (line === '') break; // 头段结束（此后是提交信息，正文里可能出现任意以 parent 开头的行）
+    if (line.startsWith('parent ')) declared.push(line.slice('parent '.length).trim());
+  }
+
+  if (traversed.length === 0 && declared.length > 0) {
+    throw new Error(
+      `提交 ${commit} 的遍历视图里没有父提交，但它的提交对象写着 ${declared.length} 个 parent：` +
+        '这是被 graft 过的历史（典型是浅克隆的浅边界或 replace 引用），**不是根提交**——' +
+        '拿不到真正的父提交判据，不得按空树处理（浅克隆请先 git fetch --unshallow）。',
+    );
+  }
+  return traversed;
+}
+
 // ---------------------------------------------------------------------------
 // 快照：提交侧（临时索引 + 空工作树）与索引侧
 // ---------------------------------------------------------------------------
@@ -367,9 +418,19 @@ function degradationOf(kind, modes, shallow, basisMoved) {
 
 const shortHash = (commit) => (commit ? commit.slice(0, 7) : 'unknown');
 
-/** 记录文件名：`<utc-iso8601 紧凑式>-<短哈希>.json`（设计稿 §4.4；**去掉了冒号**，Windows 文件名不允许 `:`）。 */
-function recordFileName(createdAt, commit) {
-  return `${createdAt.replace(/[-:]/g, '')}-${shortHash(commit)}.json`;
+/**
+ * 记录文件名：`<utc-iso8601 紧凑式>-<短哈希>[-index].json`（设计稿 §4.4；**去掉了冒号**，Windows 文件名不允许 `:`）。
+ *
+ * `-index` 只加在 `kind === 'index'` 上，理由是硬的：`--index` 的 commit 侧取的就是 **HEAD**，与
+ * `--commit HEAD` 是**同一个短哈希**，而时间戳只到秒 ⇒ 同一秒内两者**同名**；幂等键是 (kind, commit)、
+ * 两者 kind 不同 ⇒ 判不出重复；再碰上裸 `writeFileSync`（无 `wx`）就是**静默互相覆盖**——与
+ * `ledger/change-log/README.md`「短哈希避免同一秒内两次写入撞名」那句明文承诺直接冲突。
+ * kind 本来就是幂等键的一半，名称里就必须有它。（`--commit` 的记录名**一个字符都不变**：
+ * 已落盘的 96 条全是 commit 记录，逐条可复核性、文件名、README 里的示例 `…-ed404e5.json` 都不动。）
+ */
+function recordFileName(createdAt, commit, kind) {
+  const suffix = kind === 'index' ? '-index' : '';
+  return `${createdAt.replace(/[-:]/g, '')}-${shortHash(commit)}${suffix}.json`;
 }
 
 /**
@@ -512,11 +573,18 @@ function generate(root, spec) {
       if (builtFrom.error) return { error: builtFrom.error };
       from = { graph: builtFrom.graph, snapshot: builtFrom.snapshot };
     } else {
-      // 未显式给 from：用 to 的父提交；根提交则退到「空树」（basis = empty-tree，如实登记）。
-      const parent = gitTrim(root, ['rev-parse', '--verify', `${commit}^`]);
-      if (parent) {
-        commitParent = parent;
-        const builtFrom = buildCommitSnapshot(root, parent);
+      // 未显式给 from：用 to 的父提交；**根提交**才退到「空树」（basis = empty-tree，如实登记）。
+      // 「拿不到父提交判据」**不**走这一支：readParentCommits 会抛错（见它的注释——把「拿不到」读成
+      // 「根提交」会让记录照写 basis=empty-tree + degradation.status=complete，而 --check 会判绿）。
+      let parents;
+      try {
+        parents = readParentCommits(root, commit);
+      } catch (err) {
+        return { error: err.message };
+      }
+      if (parents.length > 0) {
+        commitParent = parents[0];
+        const builtFrom = buildCommitSnapshot(root, commitParent);
         if (builtFrom.error) return { error: builtFrom.error };
         from = { graph: builtFrom.graph, snapshot: builtFrom.snapshot };
       } else {
@@ -847,7 +915,8 @@ function printHelp() {
     '  node scripts/generate-change-log.cjs [选项]',
     '',
     '选项：',
-    '  --commit <rev>    为一次提交写记录：from = <rev> 的父提交（根提交 = 空树），to = <rev>；默认 HEAD',
+    '  --commit <rev>    为一次提交写记录：from = <rev> 的父提交（**只有真的是根提交**才取空树），to = <rev>；默认 HEAD',
+    '                    「拿不到父提交判据」不按空树处理：直接生成失败（exit 1），绝不给一份伪造的完整差',
     '  --from <rev>      显式指定 from（必须与 --to 成对）',
     '  --to <rev|INDEX>  显式指定 to；INDEX = 当前 git 索引（暂存态：未落定的观测点，kind = "index"）',
     '  --index           等价于 --from HEAD --to INDEX（暂存态记录；它描述的基准一变即为 stale）',
@@ -859,13 +928,14 @@ function printHelp() {
     '',
     '退出码：0 成功（含 --check 全部通过）/ 1 生成失败或复核不通过 / 2 用法错误',
     '',
-    `产物：${LOG_DIR_REL}/<utc-iso8601 紧凑式>-<短哈希>.json（单文件一条记录，只增不改）`,
+    `产物：${LOG_DIR_REL}/<utc-iso8601 紧凑式>-<短哈希>[-index].json（单文件一条记录，只增不改）`,
     `Schema：${SCHEMA_REL}（draft 2020-12；--check 的判据就是它，不是文档里的描述）`,
     '',
     '读 / 写：',
     '  读：git 对象（`--commit` / `--from` / `--to` 指定的 rev，或索引）——两侧快照都用与',
     '      ledger/references.json 同一份 buildGraph 重建，**不读工作区那份图**；另读上面的 Schema 与已有记录；',
-    `  写：${LOG_DIR_REL}/<utc-iso8601 紧凑式>-<短哈希>.json（--check 不写盘；同一基准已有记录时不重复写）。`,
+    `  写：${LOG_DIR_REL}/<utc-iso8601 紧凑式>-<短哈希>[-index].json（--check 不写盘；同一基准已有记录时不重复写；` +
+      '文件名被占用则失败，绝不覆盖）。',
     '',
     'check 链位置（npm 脚本 `check` 的实际顺序，环名照抄）：',
     '  第 12 环 `npm run check:changes`（= 本脚本，链上以 `--check` 调用）——前一环是第 11 环 `npm run check:graph`，',
@@ -1007,10 +1077,44 @@ function main(argv) {
     return;
   }
 
-  const name = recordFileName(createdAt, result.commit);
+  const name = recordFileName(createdAt, result.commit, result.kind);
   const abs = path.join(root, ...LOG_DIR_REL.split('/'), name);
   fs.mkdirSync(path.dirname(abs), { recursive: true });
-  fs.writeFileSync(abs, serialize(record), 'utf8');
+  // **`wx` = 文件已存在就失败，绝不覆盖**（记录「只增不改」，而裸 writeFileSync 是静默覆盖：
+  // 文件名撞上时先落盘的那条会被后写的那条整份吃掉，`--check` 只会看到后一条、前一条连痕迹都没有）。
+  // 正常路径不依赖它（上面按 (kind, commit) 判过重），它是**兜底**：任何残留的同名碰撞都必须响亮失败。
+  // 撞名时的两种出路都不改已落盘的字节：同一条记录（逐字节相同）⇒ 幂等，exit 0；否则 ⇒ exit 1 报错。
+  try {
+    fs.writeFileSync(abs, serialize(record), { encoding: 'utf8', flag: 'wx' });
+  } catch (err) {
+    if (!err || err.code !== 'EEXIST') {
+      process.stderr.write(`${TOOL}: 生成失败：写盘失败（${LOG_DIR_REL}/${name}）：${String(err)}\n`);
+      process.exitCode = 1;
+      return;
+    }
+    let same = false;
+    try {
+      same = fs.readFileSync(abs, 'utf8') === serialize(record);
+    } catch {
+      same = false;
+    }
+    if (same) {
+      process.stdout.write(
+        `${TOOL}: 这条基准已经有记录了（${LOG_DIR_REL}/${name}，逐字节相同）——记录**只增不改**，本次不重复写。\n`,
+      );
+      process.exitCode = 0;
+      return;
+    }
+    process.stderr.write(
+      `${TOOL}: 生成失败：目标文件名已被另一条记录占用，**不覆盖**：${LOG_DIR_REL}/${name}\n` +
+        `  抢占者与本次不是同一条记录（幂等键 = (kind, commit)：本次 kind=${result.kind}、commit=${result.commit}）。\n` +
+        '  文件名的秒级时间戳撞上了——这是「同一秒内写两条不同基准」的形状，不是数据损坏。\n' +
+        `  修法：等 1 秒重跑（时间戳会变），或先看清 ${LOG_DIR_REL}/${name} 是哪一条。\n` +
+        '  记录**只增不改**：绝不覆盖、也绝不改名已落盘的记录。\n',
+    );
+    process.exitCode = 1;
+    return;
+  }
 
   if (opts.json) {
     process.stdout.write(
@@ -1066,4 +1170,5 @@ module.exports = {
   checkAll,
   buildCommitSnapshot,
   buildIndexSnapshot,
+  readParentCommits,
 };

@@ -1,18 +1,22 @@
 import type { ChangeData, Diagnostic, LayoutData, ModuleFile, PolicyData } from './types.js';
 import { apiKey, depthOf, deriveParent, idFromFilePath, treeOf } from './ids.js';
-import { classifySourcePath, fingerprintOf, loadAllModules } from './store.js';
+import { classifySourcePath, fingerprintOf, listModuleTreeAnomalies, loadAllModules } from './store.js';
 import { edgeKey, validateLayouts } from './layout.js';
 import { evaluatePolicy, loadPolicyFile } from './policy.js';
 import { validateChanges } from './changes.js';
 import { diag } from './diag.js';
 import { boundPath, WorkspaceError } from '../workspace.js';
 import { validateContracts } from './contracts.js';
-const BILINGUAL_CODES = new Set([
-    'structure/name-shape', 'structure/name-empty', 'structure/name-too-long',
-    'structure/description-shape', 'structure/description-empty', 'structure/description-too-long',
-    'api/description-shape', 'api/description-empty', 'api/description-too-long',
-    'dep/label-shape', 'dep/label-empty', 'dep/label-too-long',
-]);
+// **留痕（旧实现，已删）**：这里曾有一张 `BILINGUAL_CODES`（12 个码：structure/name-* ·
+// structure/description-* · api/description-* · dep/label-*）+ 下面这段「按码降级」的过滤器：
+//     if (!opts.requireBilingual) { errors = errors.filter(e => BILINGUAL_CODES.has(e.code) ? (warnings.push({...e, severity:'warning'}), false) : true); }
+// 它按**码**降级，而一个码同时覆盖中文侧与英文侧：`structure/name-empty` 既在「中文 name 为空」时发，
+// 也在「英文 name 为空」时发 ⇒ **中文侧的错误被一起吞掉**，模块带着空中文名进了产物，validate 照报 ok。
+// 违反 SPEC §5.5「library 配置 requireBilingual: false 时**缺少英文**降级为 warning；**中文描述仍须满足
+// 基本字段校验**」。现在放宽只由 L1 的 `checkL10n(…, relax)` 按**语言**判（`frontmatter.ts`），
+// 它精确地只降级 en 侧、并把 LocalizedText 交还调用方；所以这里**不再需要**第二套按码的降级。
+// 也因此 `api/description-*` / `dep/label-*` / types 的 `structure/description-*` 必须把 relax 一路带下去
+// （否则它们的「缺英文」会从 warning 退回 error）——见 `checkApiEntry` / `checkDataTypeEntry` / `checkDepEntry`。
 export interface ValidateOptions {
     repoRoot?: string;
     requireBilingual: boolean;
@@ -31,18 +35,11 @@ export interface ValidateOutput {
 /** L2：全项目校验（规范 §5.2 规则全集）。零容忍：任何 error 阻断构建。 */
 export async function validateProject(projectDir: string, opts: ValidateOptions): Promise<ValidateOutput> {
     const loaded = await loadAllModules(projectDir, { requireBilingual: opts.requireBilingual });
-    let errors: Diagnostic[] = loaded.errors;
-    let warnings: Diagnostic[] = loaded.warnings;
-    // 双语放宽开关：把双语类错误降级为 warning
-    if (!opts.requireBilingual) {
-        errors = errors.filter(e => {
-            if (BILINGUAL_CODES.has(e.code)) {
-                warnings.push({ ...e, severity: 'warning' });
-                return false;
-            }
-            return true;
-        });
-    }
+    const errors: Diagnostic[] = loaded.errors;
+    const warnings: Diagnostic[] = loaded.warnings;
+    // 双语放宽**不在这里**做（这里曾按码降级、把中文侧错误一起吞掉，见本文件顶部留痕）：
+    // 放宽是 L1 的 `checkL10n(…, relax)` 按语言判的，relax 开关随 `loadAllModules` 传下去。
+
     const files = loaded.files;
     const byId = new Map<string, ModuleFile>();
     const byUid = new Map<string, string[]>();
@@ -112,6 +109,15 @@ export async function validateProject(projectDir: string, opts: ValidateOptions)
     };
     for (const id of byId.keys())
         checkChain(id, []);
+    // SPEC §5.2 规则 6 的后半句：`modules/` 下无游离文件、无空树目录。
+    // 这两类东西 `listModuleFiles` 收不到（它只收 `.md`），必须单独按磁盘查——否则规则写了等于没写。
+    const anomalies = await listModuleTreeAnomalies(projectDir);
+    for (const rel of anomalies.strayFiles) {
+        errors.push(diag('error', 'structure/stray-file', '`modules/` 下存在游离文件（不是 .md 模块文件）', { path: 'modules/' + rel }, {}, ['删除它，或把它移出 modules/']));
+    }
+    for (const rel of anomalies.emptyTreeDirs) {
+        errors.push(diag('error', 'structure/empty-tree-dir', '`modules/` 下存在空树目录（子树里一个模块文件都没有）', { path: 'modules/' + rel }, {}, ['删除该目录，或在其中建模块文件']));
+    }
     // 文件 ↔ id 映射、叶子规则、API、边
     const apiOwners = new Map<string, string[]>();
     const coarseLeaves: { id: string; files: number; span: number }[] = [];

@@ -1,10 +1,16 @@
 import type { Diagnostic, Module } from './types.js';
 export declare function checkSourceEntry(v: unknown, where: string, out: Diagnostic[]): boolean;
-export declare function checkApiEntry(v: unknown, where: string, out: Diagnostic[]): boolean;
+export declare function checkApiEntry(v: unknown, where: string, out: Diagnostic[], relax?: {
+    warnings: Diagnostic[];
+}): boolean;
 /** 引用的单一契约：{ module, name }；字符串引用和隐式本模块均不接受。 */
 export declare function checkTypeRef(value: unknown, where: string, out: Diagnostic[]): boolean;
-export declare function checkDataTypeEntry(value: unknown, where: string, out: Diagnostic[]): boolean;
-export declare function checkDepEntry(v: unknown, where: string, out: Diagnostic[]): boolean;
+export declare function checkDataTypeEntry(value: unknown, where: string, out: Diagnostic[], relax?: {
+    warnings: Diagnostic[];
+}): boolean;
+export declare function checkDepEntry(v: unknown, where: string, out: Diagnostic[], relax?: {
+    warnings: Diagnostic[];
+}): boolean;
 /** L1：单文件级字段校验（规范 §5.2 结构/API/边类的格式部分）。 */
 export declare function l1Validate(data: unknown, where: string, options?: {
     requireBilingual?: boolean;

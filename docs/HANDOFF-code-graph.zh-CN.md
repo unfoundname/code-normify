@@ -322,7 +322,7 @@ id, kind, from, to, cross_file, specifier, resolved, status, reason, type_only
 | `edges[].type_only` 与 `symbol_edges[].type_only`（**产物字段**） | **语法级**：该边所在语句**是不是纯类型语句**（`import type` / `export type … from`）。`require()` / `import()` 与「拿不到 TypeScript 时的正则回退」一律按运行时 | `node scripts/refs-query.cjs who-references <路径> --json` 的 `gaps[2]`，原文含 `该边所在语句是否为纯类型语句`（**本批改引实测**：改用引文锚，不再指行号） |
 | `refs-query impact` 的 `buckets[].files[].type_only`（**查询期标注**） | **可达性**：在「目标 ∪ 全量无界反向闭包」内，只沿**运行时边**走，从这个文件**能否到达目标**；到不了 ⇒ 标「仅类型级影响」 | `scripts/refs-query.cjs --help` 的 `impact` 段与 `reasons[]` 第 3 条 |
 
-**可达性口径的精确表述**（`refs-query.cjs --help` 原文照抄）：运行时边 = `import` / `export-from` / `require` / `dynamic-import` / `package-field` / `ci-target`，**以及符号级边**；`type_only=true` 的纯类型语句与 `markdown-link` / `anchor` 这类纯文字引用**不算**。走得到 ⇒ 不标；走不到 ⇒ 标注；**目标不是 `.ts` / `.tsx` ⇒ 「不可判」**——「不标」不等于「没有类型级影响」。
+**可达性口径的精确表述**（`refs-query.cjs --help` 原文照抄）：运行时边 = `import` / `export-from` / `require` / `dynamic-import` / `ci-target`，**以及符号级边**；**`package-field` 按字段再判**——`types` / `exports[…].types` 是**声明入口**（只有类型检查器读它，Node 不加载、npm 不执行）⇒ **不算**运行时边，其余 `package-field` 字段照算；`type_only=true` 的纯类型语句与 `markdown-link` / `anchor` 这类纯文字引用**不算**。走得到 ⇒ 不标；走不到 ⇒ 标注；**目标不是 `.ts` / `.tsx` ⇒ 「不可判」**——「不标」不等于「没有类型级影响」。**留痕（旧说法，已作废）**：本行原把 `package-field` 整个列进运行时边——`bin` 那类确实会被执行，但 `package.json` 的 `types` / `exports[…].types` 是声明入口，照旧说法读会把「只影响类型」的改动读成「存在运行时路径」。
 
 **闭包展开深度**：标注用的闭包**按图产物全深度展开，不受 `--depth` 截断影响**（`node scripts/refs-query.cjs impact <路径> --json` 的 `gaps[2]`，原文含 `标注用的闭包**按图产物全深度展开、不受 --depth 截断影响**`；**本批改引实测**：改用引文锚，不再指行号）。理由是硬的：展示用的闭包有深度上限，在截断集合里做可达性 BFS，会把「路径长于上限」的文件判成「没有运行时路径」——那是假话。
 
@@ -593,7 +593,7 @@ npm run typecheck && npm run build && npm test && node ci-contract-check.cjs && 
 | --- | --- | --- |
 | `npm run check` | 见 §4.1 那行 | 全链含 `npm test` 与 `check:examples`，后者单条示例实测 5–17 秒，整链是分钟量级 |
 | `npm test` | `node tests/engine-e2e.mjs && … && node tests/change-log-e2e.mjs`（14 个，逐字见 `package.json`） | 同上 |
-| `tests/impact-gate-e2e.mjs` | `node tests/impact-gate-e2e.mjs` 或 `npm run test:impact` | 同上。它是 `check:impact` 的回归用例（609 行，`files[].lines` 口径） |
+| `tests/impact-gate-e2e.mjs` | `node tests/impact-gate-e2e.mjs` 或 `npm run test:impact` | 同上。它是 `check:impact` 的回归用例（**行数是活值、不在此复述**——现值取数 `node -e "console.log(require('./ledger/references.json').files.find(f=>f.id==='tests/impact-gate-e2e.mjs').lines)"`，**口径就是本行自己声明的 `files[].lines`**（§2.3 第 1 条：`text.split('\n').length`，末尾带换行 ⇒ 比可见行数多 1；该文件改一次就变）。**留痕（只作留痕，不是现值）**：本行原写「**609 行**，`files[].lines` 口径」——那是某一时点读某个版本的数；**本批复核时按同一口径实测是 742**，两者之差就是本文件自身的增长。§0 那句总括（「规模数字都是各批次的留痕，不是现值」）挡不住这一处：它**自带一个今天仍可机器复核的口径**，照它读数当场就是错的，故按同族惯例就地补取数命令） |
 
 **结论**：本文档对链上第 5 / 6 / 9 / 10 / 11 / 12 / 13 环的结论是**实测**（第 9 环 = `npm run check:ledger:gen`，即 `node scripts/generate-file-ledger.cjs --check`，§4.5 实测：修前 `1` → 修后 `0`）；对第 1 / 2 / 3 / 4 / 7 / 8 环的结论是**从其 `--help` 与 `package.json` 读来的口径**，**未在本次运行中执行过** ⇒ 冒烟状态**未验证**。
 
@@ -644,7 +644,7 @@ npm run check:changes                                # = 生成器 --check：结
 - `--from <rev>` / `--to <rev|INDEX>`：显式指定（必须成对）；`INDEX` = 当前 git 索引，`kind = "index"`。
 - **幂等**：同一基准已有记录就不再写第二条（记录**只增不改**），重复执行 exit 0 并说明原因。
 - **写入者只有生成器**；CI 只读校验，绝不自动改记录。
-- 命名：`<utc-iso8601 紧凑式>-<短哈希>.json`（**去掉冒号**，Windows 文件名不允许 `:`），例如 `20261005T183940Z-ed404e5.json`。
+- 命名：`<utc-iso8601 紧凑式>-<短哈希>[-index].json`（**去掉冒号**，Windows 文件名不允许 `:`），例如 `20261005T183940Z-ed404e5.json`；**`-index` 只加在 `kind: "index"` 的记录上**（`--index` 与 `--commit HEAD` 在同一秒内是同一个短哈希、同名，幂等键 `(kind, commit)` 因 kind 不同判不出重），写入用 `fs.writeFileSync(..., { flag: 'wx' })`：**占用即失败，绝不覆盖**（同一条逐字节相同 ⇒ 幂等 exit 0，不同 ⇒ exit 1）。**留痕（旧说法，已作废）**：本行原写「短哈希避免同一秒内两次写入撞名」——短哈希挡不住那一对。
 
 **条数不在此复述**（记录**只增不改**，写死必然过期）——现值取数：`node scripts/generate-change-log.cjs --check`（回显「N 条记录全部通过」），或**按 `kind -eq 'commit'` 过滤后**数一遍 `ledger/change-log/*.json`：`Get-ChildItem ledger/change-log/*.json | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json } | Where-Object { $_.kind -eq 'commit' } | Measure-Object | Select-Object -ExpandProperty Count`（**不能不过滤直接数目录**：`ledger/change-log/schema.json` 也躺在同一目录里、也会被 `*.json` 命中，直接数会**多算 1 条**）。**留痕（时点 = 本批开工 `df70cb3`，只作留痕、不是现值）**：`--check` 回显 **78 条**、过滤计数 **78**、不过滤 **79**（差的那条正是没有 `kind` 字段的 `schema.json`）；本批补录 `df70cb3` 自己那一条之后，三个数分别变成 **79 / 79 / 80**。**留痕（旧写法，已作废）**：本行历史上写「或直接数一遍 `ledger/change-log/*.json`」——该法把 `schema.json` 算成记录，比真记录数多 1，与 `CONTRIBUTING.md`、`ledger/change-log/README.md` 里「不能不过滤直接数目录」的明文警告冲突。**留痕（只作留痕，不是现值）**：本文档写作时（增量 2 落地）已落盘 **2 条**记录。
 

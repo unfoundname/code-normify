@@ -211,7 +211,18 @@ function listIndexEntries(root) {
   return out.sort((a, b) => byCodePoint(a.rel, b.rel));
 }
 
-/** `git cat-file --batch-check` → Map<sha, { type, size }>（只问体积，不读内容）。 */
+/**
+ * `git cat-file --batch-check` → Map<sha, { type, size }>（只问体积，不读内容）。
+ *
+ * **请求了却拿不到的 sha ⇒ 抛错**（fail-closed）。这些 sha 全部来自 `git ls-files -s` 的索引条目，
+ * 「索引里点名的对象」读不出来只有一种解释：对象库损坏 / 被裁掉 / 中途换了仓库——不是「这个文件没有内容」。
+ * 按 null 处理会让**索引节点**拿到 `bytes: null`：那与 §2.3 立的口径直接冲突（`bytes` 为 null 的含义是
+ * 「非索引节点（untracked / ignored / deleted）」），读产物的人会把它读成「这个文件不在跟踪里」。
+ * 与 `readDeletedPaths`（同一条红线）同口径。
+ * **留痕（旧写法，已否掉）**：这里原是 `if (!m) continue; // `<sha> missing` 等：不猜，交给调用方按 null 处理`
+ * ——「不猜」是对的，但「交给调用方」没人接：调用方只看 Map 里有没有这一条，missing 与 never-requested
+ * 在返回值上无法区分，于是没有任何一处能看出「拿不到」。
+ */
 function readBlobSizes(root, shas) {
   const sizes = new Map();
   if (shas.length === 0) return sizes;
@@ -223,9 +234,10 @@ function readBlobSizes(root, shas) {
   if (res.status !== 0) throw new Error(`git cat-file --batch-check 失败：${(res.stderr || '').toString('utf8')}`);
   for (const line of res.stdout.toString('utf8').split('\n')) {
     const m = /^([0-9a-f]+) (\w+) (\d+)$/.exec(line.trim());
-    if (!m) continue; // `<sha> missing` 等：不猜，交给调用方按 null 处理
+    if (!m) continue; // `<sha> missing` 等：这一行没有体积可读，下面统一按「请求了却没拿到」报错
     sizes.set(m[1], { type: m[2], size: Number(m[3]) });
   }
+  assertAllBlobsReadable('cat-file --batch-check（问体积）', shas, sizes);
   return sizes;
 }
 
@@ -247,14 +259,39 @@ function readBlobs(root, shas) {
     const header = buf.slice(offset, nl).toString('utf8');
     offset = nl + 1;
     const m = /^([0-9a-f]+) (\w+) (\d+)$/.exec(header);
-    if (!m) continue; // `<sha> missing`：跳过（调用方按「索引里没有」处理）
+    if (!m) continue; // `<sha> missing`：没有内容段，下面统一按「请求了却没拿到」报错
     const size = Number(m[3]);
     const content = buf.slice(offset, offset + size);
     offset += size;
     if (buf[offset] === 0x0a) offset += 1;
     out.set(m[1], content);
   }
+  assertAllBlobsReadable('cat-file --batch（读内容）', shas, out);
   return out;
+}
+
+/**
+ * 请求过的 sha 必须全部拿到内容，否则抛错（本文件对**索引 blob** 的统一收口）。
+ *
+ * 为什么这是红线而不是「尽力而为」：拿不到内容的那条路径**不会有边**，产物里却仍照写它的节点、
+ * `universe_hash` 与 `tracked_total`，「缺边」与「真的没有引用」在产物上完全同形——`--check` 拿这份
+ * 残图当基准会判绿，`generate-change-log` 会照写 `degradation.status = "complete"`。
+ * `scripts/check-references.cjs` 的 guard-unavailable 只在**它自己那条链路**上补得住，补不住依赖本函数
+ * 的其它调用方（改动记录就在其中）。**留痕（旧写法，已否掉）**：两处调用点原写
+ * `if (!buf) continue; // 索引里读不到：不猜，该文件不会有边（由 check-references 的 guard-unavailable
+ * 负责报红）`——那个「负责」不成立：guard-unavailable 查的是它自己请求的那批 blob。
+ */
+function assertAllBlobsReadable(what, requested, got) {
+  const missing = requested.filter((sha) => !got.has(sha));
+  if (missing.length === 0) return;
+  const shown = missing.slice(0, 10).join(' ');
+  throw new Error(
+    `索引里点名的 ${missing.length} 个对象读不出来（git ${what} 对它们回了 missing；共请求 ${requested.length} 个）：${shown}` +
+      `${missing.length > 10 ? ' …' : ''}\n` +
+      '  这与「拿不到判据」同一条红线：**不得静默丢边**——索引条目对应的 blob 读不到时，' +
+      '该文件的边会凭空消失，而产物里它仍是一个 indexed 节点。\n' +
+      '  先修对象库（git fsck / 重新 fetch / 确认没在错的仓库里生成）再来生成图。',
+  );
 }
 
 /**
@@ -555,7 +592,9 @@ function buildGraph(root, options = {}) {
   for (const entry of entries) {
     if (!scannedSet.has(entry.rel)) continue;
     const buf = blobs.get(entry.sha);
-    if (!buf) continue; // 索引里读不到：不猜，该文件不会有边（由 check-references 的 guard-unavailable 负责报红）
+    // `readBlobs` 已经保证「请求过的 sha 全部拿到」（拿不到就抛错）：这里再拿到 undefined 只可能是
+    // 索引条目与请求清单对不上（代码 bug）。**绝不 `continue`**——静默丢边正是 B3 那条红线。
+    if (!buf) throw new Error(`内部不一致：索引条目 ${entry.rel}（${entry.sha}）不在已读到的 blob 集合里`);
     const text = normalizeEol(buf.toString('utf8'));
     textOf.set(entry.rel, text);
     ctx.preload(entry.rel, text);
@@ -613,7 +652,9 @@ function buildGraph(root, options = {}) {
     const extra = readBlobs(root, [...new Set(anchorTargets.map((rel) => shaByRel.get(rel)).filter(Boolean))]);
     for (const rel of anchorTargets) {
       const buf = extra.get(shaByRel.get(rel));
-      if (!buf) continue;
+      // 同上面那条：`readBlobs` 拿不到就抛错，这里再拿到 undefined 只可能是代码 bug ⇒ 不静默跳过，
+      // 否则该锚点会被判成 `unresolved`（「读不到」被读成「指向的文档没有这个标题」）。
+      if (!buf) throw new Error(`内部不一致：锚点目标 ${rel}（${shaByRel.get(rel)}）不在已读到的 blob 集合里`);
       const text = normalizeEol(buf.toString('utf8'));
       textOf.set(rel, text);
       ctx.preload(rel, text);

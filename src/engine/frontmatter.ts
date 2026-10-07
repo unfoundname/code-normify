@@ -96,7 +96,7 @@ export function checkSourceEntry(v: unknown, where: string, out: Diagnostic[]): 
     }
     return true;
 }
-export function checkApiEntry(v: unknown, where: string, out: Diagnostic[]): boolean {
+export function checkApiEntry(v: unknown, where: string, out: Diagnostic[], relax?: { warnings: Diagnostic[] }): boolean {
     if (!isPlain(v)) {
         out.push(diag('error', 'api/entry-shape', 'apis 条目必须为对象', { path: where }, {}, []));
         return false;
@@ -125,7 +125,7 @@ export function checkApiEntry(v: unknown, where: string, out: Diagnostic[]): boo
         out.push(diag('error', 'api/method-forbidden', '非 http 类 API 不能有 method 字段', { path: where + '/method' }, {}, ['删除 method 字段']));
         return false;
     }
-    checkL10n(v.description, 'description', 200, where, out);
+    checkL10n(v.description, 'description', 200, where, out, relax);
     for (const direction of ['input', 'output'] as const) {
         if (v[direction] !== undefined)
             checkTypeRef(v[direction], where + '/' + direction, out);
@@ -150,7 +150,7 @@ export function checkTypeRef(value: unknown, where: string, out: Diagnostic[]): 
     return out.length === before;
 }
 
-export function checkDataTypeEntry(value: unknown, where: string, out: Diagnostic[]): boolean {
+export function checkDataTypeEntry(value: unknown, where: string, out: Diagnostic[], relax?: { warnings: Diagnostic[] }): boolean {
     const before = out.length;
     if (!isPlain(value)) {
         out.push(diag('error', 'type/entry-shape', 'types 条目必须为 {name, description, schema} 对象', { path: where }, {}, []));
@@ -162,14 +162,14 @@ export function checkDataTypeEntry(value: unknown, where: string, out: Diagnosti
     }
     if (typeof value.name !== 'string' || !isValidTypeName(value.name))
         out.push(diag('error', 'type/name-invalid', '类型 name 必须为 TypeScript 类型标识符', { path: where + '/name' }, { value: value.name }, ['使用合法的命名类型名称，如 TaskInput']));
-    checkL10n(value.description, 'description', 500, where, out);
+    checkL10n(value.description, 'description', 500, where, out, relax);
     if (!isPlain(value.schema))
         out.push(diag('error', 'type/schema-shape', 'schema 必须为 JSON Schema 2020-12 对象', { path: where + '/schema' }, {}, ['使用 JSON Schema 对象；不支持字符串或布尔值的类型定义']));
     else
         checkDataTypeSchema(value.schema, where + '/schema', out);
     return out.length === before;
 }
-export function checkDepEntry(v: unknown, where: string, out: Diagnostic[]): boolean {
+export function checkDepEntry(v: unknown, where: string, out: Diagnostic[], relax?: { warnings: Diagnostic[] }): boolean {
     if (!isPlain(v)) {
         out.push(diag('error', 'dep/entry-shape', 'deps 条目必须为对象', { path: where }, {}, []));
         return false;
@@ -194,7 +194,7 @@ export function checkDepEntry(v: unknown, where: string, out: Diagnostic[]): boo
         }
     }
     if (v.label !== undefined)
-        checkL10n(v.label, 'label', 30, where, out);
+        checkL10n(v.label, 'label', 30, where, out, relax);
     return true;
 }
 /** L1：单文件级字段校验（规范 §5.2 结构/API/边类的格式部分）。 */
@@ -340,19 +340,19 @@ export function l1Validate(data: unknown, where: string, options: { requireBilin
         module.tags = data.tags as string[];
     if (Array.isArray(data.apis)) {
         module.apis = data.apis as Api[];
-        data.apis.forEach((a: unknown, i: number) => checkApiEntry(a, where + '/apis/' + i, errors));
+        data.apis.forEach((a: unknown, i: number) => checkApiEntry(a, where + '/apis/' + i, errors, relaxL10n));
         if (errors.length > 0)
             return { module: null, errors, warnings };
     }
     if (Array.isArray(data.types)) {
         module.types = data.types as DataType[];
-        data.types.forEach((type: unknown, i: number) => checkDataTypeEntry(type, where + '/types/' + i, errors));
+        data.types.forEach((type: unknown, i: number) => checkDataTypeEntry(type, where + '/types/' + i, errors, relaxL10n));
         if (errors.length > 0)
             return { module: null, errors, warnings };
     }
     if (Array.isArray(data.deps)) {
         module.deps = data.deps as Dep[];
-        data.deps.forEach((d: unknown, i: number) => checkDepEntry(d, where + '/deps/' + i, errors));
+        data.deps.forEach((d: unknown, i: number) => checkDepEntry(d, where + '/deps/' + i, errors, relaxL10n));
         if (errors.length > 0)
             return { module: null, errors, warnings };
     }
