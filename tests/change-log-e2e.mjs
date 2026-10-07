@@ -352,6 +352,12 @@ function main() {
   expect('11 真仓库：check:changes exit 0（已落盘记录与重算一致）', r.status, 0, r.out.trim().split('\n')[0]);
   expectNotContains('11 真仓库：没有记录处于 unknown', r.out, '[unknown]');
   expectNotContains('11 真仓库：没有记录处于 stale', r.out, '[stale]');
+  // 跨编码那一类的**如实回显**：真仓库里那条由旧图编码写成的记录必须被点名，而不是被静默放过。
+  // **这是个带时点的数**：编码再变一次就该有人回来把它改成新值（红 = 让人看一眼，不是自动跟随）。
+  expectContains('11 真仓库：汇总行回显「1 条跨编码不可复核」', r.out, '1 条跨编码不可复核');
+  expectContains('11 真仓库：逐条点名那条记录', r.out, '20261006T092038Z-1b2a3c6.json');
+  expectContains('11 真仓库：明写同 epoch 仍判红（不放宽）', r.out, '同 epoch 下的任何重算不一致仍照旧 exit 1');
+  // `--json` 那一面在夹具组 13a 上钉（真仓库再跑一次 `--check` 要几分钟，不值得为同一件事付两遍）。
 
   // ---- 12. 降级契约 partial：浅克隆（历史删除清单拿不全）→ history-unavailable ----
   // 为什么单独测：`partial` 是「差已算出，但有**已知缺口**」——缺口的语义必须是「不得当完整清单」，
@@ -376,6 +382,58 @@ function main() {
   r = runTool(['--root', shallowDir, '--check']);
   expect('12 浅克隆：--check exit 0（partial 是可复核的降级，不是红）', r.status, 0, r.out.trim().split('\n')[0]);
   expectContains('12 浅克隆：复核后的状态分布是 partial', r.out, '{"partial":1}');
+
+  // ---- 13. 跨编码不可复核（cross-encoding）：**只放行「已证明是另一套图编码」的不一致** ----
+  // 为什么单独测：记录里存着边 id / 字段名这类**编码产物**；图编码实现一变，老记录一个字节都没错，
+  // 却再也重算不出来。这一组钉住三条不变量：
+  //   ① 记录缺 `graph_encoding`（= 旧编码）且重算不一致 ⇒ **exit 0**，且**计数 + 逐条点名 + 汇总可见**；
+  //   ② 同一个篡改、但记录**带着当前 epoch** ⇒ **照旧 exit 1**（这条路绝不放宽同编码判定）；
+  //   ③ 记录缺 `graph_encoding` 但**重算逐字段相同** ⇒ 算复核通过，不冒充「不可复核」。
+  // 本组要读**汇总行**，所以先把前面各组留下的记录（第 7 组的 `-index` 暂存态记录在夹具里必然 `stale`）
+  // 清干净：只留本组要判的那一条。夹具是 temp 目录，删它不影响任何断言之外的东西。
+  for (const n of recordNames()) if (n !== name) fs.rmSync(path.join(logDirAbs, n));
+  fs.writeFileSync(path.join(logDirAbs, name), pristineBytes);
+  const pristine = readRecord(name);
+  const epochNow = pristine.graph_encoding;
+  expect('13 前置：新记录带 graph_encoding（当前图编码 epoch）', /^[0-9a-f]{16}$/.test(String(epochNow)), true, String(epochNow));
+
+  // (a) 抹掉 epoch（模拟「旧编码写的记录」）+ 改坏一个字段 ⇒ 归入跨编码不可复核，exit 0
+  const oldEncoding = readRecord(name);
+  delete oldEncoding.graph_encoding;
+  oldEncoding.edges.status_changed[0].to_status = 'resolved';
+  writeRecord(name, oldEncoding);
+  r = runTool(['--root', FIX, '--check']);
+  expect('13a 跨编码：--check exit 0（记录由另一套编码写成，不是记录有错）', r.status, 0, r.out.trim().split('\n')[0]);
+  expectContains('13a 跨编码：汇总行里可见（计数）', r.out, '1 条跨编码不可复核');
+  expectContains('13a 跨编码：逐条点名那条记录', r.out, name);
+  expectContains('13a 跨编码：点出「缺失，早于该字段引入」', r.out, '（缺失，早于该字段引入）');
+  expectContains('13a 跨编码：状态分布里可见', r.out, '{"cross-encoding":1}');
+  expectContains('13a 跨编码：明写同 epoch 仍判红', r.out, '同 epoch 下的任何重算不一致仍照旧 exit 1');
+  expectNotContains('13a 跨编码：不得报「复核未通过」', r.out, '复核未通过');
+  r = runTool(['--root', FIX, '--check', '--json']);
+  const crossJson = JSON.parse(r.out);
+  expect('13a 跨编码：--json 计数与分类', JSON.stringify([crossJson.counts.cross_encoding_unverifiable, crossJson.counts.failed]), JSON.stringify([1, 0]));
+  expect('13a 跨编码：--json 逐条给 graphEncoding = null', crossJson.records[0].graphEncoding, null);
+
+  // (b) **同一处篡改**，但记录带着当前 epoch ⇒ 必须照旧 exit 1（跨编码这条路不许顺带放宽同编码判定）
+  const sameEncoding = readRecord(name);
+  sameEncoding.graph_encoding = epochNow;
+  writeRecord(name, sameEncoding);
+  r = runTool(['--root', FIX, '--check']);
+  expect('13b 同 epoch 篡改：--check exit 1（判定没有被放宽）', r.status, 1);
+  expectContains('13b 同 epoch 篡改：报复核未通过', r.out, '复核未通过');
+  expectContains('13b 同 epoch 篡改：点名到字段', r.out, 'edges.status_changed[0].to_status');
+
+  // (c) 旧编码但重算逐字段相同 ⇒ 复核通过（只按旧编码计数，不冒充「不可复核」）
+  fs.writeFileSync(path.join(logDirAbs, name), pristineBytes);
+  const matched = readRecord(name);
+  delete matched.graph_encoding;
+  writeRecord(name, matched);
+  r = runTool(['--root', FIX, '--check']);
+  expect('13c 旧编码但重算相同：--check exit 0', r.status, 0, r.out.trim().split('\n')[0]);
+  expectContains('13c 旧编码但重算相同：计进「写于旧编码」而不是「不可复核」', r.out, '1 条写于旧编码（重算后逐字段仍相同）');
+  expectContains('13c 旧编码但重算相同：跨编码不可复核 = 0', r.out, '**0 条跨编码不可复核**');
+  fs.writeFileSync(path.join(logDirAbs, name), pristineBytes);
 
   console.log(`\n${failed === 0 ? '✔' : '✖'} ${checked - failed}/${checked} 条断言通过`);
   process.exitCode = failed === 0 ? 0 : 1;

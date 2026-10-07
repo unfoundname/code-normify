@@ -79,6 +79,12 @@ const SCHEMA_REL = 'ledger/change-log/schema.json';
 const RECORD_SCHEMA_VERSION = 1;
 /** 图 schema 版本：记录里如实登记快照来自哪一版图（图升版后复核才有意义）。 */
 const GRAPH_SCHEMA_VERSION = graphGen.GRAPH_SCHEMA_VERSION;
+/**
+ * **图编码 epoch**（`generate-reference-graph.cjs` 的运行时自证摘要）：记录里存的边 id / 字段名都是
+ * **编码产物**，编码实现一变，老记录就再也重算不出来——但它一个字节都没错。
+ * 记录携带**写它时**的 epoch；复核只在 epoch **相同**时把重算不一致判红（跨编码另立分类，逐条计数回显）。
+ */
+const GRAPH_ENCODING_EPOCH = graphGen.graphEncodingEpoch();
 /** git 的空树（根提交的 from 侧基准）；空集的宇宙摘要由 `universeHashOf([])` 算出。 */
 const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 /** 记录里数组的上限：超出则**截断数组但保留真实计数**（`counts.*`），绝不静默丢信息。 */
@@ -464,6 +470,8 @@ function assembleRecord({ kind, commit, commitParent, from, to, changeId, subjec
     generator: 'scripts/generate-change-log.cjs',
     generator_version: TOOL_VERSION,
     graph_schema_version: GRAPH_SCHEMA_VERSION,
+    // 写这条记录时，图编码的 epoch（见 GRAPH_ENCODING_EPOCH）。**老记录没有这个字段** —— 那就是「旧编码」。
+    graph_encoding: GRAPH_ENCODING_EPOCH,
     from_snapshot: from.snapshot,
     to_snapshot: to.snapshot,
     degradation,
@@ -639,7 +647,9 @@ function firstDiff(a, b, at = '') {
 
 /** 复核时不参与比对的字段：`created_at`（记录写入时刻）与 `handling`（人工 / 追加式处理状态）。 */
 function projectionOf(record) {
-  const { created_at, handling, ...rest } = record;
+  // `graph_encoding` 与 `created_at` / `handling` 同类：它是**记录自身的元信息**（写它时用的是哪套编码），
+  // 不是被判定的内容 —— 参与比对的话，每条跨编码记录都会「因为元信息不同」而必然不一致，等于没比。
+  const { created_at, handling, graph_encoding, ...rest } = record;
   return rest;
 }
 
@@ -719,6 +729,10 @@ function verifyRecord(root, name, validate) {
   const shape = validateShape(validate, record);
   const problems = shape ? [`不符合 ${SCHEMA_REL}：${shape}`] : structuralProblems(record);
   if (problems.length > 0) return { name, ok: false, status: 'unknown', problems, record };
+
+  // 编码 epoch：`null` = 老记录（该字段是后加的）⇒ 一律按「旧编码」对待。
+  const recordEncoding = typeof record.graph_encoding === 'string' && record.graph_encoding !== '' ? record.graph_encoding : null;
+  const crossEncoding = recordEncoding !== GRAPH_ENCODING_EPOCH;
 
   for (const other of listRecordFiles(root)) {
     if (other === name) continue;
@@ -803,7 +817,31 @@ function verifyRecord(root, name, validate) {
     basisMoved: false,
   });
   const mismatch = firstDiff(projectionOf(record), projectionOf(expected));
-  if (mismatch) return { name, ok: false, status: 'unknown', problems: [`重算结果与记录不一致：字段 ${mismatch}`], record };
+  if (mismatch) {
+    // **跨编码**：记录是**另一套编码**写的（缺 `graph_encoding` 或与当前 epoch 不同），内容对不上是必然的，
+    // 不是记录有错。归入 `cross-encoding`（**计数、逐条点名、在汇总里可见**），不放行也不判红。
+    // **同 epoch 的不一致照旧判红**（下面这一支就是它）——只有「已证明是跨编码」才走上面那条。
+    if (crossEncoding) {
+      return {
+        name,
+        ok: true,
+        status: 'cross-encoding',
+        crossEncoding: true,
+        recompute: 'mismatch',
+        problems: [
+          `记录由**另一套图编码**写成（记录 graph_encoding = ${recordEncoding === null ? '（缺失，早于该字段引入）' : JSON.stringify(recordEncoding)}，` +
+            `当前 epoch = ${GRAPH_ENCODING_EPOCH}）：重算不一致的字段是 ${mismatch}。` +
+            '这不是「记录有错」也不是「已复核通过」——它是**跨编码不可复核**：记录本身一个字节都没动，' +
+            '只是重算它需要当年那套编码。**同 epoch 下的任何不一致仍照旧判红。**',
+        ],
+        record,
+      };
+    }
+    return { name, ok: false, status: 'unknown', problems: [`重算结果与记录不一致：字段 ${mismatch}`], record };
+  }
+  // epoch 不同但重算逐字段相同：内容确实复核过了，不该冒充「不可复核」；但仍如实标出它来自旧编码
+  // （不算新分类，只计数 + `--json` 明细；**只有重算对不上的那些**才进 `cross-encoding`）。
+  if (crossEncoding) return { name, ok: true, status: record.degradation.status, crossEncoding: true, recompute: 'match', problems: [], record };
   return { name, ok: true, status: record.degradation.status, problems: [], record };
 }
 
@@ -1000,7 +1038,24 @@ function main(argv) {
             check: true,
             ok: report.ok,
             errors: report.errors,
-            records: report.results.map((r) => ({ name: r.name, ok: r.ok, status: r.status, problems: r.problems })),
+            graphEncodingEpoch: GRAPH_ENCODING_EPOCH,
+            counts: report.results.reduce((acc, r) => {
+              acc.total += 1;
+              if (r.status === 'cross-encoding') acc.cross_encoding_unverifiable += 1;
+              else if (r.crossEncoding === true) acc.old_encoding_recompute_matched += 1;
+              if (r.ok) acc.verified += 1;
+              else acc.failed += 1;
+              return acc;
+            }, { total: 0, verified: 0, old_encoding_recompute_matched: 0, cross_encoding_unverifiable: 0, failed: 0 }),
+            records: report.results.map((r) => ({
+              name: r.name,
+              ok: r.ok,
+              status: r.status,
+              problems: r.problems,
+              graphEncoding: r.record ? (typeof r.record.graph_encoding === 'string' ? r.record.graph_encoding : null) : undefined,
+              crossEncoding: r.crossEncoding === true,
+              recompute: r.recompute === undefined ? undefined : r.recompute,
+            })),
           },
           null,
           2,
@@ -1016,9 +1071,28 @@ function main(argv) {
     } else if (report.ok) {
       const statuses = {};
       for (const r of report.results) statuses[r.status] = (statuses[r.status] || 0) + 1;
+      const crossUnverifiable = report.results.filter((r) => r.status === 'cross-encoding');
+      const crossMatched = report.results.filter((r) => r.crossEncoding === true && r.status !== 'cross-encoding');
+      const verified = report.results.length - crossUnverifiable.length - crossMatched.length;
       process.stdout.write(
-        `${TOOL}: ${report.results.length} 条记录全部通过（Schema 校验 + 重算逐字段复核；created_at 与 handling 不参与复核）。\n` +
-          `  降级状态分布 = ${JSON.stringify(statuses)}\n`,
+        `${TOOL}: ${report.results.length} 条记录：${verified} 条逐字段复核通过 · ` +
+          `${crossMatched.length} 条写于旧编码（重算后逐字段仍相同） · **${crossUnverifiable.length} 条跨编码不可复核**` +
+          `（当前 epoch = ${GRAPH_ENCODING_EPOCH}）。\n` +
+          `  降级状态分布 = ${JSON.stringify(statuses)}\n` +
+          '  （复核口径 = Schema 校验 + 重算逐字段复核；created_at 与 handling 不参与复核）\n' +
+          (crossUnverifiable.length > 0
+            ? '  跨编码不可复核（逐条点名；记录**只增不改**，其字节一个都没动）：\n' +
+              crossUnverifiable
+                .map(
+                  (r) =>
+                    `    ✖ ${r.name}  记录 epoch = ` +
+                    `${r.record && typeof r.record.graph_encoding === 'string' ? r.record.graph_encoding : '（缺失，早于该字段引入）'}` +
+                    ` · 重算 = ${r.recompute}\n`,
+                )
+                .join('')
+            : '') +
+          '  **同 epoch 下的任何重算不一致仍照旧 exit 1**（跨编码只覆盖「已证明是另一套编码」这一种）；' +
+          '旧编码且重算相同的那些逐条明细见 `--json` 的 `records[].graphEncoding` / `recompute`。\n',
       );
     } else {
       process.stderr.write(`${TOOL}: 复核未通过（${report.results.filter((r) => !r.ok).length}/${report.results.length} 条）。\n`);

@@ -65,6 +65,11 @@
       "const": 2,
       "description": "快照来自哪一版引用图（ledger/references.json 的 schema_version）。图升版后旧记录**必须同步这一栏**：--check 会用当前生成器重建两侧快照并把这一栏纳入逐字段比对，对不上就是「重算结果与记录不一致」。增量 3 把图从 v1 升到 v2（新增 declarations / symbol_edges），已落盘的两条记录随之从 1 改为 2——它们的 files / edges 差一个字节都没变（图生成器的改动面证明：v1 与 v2 的 files / edges 两个数组逐字节相同），改的只是「这份差是哪一版结构算出来的」这个标签。"
     },
+    "graph_encoding": {
+      "type": "string",
+      "minLength": 1,
+      "description": "写这条记录时**图编码**的 epoch（scripts/generate-reference-graph.cjs 的 graphEncodingEpoch()：把固定探针喂给真正在用的编码函数，对输出取 sha256 前 16 位；判据是**行为**，不是版本号）。为什么需要它：记录里逐条存着边 id / 字段名这类**编码产物**，编码实现一变，老记录一个字节都没错却再也重算不出来——那时 --check 会把它误报成「复核未通过」。有了本栏，复核只在**记录 epoch == 当前 epoch** 时把重算不一致判红；epoch 不同（或本栏缺失 = 早于该字段引入）归入 `cross-encoding` 分类：**计数 + 逐条点名 + 在汇总行里可见**，不判红也不静默放行。**本栏刻意不在 required 里**——老记录没有它，是「旧编码」的判据本身。**边界**：探针覆盖不到的编码变更不会移动 epoch，那时老记录仍按同 epoch 判红；也就是说这条路只放行「已证明是另一套编码」的不一致。"
+    },
     "from_snapshot": { "$ref": "#/$defs/snapshot" },
     "to_snapshot": { "$ref": "#/$defs/snapshot" },
     "degradation": {

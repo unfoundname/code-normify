@@ -8,6 +8,12 @@
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
     "tracked_total": 1513,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
+    "graph_encoding": {
+      "epoch": "d2d5de848c0b0e97",
+      "algorithm": "sha256(JSON(编码探针输出))[:16]（探针 = 边 id 构造 + exports 字段编码；判据是行为，不是版本号）",
+      "probes": 14,
+      "boundary": "探针覆盖不到的编码变更不会移动 epoch——那时老记录仍按同 epoch 判红（只放行已证明是跨编码的不一致）。"
+    },
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
     "history_basis": "git log --diff-filter=D --name-only（当前 37 条历史删除路径，用于 deleted 状态）",
@@ -12423,8 +12429,8 @@
       "id": "ledger/change-log/README.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 19657,
-      "lines": 220,
+      "bytes": 22048,
+      "lines": 246,
       "edge_out": 0,
       "edge_in": 0
     },
@@ -12432,8 +12438,8 @@
       "id": "ledger/change-log/schema.json",
       "lang": "json",
       "state": "indexed",
-      "bytes": 16289,
-      "lines": 270,
+      "bytes": 17392,
+      "lines": 275,
       "edge_out": 0,
       "edge_in": 0
     },
@@ -13305,8 +13311,8 @@
       "id": "scripts/generate-change-log.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 59748,
-      "lines": 1179,
+      "bytes": 64872,
+      "lines": 1253,
       "edge_out": 6,
       "edge_in": 2
     },
@@ -13323,8 +13329,8 @@
       "id": "scripts/generate-reference-graph.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 82292,
-      "lines": 1421,
+      "bytes": 87777,
+      "lines": 1491,
       "edge_out": 6,
       "edge_in": 3
     },
@@ -13629,8 +13635,8 @@
       "id": "tests/change-log-e2e.mjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 25827,
-      "lines": 394,
+      "bytes": 30794,
+      "lines": 452,
       "edge_out": 6,
       "edge_in": 2
     },
@@ -16790,11 +16796,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-change-log.cjs:695:27:require:ajv/dist/2020",
+      "id": "scripts/generate-change-log.cjs:705:27:require:ajv/dist/2020",
       "kind": "require",
       "from": {
         "file": "scripts/generate-change-log.cjs",
-        "line": 695,
+        "line": 705,
         "column": 27
       },
       "to": {

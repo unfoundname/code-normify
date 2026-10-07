@@ -441,8 +441,67 @@ function makeEdgeCollector(fromFile) {
   };
 }
 
-/** 模块说明符 → 边（source 文件：.ts/.tsx/.mts/.cts/.js/.jsx/.mjs/.cjs）。 */
-function collectModuleEdges(ctx, ts, rel, text, collector) {
+/**
+ * 图**编码**的自证 epoch：一组**固定的探针输入**喂给真正在用的编码函数，对输出取 sha256 的前 16 位。
+ *
+ * 为什么需要它：改动记录里逐条存着**边 id / 字段名**这类编码产物。编码实现一变（例如 `exports` 的
+ * `field` 从 `exports["./x.types"]` 改成结构化的 `exports["./x"].types`），**历史记录的字节一个都没错**，
+ * 但它再也重算不出来了——那时 `--check` 会把它报成「复核未通过」，而真相是「它由另一套编码写的」。
+ * epoch 让这两件事分得开：记录带着**写它时**的 epoch，`--check` 只在 epoch **相同**时把不一致判红。
+ *
+ * 判据是**行为**不是版本号：探针的输出变了 epoch 才变；改注释、改排版、挪函数位置都不动它。
+ * **不写死数字**（写死的编号必然腐化，本仓反复踩过）。
+ *
+ * **明写边界（不许当恒真式读）**：探针覆盖不到的编码变更**不会**移动 epoch —— 那时老记录仍按同 epoch
+ * 判红。也就是说这条路径只会把「**已证明是跨编码**」的不一致放行；**任何拿不准的不一致照旧是红**。
+ */
+const EDGE_ID_PROBES = [
+  { kind: 'import', from: { file: 'probe-a.ts', line: 1, column: 1 }, to: { file: 'probe-b.ts', line: null, column: null, state: 'indexed' }, specifier: './probe-b.js', resolved: 'probe-b.ts', status: 'resolved', type_only: false },
+  // 同一个键位置上的两个条件分支：id 必须靠 `field→specifier` 消歧（这正是 B3 改过的形状）。
+  { kind: 'package-field', from: { file: 'probe-pkg.json', line: 1, column: 1 }, to: { file: 'probe-b.ts', line: null, column: null, state: 'indexed' }, specifier: './probe-b.ts', resolved: 'probe-b.ts', field: 'exports["."].types', status: 'resolved' },
+  { kind: 'package-field', from: { file: 'probe-pkg.json', line: 1, column: 1 }, to: { file: 'probe-b.js', line: null, column: null, state: 'indexed' }, specifier: './probe-b.js', resolved: 'probe-b.js', field: 'exports["."].import', status: 'resolved' },
+  { kind: 'anchor', from: { file: 'probe-a.md', line: 2, column: 1 }, to: { file: 'probe-b.md', line: null, column: null, state: 'indexed' }, specifier: '#probe', resolved: 'probe-b.md', field: null, status: 'resolved' },
+  { kind: 'markdown-link', from: { file: 'probe-a.md', line: 3, column: 1 }, to: { file: 'probe-b.md', line: null, column: null, state: 'indexed' }, specifier: './probe-b.md', resolved: 'probe-b.md', field: null, status: 'resolved' },
+  { kind: 'ci-target', from: { file: '.github/workflows/ci.yml', line: 4, column: 1 }, to: { file: 'scripts/probe-x.cjs', line: null, column: null, state: 'indexed' }, specifier: 'node scripts/probe-x.cjs', resolved: 'scripts/probe-x.cjs', field: null, status: 'resolved' },
+];
+/**
+ * 探针里的路径一律是 `probe-*` 形状的**自造词**，不是对本仓文件的引用。
+ * **连子串都要避开**：`check-references` 的 `deleted-file-basename-mention` 是**子串**匹配 ——
+ * 探针里写通用目录名 / 文件名，可能**包含**某个历史已删文件的 basename，凭空多出 warning
+ * （实测：换成自造词后 746 → 739 → 737，回到开工基线）。所以这里不写任何真实文件名。
+ */
+const EXPORTS_PROBES = [
+  './probe-entry.js',
+  { './plain': './probe-main.ts' },
+  { './artifact.types': './probe-main.ts' },
+  { './artifact': { types: './probe-main.ts' } },
+  { './artifact': { types: { import: './probe-main.ts' } } },
+  { '.': { types: './probe-decl.d.ts', import: './probe-entry.js' } },
+  { './engine/*': { types: './probe-types/engine/*.d.ts', import: './probe-engine/*.js' } },
+  { import: './probe-esm.js', require: './probe-cjs.cjs', default: './probe-fallback.js' },
+];
+/** 探针载荷：**只由编码函数本身决定**（不含路径、时间、机器信息）。 */
+function encodingProbePayload() {
+  const collector = makeEdgeCollector('<probe>');
+  for (const edge of EDGE_ID_PROBES) collector.push(edge);
+  return {
+    edge_ids: collector.edges.map((e) => e.id),
+    edges: collector.edges,
+    exports_fields: EXPORTS_PROBES.flatMap((exports) => core.collectPackageFieldTargets({ exports })),
+  };
+}
+/** 当前编码的 epoch（16 位小写 hex）。 */
+function graphEncodingEpoch() {
+  return crypto.createHash('sha256').update(JSON.stringify(encodingProbePayload()), 'utf8').digest('hex').slice(0, 16);
+}
+/** 落进产物 `meta.graph_encoding` 的自证块（算法与探针条数一起落盘，可追溯、可复核）。 */
+const GRAPH_ENCODING = Object.freeze({
+  epoch: graphEncodingEpoch(),
+  algorithm: 'sha256(JSON(编码探针输出))[:16]（探针 = 边 id 构造 + exports 字段编码；判据是行为，不是版本号）',
+  probes: EDGE_ID_PROBES.length + EXPORTS_PROBES.length,
+});
+
+/** 模块说明符 → 边（source 文件：.ts/.tsx/.mts/.cts/.js/.jsx/.mjs/.cjs）。 */function collectModuleEdges(ctx, ts, rel, text, collector) {
   for (const { spec, index, kind, typeOnly } of core.collectModuleSpecifiersKinds(ctx, ts, rel)) {
     const from = { file: rel, ...core.positionAt(ctx, rel, text, index) };
     if (!spec.startsWith('.')) {
@@ -818,6 +877,14 @@ function buildGraph(root, options = {}) {
       universe_hash_algorithm: "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
       tracked_total: tracked.length,
       positions_basis: 'git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）',
+      // 图**编码**的自证 epoch：改动记录里存的边 id / 字段名是编码产物，记录带着写它时的 epoch，
+      // `generate-change-log --check` 只在 epoch 相同时把重算不一致判红（跨编码另有分类，逐条计数回显）。
+      graph_encoding: {
+        epoch: GRAPH_ENCODING.epoch,
+        algorithm: GRAPH_ENCODING.algorithm,
+        probes: GRAPH_ENCODING.probes,
+        boundary: '探针覆盖不到的编码变更不会移动 epoch——那时老记录仍按同 epoch 判红（只放行已证明是跨编码的不一致）。',
+      },
       byte_basis: 'git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）',
       read_basis: '文件内容一律取自索引 blob（git cat-file --batch），不读工作区',
       history_basis:
@@ -1415,6 +1482,9 @@ module.exports = {
   buildGraph,
   serialize,
   universeHashOf,
+  GRAPH_ENCODING,
+  graphEncodingEpoch,
+  encodingProbePayload,
 };
 
 if (require.main === module) main(process.argv.slice(2));
