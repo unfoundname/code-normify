@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "f529667b9459d85fd5a087976496b311aec46cc8cd3b421454a01348e9dc3a5c",
+    "universe_hash": "cc8a29f7785fd35da5b0f82a25b1d5bb83275db08b503f57305c42ed0f9f9e14",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1506,
+    "tracked_total": 1507,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 170
+      "scanned_total": 171
     },
     "analysis": {
       "mode": "typescript",
@@ -59,7 +59,7 @@
       "positions_basis": "声明与引用位置由 ts.SourceFile.getLineAndCharacterOfPosition 在索引 blob 的 LF 归一化文本上算出（1 基）",
       "declaration_kinds": {
         "class": 2,
-        "function": 209,
+        "function": 212,
         "interface": 114,
         "type": 18,
         "variable": 65
@@ -67,18 +67,18 @@
       "edge_kinds": {
         "export-from": 70,
         "import": 481,
-        "type-reference": 814
+        "type-reference": 807
       },
       "edge_status": {
         "external": 139,
         "resolved": 995,
-        "unresolved": 231
+        "unresolved": 224
       },
       "unresolved_reasons": {
         "bare-module-specifier": 131,
         "declaration-out-of-scope": 9,
         "external-module-symbol": 8,
-        "symbol-not-found-in-program": 222
+        "symbol-not-found-in-program": 215
       },
       "cross_file_edges": 762,
       "silent_null_edges": 0,
@@ -92,7 +92,7 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "自指条目（本产物自身的 bytes / lines）固定写 null —— 这是【处置选择】，不是\"没有不动点\"：实测把这两个量迭代写回，第 3 次即收敛（不动点存在）。因此这里写 null 是为了让产物写入幂等、而不是因为\"自指在数学上不可能稳定\"。（本条 = 图数据文件自己（ledger/references.json）那一行；只豁免这两个派生量，其余字段照常登记。）",
     "node_states": {
-      "indexed": 1506
+      "indexed": 1507
     },
     "edge_kinds": {
       "anchor": 3,
@@ -12343,6 +12343,15 @@
       "edge_in": 0
     },
     {
+      "id": "ledger/change-log/20261007T014635Z-b6d3d41.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 13179,
+      "lines": 429,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
       "id": "ledger/change-log/README.md",
       "lang": "md",
       "state": "indexed",
@@ -12427,7 +12436,7 @@
       "id": "lib/engine/branches.js",
       "lang": "js",
       "state": "indexed",
-      "bytes": 37967,
+      "bytes": 37959,
       "lines": null,
       "edge_out": 0,
       "edge_in": 1
@@ -12436,7 +12445,7 @@
       "id": "lib/engine/branches.js.map",
       "lang": "other",
       "state": "indexed",
-      "bytes": 38504,
+      "bytes": 38505,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -12481,7 +12490,7 @@
       "id": "lib/engine/compile.js",
       "lang": "js",
       "state": "indexed",
-      "bytes": 13495,
+      "bytes": 14732,
       "lines": null,
       "edge_out": 0,
       "edge_in": 2
@@ -12490,7 +12499,7 @@
       "id": "lib/engine/compile.js.map",
       "lang": "other",
       "state": "indexed",
-      "bytes": 15713,
+      "bytes": 16550,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -13300,8 +13309,8 @@
       "id": "src/engine/branches.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 40239,
-      "lines": 580,
+      "bytes": 40212,
+      "lines": 576,
       "edge_out": 13,
       "edge_in": 7
     },
@@ -13327,8 +13336,8 @@
       "id": "src/engine/compile.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 15626,
-      "lines": 375,
+      "bytes": 16942,
+      "lines": 404,
       "edge_out": 10,
       "edge_in": 4
     },
@@ -17989,12 +17998,12 @@
       "type_only": false
     },
     {
-      "id": "src/engine/compile.ts:2:49:import:node:fs/promises",
+      "id": "src/engine/compile.ts:2:46:import:node:fs/promises",
       "kind": "import",
       "from": {
         "file": "src/engine/compile.ts",
         "line": 2,
-        "column": 49
+        "column": 46
       },
       "to": {
         "file": null,
@@ -24855,24 +24864,24 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/branches.ts#branchPacket@559:23",
+      "id": "src/engine/branches.ts#branchPacket@555:23",
       "file": "src/engine/branches.ts",
       "name": "branchPacket",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 559,
+      "line": 555,
       "column": 23,
       "origin": "source"
     },
     {
-      "id": "src/engine/branches.ts#branchPackets@569:23",
+      "id": "src/engine/branches.ts#branchPackets@565:23",
       "file": "src/engine/branches.ts",
       "name": "branchPackets",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 569,
+      "line": 565,
       "column": 23,
       "origin": "source"
     },
@@ -24910,24 +24919,24 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/branches.ts#deleteBranchPlan@457:23",
+      "id": "src/engine/branches.ts#deleteBranchPlan@453:23",
       "file": "src/engine/branches.ts",
       "name": "deleteBranchPlan",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 457,
+      "line": 453,
       "column": 23,
       "origin": "source"
     },
     {
-      "id": "src/engine/branches.ts#deleteConflict@430:10",
+      "id": "src/engine/branches.ts#deleteConflict@426:10",
       "file": "src/engine/branches.ts",
       "name": "deleteConflict",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 430,
+      "line": 426,
       "column": 10,
       "origin": "source"
     },
@@ -24998,13 +25007,13 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/branches.ts#makePacket@552:16",
+      "id": "src/engine/branches.ts#makePacket@548:16",
       "file": "src/engine/branches.ts",
       "name": "makePacket",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 552,
+      "line": 548,
       "column": 16,
       "origin": "source"
     },
@@ -25031,24 +25040,24 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/branches.ts#packetContext@544:16",
+      "id": "src/engine/branches.ts#packetContext@540:16",
       "file": "src/engine/branches.ts",
       "name": "packetContext",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 544,
+      "line": 540,
       "column": 16,
       "origin": "source"
     },
     {
-      "id": "src/engine/branches.ts#putBranchPlan@406:23",
+      "id": "src/engine/branches.ts#putBranchPlan@402:23",
       "file": "src/engine/branches.ts",
       "name": "putBranchPlan",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 406,
+      "line": 402,
       "column": 23,
       "origin": "source"
     },
@@ -25075,13 +25084,13 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/branches.ts#restoreCaptured@440:16",
+      "id": "src/engine/branches.ts#restoreCaptured@436:16",
       "file": "src/engine/branches.ts",
       "name": "restoreCaptured",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 440,
+      "line": 436,
       "column": 16,
       "origin": "source"
     },
@@ -25130,13 +25139,13 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/branches.ts#suggestBranchPlan@496:23",
+      "id": "src/engine/branches.ts#suggestBranchPlan@492:23",
       "file": "src/engine/branches.ts",
       "name": "suggestBranchPlan",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 496,
+      "line": 492,
       "column": 23,
       "origin": "source"
     },
@@ -25163,35 +25172,35 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/branches.ts#uniqueIds@266:10",
+      "id": "src/engine/branches.ts#uniqueIds@262:10",
       "file": "src/engine/branches.ts",
       "name": "uniqueIds",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 266,
+      "line": 262,
       "column": 10,
       "origin": "source"
     },
     {
-      "id": "src/engine/branches.ts#validateBranchPlan@400:23",
+      "id": "src/engine/branches.ts#validateBranchPlan@396:23",
       "file": "src/engine/branches.ts",
       "name": "validateBranchPlan",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 400,
+      "line": 396,
       "column": 23,
       "origin": "source"
     },
     {
-      "id": "src/engine/branches.ts#validateWithContext@274:16",
+      "id": "src/engine/branches.ts#validateWithContext@270:16",
       "file": "src/engine/branches.ts",
       "name": "validateWithContext",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 274,
+      "line": 270,
       "column": 16,
       "origin": "source"
     },
@@ -25438,13 +25447,24 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/compile.ts#buildProject@168:23",
+      "id": "src/engine/compile.ts#blockedByDirectory@156:16",
+      "file": "src/engine/compile.ts",
+      "name": "blockedByDirectory",
+      "decl_kind": "function",
+      "exported": false,
+      "scope": null,
+      "line": 156,
+      "column": 16,
+      "origin": "source"
+    },
+    {
+      "id": "src/engine/compile.ts#buildProject@197:23",
       "file": "src/engine/compile.ts",
       "name": "buildProject",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 168,
+      "line": 197,
       "column": 23,
       "origin": "source"
     },
@@ -25471,24 +25491,46 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/compile.ts#publishArtifacts@121:16",
+      "id": "src/engine/compile.ts#publishArtifacts@124:16",
       "file": "src/engine/compile.ts",
       "name": "publishArtifacts",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 121,
+      "line": 124,
       "column": 16,
       "origin": "source"
     },
     {
-      "id": "src/engine/compile.ts#readArtifact@157:16",
+      "id": "src/engine/compile.ts#shelfName@152:10",
       "file": "src/engine/compile.ts",
-      "name": "readArtifact",
+      "name": "shelfName",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 157,
+      "line": 152,
+      "column": 10,
+      "origin": "source"
+    },
+    {
+      "id": "src/engine/compile.ts#shelve@169:16",
+      "file": "src/engine/compile.ts",
+      "name": "shelve",
+      "decl_kind": "function",
+      "exported": false,
+      "scope": null,
+      "line": 169,
+      "column": 16,
+      "origin": "source"
+    },
+    {
+      "id": "src/engine/compile.ts#unshelve@179:16",
+      "file": "src/engine/compile.ts",
+      "name": "unshelve",
+      "decl_kind": "function",
+      "exported": false,
+      "scope": null,
+      "line": 179,
       "column": 16,
       "origin": "source"
     },
@@ -29662,9 +29704,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/branches.ts#branchPackets@569:23",
+        "sym": "src/engine/branches.ts#branchPackets@565:23",
         "file": "src/engine/branches.ts",
-        "line": 569,
+        "line": 565,
         "column": 23,
         "state": "indexed"
       },
@@ -31286,59 +31328,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:252:65:type-reference",
+      "id": "src/engine/branches.ts:262:53:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 252,
-        "column": 65,
-        "sym": "src/engine/branches.ts#assertCommandCwd@252:16"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/branches.ts:259:23:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/branches.ts",
-        "line": 259,
-        "column": 23,
-        "sym": "src/engine/branches.ts#assertCommandCwd@252:16"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/branches.ts:266:53:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/branches.ts",
-        "line": 266,
+        "line": 262,
         "column": 53,
-        "sym": "src/engine/branches.ts#uniqueIds@266:10"
+        "sym": "src/engine/branches.ts#uniqueIds@262:10"
       },
       "to": {
         "sym": "src/engine/types.ts#Diagnostic@213:18",
@@ -31355,13 +31351,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:274:42:type-reference",
+      "id": "src/engine/branches.ts:270:42:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 274,
+        "line": 270,
         "column": 42,
-        "sym": "src/engine/branches.ts#validateWithContext@274:16"
+        "sym": "src/engine/branches.ts#validateWithContext@270:16"
       },
       "to": {
         "sym": "src/engine/branches.ts#BranchPlan@38:18",
@@ -31378,13 +31374,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:274:59:type-reference",
+      "id": "src/engine/branches.ts:270:59:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 274,
+        "line": 270,
         "column": 59,
-        "sym": "src/engine/branches.ts#validateWithContext@274:16"
+        "sym": "src/engine/branches.ts#validateWithContext@270:16"
       },
       "to": {
         "sym": "src/engine/branches.ts#Context@158:11",
@@ -31401,13 +31397,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:274:97:type-reference",
+      "id": "src/engine/branches.ts:270:97:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 274,
+        "line": 270,
         "column": 97,
-        "sym": "src/engine/branches.ts#validateWithContext@274:16"
+        "sym": "src/engine/branches.ts#validateWithContext@270:16"
       },
       "to": {
         "sym": "src/execution.ts#NormifyToolExecution@9:18",
@@ -31424,13 +31420,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:282:38:type-reference",
+      "id": "src/engine/branches.ts:278:38:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 282,
+        "line": 278,
         "column": 38,
-        "sym": "src/engine/branches.ts#validateWithContext@274:16"
+        "sym": "src/engine/branches.ts#validateWithContext@270:16"
       },
       "to": {
         "sym": "src/engine/branches.ts#BranchUnit@27:18",
@@ -31447,13 +31443,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:285:18:type-reference",
+      "id": "src/engine/branches.ts:281:18:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 285,
+        "line": 281,
         "column": 18,
-        "sym": "src/engine/branches.ts#validateWithContext@274:16"
+        "sym": "src/engine/branches.ts#validateWithContext@270:16"
       },
       "to": {
         "sym": "src/engine/branches.ts#DerivedBranchUnit@57:18",
@@ -31470,13 +31466,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:326:38:type-reference",
+      "id": "src/engine/branches.ts:322:38:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 326,
+        "line": 322,
         "column": 38,
-        "sym": "src/engine/branches.ts#validateWithContext@274:16"
+        "sym": "src/engine/branches.ts#validateWithContext@270:16"
       },
       "to": {
         "sym": null,
@@ -31493,13 +31489,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:327:50:type-reference",
+      "id": "src/engine/branches.ts:323:50:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 327,
+        "line": 323,
         "column": 50,
-        "sym": "src/engine/branches.ts#validateWithContext@274:16"
+        "sym": "src/engine/branches.ts#validateWithContext@270:16"
       },
       "to": {
         "sym": null,
@@ -31516,13 +31512,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:348:42:type-reference",
+      "id": "src/engine/branches.ts:344:42:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 348,
+        "line": 344,
         "column": 42,
-        "sym": "src/engine/branches.ts#validateWithContext@274:16"
+        "sym": "src/engine/branches.ts#validateWithContext@270:16"
       },
       "to": {
         "sym": "src/engine/branches.ts#BranchExternalDependency@17:18",
@@ -31539,13 +31535,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:400:129:type-reference",
+      "id": "src/engine/branches.ts:396:129:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 400,
+        "line": 396,
         "column": 129,
-        "sym": "src/engine/branches.ts#validateBranchPlan@400:23"
+        "sym": "src/engine/branches.ts#validateBranchPlan@396:23"
       },
       "to": {
         "sym": "src/execution.ts#NormifyToolExecution@9:18",
@@ -31562,13 +31558,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:406:142:type-reference",
+      "id": "src/engine/branches.ts:402:142:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 406,
+        "line": 402,
         "column": 142,
-        "sym": "src/engine/branches.ts#putBranchPlan@406:23"
+        "sym": "src/engine/branches.ts#putBranchPlan@402:23"
       },
       "to": {
         "sym": "src/execution.ts#NormifyToolExecution@9:18",
@@ -31585,13 +31581,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:440:86:type-reference",
+      "id": "src/engine/branches.ts:436:86:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 440,
+        "line": 436,
         "column": 86,
-        "sym": "src/engine/branches.ts#restoreCaptured@440:16"
+        "sym": "src/engine/branches.ts#restoreCaptured@436:16"
       },
       "to": {
         "sym": null,
@@ -31608,13 +31604,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:447:36:type-reference",
+      "id": "src/engine/branches.ts:443:36:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 447,
+        "line": 443,
         "column": 36,
-        "sym": "src/engine/branches.ts#restoreCaptured@440:16"
+        "sym": "src/engine/branches.ts#restoreCaptured@436:16"
       },
       "to": {
         "sym": null,
@@ -31631,13 +31627,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:457:86:type-reference",
+      "id": "src/engine/branches.ts:453:86:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 457,
+        "line": 453,
         "column": 86,
-        "sym": "src/engine/branches.ts#deleteBranchPlan@457:23"
+        "sym": "src/engine/branches.ts#deleteBranchPlan@453:23"
       },
       "to": {
         "sym": "src/execution.ts#NormifyToolExecution@9:18",
@@ -31654,13 +31650,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:470:23:type-reference",
+      "id": "src/engine/branches.ts:466:23:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 470,
+        "line": 466,
         "column": 23,
-        "sym": "src/engine/branches.ts#deleteBranchPlan@457:23"
+        "sym": "src/engine/branches.ts#deleteBranchPlan@453:23"
       },
       "to": {
         "sym": null,
@@ -31677,13 +31673,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:496:130:type-reference",
+      "id": "src/engine/branches.ts:492:130:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 496,
+        "line": 492,
         "column": 130,
-        "sym": "src/engine/branches.ts#suggestBranchPlan@496:23"
+        "sym": "src/engine/branches.ts#suggestBranchPlan@492:23"
       },
       "to": {
         "sym": "src/execution.ts#NormifyToolExecution@9:18",
@@ -31700,13 +31696,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:501:28:type-reference",
+      "id": "src/engine/branches.ts:497:28:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 501,
+        "line": 497,
         "column": 28,
-        "sym": "src/engine/branches.ts#suggestBranchPlan@496:23"
+        "sym": "src/engine/branches.ts#suggestBranchPlan@492:23"
       },
       "to": {
         "sym": "src/engine/types.ts#Diagnostic@213:18",
@@ -31723,13 +31719,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:528:18:type-reference",
+      "id": "src/engine/branches.ts:524:18:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 528,
+        "line": 524,
         "column": 18,
-        "sym": "src/engine/branches.ts#suggestBranchPlan@496:23"
+        "sym": "src/engine/branches.ts#suggestBranchPlan@492:23"
       },
       "to": {
         "sym": "src/engine/branches.ts#BranchUnit@27:18",
@@ -31746,13 +31742,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:535:17:type-reference",
+      "id": "src/engine/branches.ts:531:17:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 535,
+        "line": 531,
         "column": 17,
-        "sym": "src/engine/branches.ts#suggestBranchPlan@496:23"
+        "sym": "src/engine/branches.ts#suggestBranchPlan@492:23"
       },
       "to": {
         "sym": "src/engine/branches.ts#BranchPlan@38:18",
@@ -31769,13 +31765,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:544:103:type-reference",
+      "id": "src/engine/branches.ts:540:103:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 544,
+        "line": 540,
         "column": 103,
-        "sym": "src/engine/branches.ts#packetContext@544:16"
+        "sym": "src/engine/branches.ts#packetContext@540:16"
       },
       "to": {
         "sym": "src/execution.ts#NormifyToolExecution@9:18",
@@ -31792,13 +31788,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:552:32:type-reference",
+      "id": "src/engine/branches.ts:548:32:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 552,
+        "line": 548,
         "column": 32,
-        "sym": "src/engine/branches.ts#makePacket@552:16"
+        "sym": "src/engine/branches.ts#makePacket@548:16"
       },
       "to": {
         "sym": "src/engine/branches.ts#Context@158:11",
@@ -31815,13 +31811,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:552:47:type-reference",
+      "id": "src/engine/branches.ts:548:47:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 552,
+        "line": 548,
         "column": 47,
-        "sym": "src/engine/branches.ts#makePacket@552:16"
+        "sym": "src/engine/branches.ts#makePacket@548:16"
       },
       "to": {
         "sym": "src/engine/branches.ts#BranchPlan@38:18",
@@ -31838,13 +31834,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:552:81:type-reference",
+      "id": "src/engine/branches.ts:548:81:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 552,
+        "line": 548,
         "column": 81,
-        "sym": "src/engine/branches.ts#makePacket@552:16"
+        "sym": "src/engine/branches.ts#makePacket@548:16"
       },
       "to": {
         "sym": "src/engine/branches.ts#BranchUnit@27:18",
@@ -31861,13 +31857,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:552:112:type-reference",
+      "id": "src/engine/branches.ts:548:112:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 552,
+        "line": 548,
         "column": 112,
-        "sym": "src/engine/branches.ts#makePacket@552:16"
+        "sym": "src/engine/branches.ts#makePacket@548:16"
       },
       "to": {
         "sym": null,
@@ -31884,13 +31880,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:552:120:type-reference",
+      "id": "src/engine/branches.ts:548:120:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 552,
+        "line": 548,
         "column": 120,
-        "sym": "src/engine/branches.ts#makePacket@552:16"
+        "sym": "src/engine/branches.ts#makePacket@548:16"
       },
       "to": {
         "sym": "src/engine/branches.ts#BranchPacket@64:18",
@@ -31907,13 +31903,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:559:125:type-reference",
+      "id": "src/engine/branches.ts:555:125:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
-        "line": 559,
+        "line": 555,
         "column": 125,
-        "sym": "src/engine/branches.ts#branchPacket@559:23"
+        "sym": "src/engine/branches.ts#branchPacket@555:23"
       },
       "to": {
         "sym": "src/execution.ts#NormifyToolExecution@9:18",
@@ -31930,36 +31926,36 @@
       "type_only": true
     },
     {
-      "id": "src/engine/branches.ts:569:110:type-reference",
+      "id": "src/engine/branches.ts:565:110:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/branches.ts",
+        "line": 565,
+        "column": 110,
+        "sym": "src/engine/branches.ts#branchPackets@565:23"
+      },
+      "to": {
+        "sym": "src/execution.ts#NormifyToolExecution@9:18",
+        "file": "src/execution.ts",
+        "line": 9,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/execution.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/branches.ts:569:20:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/branches.ts",
         "line": 569,
-        "column": 110,
-        "sym": "src/engine/branches.ts#branchPackets@569:23"
-      },
-      "to": {
-        "sym": "src/execution.ts#NormifyToolExecution@9:18",
-        "file": "src/execution.ts",
-        "line": 9,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/execution.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/branches.ts:573:20:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/branches.ts",
-        "line": 573,
         "column": 20,
-        "sym": "src/engine/branches.ts#branchPackets@569:23"
+        "sym": "src/engine/branches.ts#branchPackets@565:23"
       },
       "to": {
         "sym": "src/engine/branches.ts#BranchPacket@64:18",
@@ -33227,9 +33223,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/compile.ts#buildProject@168:23",
+        "sym": "src/engine/compile.ts#buildProject@197:23",
         "file": "src/engine/compile.ts",
-        "line": 168,
+        "line": 197,
         "column": 23,
         "state": "indexed"
       },
@@ -33839,12 +33835,12 @@
       "type_only": false
     },
     {
-      "id": "src/engine/compile.ts:2:20:import",
+      "id": "src/engine/compile.ts:2:17:import",
       "kind": "import",
       "from": {
         "file": "src/engine/compile.ts",
         "line": 2,
-        "column": 20,
+        "column": 17,
         "sym": null
       },
       "to": {
@@ -33862,12 +33858,12 @@
       "type_only": false
     },
     {
-      "id": "src/engine/compile.ts:2:28:import",
+      "id": "src/engine/compile.ts:2:25:import",
       "kind": "import",
       "from": {
         "file": "src/engine/compile.ts",
         "line": 2,
-        "column": 28,
+        "column": 25,
         "sym": null
       },
       "to": {
@@ -33885,12 +33881,12 @@
       "type_only": false
     },
     {
-      "id": "src/engine/compile.ts:2:32:import",
+      "id": "src/engine/compile.ts:2:29:import",
       "kind": "import",
       "from": {
         "file": "src/engine/compile.ts",
         "line": 2,
-        "column": 32,
+        "column": 29,
         "sym": null
       },
       "to": {
@@ -34690,128 +34686,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/compile.ts:121:97:type-reference",
+      "id": "src/engine/compile.ts:197:62:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/compile.ts",
-        "line": 121,
-        "column": 97,
-        "sym": "src/engine/compile.ts#publishArtifacts@121:16"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/compile.ts:123:72:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/compile.ts",
-        "line": 123,
-        "column": 72,
-        "sym": "src/engine/compile.ts#publishArtifacts@121:16"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/compile.ts:157:44:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/compile.ts",
-        "line": 157,
-        "column": 44,
-        "sym": "src/engine/compile.ts#readArtifact@157:16"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/compile.ts:157:52:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/compile.ts",
-        "line": 157,
-        "column": 52,
-        "sym": "src/engine/compile.ts#readArtifact@157:16"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/compile.ts:162:23:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/compile.ts",
-        "line": 162,
-        "column": 23,
-        "sym": "src/engine/compile.ts#readArtifact@157:16"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/compile.ts:168:62:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/compile.ts",
-        "line": 168,
+        "line": 197,
         "column": 62,
-        "sym": "src/engine/compile.ts#buildProject@168:23"
+        "sym": "src/engine/compile.ts#buildProject@197:23"
       },
       "to": {
         "sym": "src/engine/compile.ts#BuildOptions@11:18",
@@ -34828,13 +34709,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/compile.ts:168:77:type-reference",
+      "id": "src/engine/compile.ts:197:77:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/compile.ts",
-        "line": 168,
+        "line": 197,
         "column": 77,
-        "sym": "src/engine/compile.ts#buildProject@168:23"
+        "sym": "src/engine/compile.ts#buildProject@197:23"
       },
       "to": {
         "sym": null,
@@ -34851,13 +34732,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/compile.ts:168:85:type-reference",
+      "id": "src/engine/compile.ts:197:85:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/compile.ts",
-        "line": 168,
+        "line": 197,
         "column": 85,
-        "sym": "src/engine/compile.ts#buildProject@168:23"
+        "sym": "src/engine/compile.ts#buildProject@197:23"
       },
       "to": {
         "sym": "src/engine/compile.ts#BuildOutput@13:18",
@@ -34874,13 +34755,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/compile.ts:200:18:type-reference",
+      "id": "src/engine/compile.ts:229:18:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/compile.ts",
-        "line": 200,
+        "line": 229,
         "column": 18,
-        "sym": "src/engine/compile.ts#buildProject@168:23"
+        "sym": "src/engine/compile.ts#buildProject@197:23"
       },
       "to": {
         "sym": "src/engine/compile.ts#TreeEdge@49:11",
@@ -34897,13 +34778,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/compile.ts:223:20:type-reference",
+      "id": "src/engine/compile.ts:252:20:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/compile.ts",
-        "line": 223,
+        "line": 252,
         "column": 20,
-        "sym": "src/engine/compile.ts#buildProject@168:23"
+        "sym": "src/engine/compile.ts#buildProject@197:23"
       },
       "to": {
         "sym": null,
@@ -34920,13 +34801,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/compile.ts:223:35:type-reference",
+      "id": "src/engine/compile.ts:252:35:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/compile.ts",
-        "line": 223,
+        "line": 252,
         "column": 35,
-        "sym": "src/engine/compile.ts#buildProject@168:23"
+        "sym": "src/engine/compile.ts#buildProject@197:23"
       },
       "to": {
         "sym": "src/engine/compile.ts#ModuleSummary@21:11",
@@ -34943,13 +34824,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/compile.ts:271:21:type-reference",
+      "id": "src/engine/compile.ts:300:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/compile.ts",
-        "line": 271,
+        "line": 300,
         "column": 21,
-        "sym": "src/engine/compile.ts#buildProject@168:23"
+        "sym": "src/engine/compile.ts#buildProject@197:23"
       },
       "to": {
         "sym": null,
@@ -34966,13 +34847,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/compile.ts:272:25:type-reference",
+      "id": "src/engine/compile.ts:301:25:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/compile.ts",
-        "line": 272,
+        "line": 301,
         "column": 25,
-        "sym": "src/engine/compile.ts#buildProject@168:23"
+        "sym": "src/engine/compile.ts#buildProject@197:23"
       },
       "to": {
         "sym": null,
@@ -34989,13 +34870,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/compile.ts:272:40:type-reference",
+      "id": "src/engine/compile.ts:301:40:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/compile.ts",
-        "line": 272,
+        "line": 301,
         "column": 40,
-        "sym": "src/engine/compile.ts#buildProject@168:23"
+        "sym": "src/engine/compile.ts#buildProject@197:23"
       },
       "to": {
         "sym": "src/engine/types.ts#Api@31:18",
@@ -35012,13 +34893,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/compile.ts:273:26:type-reference",
+      "id": "src/engine/compile.ts:302:26:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/compile.ts",
-        "line": 273,
+        "line": 302,
         "column": 26,
-        "sym": "src/engine/compile.ts#buildProject@168:23"
+        "sym": "src/engine/compile.ts#buildProject@197:23"
       },
       "to": {
         "sym": null,
@@ -35035,13 +34916,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/compile.ts:273:41:type-reference",
+      "id": "src/engine/compile.ts:302:41:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/compile.ts",
-        "line": 273,
+        "line": 302,
         "column": 41,
-        "sym": "src/engine/compile.ts#buildProject@168:23"
+        "sym": "src/engine/compile.ts#buildProject@197:23"
       },
       "to": {
         "sym": "src/engine/types.ts#DataType@25:18",
@@ -35058,13 +34939,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/compile.ts:285:20:type-reference",
+      "id": "src/engine/compile.ts:314:20:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/compile.ts",
-        "line": 285,
+        "line": 314,
         "column": 20,
-        "sym": "src/engine/compile.ts#buildProject@168:23"
+        "sym": "src/engine/compile.ts#buildProject@197:23"
       },
       "to": {
         "sym": null,
@@ -35081,13 +34962,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/compile.ts:285:35:type-reference",
+      "id": "src/engine/compile.ts:314:35:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/compile.ts",
-        "line": 285,
+        "line": 314,
         "column": 35,
-        "sym": "src/engine/compile.ts#buildProject@168:23"
+        "sym": "src/engine/compile.ts#buildProject@197:23"
       },
       "to": {
         "sym": "src/engine/types.ts#LayoutData@192:18",
@@ -35104,13 +34985,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/compile.ts:331:31:type-reference",
+      "id": "src/engine/compile.ts:360:31:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/compile.ts",
-        "line": 331,
+        "line": 360,
         "column": 31,
-        "sym": "src/engine/compile.ts#buildProject@168:23"
+        "sym": "src/engine/compile.ts#buildProject@197:23"
       },
       "to": {
         "sym": null,
@@ -35127,13 +35008,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/compile.ts:334:26:type-reference",
+      "id": "src/engine/compile.ts:363:26:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/compile.ts",
-        "line": 334,
+        "line": 363,
         "column": 26,
-        "sym": "src/engine/compile.ts#buildProject@168:23"
+        "sym": "src/engine/compile.ts#buildProject@197:23"
       },
       "to": {
         "sym": null,
@@ -40978,9 +40859,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/compile.ts#buildProject@168:23",
+        "sym": "src/engine/compile.ts#buildProject@197:23",
         "file": "src/engine/compile.ts",
-        "line": 168,
+        "line": 197,
         "column": 23,
         "state": "indexed"
       },
@@ -50776,9 +50657,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/compile.ts#buildProject@168:23",
+        "sym": "src/engine/compile.ts#buildProject@197:23",
         "file": "src/engine/compile.ts",
-        "line": 168,
+        "line": 197,
         "column": 23,
         "state": "indexed"
       },
@@ -50937,9 +50818,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/branches.ts#validateBranchPlan@400:23",
+        "sym": "src/engine/branches.ts#validateBranchPlan@396:23",
         "file": "src/engine/branches.ts",
-        "line": 400,
+        "line": 396,
         "column": 23,
         "state": "indexed"
       },
@@ -50960,9 +50841,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/branches.ts#putBranchPlan@406:23",
+        "sym": "src/engine/branches.ts#putBranchPlan@402:23",
         "file": "src/engine/branches.ts",
-        "line": 406,
+        "line": 402,
         "column": 23,
         "state": "indexed"
       },
@@ -50983,9 +50864,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/branches.ts#deleteBranchPlan@457:23",
+        "sym": "src/engine/branches.ts#deleteBranchPlan@453:23",
         "file": "src/engine/branches.ts",
-        "line": 457,
+        "line": 453,
         "column": 23,
         "state": "indexed"
       },
@@ -51006,9 +50887,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/branches.ts#suggestBranchPlan@496:23",
+        "sym": "src/engine/branches.ts#suggestBranchPlan@492:23",
         "file": "src/engine/branches.ts",
-        "line": 496,
+        "line": 492,
         "column": 23,
         "state": "indexed"
       },
@@ -51029,9 +50910,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/branches.ts#branchPacket@559:23",
+        "sym": "src/engine/branches.ts#branchPacket@555:23",
         "file": "src/engine/branches.ts",
-        "line": 559,
+        "line": 555,
         "column": 23,
         "state": "indexed"
       },
@@ -51052,9 +50933,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/branches.ts#branchPackets@569:23",
+        "sym": "src/engine/branches.ts#branchPackets@565:23",
         "file": "src/engine/branches.ts",
-        "line": 569,
+        "line": 565,
         "column": 23,
         "state": "indexed"
       },
@@ -51627,9 +51508,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/branches.ts#branchPackets@569:23",
+        "sym": "src/engine/branches.ts#branchPackets@565:23",
         "file": "src/engine/branches.ts",
-        "line": 569,
+        "line": 565,
         "column": 23,
         "state": "indexed"
       },
@@ -52938,9 +52819,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/branches.ts#validateBranchPlan@400:23",
+        "sym": "src/engine/branches.ts#validateBranchPlan@396:23",
         "file": "src/engine/branches.ts",
-        "line": 400,
+        "line": 396,
         "column": 23,
         "state": "indexed"
       },
@@ -52961,9 +52842,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/branches.ts#putBranchPlan@406:23",
+        "sym": "src/engine/branches.ts#putBranchPlan@402:23",
         "file": "src/engine/branches.ts",
-        "line": 406,
+        "line": 402,
         "column": 23,
         "state": "indexed"
       },
@@ -52984,9 +52865,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/branches.ts#deleteBranchPlan@457:23",
+        "sym": "src/engine/branches.ts#deleteBranchPlan@453:23",
         "file": "src/engine/branches.ts",
-        "line": 457,
+        "line": 453,
         "column": 23,
         "state": "indexed"
       },
@@ -53007,9 +52888,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/branches.ts#suggestBranchPlan@496:23",
+        "sym": "src/engine/branches.ts#suggestBranchPlan@492:23",
         "file": "src/engine/branches.ts",
-        "line": 496,
+        "line": 492,
         "column": 23,
         "state": "indexed"
       },
@@ -53030,9 +52911,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/branches.ts#branchPacket@559:23",
+        "sym": "src/engine/branches.ts#branchPacket@555:23",
         "file": "src/engine/branches.ts",
-        "line": 559,
+        "line": 555,
         "column": 23,
         "state": "indexed"
       },
@@ -55307,9 +55188,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/compile.ts#buildProject@168:23",
+        "sym": "src/engine/compile.ts#buildProject@197:23",
         "file": "src/engine/compile.ts",
-        "line": 168,
+        "line": 197,
         "column": 23,
         "state": "indexed"
       },

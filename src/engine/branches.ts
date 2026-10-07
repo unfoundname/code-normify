@@ -249,18 +249,14 @@ function hasBaselineFile(files: Map<string, { mode: string; size: number }> | nu
  * 路径尚不存在时不在此处判死——计划态模块的源码目录本来就可能还没落地，工具也不执行命令；
  * 存在性不在这条契约里，形态才是。
  */
-async function assertCommandCwd(repoRoot: string, cwd: string): Promise<void> {
+async function assertCommandCwd(repoRoot: string, cwd: string) {
     const abs = await boundPath(repoRoot, cwd);
-    let info;
-    try {
-        info = await lstat(abs);
-    }
-    catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT')
-            return;
+    const info = await lstat(abs).catch(error => {
+        if ((error as { code?: string }).code === 'ENOENT')
+            return null;
         throw error;
-    }
-    if (!info.isDirectory())
+    });
+    if (info !== null && !info.isDirectory())
         throw new WorkspaceError('branch/cwd-not-directory', 'verification.commands[].cwd 必须是绑定仓库内的相对目录（实际不是目录）：' + cwd);
 }
 function uniqueIds(items: { id: string }[], errors: Diagnostic[], field: string, unit: string): void {

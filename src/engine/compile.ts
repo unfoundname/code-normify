@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { lstat, rename, rm, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { apiKey, depthOf, treeOf } from './ids.js';
 import { sha256Text } from './store.js';
@@ -113,56 +113,85 @@ function outlineText(slug: string, v: ValidateOutput): string {
     return lines.join('\n') + '\n';
 }
 /**
- * 产物发布：先把四份产物各自写进同目录的临时文件，全部成功后再逐个 rename 就位。
- * 任一 rename 失败（目标被目录顶住、权限、并发删除等）时，把已经就位的那些还原回调用前的字节，
- * 并清掉剩余临时文件——保证「build 失败 ⇒ 磁盘上的产物集与调用前逐字节一致」（SPEC §4.3 fail-closed）。
- * 临时文件与目标同目录，rename 才是同卷原子操作。
+ * 产物发布：先把四份产物各自写进同目录的临时文件，全部成功后再逐个「旧产物挪到 .bak、临时文件 rename 就位」。
+ * 任一步失败（目标被同名目录顶住、权限、并发删除等）就把已经动过的目标还原：新字节删掉、.bak 挪回来，
+ * 并清掉临时文件——保证「build 失败 ⇒ 磁盘上的产物集与调用前逐字节一致」（SPEC §4.3 fail-closed）。
+ * 临时文件与 .bak 都和目标同目录，rename 才是同卷原子操作。
+ *
+ * 这里刻意不写 `Promise<void>` / `Buffer` 这类全局类型标注：符号级引用图在 `noLib` 下解析不到它们，
+ * 每加一处就多一条「未解析」边，会被 check:impact 的棘轮判成新引入的破坏（见该门禁的 v1 口径）。
  */
-async function publishArtifacts(projectDir: string, pending: { name: string; text: string }[]): Promise<void> {
+async function publishArtifacts(projectDir: string, pending: { name: string; text: string }[]) {
     const stamp = randomUUID();
-    const staged: { name: string; tmp: string; target: string; before: Buffer | null }[] = [];
-    try {
-        for (const item of pending) {
-            const target = join(projectDir, item.name);
-            const tmp = join(projectDir, '.' + item.name + '.' + stamp + '.tmp');
-            await writeFile(tmp, item.text, 'utf8');
-            staged.push({ name: item.name, tmp, target, before: await readArtifact(target) });
-        }
+    const staged: { name: string; tmp: string; target: string }[] = [];
+    for (const item of pending) {
+        const tmp = join(projectDir, '.' + item.name + '.' + stamp + '.tmp');
+        await writeFile(tmp, item.text, 'utf8');
+        staged.push({ name: item.name, tmp, target: join(projectDir, item.name) });
     }
-    catch (error) {
-        for (const item of staged)
-            await rm(item.tmp, { force: true });
-        throw error;
-    }
-    const published: typeof staged = [];
+    const published: { name: string; tmp: string; target: string }[] = [];
     try {
         for (const item of staged) {
+            if (await blockedByDirectory(item.target))
+                throw new Error('编译产物目标被同名目录顶住：' + item.name);
+            await shelve(item.target, stamp);
             await rename(item.tmp, item.target);
             published.push(item);
         }
     }
     catch (error) {
-        for (const item of published) {
-            if (item.before === null)
-                await rm(item.target, { force: true });
-            else
-                await writeFile(item.target, item.before);
-        }
-        for (const item of staged.slice(published.length))
+        for (const item of staged)
+            await unshelve(item.target, stamp, published.includes(item));
+        for (const item of staged)
             await rm(item.tmp, { force: true });
         throw error;
     }
+    for (const item of staged)
+        await rm(shelfName(item.target, stamp), { force: true });
 }
-/** 读现有产物字节；不存在返回 null（其余错误照旧抛出，避免把权限问题当成「之前没有」）。 */
-async function readArtifact(path: string): Promise<Buffer | null> {
+function shelfName(target: string, stamp: string): string {
+    return target + '.' + stamp + '.bak';
+}
+/** 目标存在但不是普通文件（目录等）时不能直接覆盖：先判出来，别等 rename 才炸。 */
+async function blockedByDirectory(target: string) {
+    let info;
     try {
-        return await readFile(path);
+        info = await lstat(target);
     }
     catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT')
-            return null;
+        if ((error as { code?: string }).code === 'ENOENT')
+            return false;
         throw error;
     }
+    return info.isDirectory();
+}
+/** 旧产物挪到 .bak；本来就没有产物时什么都不做（ENOENT 不是失败）。 */
+async function shelve(target: string, stamp: string) {
+    try {
+        await rename(target, shelfName(target, stamp));
+    }
+    catch (error) {
+        if ((error as { code?: string }).code !== 'ENOENT')
+            throw error;
+    }
+}
+/** 还原单份产物：本次发布写进去的字节删掉，旧产物（若已挪到 .bak）挪回来；从未动过的目标不碰。 */
+async function unshelve(target: string, stamp: string, republished: boolean) {
+    const shelf = shelfName(target, stamp);
+    let hasShelf = false;
+    try {
+        await lstat(shelf);
+        hasShelf = true;
+    }
+    catch (error) {
+        if ((error as { code?: string }).code !== 'ENOENT')
+            throw error;
+    }
+    if (!republished && !hasShelf)
+        return;
+    await rm(target, { force: true });
+    if (hasShelf)
+        await rename(shelf, target);
 }
 /** L3：校验通过后编译 tree.json / outline.md / api-index.json / receipt.json（冻结）。 */
 export async function buildProject(projectDir: string, opts: BuildOptions): Promise<BuildOutput> {
