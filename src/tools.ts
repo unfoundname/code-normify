@@ -9,7 +9,7 @@ import type { ErrorObject } from 'ajv';
 import { DEP_KINDS, PROTOCOLS } from './engine/types.js';
 import { l1Validate } from './engine/frontmatter.js';
 import { apiKey, isValidId, slugify, splitId } from './engine/ids.js';
-import { NormifyError, deleteModuleTree, fingerprintOf, gitChangedFiles, listProjects, loadAllModules, promoteModule, resolveProject, writeModuleFile } from './engine/store.js';
+import { NormifyError, deleteModuleTree, fingerprintOf, gitChangedFiles, listProjects, loadAllModules, moduleFileLayoutConflict, moduleFileLayoutConflictDiag, promoteModule, resolveProject, writeModuleFile } from './engine/store.js';
 import { LAYOUT_SCHEMA_VERSION, deleteLayoutFile, edgeKey, l1ValidateLayout, layoutRelPath, listLayoutFiles, loadLayoutFile, writeLayoutFile } from './engine/layout.js';
 import { batchWrite, checkProposal, moveModuleTree, patchModule, previewModuleFile, refreshModules } from './engine/edit.js';
 import { POLICY_SCHEMA_VERSION, defaultPolicyTemplate, evaluatePolicy, l1ValidatePolicy, loadPolicyFile, policyReference, writePolicyFile } from './engine/policy.js';
@@ -852,6 +852,14 @@ export function createNormifyTools(env: ToolEnv, getHelpCatalog?: () => readonly
         }
         if (args.dry_run === true) {
             const all: Module[] = (await loadAllModules(proj.dir)).files.map(f => f.module);
+            // 身份碰撞必须在 dry-run 就说：否则「dry_run 通过」是在为一次会顶替容器根模块文件的写入背书
+            // （末段 `index` 的叶子与父容器映射到同一份文件，见 moduleFileOccupant 的注释）。
+            const loadedFiles = (await loadAllModules(proj.dir)).files;
+            const conflict = moduleFileLayoutConflict(proj.dir, module, loadedFiles);
+            if (conflict !== null) {
+                const collision = moduleFileLayoutConflictDiag(proj.dir, module, conflict);
+                return { ok: false, dry_run: true, errors: [collision], warnings: warnings, summary: '1 error（未写入）' };
+            }
             return {
                 ok: true,
                 dry_run: true,

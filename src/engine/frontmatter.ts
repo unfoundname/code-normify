@@ -1,4 +1,4 @@
-import { parse as yamlParse, YAMLParseError } from 'yaml';
+import { isAlias, isScalar, LineCounter, parse as yamlParse, parseDocument, YAMLParseError } from 'yaml';
 import { DEP_KINDS, MODULE_STATES, PROTOCOLS } from './types.js';
 import type { Api, DataType, Dep, Diagnostic, LocalizedText, Module, ModuleState, SourceRef } from './types.js';
 import { deriveParent, isValidId } from './ids.js';
@@ -358,6 +358,71 @@ export function l1Validate(data: unknown, where: string, options: { requireBilin
     }
     return { module, errors, warnings };
 }
+/**
+ * SPEC §3.3「严格 YAML 子集」的**禁用项**检查（返回第一条违规，含精确行号）。
+ *
+ * 为什么必须单独查：`yaml` 是**完整**解析器，锚点/别名与 `|` 块标量在它眼里都是合法 YAML，
+ * 于是「规范写了禁用」而链路上**没有任何执行点**——实测 `source: &empty []`、
+ * `description: {zh: |}` 都得到 `moduleParsed: true、errors: []、warnings: []`。
+ * 判据取自解析器的 **CST**（不是正则）：`*` 出现在双引号字符串里只是普通字符，
+ * 而在 CST 里是 `Alias` 节点——正则会把 `"$ref":"urn:…*"` 这类合法值误判。
+ *
+ * 覆盖 SPEC §3.3 列出的禁用项里**可无争议落地**的四条：
+ *   ① 锚点（`&name`）/ ② 别名（`*name`）；③ `|` 块标量（含 `|-`/`|+`/`|2` 等修饰）；
+ *   ④ TAB 缩进（解析器会拒，但它把原因报成 "Map keys must be unique"，行号也常指错行）；
+ *   ⑤ 非 UTF-8（调用方按 utf8 解码时会产生 U+FFFD 替换字符——那种文本按 utf8 硬解会静默漏字段）。
+ * **「复杂 flow」不在本函数里**：SPEC 只允许 `{zh, en}` 内联映射，但本仓 examples 里
+ * `types[].schema` 合法地使用单行内联 JSON Schema（`{"type":"object","additionalProperties":false,…}`），
+ * 逐字执行会把这些**原本合法**的模块判红。要不要收窄由 SPEC 措辞先写准（见交付报告）。
+ */
+function yamlSubsetViolation(text: string): { kind: string; line: number; message: string } | null {
+    const lines = text.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (/^[ ]*\t/.test(line))
+            return { kind: 'tab-indent', line: i + 1, message: 'frontmatter 禁用 TAB 缩进（规范 §3.3）' };
+        if (line.includes('\uFFFD'))
+            return { kind: 'non-utf8', line: i + 1, message: 'frontmatter 不是合法 UTF-8（出现替换字符 U+FFFD，规范 §3.3 只接受 UTF-8）' };
+    }
+    let doc;
+    try {
+        doc = parseDocument(text, { uniqueKeys: true });
+    }
+    catch {
+        return null; // 语法本身就不合法：交给下面的 yamlParse 报统一口径的解析错误
+    }
+    if (doc.errors.length > 0)
+        return null; // 同上：不让子集检查抢在语法错误前面报一个更含糊的错
+    const counter = new LineCounter();
+    parseDocument(text, { uniqueKeys: true, lineCounter: counter });
+    const at = (offset: number | undefined): number => (typeof offset === 'number' ? counter.linePos(offset).line : 1);
+    let found: { kind: string; line: number; message: string } | null = null;
+    const visit = (node: unknown): void => {
+        if (found !== null || node === null || typeof node !== 'object')
+            return;
+        const n = node as { anchor?: unknown; range?: [number, number, number]; items?: unknown[]; value?: unknown; key?: unknown };
+        if (isAlias(n))
+            return void (found = { kind: 'alias', line: at(n.range?.[0]), message: 'frontmatter 禁用别名 `*name`（规范 §3.3：锚点/别名一律禁用）' });
+        if (n.anchor !== undefined)
+            return void (found = { kind: 'anchor', line: at(n.range?.[0]), message: 'frontmatter 禁用锚点 `&name`（规范 §3.3：锚点/别名一律禁用）' });
+        if (isScalar(n) && n.type === 'BLOCK_LITERAL')
+            return void (found = { kind: 'block-literal', line: at(n.range?.[0]), message: 'frontmatter 禁用 `|` 块标量（规范 §3.3 只允许 `>` 折叠块）' });
+        const children: unknown[] = [];
+        if (Array.isArray(n.items))
+            children.push(...n.items);
+        if (n.value !== undefined)
+            children.push(n.value);
+        if (n.key !== undefined)
+            children.push(n.key);
+        for (const child of children) {
+            visit(child);
+            if (found !== null)
+                return;
+        }
+    };
+    visit(doc.contents);
+    return found;
+}
 /** 解析模块文件文本：frontmatter（严格子集 YAML）+ 正文。 */
 export function parseModuleText(text: string, where: string, options: { requireBilingual?: boolean } = {}): {
     module: Module | null;
@@ -391,6 +456,17 @@ export function parseModuleText(text: string, where: string, options: { requireB
     }
     const yamlText = lines.slice(1, close).join('\n');
     const body = lines.slice(close + 1).join('\n').replace(/^\n+/, '');
+    // 严格子集：先查 SPEC §3.3 的禁用项（锚点/别名、`|` 块、TAB 缩进、非 UTF-8），再交给完整解析器。
+    // 顺序有讲究：这些构造在完整解析器里**都是合法 YAML**，解析成功并不能证明「符合子集」。
+    const subset = yamlSubsetViolation(yamlText);
+    if (subset !== null) {
+        return {
+            module: null,
+            body: '',
+            errors: [diag('error', 'input/yaml-parse', 'frontmatter YAML 解析失败（第 ' + subset.line + ' 行）：' + subset.message, { path: where }, { clause: 'SPEC §3.3', kind: subset.kind }, ['改用规范 §3.3 允许的写法：普通标量 / {zh, en} 内联映射 / 数组 / > 折叠块 / 双引号字符串'])],
+            warnings: [],
+        };
+    }
     let data: unknown;
     try {
         data = yamlParse(yamlText, { uniqueKeys: true });

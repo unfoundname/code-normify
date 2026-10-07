@@ -536,6 +536,53 @@ function forEachMarkdownLink(ctx, rel, visit, options) {
 }
 
 // ---- package.json 目标收集（原 check-references.cjs:1494-1516）----
+/**
+ * 收集 `exports` 里的字符串叶子，**保留结构身份**。
+ *
+ * npm / Node 的 `exports` 有两级语义，**键的形状**决定它是哪一级：
+ *   · 以 `.` 开头的键是**子路径**（Node 运行时按它解析入口 ⇒ 运行时位）；
+ *   · 其余键是**条件**（`types` / `import` / `require` / `default` / `node` …）；
+ *   · 一个对象里只要出现以 `.` 开头的键，它就是**子路径映射**；否则是**条件映射**（Node 的算法就这一条）。
+ * 老实现把每一层都用 `.` 拼成一个字符串键，于是两种结构被压成同一个 field：
+ *   `{"./artifact.types": "./runtime.ts"}`（运行时子路径）与 `{"./artifact": {"types": "./runtime.ts"}}`
+ *   （声明位）都变成 `./artifact.types`；条件层级同样被抹平（`{"types": {"import": …}}` 只剩末段 `import`）。
+ * 判据从这里就被污染了：下游（refs-query 的运行时/类型拆分）只能看到一个既分不清子路径、又丢了层级的名字。
+ *
+ * 返回 `[{ subpath, conditions, target }]`：
+ *   subpath    子路径键（顶层是裸字符串 / 条件映射时为 `null`）；
+ *   conditions 该叶子沿途经过的**条件名**，按层级从外到内；
+ *   target     字段值（`package.json` 原文里的字符串，未归一化）。
+ */
+function collectExportEntries(exportsField, subpath = null, conditions = [], out = []) {
+  if (typeof exportsField === 'string') {
+    out.push({ subpath, conditions: [...conditions], target: exportsField });
+    return out;
+  }
+  if (Array.isArray(exportsField)) {
+    for (const v of exportsField) collectExportEntries(v, subpath, conditions, out);
+    return out;
+  }
+  if (exportsField && typeof exportsField === 'object') {
+    const isSubpathMap = Object.keys(exportsField).some((k) => k.startsWith('.'));
+    for (const [k, v] of Object.entries(exportsField)) {
+      if (isSubpathMap) collectExportEntries(v, k, conditions, out);
+      else collectExportEntries(v, subpath, [...conditions, k], out);
+    }
+  }
+  return out;
+}
+
+/**
+ * 结构化的 exports 叶子 → 产物里 `field` 字符串。**必须可反解**（反解在 scripts/refs-query.cjs）：
+ *   `exports["<子路径>"]` 表示子路径（**无条件** ⇒ 它是运行时入口，不是任何字段名）；
+ *   其后每个 `.` 段才是**条件**，按层级从外到内：`exports["./engine/*"].types` / `exports.types`。
+ * 顶层是裸字符串或条件映射时没有子路径，写成 `exports["."]` / `exports.<cond>`。
+ */
+function renderExportField(entry) {
+  const head = entry.subpath === null ? 'exports' : `exports[${JSON.stringify(entry.subpath)}]`;
+  return head + entry.conditions.map((c) => `.${c}`).join('');
+}
+
 /** 收集 package.json 里所有指向仓库内路径的字段值（main/types/module/browser/bin/exports/files）。 */
 function collectPackageFieldTargets(pkg) {
   const fieldTargets = [];
@@ -546,18 +593,11 @@ function collectPackageFieldTargets(pkg) {
   else if (pkg.bin && typeof pkg.bin === 'object') {
     for (const [name, target] of Object.entries(pkg.bin)) fieldTargets.push({ field: `bin.${name}`, target });
   }
-  for (const [key, value] of collectExportStrings(pkg.exports)) fieldTargets.push({ field: `exports["${key}"]`, target: value });
+  // 裸字符串 `exports` 就是 `"."` 子路径（与 `{".": "…"}` 写成同一个 field）。
+  const exportEntries = collectExportEntries(pkg.exports, typeof pkg.exports === 'string' ? '.' : null, [], []);
+  for (const entry of exportEntries) fieldTargets.push({ field: renderExportField(entry), target: entry.target });
   if (Array.isArray(pkg.files)) for (const entry of pkg.files) fieldTargets.push({ field: 'files', target: entry });
   return fieldTargets;
-}
-
-/** 收集 exports 里所有字符串叶子（含 `*` 通配），键为子路径 key。 */
-function collectExportStrings(exportsField, key = '.', out = []) {
-  if (typeof exportsField === 'string') out.push([key, exportsField]);
-  else if (exportsField && typeof exportsField === 'object') {
-    for (const [k, v] of Object.entries(exportsField)) collectExportStrings(v, key === '.' ? k : `${key}.${k}`, out);
-  }
-  return out;
 }
 
 /** 在 package.json 原文里定位某个 JSON 键的行/列（找不到返回 null）。 */
@@ -1379,7 +1419,11 @@ const SYMBOL_REASONS = {
  *   · 与 `meta.analysis.typescript_version` **同一份安装**（路径由 `require.resolve('typescript')` 而来），
  *     版本、文件数、名字总数与名字表的 `sha256` 摘要都落进产物（可追溯、可复核）；
  *   · 进程内按「typescript 版本 + 解析到的入口路径」缓存一次（改动记录生成器会对每个提交重建图，
- *     不缓存就会把这份 240ms 的解析乘以提交数）。
+ *     不缓存就会把这份解析的代价乘以提交数）。
+ *     **耗时是活值 —— 取数、不复述**：它随机器与负载变，现值 = 单独计时本函数一次（`performance.now()`
+ *     包住「取全套 `lib.*.d.ts` 的顶层声明名」这段），或读 `meta.symbol_graph.lib_globals` 的自证回显；
+ *     **留痕（时点 = 第五轮总审批开工版 `9e6a077`；只作留痕，不是现值 —— 旧值不删）**：原注释在此写死
+ *     「这份 **240ms** 的解析」，那是一个时点的实测值，写死必然过期。
  *
  * **取全套 lib 而不是 tsconfig 的 `lib` 字段**（有意的取舍，如实记账）：图的 Program 口径刻意不由
  * tsconfig 决定（见 `symbolCompilerOptions`），名表也跟着以「已装 typescript 同源」为准 ⇒ 本仓
@@ -2371,7 +2415,8 @@ module.exports = {
   forEachMarkdownLink,
   // ---- package.json / CI 目标 ----
   collectPackageFieldTargets,
-  collectExportStrings,
+  collectExportEntries,
+  renderExportField,
   positionOfJsonKey,
   extractNodeTargets,
   collectWorkflowRunLines,

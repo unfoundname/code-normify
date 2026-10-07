@@ -71,8 +71,11 @@ function usage() {
     '                          人类可读输出在被截断时另打一行 ⚠ 提示；没截断 ⇒ truncated=false，此时 closure 按图产物已完整展开。',
     '                          档内另有正交标注 type_only（**不是第四档**），判据是**可达性**：在「目标 ∪ 闭包」内只沿',
     '                          **运行时边**（import / export-from / require / dynamic-import / ci-target，以及符号级边；',
-    '                          package-field **按字段再判**：`types` / `exports[…].types` 是**声明入口**（只有类型检查器读它，',
+    '                          package-field **按字段再判**：`types` / `exports` 条件链里出现过 `types` 的（如',
+    '                          `exports["./x"].types`、`exports["./x"].types.import`）是**声明入口**（只有类型检查器读它，',
     '                          Node 不加载、npm 不执行）⇒ **不算**运行时边，其余 package-field 字段照算；',
+    '                          **子路径本身不是字段名**——`exports["./artifact.types"]`（子路径恰好叫 ./artifact.types）',
+    '                          在 Node 里是**运行时入口**，不算声明位；',
     '                          type_only=true 的纯类型语句与 markdown-link / anchor 这类纯文字引用不算）走，',
     '                          从这个文件**能否到达目标**：到不了 ⇒ 给出**有边界**的「仅类型级影响」标注（闭包按图产物',
     '                          **全深度展开**，不受 --depth 截断影响，但产物之外 / 未统计到的路径仍可能触及目标，标注里',
@@ -933,25 +936,34 @@ const RUNTIME_EDGE_POLICY = new Map([
 ]);
 
 /**
- * `package-field` 边的**字段叶子名**：`exports[…]["…"]` 取子路径键的最后一段，其余字段取第一个 `.` 之前
- * 的那一段。例：`types` → `types`；`exports["types"]` → `types`；`exports["./engine/*.types"]` → `types`；
- * `bin.normify-mcp` → `bin`；`scripts["test"]` → `scripts`。
- * 口径来自产物里 `field` 的构造（`collectPackageFieldTargets` + `collectExportStrings`），是机器可判的字符串。
+ * `package-field` 边的**条件链**（字段名从外到内逐层）。
+ *
+ * 口径来自产物里 `field` 的构造（`scripts/reference-graph-core.cjs` 的 `collectExportEntries` +
+ * `renderExportField`），是机器可判的字符串；**exports 的结构身份必须在这里被还原**：
+ *   · `exports["<子路径>"]` 里的子路径是 Node 的**运行时入口**，不是字段名 ⇒ 它**不产生条件段**
+ *     （`exports["./artifact.types"]` 是「子路径恰好叫 ./artifact.types」的运行时映射，不是 types 条件）；
+ *   · `exports` 之后的每个 `.` 段才是**条件**（`types` / `import` / `require` / `default` / `node` …），按层级从外到内。
+ * 例：`exports["./engine/*"].types` → `['types']`；`exports.types` → `['types']`；
+ *     `exports["./artifact"].types.import` → `['types','import']`；`exports["./artifact.types"]` → `[]`；
+ *     `types` → `['types']`；`bin.normify-mcp` → `['bin']`；`scripts["test"]` → `['scripts["test"]']`。
+ * 取**整条链**而不是末段：`{"types": {"import": …}}` 只有在 `types` 条件成立时才继续匹配 `import`，
+ * 末段是 `import` 但整条链仍然是声明位。
  */
-function packageFieldLeaf(field) {
-  if (typeof field !== 'string') return '';
-  const exportMatch = /^exports\["([\s\S]*)"\]$/.exec(field);
-  const key = exportMatch ? exportMatch[1] : field;
-  const tail = key.split('.').pop();
-  return exportMatch ? tail : key.split('.')[0];
+function packageFieldConditions(field) {
+  if (typeof field !== 'string') return [];
+  if (field === 'exports') return [];
+  if (field.startsWith('exports.')) return field.slice('exports.'.length).split('.');
+  const exportMatch = /^exports\["[\s\S]*"\]([\s\S]*)$/.exec(field);
+  if (exportMatch) return exportMatch[1] === '' ? [] : exportMatch[1].slice(1).split('.');
+  return [field.split('.')[0]];
 }
 
 /**
- * 「声明入口」字段：`types` 与 `exports` 里的 `types` 条件。**只有类型检查器读它们**——Node 运行时永不加载
- * `.d.ts`，npm / CI 也不执行它，所以它们不构成「运行时可达」。
- * 判据边界（照实说）：只看**字段名**，不看目标扩展名，也不解析条件对象的运行时条件集合——`node` / `import` /
- * `require` / `default` 都算运行时，只有 `types` 不算。反过来，一个叫 `types` 的字段指向 `.js` 仍然是声明位
- * （那是 package.json 写错了，不是本判据该猜的）。
+ * 「声明入口」条件：`types`，以及 `exports` 条件树里出现过 `types` 的那条链。**只有类型检查器读它们**——
+ * Node 运行时永不加载 `.d.ts`，npm / CI 也不执行它，所以它们不构成「运行时可达」。
+ * 判据边界（照实说）：只看**条件名**（含层级链），不看目标扩展名，也不解析条件对象的运行时条件集合——
+ * `node` / `import` / `require` / `default` 都算运行时，只有 `types` 不算。反过来，一个叫 `types` 的字段
+ * 指向 `.js` 仍然是声明位（那是 package.json 写错了，不是本判据该猜的）。
  */
 const DECLARATION_ENTRY_FIELDS = new Set(['types']);
 
@@ -970,7 +982,7 @@ function isRuntimeEdge(edge) {
   }
   if (policy === 'always') return true;
   if (policy === 'never') return false;
-  if (policy === 'field') return !DECLARATION_ENTRY_FIELDS.has(packageFieldLeaf(edge.field));
+  if (policy === 'field') return !packageFieldConditions(edge.field).some((c) => DECLARATION_ENTRY_FIELDS.has(c));
   return edge.type_only !== true;
 }
 

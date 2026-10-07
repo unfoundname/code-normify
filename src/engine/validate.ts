@@ -34,7 +34,11 @@ export interface ValidateOutput {
 }
 /** L2：全项目校验（规范 §5.2 规则全集）。零容忍：任何 error 阻断构建。 */
 export async function validateProject(projectDir: string, opts: ValidateOptions): Promise<ValidateOutput> {
-    const loaded = await loadAllModules(projectDir, { requireBilingual: opts.requireBilingual });
+    // `surfaceDirReadErrors`：`modules/` 子树里**读不了**的目录（EACCES 等）必须显式浮出。
+    // 历史形状是 `walk` 对所有 `readdir` 失败一律静默跳过，于是「权限失败」与「目录不存在」不可区分：
+    // 漏扫整棵子树之后本函数照样返回 `ok: true`（fail-open）。**只在本路径**打开（受管 service 的写路径
+    // 另有更早的检查，沿用 `loadAllModules` 的默认行为，语义不变）；「不存在」仍按原语义（不算错误）。
+    const loaded = await loadAllModules(projectDir, { requireBilingual: opts.requireBilingual, surfaceDirReadErrors: true });
     const errors: Diagnostic[] = loaded.errors;
     const warnings: Diagnostic[] = loaded.warnings;
     // 双语放宽**不在这里**做（这里曾按码降级、把中文侧错误一起吞掉，见本文件顶部留痕）：

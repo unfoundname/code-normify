@@ -426,7 +426,11 @@ const shortHash = (commit) => (commit ? commit.slice(0, 7) : 'unknown');
  * 两者 kind 不同 ⇒ 判不出重复；再碰上裸 `writeFileSync`（无 `wx`）就是**静默互相覆盖**——与
  * `ledger/change-log/README.md`「短哈希避免同一秒内两次写入撞名」那句明文承诺直接冲突。
  * kind 本来就是幂等键的一半，名称里就必须有它。（`--commit` 的记录名**一个字符都不变**：
- * 已落盘的 96 条全是 commit 记录，逐条可复核性、文件名、README 里的示例 `…-ed404e5.json` 都不动。）
+ * 已落盘的记录全是 commit 记录，逐条可复核性、文件名、README 里的示例 `…-ed404e5.json` 都不动。
+ * **条数是活值 —— 取数、不复述**：现值 = `node scripts/generate-change-log.cjs --check` 末行
+ * `（N/M 条）` 的分母，或 `(git ls-files "ledger/change-log/*.json" | Measure-Object).Count`；
+ * **留痕（时点 = 第五轮总审批开工版 `9e6a077`；只作留痕，不是现值 —— 旧值不删）**：原注释在此写死
+ * 「已落盘的 **96** 条」，该时点实测实为 **97**。）
  */
 function recordFileName(createdAt, commit, kind) {
   const suffix = kind === 'index' ? '-index' : '';

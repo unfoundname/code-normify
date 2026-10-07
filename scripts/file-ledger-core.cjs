@@ -83,6 +83,125 @@ const foldCase = (p) => (process.platform === 'win32' ? p.toLowerCase() : p);
  */
 const normalizeEol = (s) => s.replace(/\r\n/g, '\n');
 
+/**
+ * 执行 git，**不抛**：返回 `{ ok: true, out }` 或 `{ ok: false, status, message }`。
+ * `status` 是子进程退出码（git 自己给出的裁决），进程根本没起来（ENOENT 等）时为 null——
+ * 这两类必须分开：`status === 1` 是「git 成功求值、答案是：没有这个东西」，null / 128 是「拿不到判据」。
+ */
+function gitTry(root, args) {
+  try {
+    return { ok: true, out: execGit(root, args) };
+  } catch (err) {
+    return { ok: false, status: typeof err.status === 'number' ? err.status : null, message: err.message };
+  }
+}
+
+/**
+ * 「仓库真的没有 HEAD」的**肯定判据**（三探针**同时**给出肯定证据才算），否则一律 `unavailable`。
+ *
+ * 为什么不能只看 `git rev-parse HEAD^{commit}` 成不成功：**读 HEAD 失败**与**真的没有 HEAD**
+ * 在那里是同一个 `catch`——git 不在 PATH（ENOENT）、`.git/HEAD` 被写坏、对象库读不出，全都会被
+ * 静默当成「仓库尚无提交」，于是棘轮跳过、门禁报绿（实测过的洗白路径）。本仓既定哲学是
+ * fail-closed：**拿不到判据 ⇒ 抛错**（与 scripts/generate-change-log.cjs 的 readParentCommits 同构）。
+ *
+ * 于是把「确实没有提交」拆成三条**互不相同的**探针，缺任何一条判据都不猜：
+ *   ① `git rev-parse --verify --quiet HEAD^{commit}` 必须**失败且退出码恰为 1**
+ *      ——1 = git 求值成功、答案是没有该对象；null（进程没起来）/ 128（fatal：不是仓库、ref 损坏、
+ *      对象库读不出）都是**拿不到判据**，一律 unavailable；
+ *   ② `git symbolic-ref -q HEAD` 必须**成功**——HEAD 本身是个能读出来的符号引用
+ *      （HEAD 裸文件被写坏时它退 128；`.git/refs/heads/<x>` 内容损坏时它也退 128：那是读 HEAD 失败，
+ *      但 ① 的退出码同样是 1，只有本探针能把这两种形状分开）；
+ *   ③ `git rev-list --count --all` 必须**成功且回显恰为 0**——整个仓库一个提交都没有。
+ *      这条是**正向**证据：仓库里但凡有任何提交可达，HEAD 解析不出来就绝不可能是「全新初始化」，
+ *      哪怕 ① 因为注入（假 git / 只拦截单条命令的包装脚本）而回了个 1。
+ *
+ * 已知且**有意**的边界：把 `.git/refs/heads/<当前分支>` 整份删掉、但对象仍在，三条探针会一致指向
+ * 「no-head」——这种状态下 git 自己就报 `your current branch ... does not have any commits yet`，
+ * 即 HEAD 确实是未出生的，与全新初始化同类；对象是否悬空不属于本判据。
+ *
+ * 返回 `{ status: 'ok', sha }` / `{ status: 'no-head' }` / `{ status: 'unavailable', message }`。
+ */
+function readHeadCommit(root) {
+  const rp = gitTry(root, ['rev-parse', '--verify', '--quiet', '--short', 'HEAD^{commit}']);
+  if (rp.ok) {
+    const sha = rp.out.trim();
+    if (sha === '') {
+      return {
+        status: 'unavailable',
+        message:
+          '`git rev-parse --verify --quiet --short HEAD^{commit}` 成功却没有任何回显（既不是判据成立，' +
+          '也不是判据不成立）——不按「仓库尚无提交」放过。',
+      };
+    }
+    return { status: 'ok', sha };
+  }
+  if (rp.status !== 1) {
+    return {
+      status: 'unavailable',
+      message:
+        '`git rev-parse --verify --quiet --short HEAD^{commit}` 失败（' +
+        (rp.status === null ? 'git 进程未能启动/被中断' : `退出码 ${rp.status}`) +
+        `）：${rp.message}\n  退出码 1 = git 求值成功、答案是没有该对象；其它一律是「拿不到判据」。`,
+    };
+  }
+
+  const sym = gitTry(root, ['symbolic-ref', '-q', 'HEAD']);
+  if (!sym.ok || sym.out.trim() === '') {
+    return {
+      status: 'unavailable',
+      message:
+        '`git symbolic-ref -q HEAD` 没能给出 HEAD 的符号引用（' +
+        (sym.ok ? '回显为空' : `退出码 ${sym.status === null ? 'N/A' : sym.status}：${sym.message}`) +
+        '）：HEAD 读不出来（不是未出生），不得按「仓库尚无提交」放过。',
+    };
+  }
+  const headRef = sym.out.trim();
+
+  const cnt = gitTry(root, ['rev-list', '--count', '--all']);
+  if (!cnt.ok) {
+    return {
+      status: 'unavailable',
+      message:
+        `\`git rev-list --count --all\` 失败（退出码 ${cnt.status === null ? 'N/A' : cnt.status}）：${cnt.message}\n` +
+        '  拿不到「整个仓库有没有提交」这条正向判据，不得按「仓库尚无提交」放过。',
+    };
+  }
+  const total = cnt.out.trim();
+  if (!/^\d+$/.test(total)) {
+    return { status: 'unavailable', message: `\`git rev-list --count --all\` 回显不是一个整数：${JSON.stringify(total)}` };
+  }
+  if (total !== '0') {
+    return {
+      status: 'unavailable',
+      message:
+        `HEAD（${headRef}）解析不出提交，但仓库里还有 ${total} 个提交可达（git rev-list --count --all）——` +
+        '这不是「全新初始化 / 仓库尚无提交」，是 HEAD 读取失败。',
+    };
+  }
+  return { status: 'no-head' };
+}
+
+/**
+ * 判据 `rel`（仓库相对 posix 路径）**在 HEAD 里到底有没有**，用 `git ls-tree` 而不是 `git cat-file -e`：
+ * 两者在「路径确实不在 HEAD 里」时都退非 0，但 `ls-tree` 对**判据本身拿不到**（HEAD 解析不出来、
+ * 对象库读不出）是**非 0 退出**，对「HEAD 读得出、就是没有这个条目」是**退 0 + 空回显**——
+ * 于是「不存在」是**肯定结论**而不是「命令失败」的推断。`cat-file -e` 两者都退 128，分不开。
+ *
+ * 返回 `{ status: 'present' | 'absent' | 'unavailable', message? }`。
+ */
+function readHeadPathPresence(root, rel) {
+  const r = gitTry(root, ['ls-tree', '-z', 'HEAD', '--', rel]);
+  if (!r.ok) {
+    return {
+      status: 'unavailable',
+      message:
+        `\`git ls-tree HEAD -- ${rel}\` 失败（退出码 ${r.status === null ? 'N/A' : r.status}）：${r.message}\n` +
+        `  拿不到「${rel} 在不在 HEAD 里」的判据，不得按「HEAD 里没有该条目（首次引入）」放过。`,
+    };
+  }
+  return { status: r.out.length > 0 ? 'present' : 'absent' };
+}
+
 /** 执行 git（直接 exec，无 shell；`-c core.quotePath=false` + `-z` 读，跨平台一致）。 */
 function execGit(root, args) {
   return execFileSync('git', ['-c', 'core.quotePath=false', ...args], {
@@ -452,6 +571,9 @@ module.exports = {
   foldCase,
   normalizeEol,
   execGit,
+  gitTry,
+  readHeadCommit,
+  readHeadPathPresence,
   readIgnoreCase,
   compilePattern,
   patternBreadthError,

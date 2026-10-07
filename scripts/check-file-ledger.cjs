@@ -482,9 +482,12 @@ function createContext(opts) {
     accountedRemovable: [],
     /**
      * accounted 棘轮（与 HEAD 版台账比对）的判定结果。
-     * baseline 四态：'head'（HEAD 里有且版本匹配，正常比对）/ 'absent'（HEAD 里没有该文件 = 首次引入，
-     * 本项跳过）/ 'no-head'（仓库尚无提交）/ 'unparsable'（HEAD 里有但读不出、结构非法或 schema_version
-     * 不匹配 → error，fail-closed）。added 是相对 HEAD 的新增条目。
+     * baseline 五态：'head'（HEAD 里有且版本匹配，正常比对）/ 'absent'（HEAD 读得出、但确实没有该文件 =
+     * 首次引入，本项跳过）/ 'no-head'（三条互不相同的探针都肯定「仓库尚无提交」）/ 'unparsable'（HEAD 里有但
+     * 读不出、结构非法或 schema_version 不匹配 → error，fail-closed）/ 'head-unavailable'（**拿不到 HEAD
+     * 判据**：git 起不来 / 退出码不是明确否定 / HEAD 读不出来 / 仓库仍有提交可达却解析不出 HEAD → error，
+     * fail-closed —— 「读 HEAD 失败」绝不允许被当成「仓库尚无提交」而让棘轮静默跳过）。
+     * added 是相对 HEAD 的新增条目。
      */
     accountedGrowth: {
       baseline: null,
@@ -752,22 +755,25 @@ function readIndexBlob(root, rel) {
  * HEAD 版台账在提交后不可被工作区改动影响（「在 HEAD 里」本身不是绿灯理由，它只是基线的载体）。
  *
  * 返回 { status, ... }：
- *   · 'no-head'         仓库还没有任何提交（连 HEAD 都不存在）——与「HEAD 里没有该文件」同档；
- *   · 'absent'          HEAD 里有仓库，但没有 ledger/<...> 这个条目 → **首次引入的一次性初始化语义**，
- *                       本项跳过且**不许红**（基线由本次提交建立，提交之后任何新增都会被拦住）；
- *   · 'unparsable'      HEAD 里有该文件却读不出 / 不是合法 JSON / schema_version 不匹配 /
- *                       顶层结构非法 → fail-closed（调用方报 error）：删掉、写坏或只升一半版本的
- *                       HEAD 版台账绝不能变成新的洗白路径；
+ *   · 'no-head'          仓库还没有任何提交——**只在 core.readHeadCommit 用三条互不相同的探针肯定地
+ *                        证明「确实没有 HEAD」时才会出现**；读 HEAD 失败一律落到 'head-unavailable'；
+ *   · 'absent'           HEAD 读得出、且 `git ls-tree` 肯定地证明 HEAD 里没有 ledger/<...> 这个条目
+ *                        → **首次引入的一次性初始化语义**，本项跳过且**不许红**（基线由本次提交建立）；
+ *   · 'unparsable'       HEAD 里有该文件却读不出 / 不是合法 JSON / schema_version 不匹配 /
+ *                        顶层结构非法 → fail-closed（调用方报 error）：删掉、写坏或只升一半版本的
+ *                        HEAD 版台账绝不能变成新的洗白路径；
+ *   · 'head-unavailable' **拿不到 HEAD 判据**（git 进程起不来 / 退出码不是「明确否定」/ HEAD 读不出来 /
+ *                        仓库还有提交可达却解析不出 HEAD）→ fail-closed（调用方报 error）：
+ *                        把「读 HEAD 失败」当成「仓库尚无提交」会让棘轮静默跳过、门禁报绿（实测过的
+ *                        洗白路径），与 scripts/generate-change-log.cjs 的 readParentCommits 同构——拿不到判据就抛。
  *   · 'ok'              拿到基线，返回 { ledger, rev }（rev 是短 sha，用于回显）。
  * 只读比对：本函数不改变门禁「判定基准 = git 索引」的既有口径。
  */
 function readHeadLedger(root, rel) {
-  let rev;
-  try {
-    rev = execGit(root, ['rev-parse', '--verify', '--short', 'HEAD^{commit}']).trim();
-  } catch {
-    return { status: 'no-head' };
-  }
+  const head = core.readHeadCommit(root);
+  if (head.status === 'unavailable') return { status: 'head-unavailable', message: head.message };
+  if (head.status === 'no-head') return { status: 'no-head' };
+  const rev = head.sha;
   let buf;
   try {
     buf = execFileSync('git', ['-c', 'core.quotePath=false', 'show', `HEAD:${rel}`], {
@@ -776,15 +782,12 @@ function readHeadLedger(root, rel) {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
   } catch (err) {
-    // 不猜 git 的失败原因：HEAD 里到底有没有这个条目，用 cat-file -e 单独问一次（首次引入与真正的读失败要分开）。
-    let inHead;
-    try {
-      execGit(root, ['cat-file', '-e', `HEAD:${rel}`]);
-      inHead = true;
-    } catch {
-      inHead = false;
-    }
-    if (inHead) return { status: 'unparsable', rev, message: `git show HEAD:${rel} 失败：${err.message}` };
+    // 不猜 git 的失败原因：HEAD 里到底有没有这个条目，用 `git ls-tree` 单独问一次。
+    // 用 ls-tree（而不是 cat-file -e）是有意的：它对「路径确实不在 HEAD 里」退 0 + 空回显（肯定结论），
+    // 对「判据拿不到」（HEAD 解析不出、对象库读不出）退非 0——两者必须分开，否则读失败会被当成首次引入。
+    const presence = core.readHeadPathPresence(root, rel);
+    if (presence.status === 'unavailable') return { status: 'head-unavailable', message: presence.message };
+    if (presence.status === 'present') return { status: 'unparsable', rev, message: `git show HEAD:${rel} 失败：${err.message}` };
     return { status: 'absent', rev };
   }
 
@@ -840,14 +843,14 @@ function readHeadLedger(root, rel) {
  */
 function checkAccountedGrowth(ctx) {
   const result = readHeadLedger(ctx.root, ctx.ledgerRel);
-  // 对外统一口径：'head' / 'absent' / 'no-head' / 'unparsable'。
+  // 对外统一口径：'head' / 'absent' / 'no-head' / 'unparsable' / 'head-unavailable'。
   ctx.accountedGrowth.baseline = result.status === 'ok' ? 'head' : result.status;
   ctx.accountedGrowth.headRev = result.rev || null;
-  if (result.status === 'unparsable') {
+  if (result.status === 'unparsable' || result.status === 'head-unavailable') {
     ctx.accountedGrowth.headErr = result.message;
     return;
   }
-  if (result.status !== 'ok') return; // 'absent' / 'no-head'：首次引入，本项跳过（不许红）
+  if (result.status !== 'ok') return; // 'absent' / 'no-head'：首次引入 / 仓库尚无提交，本项跳过（不许红）
 
   const headSet = new Set(result.accountedPaths);
   ctx.accountedGrowth.headTotal = headSet.size;
@@ -917,7 +920,10 @@ function loadLedger(ctx) {
     );
     // 索引里没有、HEAD 里却有该台账：判定基准退化为工作区副本，accounted 棘轮的索引基线也随之失效。
     // 不静默跳过本项比对，而是把「索引缺台账」这件事本身报成 error（HEAD 版仍可作基线，但基准已退化）。
-    if (readHeadLedger(ctx.root, ctx.ledgerRel).status !== 'absent') {
+    // 判据必须是**肯定的**「HEAD 里确实有它」（'ok' / 'unparsable' 两条都蕴含 HEAD 里存在该条目）：
+    // 把 'head-unavailable' 也算进来会报出一句假话（「HEAD 里仍有」），读不到 HEAD 时不许这么说。
+    const headStatus = readHeadLedger(ctx.root, ctx.ledgerRel).status;
+    if (headStatus === 'ok' || headStatus === 'unparsable') {
       reportLedgerIndexDrift(ctx, `台账已从 git 索引消失（HEAD 里仍有 ${ctx.ledgerRel}）：棘轮的索引基线失效，本次按工作区副本判定。`, {
         type: 'ledger-missing-in-index',
         target: `${ctx.ledgerRel}#missing-in-index`,
@@ -1527,20 +1533,26 @@ function emitViolations(ctx) {
 
   // accounted-growth：相对 HEAD 版台账的新增条目（error，逐条报出）
   const growth = ctx.accountedGrowth;
-  if (growth.baseline === 'unparsable') {
+  if (growth.baseline === 'unparsable' || growth.baseline === 'head-unavailable') {
+    const unavailable = growth.baseline === 'head-unavailable';
     ctx.report({
       check: 'accounted-growth',
       severity: 'error',
-      type: 'accounted-head-baseline-unusable',
+      type: unavailable ? 'accounted-head-unavailable' : 'accounted-head-baseline-unusable',
       file: ledgerRel,
       line: 1,
       column: null,
       target: `${ledgerRel}#head-baseline`,
-      message: `HEAD 版台账不可用作棘轮基线：${growth.headErr}`,
-      hint:
-        `删除、写坏或只升一半版本的 HEAD 版台账绝不能变成洗白路径：用 git show HEAD:${ledgerRel} 确认基线内容并把` +
-        '它修成与本次门禁同版本的完整台账（必须能解析出 accounted 数组），再重跑本门禁。' +
-        '（台账数据 / 门禁 / 生成器 / 豁免清单必须同一次提交一起改，版本不匹配直接 error 是有意的。）',
+      message: unavailable
+        ? `拿不到 HEAD 判据，无法建立棘轮基线：${growth.headErr}`
+        : `HEAD 版台账不可用作棘轮基线：${growth.headErr}`,
+      hint: unavailable
+        ? '「读 HEAD 失败」与「仓库尚无提交」是两件事：后者（全新 git init）才是允许跳过棘轮的一次性初始化状态。' +
+          '这里拿不到任何一条肯定判据，所以 fail-closed。先确认 git 可用、仓库 HEAD 能解析（git rev-parse HEAD）、' +
+          '对象库可读，再重跑本门禁。'
+        : `删除、写坏或只升一半版本的 HEAD 版台账绝不能变成洗白路径：用 git show HEAD:${ledgerRel} 确认基线内容并把` +
+          '它修成与本次门禁同版本的完整台账（必须能解析出 accounted 数组），再重跑本门禁。' +
+          '（台账数据 / 门禁 / 生成器 / 豁免清单必须同一次提交一起改，版本不匹配直接 error 是有意的。）',
     });
   }
   for (const rel of growth.added.slice(0, EVIDENCE_LIMIT)) {
@@ -1887,6 +1899,8 @@ function printHuman(ctx) {
       );
     } else if (g.baseline === 'unparsable') {
       out.push(paint('31', `accounted 棘轮: HEAD 版台账不可用作基线（${g.headErr}）→ error（fail-closed）`));
+    } else if (g.baseline === 'head-unavailable') {
+      out.push(paint('31', `accounted 棘轮: 拿不到 HEAD 判据（${g.headErr}）→ error（fail-closed，不按「仓库尚无提交」跳过）`));
     } else {
       out.push('accounted 棘轮: 基线不可用（台账未成功加载，本项未判定）');
     }

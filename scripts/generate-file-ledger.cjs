@@ -138,29 +138,30 @@ function readGitBlob(root, revColonRel) {
  *   · 'head'       HEAD 里有该文件 → 正常基线（返回 { shortSha }，用于回显）；
  *   · 'index'      HEAD 里没有该文件（首次引入的一次性初始化）→ 退回索引 blob；
  *   · 'worktree'   索引里也没有 → 退回工作区文件（首次引入且还没 git add）；
- *   · 'unreadable' HEAD 里有该文件却读不出 → **fail-closed**（调用方抛错，不静默回退）；
- *   · 'no-head'    仓库尚无提交（哈希不存在）→ 与 'index' 同档（一次性初始化）。
- * 「HEAD 里没有这个条目」用 `git cat-file -e HEAD:<rel>` 单独问一次，不猜 git show 的失败原因。
+ *   · 'unreadable' HEAD 里有该文件却读不出 / **拿不到 HEAD 判据** → **fail-closed**（调用方抛错，不静默回退）；
+ *   · 'no-head'    仓库尚无提交 → 与 'index' 同档（一次性初始化）。
+ * 「HEAD 里没有这个条目」是**肯定结论**，由 `git ls-tree HEAD -- <rel>` 给出（退 0 + 空回显）；
+ * `git cat-file -e` 在「路径不在 HEAD 里」与「判据拿不到」两种情况下都退 128，分不开，因此不再使用。
+ * 「仓库尚无提交」同样是肯定结论，由 core.readHeadCommit 的三探针合取给出（拿不到判据 ⇒ 'unreadable'）。
  */
 function readBaselineLedger(root) {
-  let headSha = null;
-  try {
-    headSha = execGit(root, ['rev-parse', '--verify', '--short', 'HEAD^{commit}']).trim();
-  } catch {
-    headSha = null;
+  const head = core.readHeadCommit(root);
+  if (head.status === 'unavailable') {
+    return {
+      source: 'unreadable',
+      message:
+        `拿不到 HEAD 判据：${head.message}\n` +
+        '  「读 HEAD 失败」与「仓库尚无提交」是两件事，后者才是允许一次性初始化的状态；拿不到判据一律 fail-closed。',
+    };
   }
-  if (headSha === null) return readFromIndexOrWorktree(root, 'no-head');
+  if (head.status === 'no-head') return readFromIndexOrWorktree(root, 'no-head');
+  const headSha = head.sha;
 
   const headBlob = readGitBlob(root, `HEAD:${LEDGER_REL}`);
   if (!headBlob.ok) {
-    let inHead;
-    try {
-      execGit(root, ['cat-file', '-e', `HEAD:${LEDGER_REL}`]);
-      inHead = true;
-    } catch {
-      inHead = false;
-    }
-    if (inHead) return { source: 'unreadable', message: `git show HEAD:${LEDGER_REL} 失败：${headBlob.message}` };
+    const presence = core.readHeadPathPresence(root, LEDGER_REL);
+    if (presence.status === 'unavailable') return { source: 'unreadable', message: presence.message };
+    if (presence.status === 'present') return { source: 'unreadable', message: `git show HEAD:${LEDGER_REL} 失败：${headBlob.message}` };
     return readFromIndexOrWorktree(root, headSha);
   }
   return { source: 'head', text: headBlob.text, shortSha: headSha };

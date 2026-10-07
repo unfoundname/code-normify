@@ -59,27 +59,27 @@
       "positions_basis": "声明与引用位置由 ts.SourceFile.getLineAndCharacterOfPosition 在索引 blob 的 LF 归一化文本上算出（1 基）",
       "declaration_kinds": {
         "class": 2,
-        "function": 213,
-        "interface": 114,
+        "function": 217,
+        "interface": 115,
         "type": 18,
         "variable": 64
       },
       "edge_kinds": {
         "export-from": 70,
-        "import": 482,
-        "type-reference": 797
+        "import": 491,
+        "type-reference": 807
       },
       "edge_status": {
-        "external": 140,
-        "resolved": 999,
-        "unresolved": 210
+        "external": 144,
+        "resolved": 1013,
+        "unresolved": 211
       },
       "unresolved_reasons": {
-        "bare-module-specifier": 131,
+        "bare-module-specifier": 135,
         "declaration-out-of-scope": 9,
         "external-module-symbol": 9,
         "lib-global-not-in-program": 180,
-        "symbol-not-found-in-program": 21
+        "symbol-not-found-in-program": 22
       },
       "lib_globals": {
         "status": "loaded",
@@ -94,7 +94,7 @@
       },
       "const_assertion_skips": 16,
       "lib_global_shadowed_edges": 0,
-      "cross_file_edges": 766,
+      "cross_file_edges": 777,
       "silent_null_edges": 0,
       "degraded_extensions": {
         ".mjs": "file-level",
@@ -174,7 +174,7 @@
       "id": "CONTRIBUTING.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 77348,
+      "bytes": 77798,
       "lines": 184,
       "edge_out": 1,
       "edge_in": 0
@@ -228,7 +228,7 @@
       "id": "docs/DESIGN-code-graph.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 236122,
+      "bytes": 239268,
       "lines": 1363,
       "edge_out": 0,
       "edge_in": 0
@@ -12594,7 +12594,7 @@
       "id": "lib/engine/edit.js",
       "lang": "js",
       "state": "indexed",
-      "bytes": 42956,
+      "bytes": 43784,
       "lines": null,
       "edge_out": 0,
       "edge_in": 1
@@ -12603,7 +12603,7 @@
       "id": "lib/engine/edit.js.map",
       "lang": "other",
       "state": "indexed",
-      "bytes": 46686,
+      "bytes": 47471,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -12612,7 +12612,7 @@
       "id": "lib/engine/frontmatter.js",
       "lang": "js",
       "state": "indexed",
-      "bytes": 29103,
+      "bytes": 33642,
       "lines": null,
       "edge_out": 0,
       "edge_in": 3
@@ -12621,7 +12621,7 @@
       "id": "lib/engine/frontmatter.js.map",
       "lang": "other",
       "state": "indexed",
-      "bytes": 30135,
+      "bytes": 32947,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -12756,7 +12756,7 @@
       "id": "lib/engine/store.js",
       "lang": "js",
       "state": "indexed",
-      "bytes": 19436,
+      "bytes": 26657,
       "lines": null,
       "edge_out": 0,
       "edge_in": 4
@@ -12765,7 +12765,7 @@
       "id": "lib/engine/store.js.map",
       "lang": "other",
       "state": "indexed",
-      "bytes": 18966,
+      "bytes": 22428,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -12810,7 +12810,7 @@
       "id": "lib/engine/validate.js",
       "lang": "js",
       "state": "indexed",
-      "bytes": 20860,
+      "bytes": 21421,
       "lines": null,
       "edge_out": 0,
       "edge_in": 4
@@ -12819,7 +12819,7 @@
       "id": "lib/engine/validate.js.map",
       "lang": "other",
       "state": "indexed",
-      "bytes": 19667,
+      "bytes": 19741,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -12918,7 +12918,7 @@
       "id": "lib/tools.js",
       "lang": "js",
       "state": "indexed",
-      "bytes": 82405,
+      "bytes": 83152,
       "lines": null,
       "edge_out": 0,
       "edge_in": 1
@@ -12927,7 +12927,7 @@
       "id": "lib/tools.js.map",
       "lang": "other",
       "state": "indexed",
-      "bytes": 75054,
+      "bytes": 75520,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -13089,7 +13089,7 @@
       "id": "lib/types/engine/store.d.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 4899,
+      "bytes": 8780,
       "lines": null,
       "edge_out": 0,
       "edge_in": 0
@@ -13242,8 +13242,8 @@
       "id": "scripts/check-file-ledger.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 107409,
-      "lines": 2053,
+      "bytes": 110029,
+      "lines": 2067,
       "edge_out": 5,
       "edge_in": 1
     },
@@ -13278,8 +13278,8 @@
       "id": "scripts/file-ledger-core.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 21398,
-      "lines": 465,
+      "bytes": 27690,
+      "lines": 587,
       "edge_out": 2,
       "edge_in": 4
     },
@@ -13287,8 +13287,8 @@
       "id": "scripts/generate-change-log.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 59323,
-      "lines": 1175,
+      "bytes": 59748,
+      "lines": 1179,
       "edge_out": 6,
       "edge_in": 2
     },
@@ -13296,8 +13296,8 @@
       "id": "scripts/generate-file-ledger.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 45291,
-      "lines": 798,
+      "bytes": 45861,
+      "lines": 799,
       "edge_out": 5,
       "edge_in": 2
     },
@@ -13305,8 +13305,8 @@
       "id": "scripts/generate-reference-graph.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 80846,
-      "lines": 1397,
+      "bytes": 82292,
+      "lines": 1421,
       "edge_out": 6,
       "edge_in": 3
     },
@@ -13314,8 +13314,8 @@
       "id": "scripts/reference-graph-core.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 115167,
-      "lines": 2422,
+      "bytes": 118211,
+      "lines": 2467,
       "edge_out": 4,
       "edge_in": 3
     },
@@ -13323,8 +13323,8 @@
       "id": "scripts/refs-query.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 100651,
-      "lines": 1828,
+      "bytes": 101934,
+      "lines": 1840,
       "edge_out": 3,
       "edge_in": 1
     },
@@ -13413,8 +13413,8 @@
       "id": "src/engine/edit.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 47412,
-      "lines": 883,
+      "bytes": 48241,
+      "lines": 891,
       "edge_out": 14,
       "edge_in": 7
     },
@@ -13422,8 +13422,8 @@
       "id": "src/engine/frontmatter.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 30807,
-      "lines": 533,
+      "bytes": 35629,
+      "lines": 609,
       "edge_out": 6,
       "edge_in": 5
     },
@@ -13494,8 +13494,8 @@
       "id": "src/engine/store.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 21387,
-      "lines": 428,
+      "bytes": 30068,
+      "lines": 521,
       "edge_out": 13,
       "edge_in": 8
     },
@@ -13521,8 +13521,8 @@
       "id": "src/engine/validate.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 22900,
-      "lines": 370,
+      "bytes": 23461,
+      "lines": 374,
       "edge_out": 9,
       "edge_in": 9
     },
@@ -13575,8 +13575,8 @@
       "id": "src/tools.ts",
       "lang": "ts",
       "state": "indexed",
-      "bytes": 92916,
-      "lines": 1843,
+      "bytes": 93663,
+      "lines": 1851,
       "edge_out": 24,
       "edge_in": 5
     },
@@ -14968,95 +14968,7 @@
       "type_only": false
     },
     {
-      "id": "package.json:8:3:package-field:exports[\"./engine/*.import\"]→./lib/engine/*.js",
-      "kind": "package-field",
-      "from": {
-        "file": "package.json",
-        "line": 8,
-        "column": 3
-      },
-      "to": {
-        "file": "lib/engine/branches.js",
-        "line": null,
-        "column": null,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": "./lib/engine/*.js",
-      "resolved": "lib/engine/branches.js",
-      "fragment": null,
-      "field": "exports[\"./engine/*.import\"]",
-      "status": "resolved",
-      "type_only": false
-    },
-    {
-      "id": "package.json:8:3:package-field:exports[\"./engine/*.types\"]→./lib/types/engine/*.d.ts",
-      "kind": "package-field",
-      "from": {
-        "file": "package.json",
-        "line": 8,
-        "column": 3
-      },
-      "to": {
-        "file": "lib/types/engine/branches.d.ts",
-        "line": null,
-        "column": null,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": "./lib/types/engine/*.d.ts",
-      "resolved": "lib/types/engine/branches.d.ts",
-      "fragment": null,
-      "field": "exports[\"./engine/*.types\"]",
-      "status": "resolved",
-      "type_only": false
-    },
-    {
-      "id": "package.json:8:3:package-field:exports[\"./service.import\"]→./lib/service.js",
-      "kind": "package-field",
-      "from": {
-        "file": "package.json",
-        "line": 8,
-        "column": 3
-      },
-      "to": {
-        "file": "lib/service.js",
-        "line": null,
-        "column": null,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": "./lib/service.js",
-      "resolved": "lib/service.js",
-      "fragment": null,
-      "field": "exports[\"./service.import\"]",
-      "status": "resolved",
-      "type_only": false
-    },
-    {
-      "id": "package.json:8:3:package-field:exports[\"./service.types\"]→./lib/types/service.d.ts",
-      "kind": "package-field",
-      "from": {
-        "file": "package.json",
-        "line": 8,
-        "column": 3
-      },
-      "to": {
-        "file": "lib/types/service.d.ts",
-        "line": null,
-        "column": null,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": "./lib/types/service.d.ts",
-      "resolved": "lib/types/service.d.ts",
-      "fragment": null,
-      "field": "exports[\"./service.types\"]",
-      "status": "resolved",
-      "type_only": false
-    },
-    {
-      "id": "package.json:8:3:package-field:exports[\"import\"]→./lib/index.js",
+      "id": "package.json:8:3:package-field:exports[\".\"].import→./lib/index.js",
       "kind": "package-field",
       "from": {
         "file": "package.json",
@@ -15073,12 +14985,12 @@
       "specifier": "./lib/index.js",
       "resolved": "lib/index.js",
       "fragment": null,
-      "field": "exports[\"import\"]",
+      "field": "exports[\".\"].import",
       "status": "resolved",
       "type_only": false
     },
     {
-      "id": "package.json:8:3:package-field:exports[\"types\"]→./lib/types/index.d.ts",
+      "id": "package.json:8:3:package-field:exports[\".\"].types→./lib/types/index.d.ts",
       "kind": "package-field",
       "from": {
         "file": "package.json",
@@ -15095,7 +15007,95 @@
       "specifier": "./lib/types/index.d.ts",
       "resolved": "lib/types/index.d.ts",
       "fragment": null,
-      "field": "exports[\"types\"]",
+      "field": "exports[\".\"].types",
+      "status": "resolved",
+      "type_only": false
+    },
+    {
+      "id": "package.json:8:3:package-field:exports[\"./engine/*\"].import→./lib/engine/*.js",
+      "kind": "package-field",
+      "from": {
+        "file": "package.json",
+        "line": 8,
+        "column": 3
+      },
+      "to": {
+        "file": "lib/engine/branches.js",
+        "line": null,
+        "column": null,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": "./lib/engine/*.js",
+      "resolved": "lib/engine/branches.js",
+      "fragment": null,
+      "field": "exports[\"./engine/*\"].import",
+      "status": "resolved",
+      "type_only": false
+    },
+    {
+      "id": "package.json:8:3:package-field:exports[\"./engine/*\"].types→./lib/types/engine/*.d.ts",
+      "kind": "package-field",
+      "from": {
+        "file": "package.json",
+        "line": 8,
+        "column": 3
+      },
+      "to": {
+        "file": "lib/types/engine/branches.d.ts",
+        "line": null,
+        "column": null,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": "./lib/types/engine/*.d.ts",
+      "resolved": "lib/types/engine/branches.d.ts",
+      "fragment": null,
+      "field": "exports[\"./engine/*\"].types",
+      "status": "resolved",
+      "type_only": false
+    },
+    {
+      "id": "package.json:8:3:package-field:exports[\"./service\"].import→./lib/service.js",
+      "kind": "package-field",
+      "from": {
+        "file": "package.json",
+        "line": 8,
+        "column": 3
+      },
+      "to": {
+        "file": "lib/service.js",
+        "line": null,
+        "column": null,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": "./lib/service.js",
+      "resolved": "lib/service.js",
+      "fragment": null,
+      "field": "exports[\"./service\"].import",
+      "status": "resolved",
+      "type_only": false
+    },
+    {
+      "id": "package.json:8:3:package-field:exports[\"./service\"].types→./lib/types/service.d.ts",
+      "kind": "package-field",
+      "from": {
+        "file": "package.json",
+        "line": 8,
+        "column": 3
+      },
+      "to": {
+        "file": "lib/types/service.d.ts",
+        "line": null,
+        "column": null,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": "./lib/types/service.d.ts",
+      "resolved": "lib/types/service.d.ts",
+      "fragment": null,
+      "field": "exports[\"./service\"].types",
       "status": "resolved",
       "type_only": false
     },
@@ -16772,11 +16772,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-change-log.cjs:691:27:require:ajv/dist/2020",
+      "id": "scripts/generate-change-log.cjs:695:27:require:ajv/dist/2020",
       "kind": "require",
       "from": {
         "file": "scripts/generate-change-log.cjs",
-        "line": 691,
+        "line": 695,
         "column": 27
       },
       "to": {
@@ -18576,12 +18576,12 @@
       "type_only": false
     },
     {
-      "id": "src/engine/edit.ts:8:73:import:./store.js",
+      "id": "src/engine/edit.ts:8:129:import:./store.js",
       "kind": "import",
       "from": {
         "file": "src/engine/edit.ts",
         "line": 8,
-        "column": 73
+        "column": 129
       },
       "to": {
         "file": "src/engine/store.ts",
@@ -18730,12 +18730,12 @@
       "type_only": true
     },
     {
-      "id": "src/engine/frontmatter.ts:1:52:import:yaml",
+      "id": "src/engine/frontmatter.ts:1:99:import:yaml",
       "kind": "import",
       "from": {
         "file": "src/engine/frontmatter.ts",
         "line": 1,
-        "column": 52
+        "column": 99
       },
       "to": {
         "file": null,
@@ -20138,12 +20138,12 @@
       "type_only": false
     },
     {
-      "id": "src/engine/store.ts:8:66:import:./ids.js",
+      "id": "src/engine/store.ts:8:82:import:./ids.js",
       "kind": "import",
       "from": {
         "file": "src/engine/store.ts",
         "line": 8,
-        "column": 66
+        "column": 82
       },
       "to": {
         "file": "src/engine/ids.ts",
@@ -21744,12 +21744,12 @@
       "type_only": false
     },
     {
-      "id": "src/tools.ts:12:158:import:./engine/store.js",
+      "id": "src/tools.ts:12:214:import:./engine/store.js",
       "kind": "import",
       "from": {
         "file": "src/tools.ts",
         "line": 12,
-        "column": 158
+        "column": 214
       },
       "to": {
         "file": "src/engine/store.ts",
@@ -25948,13 +25948,13 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/edit.ts#MoveOptions@377:18",
+      "id": "src/engine/edit.ts#MoveOptions@385:18",
       "file": "src/engine/edit.ts",
       "name": "MoveOptions",
       "decl_kind": "interface",
       "exported": true,
       "scope": null,
-      "line": 377,
+      "line": 385,
       "column": 18,
       "origin": "source"
     },
@@ -25981,13 +25981,13 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/edit.ts#Proposal@797:18",
+      "id": "src/engine/edit.ts#Proposal@805:18",
       "file": "src/engine/edit.ts",
       "name": "Proposal",
       "decl_kind": "interface",
       "exported": true,
       "scope": null,
-      "line": 797,
+      "line": 805,
       "column": 18,
       "origin": "source"
     },
@@ -26003,13 +26003,13 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/edit.ts#RefreshOptions@686:18",
+      "id": "src/engine/edit.ts#RefreshOptions@694:18",
       "file": "src/engine/edit.ts",
       "name": "RefreshOptions",
       "decl_kind": "interface",
       "exported": true,
       "scope": null,
-      "line": 686,
+      "line": 694,
       "column": 18,
       "origin": "source"
     },
@@ -26047,13 +26047,13 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/edit.ts#checkProposal@811:23",
+      "id": "src/engine/edit.ts#checkProposal@819:23",
       "file": "src/engine/edit.ts",
       "name": "checkProposal",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 811,
+      "line": 819,
       "column": 23,
       "origin": "source"
     },
@@ -26091,13 +26091,13 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/edit.ts#moveModuleTree@382:23",
+      "id": "src/engine/edit.ts#moveModuleTree@390:23",
       "file": "src/engine/edit.ts",
       "name": "moveModuleTree",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 382,
+      "line": 390,
       "column": 23,
       "origin": "source"
     },
@@ -26146,13 +26146,13 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/edit.ts#refreshModules@693:23",
+      "id": "src/engine/edit.ts#refreshModules@701:23",
       "file": "src/engine/edit.ts",
       "name": "refreshModules",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 693,
+      "line": 701,
       "column": 23,
       "origin": "source"
     },
@@ -26300,13 +26300,13 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/frontmatter.ts#YAML_NON_STRING@414:7",
+      "id": "src/engine/frontmatter.ts#YAML_NON_STRING@490:7",
       "file": "src/engine/frontmatter.ts",
       "name": "YAML_NON_STRING",
       "decl_kind": "variable",
       "exported": false,
       "scope": null,
-      "line": 414,
+      "line": 490,
       "column": 7,
       "origin": "source"
     },
@@ -26377,13 +26377,13 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/frontmatter.ts#fieldReference@517:17",
+      "id": "src/engine/frontmatter.ts#fieldReference@593:17",
       "file": "src/engine/frontmatter.ts",
       "name": "fieldReference",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 517,
+      "line": 593,
       "column": 17,
       "origin": "source"
     },
@@ -26410,24 +26410,24 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/frontmatter.ts#l10nBlock@424:10",
+      "id": "src/engine/frontmatter.ts#l10nBlock@500:10",
       "file": "src/engine/frontmatter.ts",
       "name": "l10nBlock",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 424,
+      "line": 500,
       "column": 10,
       "origin": "source"
     },
     {
-      "id": "src/engine/frontmatter.ts#l10nInline@420:10",
+      "id": "src/engine/frontmatter.ts#l10nInline@496:10",
       "file": "src/engine/frontmatter.ts",
       "name": "l10nInline",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 420,
+      "line": 496,
       "column": 10,
       "origin": "source"
     },
@@ -26443,47 +26443,58 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/frontmatter.ts#parseModuleText@362:17",
+      "id": "src/engine/frontmatter.ts#parseModuleText@427:17",
       "file": "src/engine/frontmatter.ts",
       "name": "parseModuleText",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 362,
+      "line": 427,
       "column": 17,
       "origin": "source"
     },
     {
-      "id": "src/engine/frontmatter.ts#plainScalar@415:10",
+      "id": "src/engine/frontmatter.ts#plainScalar@491:10",
       "file": "src/engine/frontmatter.ts",
       "name": "plainScalar",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 415,
+      "line": 491,
       "column": 10,
       "origin": "source"
     },
     {
-      "id": "src/engine/frontmatter.ts#q@411:10",
+      "id": "src/engine/frontmatter.ts#q@487:10",
       "file": "src/engine/frontmatter.ts",
       "name": "q",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 411,
+      "line": 487,
       "column": 10,
       "origin": "source"
     },
     {
-      "id": "src/engine/frontmatter.ts#serializeModule@432:17",
+      "id": "src/engine/frontmatter.ts#serializeModule@508:17",
       "file": "src/engine/frontmatter.ts",
       "name": "serializeModule",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 432,
+      "line": 508,
       "column": 17,
+      "origin": "source"
+    },
+    {
+      "id": "src/engine/frontmatter.ts#yamlSubsetViolation@378:10",
+      "file": "src/engine/frontmatter.ts",
+      "name": "yamlSubsetViolation",
+      "decl_kind": "function",
+      "exported": false,
+      "scope": null,
+      "line": 378,
+      "column": 10,
       "origin": "source"
     },
     {
@@ -27334,6 +27345,17 @@
       "origin": "source"
     },
     {
+      "id": "src/engine/store.ts#ModuleWalkReadError@86:18",
+      "file": "src/engine/store.ts",
+      "name": "ModuleWalkReadError",
+      "decl_kind": "interface",
+      "exported": true,
+      "scope": null,
+      "line": 86,
+      "column": 18,
+      "origin": "source"
+    },
+    {
       "id": "src/engine/store.ts#NormifyError@15:14",
       "file": "src/engine/store.ts",
       "name": "NormifyError",
@@ -27367,123 +27389,123 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#SourcePathKind@363:13",
+      "id": "src/engine/store.ts#SourcePathKind@456:13",
       "file": "src/engine/store.ts",
       "name": "SourcePathKind",
       "decl_kind": "type",
       "exported": true,
       "scope": null,
-      "line": 363,
+      "line": 456,
       "column": 13,
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#apiDropWarning@188:10",
+      "id": "src/engine/store.ts#apiDropWarning@269:10",
       "file": "src/engine/store.ts",
       "name": "apiDropWarning",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 188,
+      "line": 269,
       "column": 10,
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#classifySourcePath@372:23",
+      "id": "src/engine/store.ts#classifySourcePath@465:23",
       "file": "src/engine/store.ts",
       "name": "classifySourcePath",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 372,
+      "line": 465,
       "column": 23,
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#deleteModuleTree@228:23",
+      "id": "src/engine/store.ts#deleteModuleTree@321:23",
       "file": "src/engine/store.ts",
       "name": "deleteModuleTree",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 228,
+      "line": 321,
       "column": 23,
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#findModuleFile@138:17",
+      "id": "src/engine/store.ts#findModuleFile@166:17",
       "file": "src/engine/store.ts",
       "name": "findModuleFile",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 138,
+      "line": 166,
       "column": 17,
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#fingerprintOf@395:23",
+      "id": "src/engine/store.ts#fingerprintOf@488:23",
       "file": "src/engine/store.ts",
       "name": "fingerprintOf",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 395,
+      "line": 488,
       "column": 23,
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#gitChangedFiles@345:23",
+      "id": "src/engine/store.ts#gitChangedFiles@438:23",
       "file": "src/engine/store.ts",
       "name": "gitChangedFiles",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 345,
+      "line": 438,
       "column": 23,
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#gitHead@336:23",
+      "id": "src/engine/store.ts#gitHead@429:23",
       "file": "src/engine/store.ts",
       "name": "gitHead",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 336,
+      "line": 429,
       "column": 23,
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#isContainer@173:17",
+      "id": "src/engine/store.ts#isContainer@213:17",
       "file": "src/engine/store.ts",
       "name": "isContainer",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 173,
+      "line": 213,
       "column": 17,
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#listModuleFiles@92:23",
+      "id": "src/engine/store.ts#listModuleFiles@120:23",
       "file": "src/engine/store.ts",
       "name": "listModuleFiles",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 92,
+      "line": 120,
       "column": 23,
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#listModuleTreeAnomalies@109:23",
+      "id": "src/engine/store.ts#listModuleTreeAnomalies@137:23",
       "file": "src/engine/store.ts",
       "name": "listModuleTreeAnomalies",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 109,
+      "line": 137,
       "column": 23,
       "origin": "source"
     },
@@ -27499,35 +27521,57 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#loadAllModules@149:23",
+      "id": "src/engine/store.ts#loadAllModules@183:23",
       "file": "src/engine/store.ts",
       "name": "loadAllModules",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 149,
+      "line": 183,
       "column": 23,
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#promoteModule@307:23",
+      "id": "src/engine/store.ts#moduleFileLayoutConflict@244:17",
+      "file": "src/engine/store.ts",
+      "name": "moduleFileLayoutConflict",
+      "decl_kind": "function",
+      "exported": true,
+      "scope": null,
+      "line": 244,
+      "column": 17,
+      "origin": "source"
+    },
+    {
+      "id": "src/engine/store.ts#moduleFileLayoutConflictDiag@255:17",
+      "file": "src/engine/store.ts",
+      "name": "moduleFileLayoutConflictDiag",
+      "decl_kind": "function",
+      "exported": true,
+      "scope": null,
+      "line": 255,
+      "column": 17,
+      "origin": "source"
+    },
+    {
+      "id": "src/engine/store.ts#promoteModule@400:23",
       "file": "src/engine/store.ts",
       "name": "promoteModule",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 307,
+      "line": 400,
       "column": 23,
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#pruneEmptyDirs@283:16",
+      "id": "src/engine/store.ts#pruneEmptyDirs@376:16",
       "file": "src/engine/store.ts",
       "name": "pruneEmptyDirs",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 283,
+      "line": 376,
       "column": 16,
       "origin": "source"
     },
@@ -27543,57 +27587,68 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#runGit@332:16",
+      "id": "src/engine/store.ts#runGit@425:16",
       "file": "src/engine/store.ts",
       "name": "runGit",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 332,
+      "line": 425,
       "column": 16,
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#sha256Text@425:17",
+      "id": "src/engine/store.ts#sameFile@219:10",
+      "file": "src/engine/store.ts",
+      "name": "sameFile",
+      "decl_kind": "function",
+      "exported": false,
+      "scope": null,
+      "line": 219,
+      "column": 10,
+      "origin": "source"
+    },
+    {
+      "id": "src/engine/store.ts#sha256Text@518:17",
       "file": "src/engine/store.ts",
       "name": "sha256Text",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 425,
+      "line": 518,
       "column": 17,
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#stripApisForContainer@180:10",
+      "id": "src/engine/store.ts#stripApisForContainer@261:10",
       "file": "src/engine/store.ts",
       "name": "stripApisForContainer",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 180,
+      "line": 261,
       "column": 10,
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#walk@76:16",
+      "id": "src/engine/store.ts#walk@99:16",
       "file": "src/engine/store.ts",
       "name": "walk",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 76,
+      "line": 99,
       "column": 16,
       "origin": "source"
     },
     {
-      "id": "src/engine/store.ts#writeModuleFile@191:23",
+      "id": "src/engine/store.ts#writeModuleFile@272:23",
       "file": "src/engine/store.ts",
       "name": "writeModuleFile",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 191,
+      "line": 272,
       "column": 23,
       "origin": "source"
     },
@@ -27950,13 +28005,13 @@
       "origin": "source"
     },
     {
-      "id": "src/engine/validate.ts#expectedPathHint@361:10",
+      "id": "src/engine/validate.ts#expectedPathHint@365:10",
       "file": "src/engine/validate.ts",
       "name": "expectedPathHint",
       "decl_kind": "function",
       "exported": false,
       "scope": null,
-      "line": 361,
+      "line": 365,
       "column": 10,
       "origin": "source"
     },
@@ -29105,13 +29160,13 @@
       "origin": "source"
     },
     {
-      "id": "src/tools.ts#registerTools@1839:17",
+      "id": "src/tools.ts#registerTools@1847:17",
       "file": "src/tools.ts",
       "name": "registerTools",
       "decl_kind": "function",
       "exported": true,
       "scope": null,
-      "line": 1839,
+      "line": 1847,
       "column": 17,
       "origin": "source"
     },
@@ -33179,9 +33234,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#gitHead@336:23",
+        "sym": "src/engine/store.ts#gitHead@429:23",
         "file": "src/engine/store.ts",
-        "line": 336,
+        "line": 429,
         "column": 23,
         "state": "indexed"
       },
@@ -33202,9 +33257,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#loadAllModules@149:23",
+        "sym": "src/engine/store.ts#loadAllModules@183:23",
         "file": "src/engine/store.ts",
-        "line": 149,
+        "line": 183,
         "column": 23,
         "state": "indexed"
       },
@@ -33225,9 +33280,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/edit.ts#refreshModules@693:23",
+        "sym": "src/engine/edit.ts#refreshModules@701:23",
         "file": "src/engine/edit.ts",
-        "line": 693,
+        "line": 701,
         "column": 23,
         "state": "indexed"
       },
@@ -34053,9 +34108,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#sha256Text@425:17",
+        "sym": "src/engine/store.ts#sha256Text@518:17",
         "file": "src/engine/store.ts",
-        "line": 425,
+        "line": 518,
         "column": 17,
         "state": "indexed"
       },
@@ -36376,9 +36431,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#loadAllModules@149:23",
+        "sym": "src/engine/store.ts#loadAllModules@183:23",
         "file": "src/engine/store.ts",
-        "line": 149,
+        "line": 183,
         "column": 23,
         "state": "indexed"
       },
@@ -36399,9 +36454,55 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#writeModuleFile@191:23",
+        "sym": "src/engine/store.ts#moduleFileLayoutConflict@244:17",
         "file": "src/engine/store.ts",
-        "line": 191,
+        "line": 244,
+        "column": 17,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": "./store.js",
+      "resolved": "./store.js",
+      "status": "resolved",
+      "reason": null,
+      "type_only": false
+    },
+    {
+      "id": "src/engine/edit.ts:8:52:import",
+      "kind": "import",
+      "from": {
+        "file": "src/engine/edit.ts",
+        "line": 8,
+        "column": 52,
+        "sym": null
+      },
+      "to": {
+        "sym": "src/engine/store.ts#moduleFileLayoutConflictDiag@255:17",
+        "file": "src/engine/store.ts",
+        "line": 255,
+        "column": 17,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": "./store.js",
+      "resolved": "./store.js",
+      "status": "resolved",
+      "reason": null,
+      "type_only": false
+    },
+    {
+      "id": "src/engine/edit.ts:8:82:import",
+      "kind": "import",
+      "from": {
+        "file": "src/engine/edit.ts",
+        "line": 8,
+        "column": 82,
+        "sym": null
+      },
+      "to": {
+        "sym": "src/engine/store.ts#writeModuleFile@272:23",
+        "file": "src/engine/store.ts",
+        "line": 272,
         "column": 23,
         "state": "indexed"
       },
@@ -36413,18 +36514,18 @@
       "type_only": false
     },
     {
-      "id": "src/engine/edit.ts:8:43:import",
+      "id": "src/engine/edit.ts:8:99:import",
       "kind": "import",
       "from": {
         "file": "src/engine/edit.ts",
         "line": 8,
-        "column": 43,
+        "column": 99,
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#fingerprintOf@395:23",
+        "sym": "src/engine/store.ts#fingerprintOf@488:23",
         "file": "src/engine/store.ts",
-        "line": 395,
+        "line": 488,
         "column": 23,
         "state": "indexed"
       },
@@ -36436,18 +36537,18 @@
       "type_only": false
     },
     {
-      "id": "src/engine/edit.ts:8:58:import",
+      "id": "src/engine/edit.ts:8:114:import",
       "kind": "import",
       "from": {
         "file": "src/engine/edit.ts",
         "line": 8,
-        "column": 58,
+        "column": 114,
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#gitHead@336:23",
+        "sym": "src/engine/store.ts#gitHead@429:23",
         "file": "src/engine/store.ts",
-        "line": 336,
+        "line": 429,
         "column": 23,
         "state": "indexed"
       },
@@ -38161,18 +38262,18 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:382:76:type-reference",
+      "id": "src/engine/edit.ts:390:76:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 382,
+        "line": 390,
         "column": 76,
-        "sym": "src/engine/edit.ts#moveModuleTree@382:23"
+        "sym": "src/engine/edit.ts#moveModuleTree@390:23"
       },
       "to": {
-        "sym": "src/engine/edit.ts#MoveOptions@377:18",
+        "sym": "src/engine/edit.ts#MoveOptions@385:18",
         "file": "src/engine/edit.ts",
-        "line": 377,
+        "line": 385,
         "column": 18,
         "state": "indexed"
       },
@@ -38184,13 +38285,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:382:90:type-reference",
+      "id": "src/engine/edit.ts:390:90:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 382,
+        "line": 390,
         "column": 90,
-        "sym": "src/engine/edit.ts#moveModuleTree@382:23"
+        "sym": "src/engine/edit.ts#moveModuleTree@390:23"
       },
       "to": {
         "sym": null,
@@ -38207,13 +38308,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:382:98:type-reference",
+      "id": "src/engine/edit.ts:390:98:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 382,
+        "line": 390,
         "column": 98,
-        "sym": "src/engine/edit.ts#moveModuleTree@382:23"
+        "sym": "src/engine/edit.ts#moveModuleTree@390:23"
       },
       "to": {
         "sym": "src/engine/edit.ts#EditResult@22:18",
@@ -38230,13 +38331,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:395:27:type-reference",
+      "id": "src/engine/edit.ts:403:27:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 395,
+        "line": 403,
         "column": 27,
-        "sym": "src/engine/edit.ts#moveModuleTree@382:23"
+        "sym": "src/engine/edit.ts#moveModuleTree@390:23"
       },
       "to": {
         "sym": "src/engine/edit.ts#ModuleMove@33:11",
@@ -38253,13 +38354,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:395:50:type-reference",
+      "id": "src/engine/edit.ts:403:50:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 395,
+        "line": 403,
         "column": 50,
-        "sym": "src/engine/edit.ts#moveModuleTree@382:23"
+        "sym": "src/engine/edit.ts#moveModuleTree@390:23"
       },
       "to": {
         "sym": "src/engine/edit.ts#DepRewire@38:11",
@@ -38276,13 +38377,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:437:35:type-reference",
+      "id": "src/engine/edit.ts:445:35:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 437,
+        "line": 445,
         "column": 35,
-        "sym": "src/engine/edit.ts#moveModuleTree@382:23"
+        "sym": "src/engine/edit.ts#moveModuleTree@390:23"
       },
       "to": {
         "sym": "src/engine/types.ts#Module@140:18",
@@ -38299,13 +38400,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:438:20:type-reference",
+      "id": "src/engine/edit.ts:446:20:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 438,
+        "line": 446,
         "column": 20,
-        "sym": "src/engine/edit.ts#moveModuleTree@382:23"
+        "sym": "src/engine/edit.ts#moveModuleTree@390:23"
       },
       "to": {
         "sym": "src/engine/edit.ts#DepRewire@38:11",
@@ -38322,13 +38423,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:458:18:type-reference",
+      "id": "src/engine/edit.ts:466:18:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 458,
+        "line": 466,
         "column": 18,
-        "sym": "src/engine/edit.ts#moveModuleTree@382:23"
+        "sym": "src/engine/edit.ts#moveModuleTree@390:23"
       },
       "to": {
         "sym": "src/engine/edit.ts#ModuleMove@33:11",
@@ -38345,13 +38446,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:477:22:type-reference",
+      "id": "src/engine/edit.ts:485:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 477,
+        "line": 485,
         "column": 22,
-        "sym": "src/engine/edit.ts#moveModuleTree@382:23"
+        "sym": "src/engine/edit.ts#moveModuleTree@390:23"
       },
       "to": {
         "sym": "src/engine/edit.ts#WritePlanEntry@56:11",
@@ -38368,13 +38469,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:492:23:type-reference",
+      "id": "src/engine/edit.ts:500:23:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 492,
+        "line": 500,
         "column": 23,
-        "sym": "src/engine/edit.ts#moveModuleTree@382:23"
+        "sym": "src/engine/edit.ts#moveModuleTree@390:23"
       },
       "to": {
         "sym": "src/engine/edit.ts#LayoutPlanEntry@64:11",
@@ -38391,13 +38492,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:505:38:type-reference",
+      "id": "src/engine/edit.ts:513:38:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 505,
+        "line": 513,
         "column": 38,
-        "sym": "src/engine/edit.ts#moveModuleTree@382:23"
+        "sym": "src/engine/edit.ts#moveModuleTree@390:23"
       },
       "to": {
         "sym": "src/engine/types.ts#LayoutData@192:18",
@@ -38414,13 +38515,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:505:51:type-reference",
+      "id": "src/engine/edit.ts:513:51:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 505,
+        "line": 513,
         "column": 51,
-        "sym": "src/engine/edit.ts#moveModuleTree@382:23"
+        "sym": "src/engine/edit.ts#moveModuleTree@390:23"
       },
       "to": {
         "sym": "src/engine/types.ts#LayoutData@192:18",
@@ -38437,13 +38538,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:506:21:type-reference",
+      "id": "src/engine/edit.ts:514:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 506,
+        "line": 514,
         "column": 21,
-        "sym": "src/engine/edit.ts#moveModuleTree@382:23"
+        "sym": "src/engine/edit.ts#moveModuleTree@390:23"
       },
       "to": {
         "sym": "src/engine/types.ts#LayoutData@192:18",
@@ -38460,13 +38561,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:559:25:type-reference",
+      "id": "src/engine/edit.ts:567:25:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 559,
+        "line": 567,
         "column": 25,
-        "sym": "src/engine/edit.ts#moveModuleTree@382:23"
+        "sym": "src/engine/edit.ts#moveModuleTree@390:23"
       },
       "to": {
         "sym": "src/engine/types.ts#LayoutData@192:18",
@@ -38483,13 +38584,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:586:15:type-reference",
+      "id": "src/engine/edit.ts:594:15:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 586,
+        "line": 594,
         "column": 15,
-        "sym": "src/engine/edit.ts#moveModuleTree@382:23"
+        "sym": "src/engine/edit.ts#moveModuleTree@390:23"
       },
       "to": {
         "sym": "src/engine/types.ts#LayoutData@192:18",
@@ -38506,13 +38607,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:604:19:type-reference",
+      "id": "src/engine/edit.ts:612:19:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 604,
+        "line": 612,
         "column": 19,
-        "sym": "src/engine/edit.ts#moveModuleTree@382:23"
+        "sym": "src/engine/edit.ts#moveModuleTree@390:23"
       },
       "to": {
         "sym": "src/engine/types.ts#LayoutData@192:18",
@@ -38529,18 +38630,18 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:693:64:type-reference",
+      "id": "src/engine/edit.ts:701:64:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 693,
+        "line": 701,
         "column": 64,
-        "sym": "src/engine/edit.ts#refreshModules@693:23"
+        "sym": "src/engine/edit.ts#refreshModules@701:23"
       },
       "to": {
-        "sym": "src/engine/edit.ts#RefreshOptions@686:18",
+        "sym": "src/engine/edit.ts#RefreshOptions@694:18",
         "file": "src/engine/edit.ts",
-        "line": 686,
+        "line": 694,
         "column": 18,
         "state": "indexed"
       },
@@ -38552,13 +38653,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:693:91:type-reference",
+      "id": "src/engine/edit.ts:701:91:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 693,
+        "line": 701,
         "column": 91,
-        "sym": "src/engine/edit.ts#refreshModules@693:23"
+        "sym": "src/engine/edit.ts#refreshModules@701:23"
       },
       "to": {
         "sym": "src/execution.ts#NormifyToolExecution@9:18",
@@ -38575,13 +38676,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:693:136:type-reference",
+      "id": "src/engine/edit.ts:701:136:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 693,
+        "line": 701,
         "column": 136,
-        "sym": "src/engine/edit.ts#refreshModules@693:23"
+        "sym": "src/engine/edit.ts#refreshModules@701:23"
       },
       "to": {
         "sym": null,
@@ -38598,13 +38699,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:693:144:type-reference",
+      "id": "src/engine/edit.ts:701:144:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 693,
+        "line": 701,
         "column": 144,
-        "sym": "src/engine/edit.ts#refreshModules@693:23"
+        "sym": "src/engine/edit.ts#refreshModules@701:23"
       },
       "to": {
         "sym": "src/engine/edit.ts#EditResult@22:18",
@@ -38621,13 +38722,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:697:16:type-reference",
+      "id": "src/engine/edit.ts:705:16:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 697,
+        "line": 705,
         "column": 16,
-        "sym": "src/engine/edit.ts#refreshModules@693:23"
+        "sym": "src/engine/edit.ts#refreshModules@701:23"
       },
       "to": {
         "sym": "src/engine/types.ts#ModuleState@51:13",
@@ -38644,13 +38745,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:707:22:type-reference",
+      "id": "src/engine/edit.ts:715:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 707,
+        "line": 715,
         "column": 22,
-        "sym": "src/engine/edit.ts#refreshModules@693:23"
+        "sym": "src/engine/edit.ts#refreshModules@701:23"
       },
       "to": {
         "sym": "src/engine/edit.ts#RefreshEntry@44:11",
@@ -38667,13 +38768,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:708:20:type-reference",
+      "id": "src/engine/edit.ts:716:20:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 708,
+        "line": 716,
         "column": 20,
-        "sym": "src/engine/edit.ts#refreshModules@693:23"
+        "sym": "src/engine/edit.ts#refreshModules@701:23"
       },
       "to": {
         "sym": "src/engine/edit.ts#MissingEntry@51:11",
@@ -38690,13 +38791,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:719:42:type-reference",
+      "id": "src/engine/edit.ts:727:42:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 719,
+        "line": 727,
         "column": 42,
-        "sym": "src/engine/edit.ts#refreshModules@693:23"
+        "sym": "src/engine/edit.ts#refreshModules@701:23"
       },
       "to": {
         "sym": "src/engine/types.ts#Module@140:18",
@@ -38713,13 +38814,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:807:17:type-reference",
+      "id": "src/engine/edit.ts:815:17:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 807,
+        "line": 815,
         "column": 17,
-        "sym": "src/engine/edit.ts#Proposal@797:18"
+        "sym": "src/engine/edit.ts#Proposal@805:18"
       },
       "to": {
         "sym": "src/engine/types.ts#ModuleState@51:13",
@@ -38736,18 +38837,18 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:811:67:type-reference",
+      "id": "src/engine/edit.ts:819:67:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 811,
+        "line": 819,
         "column": 67,
-        "sym": "src/engine/edit.ts#checkProposal@811:23"
+        "sym": "src/engine/edit.ts#checkProposal@819:23"
       },
       "to": {
-        "sym": "src/engine/edit.ts#Proposal@797:18",
+        "sym": "src/engine/edit.ts#Proposal@805:18",
         "file": "src/engine/edit.ts",
-        "line": 797,
+        "line": 805,
         "column": 18,
         "state": "indexed"
       },
@@ -38759,13 +38860,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:811:78:type-reference",
+      "id": "src/engine/edit.ts:819:78:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 811,
+        "line": 819,
         "column": 78,
-        "sym": "src/engine/edit.ts#checkProposal@811:23"
+        "sym": "src/engine/edit.ts#checkProposal@819:23"
       },
       "to": {
         "sym": null,
@@ -38782,13 +38883,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:811:109:type-reference",
+      "id": "src/engine/edit.ts:819:109:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 811,
+        "line": 819,
         "column": 109,
-        "sym": "src/engine/edit.ts#checkProposal@811:23"
+        "sym": "src/engine/edit.ts#checkProposal@819:23"
       },
       "to": {
         "sym": "src/engine/types.ts#Diagnostic@213:18",
@@ -38805,13 +38906,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:811:133:type-reference",
+      "id": "src/engine/edit.ts:819:133:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 811,
+        "line": 819,
         "column": 133,
-        "sym": "src/engine/edit.ts#checkProposal@811:23"
+        "sym": "src/engine/edit.ts#checkProposal@819:23"
       },
       "to": {
         "sym": "src/engine/types.ts#Diagnostic@213:18",
@@ -38828,13 +38929,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:813:19:type-reference",
+      "id": "src/engine/edit.ts:821:19:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 813,
+        "line": 821,
         "column": 19,
-        "sym": "src/engine/edit.ts#checkProposal@811:23"
+        "sym": "src/engine/edit.ts#checkProposal@819:23"
       },
       "to": {
         "sym": "src/engine/types.ts#Diagnostic@213:18",
@@ -38851,13 +38952,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:814:39:type-reference",
+      "id": "src/engine/edit.ts:822:39:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 814,
+        "line": 822,
         "column": 39,
-        "sym": "src/engine/edit.ts#checkProposal@811:23"
+        "sym": "src/engine/edit.ts#checkProposal@819:23"
       },
       "to": {
         "sym": "src/engine/types.ts#Module@140:18",
@@ -38874,13 +38975,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/edit.ts:861:67:type-reference",
+      "id": "src/engine/edit.ts:869:67:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/edit.ts",
-        "line": 861,
+        "line": 869,
         "column": 67,
-        "sym": "src/engine/edit.ts#checkProposal@811:23"
+        "sym": "src/engine/edit.ts#checkProposal@819:23"
       },
       "to": {
         "sym": "src/engine/edit.ts#DepKind@31:6",
@@ -38895,6 +38996,29 @@
       "status": "resolved",
       "reason": null,
       "type_only": true
+    },
+    {
+      "id": "src/engine/frontmatter.ts:1:10:import",
+      "kind": "import",
+      "from": {
+        "file": "src/engine/frontmatter.ts",
+        "line": 1,
+        "column": 10,
+        "sym": null
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": "outside"
+      },
+      "cross_file": false,
+      "specifier": "yaml",
+      "resolved": null,
+      "status": "external",
+      "reason": "bare-module-specifier",
+      "type_only": false
     },
     {
       "id": "src/engine/frontmatter.ts:1:19:import",
@@ -38920,12 +39044,81 @@
       "type_only": false
     },
     {
-      "id": "src/engine/frontmatter.ts:1:30:import",
+      "id": "src/engine/frontmatter.ts:1:29:import",
       "kind": "import",
       "from": {
         "file": "src/engine/frontmatter.ts",
         "line": 1,
-        "column": 30,
+        "column": 29,
+        "sym": null
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": "outside"
+      },
+      "cross_file": false,
+      "specifier": "yaml",
+      "resolved": null,
+      "status": "external",
+      "reason": "bare-module-specifier",
+      "type_only": false
+    },
+    {
+      "id": "src/engine/frontmatter.ts:1:51:import",
+      "kind": "import",
+      "from": {
+        "file": "src/engine/frontmatter.ts",
+        "line": 1,
+        "column": 51,
+        "sym": null
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": "outside"
+      },
+      "cross_file": false,
+      "specifier": "yaml",
+      "resolved": null,
+      "status": "external",
+      "reason": "bare-module-specifier",
+      "type_only": false
+    },
+    {
+      "id": "src/engine/frontmatter.ts:1:62:import",
+      "kind": "import",
+      "from": {
+        "file": "src/engine/frontmatter.ts",
+        "line": 1,
+        "column": 62,
+        "sym": null
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": "outside"
+      },
+      "cross_file": false,
+      "specifier": "yaml",
+      "resolved": null,
+      "status": "external",
+      "reason": "bare-module-specifier",
+      "type_only": false
+    },
+    {
+      "id": "src/engine/frontmatter.ts:1:77:import",
+      "kind": "import",
+      "from": {
+        "file": "src/engine/frontmatter.ts",
+        "line": 1,
+        "column": 77,
         "sym": null
       },
       "to": {
@@ -40139,13 +40332,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/frontmatter.ts:363:13:type-reference",
+      "id": "src/engine/frontmatter.ts:428:13:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/frontmatter.ts",
-        "line": 363,
+        "line": 428,
         "column": 13,
-        "sym": "src/engine/frontmatter.ts#parseModuleText@362:17"
+        "sym": "src/engine/frontmatter.ts#parseModuleText@427:17"
       },
       "to": {
         "sym": "src/engine/types.ts#Module@140:18",
@@ -40162,13 +40355,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/frontmatter.ts:365:13:type-reference",
+      "id": "src/engine/frontmatter.ts:430:13:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/frontmatter.ts",
-        "line": 365,
+        "line": 430,
         "column": 13,
-        "sym": "src/engine/frontmatter.ts#parseModuleText@362:17"
+        "sym": "src/engine/frontmatter.ts#parseModuleText@427:17"
       },
       "to": {
         "sym": "src/engine/types.ts#Diagnostic@213:18",
@@ -40185,13 +40378,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/frontmatter.ts:366:15:type-reference",
+      "id": "src/engine/frontmatter.ts:431:15:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/frontmatter.ts",
-        "line": 366,
+        "line": 431,
         "column": 15,
-        "sym": "src/engine/frontmatter.ts#parseModuleText@362:17"
+        "sym": "src/engine/frontmatter.ts#parseModuleText@427:17"
       },
       "to": {
         "sym": "src/engine/types.ts#Diagnostic@213:18",
@@ -40208,13 +40401,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/frontmatter.ts:420:24:type-reference",
+      "id": "src/engine/frontmatter.ts:496:24:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/frontmatter.ts",
-        "line": 420,
+        "line": 496,
         "column": 24,
-        "sym": "src/engine/frontmatter.ts#l10nInline@420:10"
+        "sym": "src/engine/frontmatter.ts#l10nInline@496:10"
       },
       "to": {
         "sym": "src/engine/types.ts#LocalizedText@3:18",
@@ -40231,13 +40424,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/frontmatter.ts:424:39:type-reference",
+      "id": "src/engine/frontmatter.ts:500:39:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/frontmatter.ts",
-        "line": 424,
+        "line": 500,
         "column": 39,
-        "sym": "src/engine/frontmatter.ts#l10nBlock@424:10"
+        "sym": "src/engine/frontmatter.ts#l10nBlock@500:10"
       },
       "to": {
         "sym": "src/engine/types.ts#LocalizedText@3:18",
@@ -40254,13 +40447,13 @@
       "type_only": true
     },
     {
-      "id": "src/engine/frontmatter.ts:432:41:type-reference",
+      "id": "src/engine/frontmatter.ts:508:41:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/frontmatter.ts",
-        "line": 432,
+        "line": 508,
         "column": 41,
-        "sym": "src/engine/frontmatter.ts#serializeModule@432:17"
+        "sym": "src/engine/frontmatter.ts#serializeModule@508:17"
       },
       "to": {
         "sym": "src/engine/types.ts#Module@140:18",
@@ -40608,9 +40801,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#loadAllModules@149:23",
+        "sym": "src/engine/store.ts#loadAllModules@183:23",
         "file": "src/engine/store.ts",
-        "line": 149,
+        "line": 183,
         "column": 23,
         "state": "indexed"
       },
@@ -40631,9 +40824,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#writeModuleFile@191:23",
+        "sym": "src/engine/store.ts#writeModuleFile@272:23",
         "file": "src/engine/store.ts",
-        "line": 191,
+        "line": 272,
         "column": 23,
         "state": "indexed"
       },
@@ -44495,9 +44688,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/frontmatter.ts#fieldReference@517:17",
+        "sym": "src/engine/frontmatter.ts#fieldReference@593:17",
         "file": "src/engine/frontmatter.ts",
-        "line": 517,
+        "line": 593,
         "column": 17,
         "state": "indexed"
       },
@@ -44909,9 +45102,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#sha256Text@425:17",
+        "sym": "src/engine/store.ts#sha256Text@518:17",
         "file": "src/engine/store.ts",
-        "line": 425,
+        "line": 518,
         "column": 17,
         "state": "indexed"
       },
@@ -45921,9 +46114,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/ids.ts#isValidId@17:17",
+        "sym": "src/engine/ids.ts#idFromFilePath@52:17",
         "file": "src/engine/ids.ts",
-        "line": 17,
+        "line": 52,
         "column": 17,
         "state": "indexed"
       },
@@ -45935,18 +46128,18 @@
       "type_only": false
     },
     {
-      "id": "src/engine/store.ts:8:35:import",
+      "id": "src/engine/store.ts:8:40:import",
       "kind": "import",
       "from": {
         "file": "src/engine/store.ts",
         "line": 8,
-        "column": 35,
+        "column": 40,
         "sym": null
       },
       "to": {
-        "sym": "src/engine/ids.ts#moduleFilePath@70:17",
+        "sym": "src/engine/ids.ts#isValidId@17:17",
         "file": "src/engine/ids.ts",
-        "line": 70,
+        "line": 17,
         "column": 17,
         "state": "indexed"
       },
@@ -45964,6 +46157,29 @@
         "file": "src/engine/store.ts",
         "line": 8,
         "column": 51,
+        "sym": null
+      },
+      "to": {
+        "sym": "src/engine/ids.ts#moduleFilePath@70:17",
+        "file": "src/engine/ids.ts",
+        "line": 70,
+        "column": 17,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": "./ids.js",
+      "resolved": "./ids.js",
+      "status": "resolved",
+      "reason": null,
+      "type_only": false
+    },
+    {
+      "id": "src/engine/store.ts:8:67:import",
+      "kind": "import",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 8,
+        "column": 67,
         "sym": null
       },
       "to": {
@@ -45990,9 +46206,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/frontmatter.ts#parseModuleText@362:17",
+        "sym": "src/engine/frontmatter.ts#parseModuleText@427:17",
         "file": "src/engine/frontmatter.ts",
-        "line": 362,
+        "line": 427,
         "column": 17,
         "state": "indexed"
       },
@@ -46013,9 +46229,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/frontmatter.ts#serializeModule@432:17",
+        "sym": "src/engine/frontmatter.ts#serializeModule@508:17",
         "file": "src/engine/frontmatter.ts",
-        "line": 432,
+        "line": 508,
         "column": 17,
         "state": "indexed"
       },
@@ -46211,893 +46427,19 @@
       "type_only": true
     },
     {
-      "id": "src/engine/store.ts:76:64:type-reference",
+      "id": "src/engine/store.ts:99:76:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/store.ts",
-        "line": 76,
-        "column": 64,
-        "sym": "src/engine/store.ts#walk@76:16"
+        "line": 99,
+        "column": 76,
+        "sym": "src/engine/store.ts#walk@99:16"
       },
       "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "lib-global-not-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:77:18:type-reference",
-      "kind": "type-reference",
-      "from": {
+        "sym": "src/engine/store.ts#ModuleWalkReadError@86:18",
         "file": "src/engine/store.ts",
-        "line": 77,
+        "line": 86,
         "column": 18,
-        "sym": "src/engine/store.ts#walk@76:16"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": "outside"
-      },
-      "cross_file": false,
-      "specifier": "node:fs",
-      "resolved": null,
-      "status": "external",
-      "reason": "external-module-symbol",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:92:60:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 92,
-        "column": 60,
-        "sym": "src/engine/store.ts#listModuleFiles@92:23"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "lib-global-not-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:109:68:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 109,
-        "column": 68,
-        "sym": "src/engine/store.ts#listModuleTreeAnomalies@109:23"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "lib-global-not-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:112:53:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 112,
-        "column": 53,
-        "sym": "src/engine/store.ts#listModuleTreeAnomalies@109:23"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "lib-global-not-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:113:22:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 113,
-        "column": 22,
-        "sym": "src/engine/store.ts#listModuleTreeAnomalies@109:23"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": "outside"
-      },
-      "cross_file": false,
-      "specifier": "node:fs",
-      "resolved": null,
-      "status": "external",
-      "reason": "external-module-symbol",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:149:105:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 149,
-        "column": 105,
-        "sym": "src/engine/store.ts#loadAllModules@149:23"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "lib-global-not-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:149:122:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 149,
-        "column": 122,
-        "sym": "src/engine/store.ts#loadAllModules@149:23"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#ModuleFile@206:18",
-        "file": "src/engine/types.ts",
-        "line": 206,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:149:144:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 149,
-        "column": 144,
-        "sym": "src/engine/store.ts#loadAllModules@149:23"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#Diagnostic@213:18",
-        "file": "src/engine/types.ts",
-        "line": 213,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:149:168:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 149,
-        "column": 168,
-        "sym": "src/engine/store.ts#loadAllModules@149:23"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#Diagnostic@213:18",
-        "file": "src/engine/types.ts",
-        "line": 213,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:150:19:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 150,
-        "column": 19,
-        "sym": "src/engine/store.ts#loadAllModules@149:23"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#Diagnostic@213:18",
-        "file": "src/engine/types.ts",
-        "line": 213,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:151:21:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 151,
-        "column": 21,
-        "sym": "src/engine/store.ts#loadAllModules@149:23"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#Diagnostic@213:18",
-        "file": "src/engine/types.ts",
-        "line": 213,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:152:18:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 152,
-        "column": 18,
-        "sym": "src/engine/store.ts#loadAllModules@149:23"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#ModuleFile@206:18",
-        "file": "src/engine/types.ts",
-        "line": 206,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:173:37:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 173,
-        "column": 37,
-        "sym": "src/engine/store.ts#isContainer@173:17"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#Module@140:18",
-        "file": "src/engine/types.ts",
-        "line": 140,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:173:50:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 173,
-        "column": 50,
-        "sym": "src/engine/store.ts#isContainer@173:17"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#Module@140:18",
-        "file": "src/engine/types.ts",
-        "line": 140,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:180:38:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 180,
-        "column": 38,
-        "sym": "src/engine/store.ts#stripApisForContainer@180:10"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#ModuleFile@206:18",
-        "file": "src/engine/types.ts",
-        "line": 206,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:180:61:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 180,
-        "column": 61,
-        "sym": "src/engine/store.ts#stripApisForContainer@180:10"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#Module@140:18",
-        "file": "src/engine/types.ts",
-        "line": 140,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:184:17:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 184,
-        "column": 17,
-        "sym": "src/engine/store.ts#stripApisForContainer@180:10"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#Module@140:18",
-        "file": "src/engine/types.ts",
-        "line": 140,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:188:70:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 188,
-        "column": 70,
-        "sym": "src/engine/store.ts#apiDropWarning@188:10"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#Diagnostic@213:18",
-        "file": "src/engine/types.ts",
-        "line": 213,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:191:67:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 191,
-        "column": 67,
-        "sym": "src/engine/store.ts#writeModuleFile@191:23"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#Module@140:18",
-        "file": "src/engine/types.ts",
-        "line": 140,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:191:108:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 191,
-        "column": 108,
-        "sym": "src/engine/store.ts#writeModuleFile@191:23"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#ModuleFile@206:18",
-        "file": "src/engine/types.ts",
-        "line": 206,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:191:125:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 191,
-        "column": 125,
-        "sym": "src/engine/store.ts#writeModuleFile@191:23"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "lib-global-not-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:191:179:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 191,
-        "column": 179,
-        "sym": "src/engine/store.ts#writeModuleFile@191:23"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#Diagnostic@213:18",
-        "file": "src/engine/types.ts",
-        "line": 213,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:193:21:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 193,
-        "column": 21,
-        "sym": "src/engine/store.ts#writeModuleFile@191:23"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#Diagnostic@213:18",
-        "file": "src/engine/types.ts",
-        "line": 213,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:228:73:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 228,
-        "column": 73,
-        "sym": "src/engine/store.ts#deleteModuleTree@228:23"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "lib-global-not-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:228:136:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 228,
-        "column": 136,
-        "sym": "src/engine/store.ts#deleteModuleTree@228:23"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#Diagnostic@213:18",
-        "file": "src/engine/types.ts",
-        "line": 213,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:229:21:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 229,
-        "column": 21,
-        "sym": "src/engine/store.ts#deleteModuleTree@228:23"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#Diagnostic@213:18",
-        "file": "src/engine/types.ts",
-        "line": 213,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:283:68:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 283,
-        "column": 68,
-        "sym": "src/engine/store.ts#pruneEmptyDirs@283:16"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "lib-global-not-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:307:70:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 307,
-        "column": 70,
-        "sym": "src/engine/store.ts#promoteModule@307:23"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "lib-global-not-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:307:104:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 307,
-        "column": 104,
-        "sym": "src/engine/store.ts#promoteModule@307:23"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#Diagnostic@213:18",
-        "file": "src/engine/types.ts",
-        "line": 213,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:308:21:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 308,
-        "column": 21,
-        "sym": "src/engine/store.ts#promoteModule@307:23"
-      },
-      "to": {
-        "sym": "src/engine/types.ts#Diagnostic@213:18",
-        "file": "src/engine/types.ts",
-        "line": 213,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/engine/types.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:332:68:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 332,
-        "column": 68,
-        "sym": "src/engine/store.ts#runGit@332:16"
-      },
-      "to": {
-        "sym": "src/execution.ts#NormifyToolExecution@9:18",
-        "file": "src/execution.ts",
-        "line": 9,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/execution.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:332:91:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 332,
-        "column": 91,
-        "sym": "src/engine/store.ts#runGit@332:16"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "lib-global-not-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:336:60:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 336,
-        "column": 60,
-        "sym": "src/engine/store.ts#gitHead@336:23"
-      },
-      "to": {
-        "sym": "src/execution.ts#NormifyToolExecution@9:18",
-        "file": "src/execution.ts",
-        "line": 9,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/execution.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:336:105:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 336,
-        "column": 105,
-        "sym": "src/engine/store.ts#gitHead@336:23"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "lib-global-not-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:345:86:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 345,
-        "column": 86,
-        "sym": "src/engine/store.ts#gitChangedFiles@345:23"
-      },
-      "to": {
-        "sym": "src/execution.ts#NormifyToolExecution@9:18",
-        "file": "src/execution.ts",
-        "line": 9,
-        "column": 18,
-        "state": "indexed"
-      },
-      "cross_file": true,
-      "specifier": null,
-      "resolved": "src/execution.ts",
-      "status": "resolved",
-      "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:345:131:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 345,
-        "column": 131,
-        "sym": "src/engine/store.ts#gitChangedFiles@345:23"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "lib-global-not-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:372:75:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 372,
-        "column": 75,
-        "sym": "src/engine/store.ts#classifySourcePath@372:23"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "lib-global-not-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/store.ts:372:91:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/store.ts",
-        "line": 372,
-        "column": 91,
-        "sym": "src/engine/store.ts#classifySourcePath@372:23"
-      },
-      "to": {
-        "sym": "src/engine/store.ts#SourcePathKind@363:13",
-        "file": "src/engine/store.ts",
-        "line": 363,
-        "column": 13,
         "state": "indexed"
       },
       "cross_file": false,
@@ -47108,13 +46450,59 @@
       "type_only": true
     },
     {
-      "id": "src/engine/store.ts:379:34:type-reference",
+      "id": "src/engine/store.ts:99:100:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/store.ts",
-        "line": 379,
-        "column": 34,
-        "sym": "src/engine/store.ts#classifySourcePath@372:23"
+        "line": 99,
+        "column": 100,
+        "sym": "src/engine/store.ts#walk@99:16"
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": null
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": null,
+      "status": "unresolved",
+      "reason": "lib-global-not-in-program",
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:100:18:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 100,
+        "column": 18,
+        "sym": "src/engine/store.ts#walk@99:16"
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": "outside"
+      },
+      "cross_file": false,
+      "specifier": "node:fs",
+      "resolved": null,
+      "status": "external",
+      "reason": "external-module-symbol",
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:107:32:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 107,
+        "column": 32,
+        "sym": "src/engine/store.ts#walk@99:16"
       },
       "to": {
         "sym": null,
@@ -47131,36 +46519,36 @@
       "type_only": true
     },
     {
-      "id": "src/engine/store.ts:395:64:type-reference",
+      "id": "src/engine/store.ts:120:83:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/store.ts",
-        "line": 395,
-        "column": 64,
-        "sym": "src/engine/store.ts#fingerprintOf@395:23"
+        "line": 120,
+        "column": 83,
+        "sym": "src/engine/store.ts#listModuleFiles@120:23"
       },
       "to": {
-        "sym": "src/engine/types.ts#SourceRef@8:18",
-        "file": "src/engine/types.ts",
-        "line": 8,
+        "sym": "src/engine/store.ts#ModuleWalkReadError@86:18",
+        "file": "src/engine/store.ts",
+        "line": 86,
         "column": 18,
         "state": "indexed"
       },
-      "cross_file": true,
+      "cross_file": false,
       "specifier": null,
-      "resolved": "src/engine/types.ts",
+      "resolved": "src/engine/store.ts",
       "status": "resolved",
       "reason": null,
       "type_only": true
     },
     {
-      "id": "src/engine/store.ts:395:78:type-reference",
+      "id": "src/engine/store.ts:120:114:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/store.ts",
-        "line": 395,
-        "column": 78,
-        "sym": "src/engine/store.ts#fingerprintOf@395:23"
+        "line": 120,
+        "column": 114,
+        "sym": "src/engine/store.ts#listModuleFiles@120:23"
       },
       "to": {
         "sym": null,
@@ -47177,13 +46565,1071 @@
       "type_only": true
     },
     {
-      "id": "src/engine/store.ts:419:27:type-reference",
+      "id": "src/engine/store.ts:137:68:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/store.ts",
-        "line": 419,
+        "line": 137,
+        "column": 68,
+        "sym": "src/engine/store.ts#listModuleTreeAnomalies@137:23"
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": null
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": null,
+      "status": "unresolved",
+      "reason": "lib-global-not-in-program",
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:140:53:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 140,
+        "column": 53,
+        "sym": "src/engine/store.ts#listModuleTreeAnomalies@137:23"
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": null
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": null,
+      "status": "unresolved",
+      "reason": "lib-global-not-in-program",
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:141:22:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 141,
+        "column": 22,
+        "sym": "src/engine/store.ts#listModuleTreeAnomalies@137:23"
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": "outside"
+      },
+      "cross_file": false,
+      "specifier": "node:fs",
+      "resolved": null,
+      "status": "external",
+      "reason": "external-module-symbol",
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:183:137:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 183,
+        "column": 137,
+        "sym": "src/engine/store.ts#loadAllModules@183:23"
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": null
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": null,
+      "status": "unresolved",
+      "reason": "lib-global-not-in-program",
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:183:154:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 183,
+        "column": 154,
+        "sym": "src/engine/store.ts#loadAllModules@183:23"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#ModuleFile@206:18",
+        "file": "src/engine/types.ts",
+        "line": 206,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:183:176:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 183,
+        "column": 176,
+        "sym": "src/engine/store.ts#loadAllModules@183:23"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Diagnostic@213:18",
+        "file": "src/engine/types.ts",
+        "line": 213,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:183:200:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 183,
+        "column": 200,
+        "sym": "src/engine/store.ts#loadAllModules@183:23"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Diagnostic@213:18",
+        "file": "src/engine/types.ts",
+        "line": 213,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:184:19:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 184,
+        "column": 19,
+        "sym": "src/engine/store.ts#loadAllModules@183:23"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Diagnostic@213:18",
+        "file": "src/engine/types.ts",
+        "line": 213,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:185:21:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 185,
+        "column": 21,
+        "sym": "src/engine/store.ts#loadAllModules@183:23"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Diagnostic@213:18",
+        "file": "src/engine/types.ts",
+        "line": 213,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:186:18:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 186,
+        "column": 18,
+        "sym": "src/engine/store.ts#loadAllModules@183:23"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#ModuleFile@206:18",
+        "file": "src/engine/types.ts",
+        "line": 206,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:187:26:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 187,
+        "column": 26,
+        "sym": "src/engine/store.ts#loadAllModules@183:23"
+      },
+      "to": {
+        "sym": "src/engine/store.ts#ModuleWalkReadError@86:18",
+        "file": "src/engine/store.ts",
+        "line": 86,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": "src/engine/store.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:213:37:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 213,
+        "column": 37,
+        "sym": "src/engine/store.ts#isContainer@213:17"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Module@140:18",
+        "file": "src/engine/types.ts",
+        "line": 140,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:213:50:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 213,
+        "column": 50,
+        "sym": "src/engine/store.ts#isContainer@213:17"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Module@140:18",
+        "file": "src/engine/types.ts",
+        "line": 140,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:244:70:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 244,
+        "column": 70,
+        "sym": "src/engine/store.ts#moduleFileLayoutConflict@244:17"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Module@140:18",
+        "file": "src/engine/types.ts",
+        "line": 140,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:244:85:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 244,
+        "column": 85,
+        "sym": "src/engine/store.ts#moduleFileLayoutConflict@244:17"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#ModuleFile@206:18",
+        "file": "src/engine/types.ts",
+        "line": 206,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:244:152:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 244,
+        "column": 152,
+        "sym": "src/engine/store.ts#moduleFileLayoutConflict@244:17"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#ModuleFile@206:18",
+        "file": "src/engine/types.ts",
+        "line": 206,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:255:74:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 255,
+        "column": 74,
+        "sym": "src/engine/store.ts#moduleFileLayoutConflictDiag@255:17"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Module@140:18",
+        "file": "src/engine/types.ts",
+        "line": 140,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:255:144:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 255,
+        "column": 144,
+        "sym": "src/engine/store.ts#moduleFileLayoutConflictDiag@255:17"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#ModuleFile@206:18",
+        "file": "src/engine/types.ts",
+        "line": 206,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:255:166:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 255,
+        "column": 166,
+        "sym": "src/engine/store.ts#moduleFileLayoutConflictDiag@255:17"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Diagnostic@213:18",
+        "file": "src/engine/types.ts",
+        "line": 213,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:261:38:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 261,
+        "column": 38,
+        "sym": "src/engine/store.ts#stripApisForContainer@261:10"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#ModuleFile@206:18",
+        "file": "src/engine/types.ts",
+        "line": 206,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:261:61:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 261,
+        "column": 61,
+        "sym": "src/engine/store.ts#stripApisForContainer@261:10"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Module@140:18",
+        "file": "src/engine/types.ts",
+        "line": 140,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:265:17:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 265,
+        "column": 17,
+        "sym": "src/engine/store.ts#stripApisForContainer@261:10"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Module@140:18",
+        "file": "src/engine/types.ts",
+        "line": 140,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:269:70:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 269,
+        "column": 70,
+        "sym": "src/engine/store.ts#apiDropWarning@269:10"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Diagnostic@213:18",
+        "file": "src/engine/types.ts",
+        "line": 213,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:272:67:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 272,
+        "column": 67,
+        "sym": "src/engine/store.ts#writeModuleFile@272:23"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Module@140:18",
+        "file": "src/engine/types.ts",
+        "line": 140,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:272:108:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 272,
+        "column": 108,
+        "sym": "src/engine/store.ts#writeModuleFile@272:23"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#ModuleFile@206:18",
+        "file": "src/engine/types.ts",
+        "line": 206,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:272:125:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 272,
+        "column": 125,
+        "sym": "src/engine/store.ts#writeModuleFile@272:23"
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": null
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": null,
+      "status": "unresolved",
+      "reason": "lib-global-not-in-program",
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:272:179:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 272,
+        "column": 179,
+        "sym": "src/engine/store.ts#writeModuleFile@272:23"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Diagnostic@213:18",
+        "file": "src/engine/types.ts",
+        "line": 213,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:274:21:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 274,
+        "column": 21,
+        "sym": "src/engine/store.ts#writeModuleFile@272:23"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Diagnostic@213:18",
+        "file": "src/engine/types.ts",
+        "line": 213,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:321:73:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 321,
+        "column": 73,
+        "sym": "src/engine/store.ts#deleteModuleTree@321:23"
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": null
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": null,
+      "status": "unresolved",
+      "reason": "lib-global-not-in-program",
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:321:136:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 321,
+        "column": 136,
+        "sym": "src/engine/store.ts#deleteModuleTree@321:23"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Diagnostic@213:18",
+        "file": "src/engine/types.ts",
+        "line": 213,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:322:21:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 322,
+        "column": 21,
+        "sym": "src/engine/store.ts#deleteModuleTree@321:23"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Diagnostic@213:18",
+        "file": "src/engine/types.ts",
+        "line": 213,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:376:68:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 376,
+        "column": 68,
+        "sym": "src/engine/store.ts#pruneEmptyDirs@376:16"
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": null
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": null,
+      "status": "unresolved",
+      "reason": "lib-global-not-in-program",
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:400:70:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 400,
+        "column": 70,
+        "sym": "src/engine/store.ts#promoteModule@400:23"
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": null
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": null,
+      "status": "unresolved",
+      "reason": "lib-global-not-in-program",
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:400:104:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 400,
+        "column": 104,
+        "sym": "src/engine/store.ts#promoteModule@400:23"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Diagnostic@213:18",
+        "file": "src/engine/types.ts",
+        "line": 213,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:401:21:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 401,
+        "column": 21,
+        "sym": "src/engine/store.ts#promoteModule@400:23"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#Diagnostic@213:18",
+        "file": "src/engine/types.ts",
+        "line": 213,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:425:68:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 425,
+        "column": 68,
+        "sym": "src/engine/store.ts#runGit@425:16"
+      },
+      "to": {
+        "sym": "src/execution.ts#NormifyToolExecution@9:18",
+        "file": "src/execution.ts",
+        "line": 9,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/execution.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:425:91:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 425,
+        "column": 91,
+        "sym": "src/engine/store.ts#runGit@425:16"
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": null
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": null,
+      "status": "unresolved",
+      "reason": "lib-global-not-in-program",
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:429:60:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 429,
+        "column": 60,
+        "sym": "src/engine/store.ts#gitHead@429:23"
+      },
+      "to": {
+        "sym": "src/execution.ts#NormifyToolExecution@9:18",
+        "file": "src/execution.ts",
+        "line": 9,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/execution.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:429:105:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 429,
+        "column": 105,
+        "sym": "src/engine/store.ts#gitHead@429:23"
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": null
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": null,
+      "status": "unresolved",
+      "reason": "lib-global-not-in-program",
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:438:86:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 438,
+        "column": 86,
+        "sym": "src/engine/store.ts#gitChangedFiles@438:23"
+      },
+      "to": {
+        "sym": "src/execution.ts#NormifyToolExecution@9:18",
+        "file": "src/execution.ts",
+        "line": 9,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/execution.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:438:131:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 438,
+        "column": 131,
+        "sym": "src/engine/store.ts#gitChangedFiles@438:23"
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": null
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": null,
+      "status": "unresolved",
+      "reason": "lib-global-not-in-program",
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:465:75:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 465,
+        "column": 75,
+        "sym": "src/engine/store.ts#classifySourcePath@465:23"
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": null
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": null,
+      "status": "unresolved",
+      "reason": "lib-global-not-in-program",
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:465:91:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 465,
+        "column": 91,
+        "sym": "src/engine/store.ts#classifySourcePath@465:23"
+      },
+      "to": {
+        "sym": "src/engine/store.ts#SourcePathKind@456:13",
+        "file": "src/engine/store.ts",
+        "line": 456,
+        "column": 13,
+        "state": "indexed"
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": "src/engine/store.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:472:34:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 472,
+        "column": 34,
+        "sym": "src/engine/store.ts#classifySourcePath@465:23"
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": null
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": null,
+      "status": "unresolved",
+      "reason": "symbol-not-found-in-program",
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:488:64:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 488,
+        "column": 64,
+        "sym": "src/engine/store.ts#fingerprintOf@488:23"
+      },
+      "to": {
+        "sym": "src/engine/types.ts#SourceRef@8:18",
+        "file": "src/engine/types.ts",
+        "line": 8,
+        "column": 18,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": null,
+      "resolved": "src/engine/types.ts",
+      "status": "resolved",
+      "reason": null,
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:488:78:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 488,
+        "column": 78,
+        "sym": "src/engine/store.ts#fingerprintOf@488:23"
+      },
+      "to": {
+        "sym": null,
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": null
+      },
+      "cross_file": false,
+      "specifier": null,
+      "resolved": null,
+      "status": "unresolved",
+      "reason": "lib-global-not-in-program",
+      "type_only": true
+    },
+    {
+      "id": "src/engine/store.ts:512:27:type-reference",
+      "kind": "type-reference",
+      "from": {
+        "file": "src/engine/store.ts",
+        "line": 512,
         "column": 27,
-        "sym": "src/engine/store.ts#fingerprintOf@395:23"
+        "sym": "src/engine/store.ts#fingerprintOf@488:23"
       },
       "to": {
         "sym": null,
@@ -48267,9 +48713,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#classifySourcePath@372:23",
+        "sym": "src/engine/store.ts#classifySourcePath@465:23",
         "file": "src/engine/store.ts",
-        "line": 372,
+        "line": 465,
         "column": 23,
         "state": "indexed"
       },
@@ -48290,9 +48736,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#fingerprintOf@395:23",
+        "sym": "src/engine/store.ts#fingerprintOf@488:23",
         "file": "src/engine/store.ts",
-        "line": 395,
+        "line": 488,
         "column": 23,
         "state": "indexed"
       },
@@ -48313,9 +48759,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#listModuleTreeAnomalies@109:23",
+        "sym": "src/engine/store.ts#listModuleTreeAnomalies@137:23",
         "file": "src/engine/store.ts",
-        "line": 109,
+        "line": 137,
         "column": 23,
         "state": "indexed"
       },
@@ -48336,9 +48782,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#loadAllModules@149:23",
+        "sym": "src/engine/store.ts#loadAllModules@183:23",
         "file": "src/engine/store.ts",
-        "line": 149,
+        "line": 183,
         "column": 23,
         "state": "indexed"
       },
@@ -48856,11 +49302,11 @@
       "type_only": true
     },
     {
-      "id": "src/engine/validate.ts:38:19:type-reference",
+      "id": "src/engine/validate.ts:42:19:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/validate.ts",
-        "line": 38,
+        "line": 42,
         "column": 19,
         "sym": "src/engine/validate.ts#validateProject@36:23"
       },
@@ -48879,11 +49325,11 @@
       "type_only": true
     },
     {
-      "id": "src/engine/validate.ts:39:21:type-reference",
+      "id": "src/engine/validate.ts:43:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/validate.ts",
-        "line": 39,
+        "line": 43,
         "column": 21,
         "sym": "src/engine/validate.ts#validateProject@36:23"
       },
@@ -48902,11 +49348,11 @@
       "type_only": true
     },
     {
-      "id": "src/engine/validate.ts:44:34:type-reference",
+      "id": "src/engine/validate.ts:48:34:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/validate.ts",
-        "line": 44,
+        "line": 48,
         "column": 34,
         "sym": "src/engine/validate.ts#validateProject@36:23"
       },
@@ -48925,11 +49371,11 @@
       "type_only": true
     },
     {
-      "id": "src/engine/validate.ts:254:42:type-reference",
+      "id": "src/engine/validate.ts:258:42:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/validate.ts",
-        "line": 254,
+        "line": 258,
         "column": 42,
         "sym": "src/engine/validate.ts#validateProject@36:23"
       },
@@ -48948,11 +49394,11 @@
       "type_only": true
     },
     {
-      "id": "src/engine/validate.ts:275:17:type-reference",
+      "id": "src/engine/validate.ts:279:17:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/engine/validate.ts",
-        "line": 275,
+        "line": 279,
         "column": 17,
         "sym": "src/engine/validate.ts#validateProject@36:23"
       },
@@ -49670,9 +50116,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/tools.ts#registerTools@1839:17",
+        "sym": "src/tools.ts#registerTools@1847:17",
         "file": "src/tools.ts",
-        "line": 1839,
+        "line": 1847,
         "column": 17,
         "state": "indexed"
       },
@@ -50544,9 +50990,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#loadAllModules@149:23",
+        "sym": "src/engine/store.ts#loadAllModules@183:23",
         "file": "src/engine/store.ts",
-        "line": 149,
+        "line": 183,
         "column": 23,
         "state": "indexed"
       },
@@ -54224,9 +54670,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#deleteModuleTree@228:23",
+        "sym": "src/engine/store.ts#deleteModuleTree@321:23",
         "file": "src/engine/store.ts",
-        "line": 228,
+        "line": 321,
         "column": 23,
         "state": "indexed"
       },
@@ -54247,9 +54693,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#fingerprintOf@395:23",
+        "sym": "src/engine/store.ts#fingerprintOf@488:23",
         "file": "src/engine/store.ts",
-        "line": 395,
+        "line": 488,
         "column": 23,
         "state": "indexed"
       },
@@ -54270,9 +54716,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#gitChangedFiles@345:23",
+        "sym": "src/engine/store.ts#gitChangedFiles@438:23",
         "file": "src/engine/store.ts",
-        "line": 345,
+        "line": 438,
         "column": 23,
         "state": "indexed"
       },
@@ -54316,9 +54762,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#loadAllModules@149:23",
+        "sym": "src/engine/store.ts#loadAllModules@183:23",
         "file": "src/engine/store.ts",
-        "line": 149,
+        "line": 183,
         "column": 23,
         "state": "indexed"
       },
@@ -54339,9 +54785,55 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#promoteModule@307:23",
+        "sym": "src/engine/store.ts#moduleFileLayoutConflict@244:17",
         "file": "src/engine/store.ts",
-        "line": 307,
+        "line": 244,
+        "column": 17,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": "./engine/store.js",
+      "resolved": "./engine/store.js",
+      "status": "resolved",
+      "reason": null,
+      "type_only": false
+    },
+    {
+      "id": "src/tools.ts:12:130:import",
+      "kind": "import",
+      "from": {
+        "file": "src/tools.ts",
+        "line": 12,
+        "column": 130,
+        "sym": null
+      },
+      "to": {
+        "sym": "src/engine/store.ts#moduleFileLayoutConflictDiag@255:17",
+        "file": "src/engine/store.ts",
+        "line": 255,
+        "column": 17,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": "./engine/store.js",
+      "resolved": "./engine/store.js",
+      "status": "resolved",
+      "reason": null,
+      "type_only": false
+    },
+    {
+      "id": "src/tools.ts:12:160:import",
+      "kind": "import",
+      "from": {
+        "file": "src/tools.ts",
+        "line": 12,
+        "column": 160,
+        "sym": null
+      },
+      "to": {
+        "sym": "src/engine/store.ts#promoteModule@400:23",
+        "file": "src/engine/store.ts",
+        "line": 400,
         "column": 23,
         "state": "indexed"
       },
@@ -54353,12 +54845,12 @@
       "type_only": false
     },
     {
-      "id": "src/tools.ts:12:119:import",
+      "id": "src/tools.ts:12:175:import",
       "kind": "import",
       "from": {
         "file": "src/tools.ts",
         "line": 12,
-        "column": 119,
+        "column": 175,
         "sym": null
       },
       "to": {
@@ -54376,18 +54868,18 @@
       "type_only": false
     },
     {
-      "id": "src/tools.ts:12:135:import",
+      "id": "src/tools.ts:12:191:import",
       "kind": "import",
       "from": {
         "file": "src/tools.ts",
         "line": 12,
-        "column": 135,
+        "column": 191,
         "sym": null
       },
       "to": {
-        "sym": "src/engine/store.ts#writeModuleFile@191:23",
+        "sym": "src/engine/store.ts#writeModuleFile@272:23",
         "file": "src/engine/store.ts",
-        "line": 191,
+        "line": 272,
         "column": 23,
         "state": "indexed"
       },
@@ -54615,9 +55107,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/edit.ts#checkProposal@811:23",
+        "sym": "src/engine/edit.ts#checkProposal@819:23",
         "file": "src/engine/edit.ts",
-        "line": 811,
+        "line": 819,
         "column": 23,
         "state": "indexed"
       },
@@ -54638,9 +55130,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/edit.ts#moveModuleTree@382:23",
+        "sym": "src/engine/edit.ts#moveModuleTree@390:23",
         "file": "src/engine/edit.ts",
-        "line": 382,
+        "line": 390,
         "column": 23,
         "state": "indexed"
       },
@@ -54707,9 +55199,9 @@
         "sym": null
       },
       "to": {
-        "sym": "src/engine/edit.ts#refreshModules@693:23",
+        "sym": "src/engine/edit.ts#refreshModules@701:23",
         "file": "src/engine/edit.ts",
-        "line": 693,
+        "line": 701,
         "column": 23,
         "state": "indexed"
       },
@@ -58493,11 +58985,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:881:21:type-reference",
+      "id": "src/tools.ts:889:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 881,
+        "line": 889,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58516,11 +59008,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:885:23:type-reference",
+      "id": "src/tools.ts:893:23:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 885,
+        "line": 893,
         "column": 23,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58539,11 +59031,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:916:21:type-reference",
+      "id": "src/tools.ts:924:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 916,
+        "line": 924,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58562,11 +59054,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:938:21:type-reference",
+      "id": "src/tools.ts:946:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 938,
+        "line": 946,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58585,11 +59077,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:950:21:type-reference",
+      "id": "src/tools.ts:958:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 950,
+        "line": 958,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58608,11 +59100,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:966:21:type-reference",
+      "id": "src/tools.ts:974:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 966,
+        "line": 974,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58631,11 +59123,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:974:22:type-reference",
+      "id": "src/tools.ts:982:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 974,
+        "line": 982,
         "column": 22,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58654,11 +59146,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1023:25:type-reference",
+      "id": "src/tools.ts:1031:25:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1023,
+        "line": 1031,
         "column": 25,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58677,11 +59169,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1024:27:type-reference",
+      "id": "src/tools.ts:1032:27:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1024,
+        "line": 1032,
         "column": 27,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58700,11 +59192,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1025:36:type-reference",
+      "id": "src/tools.ts:1033:36:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1025,
+        "line": 1033,
         "column": 36,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58723,11 +59215,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1027:25:type-reference",
+      "id": "src/tools.ts:1035:25:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1027,
+        "line": 1035,
         "column": 25,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58746,11 +59238,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1082:21:type-reference",
+      "id": "src/tools.ts:1090:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1082,
+        "line": 1090,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58769,11 +59261,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1086:22:type-reference",
+      "id": "src/tools.ts:1094:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1086,
+        "line": 1094,
         "column": 22,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58792,11 +59284,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1087:21:type-reference",
+      "id": "src/tools.ts:1095:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1087,
+        "line": 1095,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58815,11 +59307,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1111:21:type-reference",
+      "id": "src/tools.ts:1119:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1111,
+        "line": 1119,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58838,11 +59330,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1114:22:type-reference",
+      "id": "src/tools.ts:1122:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1114,
+        "line": 1122,
         "column": 22,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58861,11 +59353,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1126:21:type-reference",
+      "id": "src/tools.ts:1134:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1126,
+        "line": 1134,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58884,11 +59376,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1141:21:type-reference",
+      "id": "src/tools.ts:1149:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1141,
+        "line": 1149,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58907,11 +59399,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1143:22:type-reference",
+      "id": "src/tools.ts:1151:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1143,
+        "line": 1151,
         "column": 22,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58930,11 +59422,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1151:44:type-reference",
+      "id": "src/tools.ts:1159:44:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1151,
+        "line": 1159,
         "column": 44,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58953,11 +59445,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1151:70:type-reference",
+      "id": "src/tools.ts:1159:70:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1151,
+        "line": 1159,
         "column": 70,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58976,11 +59468,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1177:21:type-reference",
+      "id": "src/tools.ts:1185:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1177,
+        "line": 1185,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -58999,11 +59491,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1197:21:type-reference",
+      "id": "src/tools.ts:1205:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1197,
+        "line": 1205,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59022,11 +59514,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1199:22:type-reference",
+      "id": "src/tools.ts:1207:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1199,
+        "line": 1207,
         "column": 22,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59045,11 +59537,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1216:21:type-reference",
+      "id": "src/tools.ts:1224:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1216,
+        "line": 1224,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59068,11 +59560,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1250:21:type-reference",
+      "id": "src/tools.ts:1258:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1250,
+        "line": 1258,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59091,11 +59583,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1271:21:type-reference",
+      "id": "src/tools.ts:1279:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1271,
+        "line": 1279,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59114,11 +59606,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1294:21:type-reference",
+      "id": "src/tools.ts:1302:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1294,
+        "line": 1302,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59137,11 +59629,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1296:22:type-reference",
+      "id": "src/tools.ts:1304:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1296,
+        "line": 1304,
         "column": 22,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59160,11 +59652,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1354:23:type-reference",
+      "id": "src/tools.ts:1362:23:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1354,
+        "line": 1362,
         "column": 23,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59183,11 +59675,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1399:28:type-reference",
+      "id": "src/tools.ts:1407:28:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1399,
+        "line": 1407,
         "column": 28,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59206,11 +59698,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1435:27:type-reference",
+      "id": "src/tools.ts:1443:27:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1435,
+        "line": 1443,
         "column": 27,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59229,11 +59721,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1474:21:type-reference",
+      "id": "src/tools.ts:1482:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1474,
+        "line": 1482,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59252,11 +59744,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1501:21:type-reference",
+      "id": "src/tools.ts:1509:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1501,
+        "line": 1509,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59275,11 +59767,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1542:21:type-reference",
+      "id": "src/tools.ts:1550:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1542,
+        "line": 1550,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59298,11 +59790,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1576:21:type-reference",
+      "id": "src/tools.ts:1584:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1576,
+        "line": 1584,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59321,11 +59813,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1614:21:type-reference",
+      "id": "src/tools.ts:1622:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1614,
+        "line": 1622,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59344,11 +59836,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1628:22:type-reference",
+      "id": "src/tools.ts:1636:22:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1628,
+        "line": 1636,
         "column": 22,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59367,11 +59859,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1668:21:type-reference",
+      "id": "src/tools.ts:1676:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1668,
+        "line": 1676,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59390,11 +59882,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1698:21:type-reference",
+      "id": "src/tools.ts:1706:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1698,
+        "line": 1706,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59413,11 +59905,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1708:20:type-reference",
+      "id": "src/tools.ts:1716:20:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1708,
+        "line": 1716,
         "column": 20,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59436,11 +59928,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1725:23:type-reference",
+      "id": "src/tools.ts:1733:23:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1725,
+        "line": 1733,
         "column": 23,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59459,11 +59951,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1741:21:type-reference",
+      "id": "src/tools.ts:1749:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1741,
+        "line": 1749,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59482,11 +59974,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1771:21:type-reference",
+      "id": "src/tools.ts:1779:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1771,
+        "line": 1779,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59505,11 +59997,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1776:20:type-reference",
+      "id": "src/tools.ts:1784:20:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1776,
+        "line": 1784,
         "column": 20,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59528,11 +60020,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1796:21:type-reference",
+      "id": "src/tools.ts:1804:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1796,
+        "line": 1804,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59551,11 +60043,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1815:21:type-reference",
+      "id": "src/tools.ts:1823:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1815,
+        "line": 1823,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59574,11 +60066,11 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1834:21:type-reference",
+      "id": "src/tools.ts:1842:21:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1834,
+        "line": 1842,
         "column": 21,
         "sym": "src/tools.ts#createNormifyTools@685:17"
       },
@@ -59597,13 +60089,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1839:41:type-reference",
+      "id": "src/tools.ts:1847:41:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1839,
+        "line": 1847,
         "column": 41,
-        "sym": "src/tools.ts#registerTools@1839:17"
+        "sym": "src/tools.ts#registerTools@1847:17"
       },
       "to": {
         "sym": "src/tools.ts#NormifyToolRegistration@76:13",
@@ -59620,13 +60112,13 @@
       "type_only": true
     },
     {
-      "id": "src/tools.ts:1839:71:type-reference",
+      "id": "src/tools.ts:1847:71:type-reference",
       "kind": "type-reference",
       "from": {
         "file": "src/tools.ts",
-        "line": 1839,
+        "line": 1847,
         "column": 71,
-        "sym": "src/tools.ts#registerTools@1839:17"
+        "sym": "src/tools.ts#registerTools@1847:17"
       },
       "to": {
         "sym": "src/tools.ts#ToolEnv@27:18",

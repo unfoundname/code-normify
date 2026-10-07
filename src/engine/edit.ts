@@ -5,7 +5,7 @@ import { join, relative, dirname } from 'node:path';
 import { DEP_KINDS } from './types.js';
 import { diag } from './diag.js';
 import { deriveParent, isValidId, moduleFilePath, splitId } from './ids.js';
-import { loadAllModules, writeModuleFile, fingerprintOf, gitHead } from './store.js';
+import { loadAllModules, moduleFileLayoutConflict, moduleFileLayoutConflictDiag, writeModuleFile, fingerprintOf, gitHead } from './store.js';
 import { evaluatePolicy, loadPolicyFile } from './policy.js';
 import { l1Validate } from './frontmatter.js';
 import { rewriteModuleTypeReferences } from './contracts.js';
@@ -356,6 +356,14 @@ export async function batchWrite(projectDir: string, items: BatchItem[], mode: '
     if (errorsOut.length > 0)
         return { ok: false, dryRun: opts.dryRun === true, errors: errorsOut, warnings, changed: [], files: [], detail: { validated: items.length, dropped_by_l1: [...droppedByL1.entries()].map(([id, d]) => ({ module: id, code: d.code, message: d.message })), root_cause_hint: droppedByL1.size > 0 ? '本批有 ' + droppedByL1.size + ' 个模块未通过 L1（见 dropped_by_l1）；连带诊断 dep/target-dropped 与 structure/parent-dropped 都指向它们，先修这些再整批重试' : null } };
     const targets = all.filter(m => batchIds.has(m.id)).map(m => ({ module: m, path: targetPath(projectDir, m, all) }));
+    // 文件布局冲突（末段 `index` 的叶子算不出自己那份文件）必须在 dry-run 就说，
+    // 而不是等真写时靠 writeModuleFile 抛错 + 整批回滚——那时报的是「批量写入失败」，没人知道是哪个 id 撞了谁。
+    const collisions = all
+        .filter(m => batchIds.has(m.id))
+        .map(m => ({ module: m, conflict: moduleFileLayoutConflict(projectDir, m, files) }))
+        .filter(x => x.conflict !== null);
+    if (collisions.length > 0)
+        return { ok: false, dryRun: opts.dryRun === true, errors: collisions.map(x => moduleFileLayoutConflictDiag(projectDir, x.module, x.conflict!)), warnings, changed: [], files: [], detail: { validated: targets.length, collisions: collisions.map(x => x.module.id) } };
     if (opts.dryRun === true) {
         return { ok: true, dryRun: true, errors: [], warnings, changed: [], files: targets.map(t => relative(projectDir, t.path).replace(/\\/g, '/')), detail: { validated: targets.length } };
     }

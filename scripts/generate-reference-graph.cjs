@@ -375,6 +375,30 @@ function targetStateOf(indexState, resolvedTarget, deletedPaths) {
 /** 位置的紧凑写法（用于人类报告与 --json 的样例，不落盘进图数据）。 */
 const posText = (p) => `${p.file}:${p.line}:${p.column}`;
 
+/**
+ * 扫描面内一份**索引 blob** → 文本。
+ *
+ * **必须走共享解码边界**（`core.decodeGuardedText`，与 `check-references.cjs` 的 `readText` 是同一份实现）：
+ * 直接 `buf.toString('utf8')` 会把 UTF-8 BOM 留在文本里，于是首行标题的 slug 带上 U+FEFF ——
+ * 同一份 `# Title` + `[x](#title)`，门禁侧（走共享边界）判 `resolved`，生成的图里却判 `dangling`。
+ * 「复用共享解码」因此名存实亡，而且产出的是一条**看起来像事实的错边**。
+ *
+ * UTF-16 BOM 与非法 UTF-8 由该边界**明确拒绝**（本仓只接受 UTF-8，这是既定的边界，不是本项要放宽的东西）：
+ * 这里同样不将就，直接抛错——生成器是写入侧，宁可红也不写一份基于乱码的图（按 utf8 硬解码会让
+ * 该文件的链接/锚点全部静默漏检）。
+ */
+function decodeScannedText(rel, buf) {
+  const decoded = core.decodeGuardedText(buf);
+  if (decoded.error) {
+    throw new Error(
+      `扫描面内的已跟踪文件不是可读的 UTF-8 文本：${rel}（${decoded.error}）\n` +
+        '  建图必须与 check-references 走同一套解码边界（scripts/reference-graph-core.cjs 的 decodeGuardedText）：' +
+        '硬解码出来的乱码会静默产出错边（UTF-8 BOM 会让真实锚点被判悬空；UTF-16 会让整份文件的链接全部漏检）。',
+    );
+  }
+  return normalizeEol(decoded.text);
+}
+
 function makeEdgeCollector(fromFile) {
   const edges = [];
   return {
@@ -595,7 +619,7 @@ function buildGraph(root, options = {}) {
     // `readBlobs` 已经保证「请求过的 sha 全部拿到」（拿不到就抛错）：这里再拿到 undefined 只可能是
     // 索引条目与请求清单对不上（代码 bug）。**绝不 `continue`**——静默丢边正是 B3 那条红线。
     if (!buf) throw new Error(`内部不一致：索引条目 ${entry.rel}（${entry.sha}）不在已读到的 blob 集合里`);
-    const text = normalizeEol(buf.toString('utf8'));
+    const text = decodeScannedText(entry.rel, buf);
     textOf.set(entry.rel, text);
     ctx.preload(entry.rel, text);
   }
@@ -655,7 +679,7 @@ function buildGraph(root, options = {}) {
       // 同上面那条：`readBlobs` 拿不到就抛错，这里再拿到 undefined 只可能是代码 bug ⇒ 不静默跳过，
       // 否则该锚点会被判成 `unresolved`（「读不到」被读成「指向的文档没有这个标题」）。
       if (!buf) throw new Error(`内部不一致：锚点目标 ${rel}（${shaByRel.get(rel)}）不在已读到的 blob 集合里`);
-      const text = normalizeEol(buf.toString('utf8'));
+      const text = decodeScannedText(rel, buf);
       textOf.set(rel, text);
       ctx.preload(rel, text);
     }
