@@ -1,0 +1,232 @@
+{
+  "schema_version": 1,
+  "kind": "commit",
+  "commit": "48c6eda2e2fa81236cbcd313d504d5eee724dedb",
+  "commit_parent": "7dba4a5446313328a183389b449b7977e1c659f5",
+  "cas_digest": null,
+  "change_id": null,
+  "created_at": "2026-10-07T08:06:07Z",
+  "generator": "scripts/generate-change-log.cjs",
+  "generator_version": "1.0.0",
+  "graph_schema_version": 2,
+  "graph_encoding": "d2d5de848c0b0e97",
+  "from_snapshot": {
+    "basis": "commit",
+    "rev": "7dba4a5446313328a183389b449b7977e1c659f5",
+    "tree": "d519e7babfaf504da3757f8c6a22fead065eb65b",
+    "universe_hash": "92766d260597ad7e7efb0e68f3ac1cc530108553f7c494dff55337b3726e15da",
+    "tracked_total": 1514,
+    "files": 1514,
+    "edges": 501,
+    "analysis_mode": "typescript"
+  },
+  "to_snapshot": {
+    "basis": "commit",
+    "rev": "48c6eda2e2fa81236cbcd313d504d5eee724dedb",
+    "tree": "6451875a57a124ee2de1a4fbf6491e591c9fdbc3",
+    "universe_hash": "92766d260597ad7e7efb0e68f3ac1cc530108553f7c494dff55337b3726e15da",
+    "tracked_total": 1514,
+    "files": 1514,
+    "edges": 501,
+    "analysis_mode": "typescript"
+  },
+  "degradation": {
+    "status": "complete",
+    "reasons": [],
+    "note": "两侧快照都完整重建：本次差在**文件层**是完整的（节点 = 全量已跟踪文件，边 = 扫描面产出的全部边）。数组为空 = 真的没有差异。"
+  },
+  "files": {
+    "added": [],
+    "removed": [],
+    "state_changed": []
+  },
+  "edges": {
+    "added": [
+      "scripts/generate-reference-graph.cjs:127:20:require:node:fs",
+      "scripts/generate-reference-graph.cjs:128:22:require:node:path",
+      "scripts/generate-reference-graph.cjs:129:24:require:node:crypto",
+      "scripts/generate-reference-graph.cjs:130:31:require:node:child_process",
+      "scripts/generate-reference-graph.cjs:133:22:require:./reference-graph-core.cjs",
+      "scripts/generate-reference-graph.cjs:136:24:require:./file-ledger-core.cjs"
+    ],
+    "removed": [
+      "scripts/generate-reference-graph.cjs:114:20:require:node:fs",
+      "scripts/generate-reference-graph.cjs:115:22:require:node:path",
+      "scripts/generate-reference-graph.cjs:116:24:require:node:crypto",
+      "scripts/generate-reference-graph.cjs:117:31:require:node:child_process",
+      "scripts/generate-reference-graph.cjs:120:22:require:./reference-graph-core.cjs",
+      "scripts/generate-reference-graph.cjs:123:24:require:./file-ledger-core.cjs"
+    ],
+    "status_changed": []
+  },
+  "affected_referrers": [
+    {
+      "edge": "scripts/generate-reference-graph.cjs:114:20:require:node:fs",
+      "file": "scripts/generate-reference-graph.cjs",
+      "line": 114,
+      "column": 20,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-reference-graph.cjs:115:22:require:node:path",
+      "file": "scripts/generate-reference-graph.cjs",
+      "line": 115,
+      "column": 22,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-reference-graph.cjs:116:24:require:node:crypto",
+      "file": "scripts/generate-reference-graph.cjs",
+      "line": 116,
+      "column": 24,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-reference-graph.cjs:117:31:require:node:child_process",
+      "file": "scripts/generate-reference-graph.cjs",
+      "line": 117,
+      "column": 31,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-reference-graph.cjs:120:22:require:./reference-graph-core.cjs",
+      "file": "scripts/generate-reference-graph.cjs",
+      "line": 120,
+      "column": 22,
+      "kind": "require",
+      "target": "scripts/reference-graph-core.cjs",
+      "target_state": "indexed",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-reference-graph.cjs:123:24:require:./file-ledger-core.cjs",
+      "file": "scripts/generate-reference-graph.cjs",
+      "line": 123,
+      "column": 24,
+      "kind": "require",
+      "target": "scripts/file-ledger-core.cjs",
+      "target_state": "indexed",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-reference-graph.cjs:127:20:require:node:fs",
+      "file": "scripts/generate-reference-graph.cjs",
+      "line": 127,
+      "column": 20,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-reference-graph.cjs:128:22:require:node:path",
+      "file": "scripts/generate-reference-graph.cjs",
+      "line": 128,
+      "column": 22,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-reference-graph.cjs:129:24:require:node:crypto",
+      "file": "scripts/generate-reference-graph.cjs",
+      "line": 129,
+      "column": 24,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-reference-graph.cjs:130:31:require:node:child_process",
+      "file": "scripts/generate-reference-graph.cjs",
+      "line": 130,
+      "column": 31,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-reference-graph.cjs:133:22:require:./reference-graph-core.cjs",
+      "file": "scripts/generate-reference-graph.cjs",
+      "line": 133,
+      "column": 22,
+      "kind": "require",
+      "target": "scripts/reference-graph-core.cjs",
+      "target_state": "indexed",
+      "edge_status": "resolved",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-reference-graph.cjs:136:24:require:./file-ledger-core.cjs",
+      "file": "scripts/generate-reference-graph.cjs",
+      "line": 136,
+      "column": 24,
+      "kind": "require",
+      "target": "scripts/file-ledger-core.cjs",
+      "target_state": "indexed",
+      "edge_status": "resolved",
+      "classification": "edge-added",
+      "needs_change": false
+    }
+  ],
+  "counts": {
+    "files_added": 0,
+    "files_removed": 0,
+    "files_state_changed": 0,
+    "edges_added": 6,
+    "edges_removed": 6,
+    "edges_status_changed": 0,
+    "affected_referrers": 12,
+    "needs_change": 0
+  },
+  "handling": {
+    "status": "pending",
+    "by": null,
+    "at": null,
+    "note": null
+  },
+  "summary": "提交 48c6eda（收口：订正设计稿里 `lines !== null` 那组的漂移数值、删掉生成器注释里的裸耗时活值；CONTRIBUTING 的 `--help` 清单复核属实不动）：文件 +0/−0/±0 · 边 +6/−6/±0 · 受影响引用方 12 条（需改 0 条）",
+  "omitted": [
+    "declarations（符号级节点差，增量 3）",
+    "type-reference 边（增量 3）",
+    "传递闭包（affected_referrers 只到直接引用方，depth 恒 1；增量 5）",
+    "查询接口（增量 5）",
+    "cas-write 观测点（设计稿 §4.1 的第二个观测点，本批不实现）"
+  ]
+}
