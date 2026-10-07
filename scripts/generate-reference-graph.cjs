@@ -33,6 +33,20 @@
  * `SYMBOL_REASONS`）。两条不变量在 `buildGraph` 里是**抛错级**检查（违反 ⇒ 生成失败、不写盘），
  * 测试里另有对产物的全局断言。
  *
+ * **本批新增：`lib-global-not-in-program` 与 `as const` 假阳性（两条都是「如实记账」，不是放宽）**：
+ *   · Program 刻意 `noLib: true`（不把 `node_modules` 拉进来），于是给函数加一句标准类型标注
+ *     （`function f(): Promise<void>`）就会多一条「未解析」的 `type-reference`。本批不去给 Program
+ *     接 lib（实测：`unresolved` 恒 224、一条没降，却让 Program 28 → 95 个源文件、+约 200ms、
+ *     产物 +13.9KB，且 `cross_file` 被 lib 路径污染），而是由**生成器**在**运行时**读已装 typescript
+ *     自带 `lib.*.d.ts` 的顶层全局名，给**同时满足**「kind=type-reference ∧ from 在扫描面内 ∧
+ *     名字命中名表」的边打这个新原因码；`scripts/check-impact.cjs` **只**排除这一个原因码
+ *     （`declaration-out-of-scope` 等一律继续算红）。
+ *   · TS 把 `as const` 解析成名为 `const` 的 `TypeReferenceNode`（保留字，永远解析不到）⇒ 本批在
+ *     **生成器侧**跳过它（不是门禁侧放行 —— 它根本不该是一条引用边），跳过数落进产物自证。
+ *   · 名表 `status ≠ loaded` ⇒ 一条边也不归入新原因码（= 旧行为，**不判绿**），且降级写进产物与报告。
+ *   规模数字一律不回显成文档常数：取数看生成器报告里那两行「lib 全局名表 / 按设计排除」，
+ *   语义与假阴性面见 docs/HANDOFF-code-graph.zh-CN.md §7.14。
+ *
  * **本批不做**（设计稿 §10 的分期）：不做函数内局部变量与参数（增量 4）、不做文件内边的按需展开
  * （增量 4）、不做传递闭包与查询接口（增量 5）、不做变更影响门禁（增量 6）。这几条写进 `meta.omitted` 自证。
  *
@@ -118,6 +132,19 @@ const GRAPH_REL = 'ledger/references.json';
  * 1 → 2（增量 3）：新增 `declarations`（声明节点表）与 `symbol_edges`（符号级边表），
  * 并在 `meta.symbol_graph` 里自证 Program 的范围与原因码统计——`files` / `edges` 的**结构与内容
  * 口径都没变**（这是刻意的：改动记录的复核要能继续通过，见文件头「为什么分成两组数组」）。
+ *
+ * **2 保持不升（本批判定，理由写在这里而不是只写在提交信息里）**：本批加的是
+ *   ① `SYMBOL_REASONS` 里**新增一个取值** `lib-global-not-in-program`（闭集加一项，`reason` 字段的
+ *      含义与位置都没动）；② `meta.symbol_graph` 里新增三个**自证键**（`lib_globals` /
+ *      `const_assertion_skips` / `lib_global_shadowed_edges`）；③ 16 条 `as const` 假阳性边消失。
+ *   四条记录数组（`files` / `edges` / `declarations` / `symbol_edges`）的**字段集合与字段语义
+ *   一个都没动** ⇒ 按本仓对 `schema_version` 的用法（保护消费者别误读**结构**），这是**加值**而不是
+ *   结构变更，**不升版**。
+ *   另一条同样是硬的：升版会让**引入它的那一次提交自己**在 `check:impact` 上 fail-closed
+ *   （`impact-schema-version-mismatch`：基线 HEAD^ 还是 v2、当前是 v3），要它变绿就得放宽那条
+ *   fail-closed 判据——用「放宽 fail-closed 换自己绿」正是本仓最忌讳的形状。若将来要把新原因码
+ *   变成跨产物的硬契约（例如让别的消费者按版本分支），那就升到 3，并**同一次提交**改
+ *   `scripts/check-impact.cjs` 的两边比对逻辑与本文件末尾的 `--help`；本批不做。
  */
 const GRAPH_SCHEMA_VERSION = 2;
 
@@ -706,6 +733,14 @@ function buildGraph(root, options = {}) {
     return Object.fromEntries(Object.entries(out).sort((a, b) => byUtf8(a[0], b[0])));
   };
 
+  /**
+   * 被归入 `lib-global-not-in-program` 的符号级边条数（= 名表命中数）。
+   * **必须回显**（生成器报告 / `--json` / `check-impact` 三处）：「有多少条被按设计排除」是判定的一部分，
+   * 静默豁免与假绿在本仓同罪。
+   */
+  const libGlobalReason = core.SYMBOL_REASONS.LIB_GLOBAL_NOT_IN_PROGRAM;
+  const libGlobalEdges = sortedSymbolEdges.filter((e) => e.reason === libGlobalReason).length;
+
   const degraded = core.SPECIFIER_ANALYSIS.mode !== 'typescript';
   const graph = {
     schema_version: GRAPH_SCHEMA_VERSION,
@@ -766,6 +801,17 @@ function buildGraph(root, options = {}) {
           sortedSymbolEdges.filter((e) => e.reason),
           (e) => e.reason,
         ),
+        /**
+         * **lib 全局名表（本批新增）的自证块**：`status` / `reason` / 版本 / 规模 / 名字表摘要都在这里，
+         * 「有多少条边被归入 `lib-global-not-in-program`」由上面的 `unresolved_reasons` 给出（**不回显就
+         * 等于静默豁免**，所以生成器的人类报告与 `--json` 两处都再点一次名）。
+         * `status ≠ loaded` ⇒ 一条边也不会归入那个原因码（保持旧行为 = 那些边继续算红，**不判绿**）。
+         */
+        lib_globals: core.libGlobalsSummary(),
+        /** `as const` 假阳性被跳过的节点数（生成器侧修，不是门禁侧放行；跳过不许静默）。 */
+        const_assertion_skips: symbol.stats.skipped_const_assertions,
+        /** 假阴性面（仓库符号遮蔽 lib 全局名）的条数，只回显、不参与判定，见 HANDOFF §7.14。 */
+        lib_global_shadowed_edges: symbol.stats.lib_global_shadowed_edges,
         cross_file_edges: sortedSymbolEdges.filter((e) => e.cross_file).length,
         // 恒为 0：`to.sym === null && !reason` 在 buildGraph 里直接抛错（fail-closed），不是统计出来的。
         silent_null_edges: 0,
@@ -787,7 +833,7 @@ function buildGraph(root, options = {}) {
         '文件内边按需展开（设计稿 §2.5 ④ / 增量 4）：本批的符号级边全部落盘',
         'import-binding 节点（本批把 import 绑定表达成符号级边的源端，不单独节点化）',
         '非 TS 后缀（.mjs / .cjs / .js / .jsx）的符号级解析（按设计稿 §3.4 退化为文件级）',
-        '库类型与 @types（Program 刻意 noLib + types:[]：这类引用记 unresolved / symbol-not-found-in-program）',
+        '库类型与 @types（Program 刻意 noLib + types:[]：库类型=自带 lib 的全局名记 lib-global-not-in-program，其余记 symbol-not-found-in-program）',
         '传递闭包查询的结果不落盘（能力已由 scripts/refs-query.cjs 的 impact / who-references 提供，属按需查询）',
         '查询接口的产物不落盘（能力已由 scripts/refs-query.cjs 提供）',
         '变更影响判定不落盘（能力已由 scripts/check-impact.cjs 提供，它是 check 链第 13 环）',
@@ -803,11 +849,14 @@ function buildGraph(root, options = {}) {
     scanned: scanned.length,
     elapsedMs: Date.now() - startedAt,
     degraded,
+    /** 被归入 `lib-global-not-in-program` 的符号级边条数（回显用；判定在 check-impact 侧）。 */
+    libGlobalEdges,
     symbol: {
       mode: symbol.mode,
       reasons: symbol.reasons,
       stats: symbol.stats,
       compilerOptions: symbol.compiler_options,
+      libGlobals: core.libGlobalsSummary(),
     },
   };
 }
@@ -977,7 +1026,7 @@ function main(argv) {
     return;
   }
 
-  const { graph, elapsedMs, degraded, symbol } = built;
+  const { graph, elapsedMs, degraded, symbol, libGlobalEdges } = built;
   const serialized = serialize(graph);
   const graphAbs = path.join(root, ...GRAPH_REL.split('/'));
   // 两种模式的比较基准刻意不同（与 generate-file-ledger.cjs 同构）：
@@ -1082,6 +1131,11 @@ function main(argv) {
             unresolvedReasons: graph.meta.symbol_graph.unresolved_reasons,
             crossFileEdges: graph.meta.symbol_graph.cross_file_edges,
             silentNullEdges: graph.meta.symbol_graph.silent_null_edges,
+            // 本批新增：lib 全局名表自证块 + 三个必须回显的计数（命中数 / 跳过数 / 遮蔽条数）。
+            libGlobals: graph.meta.symbol_graph.lib_globals,
+            libGlobalEdges,
+            constAssertionSkips: graph.meta.symbol_graph.const_assertion_skips,
+            libGlobalShadowedEdges: graph.meta.symbol_graph.lib_global_shadowed_edges,
           },
           timings: { totalMs: elapsedMs, programMs: symbol.stats.program_ms, collectMs: symbol.stats.collect_ms },
         },
@@ -1096,7 +1150,8 @@ function main(argv) {
         `${TOOL}: ${GRAPH_REL} 与重新生成的结果一致（比较基准 = ${basis}）。\n` +
           `  降级状态 = ${degradation.status}（基准 = git 索引 blob，且与工作区是同一份事实）\n` +
           `  节点 ${graph.files.length} · 边 ${graph.edges.length} · 扫描面 ${graph.meta.scope.scanned_total} 个文件 · universe ${graph.meta.tracked_total} 条\n` +
-          `  符号级 = 声明 ${graph.declarations.length} · 符号边 ${graph.symbol_edges.length}（schema_version ${graph.schema_version}）\n`,
+          `  符号级 = 声明 ${graph.declarations.length} · 符号边 ${graph.symbol_edges.length}（schema_version ${graph.schema_version}）\n` +
+          `${libGlobalsReportLines(graph, libGlobalEdges).join('\n')}\n`,
       );
     } else {
       const lines = [
@@ -1108,6 +1163,7 @@ function main(argv) {
             `符号边 ${graph.symbol_edges.length} · universe_hash ${graph.meta.universe_hash.slice(0, 16)}…`,
         );
       }
+      lines.push(...libGlobalsReportLines(graph, libGlobalEdges));
       for (const d of diagnostics) {
         lines.push(`  [${degradation.status}] ${d.check}/${d.type} ${d.file}：${d.message}`);
         if (d.hint) lines.push(`       修法：${d.hint}`);
@@ -1128,11 +1184,32 @@ function main(argv) {
         `未解析原因 ${JSON.stringify(graph.meta.symbol_graph.unresolved_reasons)}\n` +
         `    Program ${graph.meta.symbol_graph.program_source_files} 个源文件（仓库外 ${graph.meta.symbol_graph.program_outside_repo_files} 个）· ` +
         `编译器选项 ${JSON.stringify(graph.meta.symbol_graph.compiler_options)}\n` +
+        `${libGlobalsReportLines(graph, libGlobalEdges).join('\n')}\n` +
         (upgradedFrom !== null ? `  结构升级：${GRAPH_REL} v${upgradedFrom} → v${graph.schema_version}\n` : '') +
         `  解析模式 = ${graph.meta.analysis.mode}${degraded ? '（**降级**：拿不到 typescript，说明符只按正则解析）' : ''} · ` +
         `耗时 ${elapsedMs} ms（其中 createProgram ${symbol.stats.program_ms} ms / 符号遍历 ${symbol.stats.collect_ms} ms）\n`,
     );
   }  if (opts.check && !checkOk) process.exitCode = 1;
+}
+
+/**
+ * 人类报告里那两行「按设计排除了多少条」——**必须出现**（生成器人类报告 / `--json` /
+ * `scripts/check-impact.cjs` 三处都要能看到「有多少条被归入 lib-global-not-in-program」）。
+ * 静默豁免与假绿在本仓同罪：判绿的那部分判定，必须自己把规模说出来。
+ */
+function libGlobalsReportLines(graph, libGlobalEdges) {
+  const lg = graph.meta.symbol_graph.lib_globals;
+  const reason = core.SYMBOL_REASONS.LIB_GLOBAL_NOT_IN_PROGRAM;
+  return [
+    lg.status === 'loaded'
+      ? `    lib 全局名表 = loaded（typescript ${lg.typescript_version} · ${lg.lib_files_total} 个 lib.*.d.ts · ` +
+        `顶层全局名 ${lg.globals_total} 个 · 名字表摘要 ${String(lg.names_digest).slice(0, 23)}…）`
+      : `    lib 全局名表 = **unavailable**（原因码 ${lg.reason}）：本次**没有任何边**被归入 ${reason} —— ` +
+        `那些边继续按 symbol-not-found-in-program 计（保持旧行为，**不判绿**）`,
+    `    按设计排除 = ${libGlobalEdges} 条 ${reason}（仅 kind=type-reference 且名字命中名表）· ` +
+      `as const 假阳性跳过 ${graph.meta.symbol_graph.const_assertion_skips} 条 · ` +
+      `遮蔽风险（同名仓库顶层声明）${graph.meta.symbol_graph.lib_global_shadowed_edges} 条`,
+  ];
 }
 
 function parseArgs(argv) {
@@ -1234,6 +1311,14 @@ function printHelp() {
     '             specifier / resolved / status / reason / type_only，',
     '             kind ∈ import | export-from | type-reference；',
     '             **无静默 null**：to.sym 为空时 reason 必填（闭集见共享内核的 SYMBOL_REASONS），违反即生成失败。',
+    '             **lib-global-not-in-program**（本批新增）：被引用的名字是**已装 typescript 自带 lib 的顶层全局名**',
+    '             （Promise / Record / Map …），而 Program 刻意 noLib ⇒ 它不是断链。名表**运行时读**（不写死清单），',
+    '             版本 / 文件数 / 名字总数 / 名字表 sha256 摘要落进 meta.symbol_graph.lib_globals；名表读不到时',
+    '             status ≠ loaded、一条边也不归入该原因码（保持旧行为 = 那些边继续算未解析，**不判绿**）。',
+    '             命中的条数在人类报告与 --json（symbolGraph.libGlobalEdges）里回显；`as const` 假阳性在生成器侧跳过',
+    '             （meta.symbol_graph.const_assertion_skips）。',
+    '             **只对 kind=type-reference 且 from 在扫描面内的边成立**：declaration-out-of-scope（仓库内越界）、',
+    '             imported-symbol-not-loaded / external-module-symbol 与拼错的名字一律**不归**本条（继续算红）。',
     '',
     '解析器与 scripts/check-references.cjs 共用 scripts/reference-graph-core.cjs（同一份实现，不造第二套）：',
     '  门禁回答「引用完整性」，图回答「谁指向谁」；文件级边与符号级边都出自这一份内核。',

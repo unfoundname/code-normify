@@ -67,19 +67,33 @@
       "edge_kinds": {
         "export-from": 70,
         "import": 481,
-        "type-reference": 807
+        "type-reference": 791
       },
       "edge_status": {
         "external": 139,
         "resolved": 995,
-        "unresolved": 224
+        "unresolved": 208
       },
       "unresolved_reasons": {
         "bare-module-specifier": 131,
         "declaration-out-of-scope": 9,
         "external-module-symbol": 8,
-        "symbol-not-found-in-program": 215
+        "lib-global-not-in-program": 178,
+        "symbol-not-found-in-program": 21
       },
+      "lib_globals": {
+        "status": "loaded",
+        "reason": null,
+        "typescript_version": "5.9.3",
+        "lib_files_total": 99,
+        "globals_total": 2031,
+        "names_digest": "sha256:7b6715cb86307c6001021c2db2fa782d1198a2ef34ad84d827ebe22c21acd8d9",
+        "source": "已安装 typescript 包自带 lib/*.d.ts 的顶层声明名（ts.createSourceFile，不建 Program、不读 tsconfig）",
+        "used_by": "仅用于把 kind=type-reference 且名字命中本表的未解析边归入 lib-global-not-in-program（Program 刻意 noLib）；status ≠ loaded ⇒ 一条也不归入（保持旧行为，不判绿）",
+        "shadowing_caveat": "名字命中本表、但仓库内另有同名顶层声明时，本表判不出来（见 HANDOFF §7.14 的假阴性面）；这类边的条数由 lib_global_shadowed_edges 单独回显"
+      },
+      "const_assertion_skips": 16,
+      "lib_global_shadowed_edges": 0,
       "cross_file_edges": 762,
       "silent_null_edges": 0,
       "degraded_extensions": {
@@ -102,18 +116,18 @@
       "import": 321,
       "markdown-link": 35,
       "package-field": 51,
-      "require": 52
+      "require": 54
     },
     "edge_status": {
-      "external": 188,
-      "resolved": 311
+      "external": 189,
+      "resolved": 312
     },
     "omitted": [
       "函数内局部变量与参数（设计稿 §10 增量 4）",
       "文件内边按需展开（设计稿 §2.5 ④ / 增量 4）：本批的符号级边全部落盘",
       "import-binding 节点（本批把 import 绑定表达成符号级边的源端，不单独节点化）",
       "非 TS 后缀（.mjs / .cjs / .js / .jsx）的符号级解析（按设计稿 §3.4 退化为文件级）",
-      "库类型与 @types（Program 刻意 noLib + types:[]：这类引用记 unresolved / symbol-not-found-in-program）",
+      "库类型与 @types（Program 刻意 noLib + types:[]：库类型=自带 lib 的全局名记 lib-global-not-in-program，其余记 symbol-not-found-in-program）",
       "传递闭包查询的结果不落盘（能力已由 scripts/refs-query.cjs 的 impact / who-references 提供，属按需查询）",
       "查询接口的产物不落盘（能力已由 scripts/refs-query.cjs 提供）",
       "变更影响判定不落盘（能力已由 scripts/check-impact.cjs 提供，它是 check 链第 13 环）"
@@ -124,8 +138,8 @@
       "id": ".github/workflows/ci.yml",
       "lang": "yaml",
       "state": "indexed",
-      "bytes": 36682,
-      "lines": 331,
+      "bytes": 38515,
+      "lines": 345,
       "edge_out": 17,
       "edge_in": 0
     },
@@ -160,7 +174,7 @@
       "id": "CONTRIBUTING.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 74858,
+      "bytes": 77348,
       "lines": 184,
       "edge_out": 1,
       "edge_in": 0
@@ -214,7 +228,7 @@
       "id": "docs/DESIGN-code-graph.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 235025,
+      "bytes": 235700,
       "lines": 1363,
       "edge_out": 0,
       "edge_in": 0
@@ -223,8 +237,8 @@
       "id": "docs/HANDOFF-code-graph.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 138130,
-      "lines": 1126,
+      "bytes": 153449,
+      "lines": 1266,
       "edge_out": 0,
       "edge_in": 0
     },
@@ -13210,9 +13224,9 @@
       "id": "scripts/check-impact.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 31752,
-      "lines": 545,
-      "edge_out": 3,
+      "bytes": 41360,
+      "lines": 678,
+      "edge_out": 4,
       "edge_in": 1
     },
     {
@@ -13264,8 +13278,8 @@
       "id": "scripts/generate-reference-graph.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 69777,
-      "lines": 1271,
+      "bytes": 77312,
+      "lines": 1356,
       "edge_out": 6,
       "edge_in": 3
     },
@@ -13273,10 +13287,10 @@
       "id": "scripts/reference-graph-core.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 97942,
-      "lines": 2138,
-      "edge_out": 3,
-      "edge_in": 2
+      "bytes": 113841,
+      "lines": 2414,
+      "edge_out": 4,
+      "edge_in": 3
     },
     {
       "id": "scripts/refs-query.cjs",
@@ -13624,8 +13638,8 @@
       "id": "tests/impact-gate-e2e.mjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 35841,
-      "lines": 609,
+      "bytes": 44759,
+      "lines": 742,
       "edge_out": 5,
       "edge_in": 2
     },
@@ -13959,11 +13973,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:310:9:ci-target:scripts[\"check:impact\"]→check:impact",
+      "id": ".github/workflows/ci.yml:324:9:ci-target:scripts[\"check:impact\"]→check:impact",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 310,
+        "line": 324,
         "column": 9
       },
       "to": {
@@ -13981,11 +13995,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:323:9:ci-target:scripts[\"test:render\"]→test:render",
+      "id": ".github/workflows/ci.yml:337:9:ci-target:scripts[\"test:render\"]→test:render",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 323,
+        "line": 337,
         "column": 9
       },
       "to": {
@@ -14003,11 +14017,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:327:24:ci-target:lib/index.js",
+      "id": ".github/workflows/ci.yml:341:24:ci-target:lib/index.js",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 327,
+        "line": 341,
         "column": 24
       },
       "to": {
@@ -14025,11 +14039,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:328:24:ci-target:lib/tools.js",
+      "id": ".github/workflows/ci.yml:342:24:ci-target:lib/tools.js",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 328,
+        "line": 342,
         "column": 24
       },
       "to": {
@@ -14047,11 +14061,11 @@
       "type_only": false
     },
     {
-      "id": ".github/workflows/ci.yml:329:24:ci-target:lib/mcp.js",
+      "id": ".github/workflows/ci.yml:343:24:ci-target:lib/mcp.js",
       "kind": "ci-target",
       "from": {
         "file": ".github/workflows/ci.yml",
-        "line": 329,
+        "line": 343,
         "column": 24
       },
       "to": {
@@ -16357,6 +16371,28 @@
       "type_only": false
     },
     {
+      "id": "scripts/check-impact.cjs:62:18:require:./reference-graph-core.cjs",
+      "kind": "require",
+      "from": {
+        "file": "scripts/check-impact.cjs",
+        "line": 62,
+        "column": 18
+      },
+      "to": {
+        "file": "scripts/reference-graph-core.cjs",
+        "line": null,
+        "column": null,
+        "state": "indexed"
+      },
+      "cross_file": true,
+      "specifier": "./reference-graph-core.cjs",
+      "resolved": "scripts/reference-graph-core.cjs",
+      "fragment": null,
+      "field": null,
+      "status": "resolved",
+      "type_only": false
+    },
+    {
       "id": "scripts/check-lib-sync.cjs:87:20:require:node:fs",
       "kind": "require",
       "from": {
@@ -16841,11 +16877,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:100:20:require:node:fs",
+      "id": "scripts/generate-reference-graph.cjs:114:20:require:node:fs",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 100,
+        "line": 114,
         "column": 20
       },
       "to": {
@@ -16863,11 +16899,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:101:22:require:node:path",
+      "id": "scripts/generate-reference-graph.cjs:115:22:require:node:path",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 101,
+        "line": 115,
         "column": 22
       },
       "to": {
@@ -16885,11 +16921,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:102:24:require:node:crypto",
+      "id": "scripts/generate-reference-graph.cjs:116:24:require:node:crypto",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 102,
+        "line": 116,
         "column": 24
       },
       "to": {
@@ -16907,11 +16943,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:103:31:require:node:child_process",
+      "id": "scripts/generate-reference-graph.cjs:117:31:require:node:child_process",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 103,
+        "line": 117,
         "column": 31
       },
       "to": {
@@ -16929,11 +16965,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:106:22:require:./reference-graph-core.cjs",
+      "id": "scripts/generate-reference-graph.cjs:120:22:require:./reference-graph-core.cjs",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 106,
+        "line": 120,
         "column": 22
       },
       "to": {
@@ -16951,11 +16987,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:109:24:require:./file-ledger-core.cjs",
+      "id": "scripts/generate-reference-graph.cjs:123:24:require:./file-ledger-core.cjs",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 109,
+        "line": 123,
         "column": 24
       },
       "to": {
@@ -17017,11 +17053,33 @@
       "type_only": false
     },
     {
-      "id": "scripts/reference-graph-core.cjs:43:34:require:node:child_process",
+      "id": "scripts/reference-graph-core.cjs:43:24:require:node:crypto",
       "kind": "require",
       "from": {
         "file": "scripts/reference-graph-core.cjs",
         "line": 43,
+        "column": 24
+      },
+      "to": {
+        "file": null,
+        "line": null,
+        "column": null,
+        "state": "outside"
+      },
+      "cross_file": false,
+      "specifier": "node:crypto",
+      "resolved": null,
+      "fragment": null,
+      "field": null,
+      "status": "external",
+      "type_only": false
+    },
+    {
+      "id": "scripts/reference-graph-core.cjs:44:34:require:node:child_process",
+      "kind": "require",
+      "from": {
+        "file": "scripts/reference-graph-core.cjs",
+        "line": 44,
         "column": 34
       },
       "to": {
@@ -29424,7 +29482,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -29493,7 +29551,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -29585,7 +29643,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -29631,7 +29689,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -29793,29 +29851,6 @@
       "resolved": "src/planning.ts",
       "status": "resolved",
       "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/adapters/promptmanager.ts:12:29:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/adapters/promptmanager.ts",
-        "line": 12,
-        "column": 29,
-        "sym": "src/adapters/promptmanager.ts#projectBranchWorkerPlan@7:17"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
       "type_only": true
     },
     {
@@ -30827,7 +30862,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -30942,7 +30977,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -30988,7 +31023,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -31011,7 +31046,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -31034,7 +31069,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -31103,7 +31138,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -31126,7 +31161,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -31287,7 +31322,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -31310,7 +31345,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -31333,7 +31368,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -31494,7 +31529,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -31517,7 +31552,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -31609,7 +31644,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -31885,7 +31920,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -32368,7 +32403,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -32552,7 +32587,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -32575,7 +32610,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -32713,7 +32748,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -32736,7 +32771,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -32828,7 +32863,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -32851,7 +32886,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -32897,7 +32932,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -33036,29 +33071,6 @@
       "resolved": "src/engine/types.ts",
       "status": "resolved",
       "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/changes.ts:222:56:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/changes.ts",
-        "line": 222,
-        "column": 56,
-        "sym": "src/engine/changes.ts#validateChanges@192:23"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
       "type_only": true
     },
     {
@@ -33495,7 +33507,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -33518,7 +33530,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -33541,7 +33553,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -33610,7 +33622,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -33725,7 +33737,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -33771,7 +33783,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -33794,7 +33806,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -34369,7 +34381,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -34553,7 +34565,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -34622,7 +34634,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -34737,7 +34749,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -34806,7 +34818,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -34852,7 +34864,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -34875,7 +34887,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -34921,7 +34933,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -34967,7 +34979,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -35013,7 +35025,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -35036,7 +35048,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -35312,7 +35324,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -35335,7 +35347,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -35404,7 +35416,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -35427,7 +35439,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -35450,7 +35462,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -35473,7 +35485,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -35565,7 +35577,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -35703,7 +35715,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -35776,29 +35788,6 @@
       "type_only": true
     },
     {
-      "id": "src/engine/contracts.ts:199:60:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/contracts.ts",
-        "line": 199,
-        "column": 60,
-        "sym": "src/engine/contracts.ts#validateContracts@174:17"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
-      "type_only": true
-    },
-    {
       "id": "src/engine/diag.ts:1:15:import",
       "kind": "import",
       "from": {
@@ -35841,7 +35830,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -35864,7 +35853,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -36830,7 +36819,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -36922,7 +36911,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -36968,7 +36957,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -37152,7 +37141,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -37221,7 +37210,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -37267,7 +37256,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -37359,7 +37348,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -37474,7 +37463,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -37543,7 +37532,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -37566,7 +37555,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -37704,7 +37693,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -37796,7 +37785,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -37842,7 +37831,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -37888,7 +37877,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -37934,7 +37923,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -37957,7 +37946,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -38026,7 +38015,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -38118,7 +38107,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -38141,7 +38130,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -38187,7 +38176,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -38578,7 +38567,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -38762,7 +38751,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -39337,7 +39326,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -39502,29 +39491,6 @@
       "type_only": true
     },
     {
-      "id": "src/engine/frontmatter.ts:51:40:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/frontmatter.ts",
-        "line": 51,
-        "column": 40,
-        "sym": "src/engine/frontmatter.ts#checkL10n@32:10"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
-      "type_only": true
-    },
-    {
       "id": "src/engine/frontmatter.ts:67:66:type-reference",
       "kind": "type-reference",
       "from": {
@@ -39591,29 +39557,6 @@
       "resolved": "src/engine/frontmatter.ts",
       "status": "resolved",
       "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/frontmatter.ts:129:52:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/frontmatter.ts",
-        "line": 129,
-        "column": 52,
-        "sym": "src/engine/frontmatter.ts#checkApiEntry@99:17"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
       "type_only": true
     },
     {
@@ -39706,29 +39649,6 @@
       "resolved": "src/engine/frontmatter.ts",
       "status": "resolved",
       "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/frontmatter.ts:190:47:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/frontmatter.ts",
-        "line": 190,
-        "column": 47,
-        "sym": "src/engine/frontmatter.ts#checkDepEntry@172:17"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
       "type_only": true
     },
     {
@@ -40258,29 +40178,6 @@
       "resolved": "src/engine/types.ts",
       "status": "resolved",
       "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/frontmatter.ts:477:64:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/frontmatter.ts",
-        "line": 477,
-        "column": 64,
-        "sym": "src/engine/frontmatter.ts#serializeModule@432:17"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
       "type_only": true
     },
     {
@@ -41591,7 +41488,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -42258,7 +42155,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -42304,7 +42201,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -42327,7 +42224,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -42396,7 +42293,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -42442,7 +42339,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -42856,7 +42753,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -42879,7 +42776,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -42902,7 +42799,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -42948,7 +42845,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -42971,7 +42868,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -42994,7 +42891,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -43017,7 +42914,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -43040,7 +42937,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -43247,7 +43144,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -43845,7 +43742,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -44121,7 +44018,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -44213,7 +44110,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -44236,7 +44133,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -44282,7 +44179,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -44420,7 +44317,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -44443,7 +44340,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -44489,7 +44386,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -44608,29 +44505,6 @@
       "type_only": false
     },
     {
-      "id": "src/engine/reference.ts:13:105:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/reference.ts",
-        "line": 13,
-        "column": 105,
-        "sym": "src/engine/reference.ts#HELP_TOPICS@13:14"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
-      "type_only": true
-    },
-    {
       "id": "src/engine/reference.ts:90:39:type-reference",
       "kind": "type-reference",
       "from": {
@@ -44696,7 +44570,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -44742,7 +44616,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -45087,7 +44961,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -45156,7 +45030,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -45202,7 +45076,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -45340,7 +45214,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -46168,7 +46042,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -46214,7 +46088,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -46260,7 +46134,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -46306,7 +46180,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -46329,7 +46203,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -46674,7 +46548,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -46743,7 +46617,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -46812,7 +46686,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -46835,7 +46709,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -46927,7 +46801,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -46973,7 +46847,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -47019,7 +46893,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -47042,7 +46916,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -47134,7 +47008,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -47180,7 +47054,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -47204,52 +47078,6 @@
       "resolved": "src/engine/template.ts",
       "status": "resolved",
       "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/types.ts:14:120:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/types.ts",
-        "line": 14,
-        "column": 120,
-        "sym": "src/engine/types.ts#PROTOCOLS@14:14"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/types.ts:16:72:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/types.ts",
-        "line": 16,
-        "column": 72,
-        "sym": "src/engine/types.ts#DEP_KINDS@16:14"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
       "type_only": true
     },
     {
@@ -47295,7 +47123,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -47388,52 +47216,6 @@
       "resolved": "src/engine/types.ts",
       "status": "resolved",
       "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/types.ts:49:69:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/types.ts",
-        "line": 49,
-        "column": 69,
-        "sym": "src/engine/types.ts#MODULE_STATES@49:14"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
-      "type_only": true
-    },
-    {
-      "id": "src/engine/types.ts:54:131:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/types.ts",
-        "line": 54,
-        "column": 131,
-        "sym": "src/engine/types.ts#POLICY_RULE_TYPES@54:14"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
       "type_only": true
     },
     {
@@ -47572,29 +47354,6 @@
       "resolved": "src/engine/types.ts",
       "status": "resolved",
       "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/engine/types.ts:104:88:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/types.ts",
-        "line": 104,
-        "column": 88,
-        "sym": "src/engine/types.ts#CHANGE_STATUSES@104:14"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
       "type_only": true
     },
     {
@@ -47897,29 +47656,6 @@
       "type_only": true
     },
     {
-      "id": "src/engine/types.ts:167:69:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/engine/types.ts",
-        "line": 167,
-        "column": 69,
-        "sym": "src/engine/types.ts#LAYOUT_MODES@167:14"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
-      "type_only": true
-    },
-    {
       "id": "src/engine/types.ts:172:10:type-reference",
       "kind": "type-reference",
       "from": {
@@ -48054,7 +47790,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -48077,7 +47813,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -48721,7 +48457,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -48744,7 +48480,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -48790,7 +48526,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -48905,7 +48641,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -49020,7 +48756,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -49135,7 +48871,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -49158,7 +48894,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -49181,7 +48917,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -49250,7 +48986,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -49296,7 +49032,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -49342,7 +49078,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -49388,7 +49124,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -49503,7 +49239,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -49572,7 +49308,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -49595,7 +49331,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -49664,7 +49400,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -51366,7 +51102,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -51389,7 +51125,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -51412,7 +51148,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -51849,7 +51585,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -51895,7 +51631,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -52010,7 +51746,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -52056,7 +51792,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -53321,7 +53057,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -53348,29 +53084,6 @@
       "type_only": true
     },
     {
-      "id": "src/service.ts:71:103:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/service.ts",
-        "line": 71,
-        "column": 103,
-        "sym": "src/service.ts#previewTool@57:16"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
-      "type_only": true
-    },
-    {
       "id": "src/service.ts:75:29:type-reference",
       "kind": "type-reference",
       "from": {
@@ -53390,7 +53103,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -53459,7 +53172,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -53551,7 +53264,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -53827,7 +53540,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -53851,29 +53564,6 @@
       "resolved": "src/engine/edit.ts",
       "status": "resolved",
       "reason": null,
-      "type_only": true
-    },
-    {
-      "id": "src/service.ts:241:152:type-reference",
-      "kind": "type-reference",
-      "from": {
-        "file": "src/service.ts",
-        "line": 241,
-        "column": 152,
-        "sym": "src/service.ts#createPromptManagerTools@85:23"
-      },
-      "to": {
-        "sym": null,
-        "file": null,
-        "line": null,
-        "column": null,
-        "state": null
-      },
-      "cross_file": false,
-      "specifier": null,
-      "resolved": null,
-      "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
       "type_only": true
     },
     {
@@ -55644,7 +55334,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -55920,7 +55610,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -55966,7 +55656,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -56035,7 +55725,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -56219,7 +55909,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -56242,7 +55932,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -56265,7 +55955,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -56380,7 +56070,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -56702,7 +56392,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -56932,7 +56622,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -56978,7 +56668,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -57047,7 +56737,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -57599,7 +57289,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -57622,7 +57312,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -57691,7 +57381,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -57967,7 +57657,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -58220,7 +57910,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -58266,7 +57956,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -58542,7 +58232,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -59577,7 +59267,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -60129,7 +59819,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -60175,7 +59865,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -60198,7 +59888,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -60244,7 +59934,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -60290,7 +59980,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {
@@ -60313,7 +60003,7 @@
       "specifier": null,
       "resolved": null,
       "status": "unresolved",
-      "reason": "symbol-not-found-in-program",
+      "reason": "lib-global-not-in-program",
       "type_only": true
     },
     {

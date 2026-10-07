@@ -296,6 +296,16 @@ id, kind, from, to, cross_file, specifier, resolved, status, reason, type_only
 
 `status` 与 `reason` 分布都是活值、不在此复述——现值取数 `node -e "const g=require('./ledger/references.json').meta.symbol_graph;console.log(g.edge_status,g.unresolved_reasons)"`。**留痕（只作留痕，不是现值）**：本行原写 `status` = `{"external":134,"resolved":989,"unresolved":224}`、`reason` = `{"bare-module-specifier":126,"declaration-out-of-scope":9,"external-module-symbol":8,"symbol-not-found-in-program":215}` —— 两组里都有栏位今天已变。
 
+**本批新增两个自证键 + 一个新原因码**（语义、归属条件与假阴性面全部写在 §7.14，这里只列字段）：
+`meta.symbol_graph.lib_globals`（lib 全局名表：`status` / `reason` / `typescript_version` / `lib_files_total` /
+`globals_total` / `names_digest`，运行时读已装 typescript 的 `lib.*.d.ts`，**不写死清单**）、
+`meta.symbol_graph.const_assertion_skips`（`as const` 假阳性在生成器侧被跳过的节点数）、
+`meta.symbol_graph.lib_global_shadowed_edges`（假阴性面的**量化**：名字遮蔽 lib 全局名的条数）。
+**四条记录数组的结构一个字节都没动**，因此 `schema_version` 保持 2（判定与依据见 §7.14.7）。
+**旧读数怎么变了（改前 → 改后，本批实测）**：`symbol-not-found-in-program` 里那 215 条拆成
+`lib-global-not-in-program` 与剩下的真·未解析名（实测剩下的只有 `Buffer` 与 `NodeJS.ErrnoException` 两个名字）；
+另有 16 条 `as const` 假阳性**整条消失**（不再是边）。两个数都是活值，取数用上面那条命令。
+
 **抛错级不变量**（违反 ⇒ 生成失败、不写盘；`.github/workflows/ci.yml` 里写着 `① 每条 `to.sym` 要么命中声明表、要么带非空 `reason`` 的那一段与本仓同款）：
 1. 每条 `to.sym` 要么命中 `declarations` 里的真实节点 id、要么带**非空** `reason`——**无静默 null**（实测 `meta.symbol_graph.silent_null_edges` = 0）；
 2. `declarations` / `symbol_edges` 按 **UTF-8 字节序**排序，不用 `localeCompare`；
@@ -329,7 +339,7 @@ id, kind, from, to, cross_file, specifier, resolved, status, reason, type_only
 | 2 | 文件内边按需展开（设计稿 §2.5 ④ / 增量 4）：本批的符号级边全部落盘 | **相符**：`symbol_edges` 里 `cross_file=false` 的边存在，按需展开未做 |
 | 3 | `import-binding` 节点（把 import 绑定表达成符号级边的源端，不单独节点化） | **相符** |
 | 4 | 非 TS 后缀（`.mjs` / `.cjs` / `.js` / `.jsx`）的符号级解析（按设计稿 §3.4 退化为文件级） | **相符**（`meta.symbol_graph.degraded_extensions` 四条自证） |
-| 5 | 库类型与 `@types`（Program 刻意 `noLib` + `types: []`） | **相符** |
+| 5 | 库类型与 `@types`（Program 刻意 `noLib` + `types: []`） | **相符（本批按新的原文改引）**：本批把这条字符串改成 `库类型与 @types（Program 刻意 noLib + types:[]：库类型=自带 lib 的全局名记 lib-global-not-in-program，其余记 symbol-not-found-in-program）`（**旧原文留痕**：`库类型与 @types（Program 刻意 noLib + types:[]：这类引用记 unresolved / symbol-not-found-in-program）`）——旧的读法会把「库类型」与「拼错的名字」混成一类，见 §7.14 |
 | 6 | 传递闭包查询（增量 5） | **已过期**：`node scripts/refs-query.cjs impact <路径>` 就是反向传递闭包，已落地 |
 | 7 | 查询接口（增量 5） | **已过期**：`scripts/refs-query.cjs` 存在且有 3 条子命令（`--help` 实测） |
 | 8 | 变更影响门禁（增量 6） | **已过期**：`scripts/check-impact.cjs` 存在，是 `check` 链第 13 环 |
@@ -530,7 +540,7 @@ npm run typecheck && npm run build && npm test && node ci-contract-check.cjs && 
 | 8 `check:examples` | 无 git 快照能力 ⇒ 退出码 1；且断言「跑完仓库零变化」 | `node scripts/check-examples.cjs --help` |
 | 11 `check:graph` | 降级状态 `unknown`（基准不可用）**不判绿**；`graph-index-drift`（索引里的图与工作区里的图不是同一份事实）直接红；写盘前另有一道：工作区那份图若是未知 / 更高版本，**拒绝覆盖**（旧生成器不得静默降级新结构） | `scripts/generate-reference-graph.cjs` 的三处：`const checkOk = consistent && diagnostics.length === 0 && degradation.status === DEGRADATION_COMPLETE;`、注释 `写盘前的 fail-closed：工作区那份图若是**未知 / 更高**版本，拒绝覆盖`、`--help` 里的 `降级词汇（与设计稿 §5.5 / §4.6 同词同义`（**本批改引实测**） |
 | 12 `check:changes` | `unknown`（基准不可用 / 结构不合规 / 重算不一致）**不判绿**，直接红 | `node scripts/generate-change-log.cjs --help` |
-| 13 `check:impact` | 两个诊断码一律红线：`impact-baseline-unavailable`（基线不可得）、`impact-current-graph-unavailable`（当前图不可得）；另有 `impact-schema-version-mismatch`、`impact-graph-malformed`。**拿不到基线 / 图就不判绿** | `node scripts/check-impact.cjs --help` |
+| 13 `check:impact` | 五个诊断码一律红线：`impact-baseline-unavailable`（基线不可得）、`impact-current-graph-unavailable`（当前图不可得）；另有 `impact-schema-version-mismatch`、`impact-graph-malformed`、`impact-shared-kernel-unavailable`（本批新增：拿不到共享内核的原因码词表）。**拿不到基线 / 图 / 词表就不判绿** | `node scripts/check-impact.cjs --help` |
 | 6 `check:docs` | 「挑到了要编译的块却跑不了 tsc」⇒ 退出码 1（宁可红也不要假绿）；取不到运行时工具数量 ⇒ **error**（原为 warning；已升级） | `node scripts/check-doc-snippets.cjs --help` |
 
 **注意第 2 环 `build` 是链条上唯一的写操作**：它改工作区 `lib/`。因此「本地 `npm run check` 全绿」与「工作区干净」是两件事。
@@ -572,7 +582,7 @@ npm run typecheck && npm run build && npm test && node ci-contract-check.cjs && 
 | `node scripts/generate-reference-graph.cjs --check` | `0` | `与重新生成的结果一致（比较基准 = git 索引 blob）` / `降级状态 = complete` / `节点 1416 · 边 498 · 扫描面 80 个文件 · universe 1416 条` / `符号级 = 声明 402 · 符号边 1347（schema_version 2）` |
 | `node scripts/check-file-ledger.cjs` | `0` | `✔ 0 error / 0 warning —— 门禁通过`；`台账宇宙: git ls-files 1416 条`；`四态归属: owned 0 · exempt 1387 · accounted 29 · unowned 0`；`accounted 棘轮: 基线 = HEAD 版台账（<当前 HEAD 短哈希> 共 29 条）· 相对基线新增 0 条`（**本批改引实测**：四态计数与旧版逐项相同；棘轮基线里的**提交号随 HEAD 前移**，实测 `790e626` → `9adf069` → `5e78029` 三处，条数恒为 29——故此处写成占位符，不写死） |
 | `node scripts/generate-file-ledger.cjs --check` | `1` → 修后 `0` | 修前：`台账 tracked_total=1415 · 重算 tracked_total=1416`（见 §1.2）；跑 `node scripts/generate-file-ledger.cjs` + `git add` 后转绿 |
-| `node scripts/check-impact.cjs` | `0` | `basis: "HEAD^..HEAD"`；`结论：通过（新增悬空 0，新增未解析 0）` |
+| `node scripts/check-impact.cjs` | `0` | `basis: "HEAD^..HEAD"`；`结论：通过（新增悬空 0，新增未解析 0）`（**本批新增两行回显**：`按设计排除：lib-global-not-in-program 基线 N 条 / 当前 M 条` 与 `lib 全局名表：…`，见 §4.7 / §7.14.3） |
 | `node scripts/check-references.cjs` | `0` | `✔ 0 error —— 门禁通过`（**本批改引实测**；**旧值 700 / 714 都已过期**）——warning 总数随本文档内容变，机制与取数命令见 §7.9 |
 | `node scripts/check-doc-snippets.cjs` | `0` | `✔ 0 error / 0 warning —— 门禁通过` |
 | `node scripts/generate-change-log.cjs --check` | `0` | `2 条记录全部通过（Schema 校验 + 重算逐字段复核）`；`降级状态分布 = {"complete":2}`（**那次运行的当时值，只作留痕**；条数刻意不写死，现值取数见 §5.1） |
@@ -599,6 +609,8 @@ npm run typecheck && npm run build && npm test && node ci-contract-check.cjs && 
 **边的身份 = 内容键，不是 `id`（本批修订）**：`from.file` + `kind` + `specifier` + `field` + `fragment`（= 「这处引用是什么」，**不含行号 / 列号、也不含包含它的那个声明**）；同一内容键内先按 `id` 精确配对，再按「当前独有 − 基线独有」的**条数差**判新增。⇒ ① 插几行导致的**行号平移不算新增**；② 声明**改名**也不算新增；③ 真新引入一处（同键条数 +1）照报。**旧口径留痕**：v1.0.0 用边 `id` 当身份，而 `id` 里含行号 ⇒ 纯平移整片误报（实测 `src/service.ts` 7 条未解析边整体平移被判成 7 条新增；全历史扫描 84 个提交里只有这一个提交的判定因此改变，其余 65 个逐字节相同、0 个报得更多）。**不得为了消掉平移而放宽判定**：真新增一处仍然报（同键条数 +1），这条由 `tests/impact-gate-e2e.mjs` 钉住。内容键同样**不含解析结果**，因此基线取的是「基线中**同样命中**」的边（同为 `dangling` / 同为未解析），不是基线全量边——否则 `resolved → dangling` 的同键边会被误判成「基线里已存在」而**漏报**。**已知边界**：同键内**同时**「修好一处 + 坏掉另一处」净差为 0 ⇒ 不报；同键多出 N 条时点名只保证**条数正确**（给出同键内按行列序靠后的 N 条）——未解析边不记录被引用的名字（`to.sym` 为 `null`），无位置身份下这两件事在产物里不可区分。
 
 **「未解析」的精确口径**（用图自己的词表，不另造）：`to.sym === null` 的符号级边，**但排除** `status === 'external'` 与 `to.state === 'outside'`——仓库外的裸模块说明符（`node:fs`、`ajv`…）与库类型（Program 刻意 `noLib` + `types: []`）本来就「仓库外、无仓库内符号」，属**已按设计处置**；算进来会让门禁在健康仓库上**恒红**。**保留** `status === 'unresolved'`（`symbol-not-found-in-program` / `declaration-out-of-scope`）——那才是该报的。
+
+**第三条排除（本批新增）**：`reason === 'lib-global-not-in-program'` 的边——被引用的名字是**已安装 typescript 自带 lib 的顶层全局名**（`Promise` / `Record` / `Map`…），而图里的 Program 刻意 `noLib` ⇒ 本来就解析不到，不是断链（不排除的话，「给函数加一句标准类型标注」这种纯合法改动会判红）。**排除是窄的、且结构上站得住**：必须**同时** `kind === 'type-reference'`（门禁自己再判一次；该原因码若出现在别的 kind 上，整份图按 `impact-graph-malformed` fail-closed）∧ 生成器侧的「`from` 在扫描面内 ∧ 名字命中**运行时**读出的名表」。⇒ `declaration-out-of-scope`、`imported-symbol-not-loaded`、`external-module-symbol`、**拼错的名字**、`@types/*` 里的名字（`Buffer`…）**一律继续算未解析**。**名表读不到时生成器一条也不会归入该原因码**（保持旧行为 = 继续算红，不判绿），并把降级写进产物与报告。**被排除的条数在人类报告与 `--json` 里回显**（`counts.lib_global_exempt_baseline` / `..._current` 与 `lib_global_exemption{}`）——不许静默豁免。完整语义、假阴性面与四个实验见 §7.14。
 
 **两种基准**（`--json` 的 `basis` 字段自证）：
 
@@ -997,6 +1009,134 @@ Select-String -LiteralPath scripts/refs-query.cjs -Pattern 'filter: isCountedSym
 **不要据此声称"同一对基准重算必然同差"** —— 本行历史上那样写过。
 
 **留痕（旧说法，已作废，逐字照抄原处）**：`ledger/change-log/README.md` 曾写「记录**不可变、可复核**（同一对基准重算必然得到同一份差）」；`scripts/generate-change-log.cjs` 的文件头注释曾写「快照来自内容寻址的提交树 ⇒ 同一对基准连跑两次，记录**除 `created_at` 外逐字节相同**」。两处都按上一条口径改成了带条件的表述（条件：**同一工作区状态 + 同一进程 git 配置**）。
+
+### 7.14 `lib-global-not-in-program`：新原因码的语义、为什么它不算红、**以及它的假阴性面**（本批新增）
+
+**这一节是本批唯一的语义变更**，读它比读 §4.7 更要紧：门禁少算了一类边，所以**必须**把「少算的是什么、为什么、会漏掉什么」三件事同时写下来。
+
+#### 7.14.1 痛点（改前 → 改后）
+
+**改前**：给一个函数加一句**标准类型标注**（例如 `export function f(): Promise<void>`）就会新产一条未解析的
+`type-reference` 边，`node scripts/check-impact.cjs` 判红并点名它 —— 而那是**纯合法改动**。根因不是门禁判错，
+是图的 Program 刻意 `noLib: true` + `types: []`（§2.7 第 3 条不变量：`node_modules` / TypeScript 自带 lib
+一个都不进 Program），于是 `Promise` / `Record` / `Map` 这些**语言自带的全局名**在 Program 里根本没有声明。
+
+**曾经的备选（已否决，留痕）**：给 Program 接上 lib。实测**否决**：`unresolved` 恒为 **224**、一条没降，
+却让 Program 的源文件数 28 → **95**、单次全量重算 +**约 200 ms**、产物 +**13.9 KB**，
+并且 `cross_file` 边被 lib 路径污染 ⇒ **空操作且有害**。
+
+**改后**：由**生成器**识别「被引用的名字属于**已安装 typescript 自带 lib 的顶层全局名**」，
+给这类边打新原因码 `lib-global-not-in-program`；`scripts/check-impact.cjs` **只排除这一个原因码**。
+
+#### 7.14.2 归属条件（三条同时成立，缺一不可）
+
+| # | 条件 | 谁保证 |
+| --- | --- | --- |
+| ① | `kind === 'type-reference'` | 生成器只在 `type-reference` 的「解析不到符号」分支里写这个原因码；门禁侧**再判一次** `kind`，产物若把该原因码挂到别的 kind 上，整份图按 `impact-graph-malformed` 处理（fail-closed） |
+| ② | `from` 在本次符号级扫描面内 | 产边的循环本身只遍历 `rootNames`（本仓 = `src/**/*.ts`） |
+| ③ | 名字命中**运行时**读出来的 lib 全局名表 | `scripts/reference-graph-core.cjs` 的 `loadLibGlobals()`：**绝不写死清单** |
+
+**名表怎么读（版本与来源可追溯）**：`require.resolve('typescript')` 定位**已安装**的 typescript 包
+（本仓 = 仓库自带的 `node_modules/typescript`，与 `meta.analysis.typescript_version` **同一份安装**），
+读它 `lib/` 目录下全部 `lib.*.d.ts`，**只 `ts.createSourceFile`**（不建 Program、不读 `tsconfig.json`），
+取**顶层**声明名（`interface` / `type` / `class` / `enum` / `namespace` / `function` / `declare var`）。
+自证块落进产物 `meta.symbol_graph.lib_globals`：`status` / `reason` / `typescript_version` /
+`lib_files_total` / `globals_total` / `names_digest`（= `sha256(按 UTF-8 字节序排序的名字, '\n' 分隔)`）。
+**取数（不回显成文档常数）**：
+
+```bash
+node -e "const g=require('./ledger/references.json').meta.symbol_graph;console.log(g.lib_globals,g.unresolved_reasons,g.const_assertion_skips,g.lib_global_shadowed_edges)"
+```
+
+**为什么取全套 lib 而不是 `tsconfig.json` 的 `lib` 字段**（有意取舍）：图的 Program 口径刻意**不由 tsconfig 决定**
+（`symbolCompilerOptions` 是显式给出的），名表也跟着以「与已装 typescript 同源」为准。后果见 §7.14.4。
+
+#### 7.14.3 为什么它不算红（以及为什么**不是**放宽门禁）
+
+- 这类边**不是断链**：`Promise` / `Record` / `Map` 的声明在 typescript 自带的 lib 里真实存在，
+  只是本 Program 按设计看不见它。把它算成「本次改动新引入的破坏」是把**范围边界**读成了**破坏**。
+- **排除是窄的**：只有上述三条同时成立才归入。`declaration-out-of-scope`（仓库内越界：类型参数、类成员）、
+  `imported-symbol-not-loaded` / `external-module-symbol`（名字来自 import）、**拼错的名字**、以及
+  `@types/node` 里的名字（实测 `Buffer`、`NodeJS.ErrnoException`）**全部继续算红**。
+- **名表读不到 ⇒ 一条也不放行**（见 §7.14.5），所以这条规则不可能被「让名表读不出来」绕过去。
+- **命中数必须回显**（不许静默豁免）：生成器人类报告 / `--check --json` 的 `symbolGraph.libGlobalEdges` /
+  `check:impact` 的人类报告与 `--json`（`counts.lib_global_exempt_*` 与 `lib_global_exemption{}`）三处都写出来。
+
+#### 7.14.4 假阴性面（**方向是「放过」，所以必须可见**）
+
+| 形状 | 会怎样 | 可见性 |
+| --- | --- | --- |
+| **仓库符号遮蔽 lib 全局名**：仓库里某处**另有**同名顶层声明（例如自己声明了 `Request` / `Event` / `Record`），而另一处**没 import** 就裸写这个名字 | 那处引用本来想指仓库里那个（本该报红），但名字命中名表 ⇒ 被归入新原因码 ⇒ **放过** | **量化回显**：`meta.symbol_graph.lib_global_shadowed_edges`（= 归入新原因码、且该名字**同时**是本仓扫描面内某个顶层声明名的边数，本批实测取数见 §7.14.2 那条命令）。**它只量化、不参与判定** —— 判定仍是已拍板的三条，不额外加条件 |
+| 名字只在**某个 target/lib 组合**下才是全局名（本仓 `tsconfig.json` 写 `lib: ["ES2023"]`，而名表含 `lib.dom.d.ts` 的 DOM 全局名，如 `Document` / `Request` / `TextEncoder`） | 这类名字的裸引用同样被放过 | 同上（名表是「与已装 typescript 同源」的全套，已在 §7.14.2 写明；`lib_files_total` / `globals_total` / `names_digest` 可复核） |
+| **类型参数 / 类成员**（`declaration-out-of-scope`） | **不受影响，照红** | 用例 10d 钉住（见下） |
+| **拼错的名字**（如 `Promsie<void>`） | **不受影响，照红**（不在名表里） | 用例 10e 钉住 |
+| **`@types/*` 里的名字**（如 `Buffer`） | **不受影响，照红**（typescript 自带 lib 里没有它） | 本批实测：`Buffer` 6 条、`NodeJS.ErrnoException` 15 条仍记 `symbol-not-found-in-program` |
+
+**反向不会发生**：原来**解析得到**的符号一律不受影响（走 `declaration` 分支）；名字来自 import 的走
+`localImports` 分支（保留 `imported-symbol-not-loaded` / `external-module-symbol`）。⇒ 本批**不会**把
+「符号被删、文件还在」这类真破坏判绿。
+
+#### 7.14.5 名表读不到时的处置（**不静默降级**）
+
+**处置 = 保持旧行为 + 把降级写进产物与报告**（不是抛错）。理由：这条降级的方向是**更红**——那些边继续按
+`symbol-not-found-in-program` 计，**不会制造假绿**；而抛错会让整个图生成在「typescript 装得不全」的环境里
+直接不可用（含只读的 `--check`）。与「拿不到判据就不判绿」一致：这里拿不到判据 ⇒ 判**红**。
+`meta.symbol_graph.lib_globals.status ≠ 'loaded'` 时 `reason` 给出**闭集**里的原因码
+（`not-loaded` / `typescript-unavailable` / `lib-directory-missing` / `lib-directory-unreadable` /
+`no-lib-files` / `lib-file-unreadable` / `lib-file-unparsable` / `no-global-declarations`），
+生成器与门禁都会打一行「**unavailable**（原因码 …）：本次**没有任何边**被归入 `lib-global-not-in-program`」。
+**绝对路径不进产物**（幂等要求），原因只以原因码落盘。
+
+#### 7.14.6 `as const` 假阳性（同批修掉的 bug，不是放宽）
+
+TS 把 const 断言解析成一个名为 `const` 的 `TypeReferenceNode`（实测：`const a = { x: 1 } as const` ⇒
+`AsExpression.type.kind === SyntaxKind.TypeReference`、`typeName.text === 'const'`、`isIdentifier === true`）。
+`const` 是保留字、**任何类型都不可能叫这个名字** ⇒ 这条边**永远**解析不到符号。**本批开工时的证据**：
+`git grep -n "as const" -- src/` 命中 **16 处**，产物里同位置的 `type-reference` 未解析边**恰好 16 条**
+（逐条对上，reason 全是 `symbol-not-found-in-program`，`to.sym` 全是 `null`）。
+**修在生成器侧**（不是门禁侧放行）：它根本不该是一条引用边。跳过数落进
+`meta.symbol_graph.const_assertion_skips`（**不许静默**），**改后取数 = 16 → 0 条边**。
+
+#### 7.14.7 `schema_version` **不升**（判定与依据）
+
+**判定：这是「加值」不是结构变更 ⇒ `schema_version` 保持 2。** 依据：本批动的是
+① `SYMBOL_REASONS` 闭集**新增一个取值**（`reason` 字段的位置与含义都没动）；
+② `meta.symbol_graph` 里**新增三个自证键**（`lib_globals` / `const_assertion_skips` / `lib_global_shadowed_edges`）；
+③ 16 条 `as const` 假阳性边消失。四条记录数组（`files` / `edges` / `declarations` / `symbol_edges`）的
+**字段集合与字段语义一个都没动**，而 `schema_version` 在本仓的用法是「保护消费者别误读**结构**」
+（1 → 2 那次是**新增两个顶层数组**）。
+**另一条同样是硬的**：升版会让**引入它的那一次提交自己**在 `check:impact` 上 fail-closed
+（`impact-schema-version-mismatch`：基线 `HEAD^` 还是 v2、当前是 v3），要它变绿就得放宽那条 fail-closed 判据
+—— 用「放宽 fail-closed 换自己绿」正是本仓最忌讳的形状。**若将来要把这个原因码变成跨产物的硬契约，
+那就升到 3，并同一次提交改 `check-impact` 的两边比对逻辑与本文件。**
+
+#### 7.14.8 本批的四个实验（回归用例 `tests/impact-gate-e2e.mjs` 第 10 组钉住）
+
+| # | 改动 | 期望 | 为什么 |
+| --- | --- | --- | --- |
+| 10a | 给 `src/**/*.ts` 里某函数加 `: Promise<void>` 返回标注 | **exit 0** | 本批要修的痛点 |
+| 10b | 加一处 `as const` | **exit 0**，且不产新的 `type-reference` 边 | 假阳性已由生成器侧跳过 |
+| 10c | `import … from './q11-definitely-missing-module.js'` | **exit 1** 且点名该说明符 | 真·新增未解析（护身符） |
+| 10d | 加一个新的**类型参数**（`<Q11T>(v: Q11T): Q11T`） | **exit 1** 且点名为 `declaration-out-of-scope` | 真·仓库内越界（护身符） |
+| 10e | 加一个**拼错的**类型名 `Promsie<void>` | **exit 1** | 证明排除不是「`type-reference` 整类放过」 |
+
+**夹具的一条附带修正（本批）**：该用例的基线图原本直接取「仓库索引里那份产物」，若那份产物由**另一套生成器**
+算出（本批改了符号级分类、而仓库里提交的还是旧图），同键内会凭空多出一批「基线独有」的未解析边，把本次新增的
+真破坏**净差掩盖成 0** —— 用例 10d / 10e 会因此假绿。现在夹具在基线提交后**用当前生成器重算一遍图**再提交，
+等价于真仓库里 `check:graph` 绿的条件。**这条不是门禁的行为**（真仓库里 `check:graph` 已保证索引里的图 =
+重算结果），是夹具与真仓库对齐。
+
+#### 7.14.9 已知边界（写下来，不藏起来）
+
+- **迁移那一次提交的净差**：门禁的身份是**内容键**（不含位置、不含原因码），同一键内按条数差判新增。
+  本批让一个文件里的一批边从「命中」变成「不命中」，于是**引入本批的那一次提交**（基线 = 旧图）在同键内
+  会看到一批「基线独有」的边 —— 方向是**更不容易红**（净差为负）。窗口只有那一次提交：下一次提交的基线
+  已经带新原因码，判据回到稳态。**实测**：本批的迁移提交 `check:impact` **exit 0 且新增悬空 0 / 新增未解析 0**。
+- **typescript 升级可能让边在两个原因码之间搬移**：名表与已装 typescript 同源，换了 TS 版本（`names_digest` 变）
+  时，某个名字可能从「命中」变成「不命中」⇒ 那一次提交会被判红（方向安全：**多报不是漏报**）。
+  修法：与 TS 升级**同一次提交**里重算图并 `git add`；报红时门禁会逐条点名。
+- **门禁版本不动**（`TOOL_VERSION` / `check-impact` 的 `VERSION` 都不 bump，按本批约束）：
+  旧版 `check-impact.cjs` 读到带新原因码的图时**不会**排除它 ⇒ 那些边照算未解析 ⇒ 方向是**假红**，不是假绿。
 
 ---
 

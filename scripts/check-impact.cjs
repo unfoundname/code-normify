@@ -48,6 +48,25 @@ const path = require('node:path');
 const VERSION = '1.0.0';
 const REL = 'ledger/references.json';
 
+/**
+ * 共享内核：**只借「原因码词表」这一件事**（`SYMBOL_REASONS`），不借它的任何解析实现。
+ * 为什么必须借而不是在本脚本里再写一遍字面量：图产物是**生成器写的**、本门禁是**读它的**，
+ * 同一个原因码出现在两处手写字面量里就是「两份真相」的开始（本仓的既定红线）。内核模块
+ * 顶层只有常量与函数定义，require 它不产生任何 I/O 或副作用。
+ * 拿不到内核时**不判绿**（见 DIAG.kernel）：不知道词表就不知道「哪些原因码属于已按设计处置」，
+ * 那正是「拿不到判据就不判绿」这一条。
+ */
+let core = null;
+let coreError = null;
+try {
+  core = require('./reference-graph-core.cjs');
+} catch (err) {
+  coreError = err;
+}
+
+/** 被排除的原因码（来自内核词表；内核拿不到时为 null ⇒ fail-closed，见 DIAG.kernel）。 */
+const LIB_GLOBAL_REASON = core && core.SYMBOL_REASONS ? core.SYMBOL_REASONS.LIB_GLOBAL_NOT_IN_PROGRAM : null;
+
 /** 退出码：0 通过 / 1 判定不通过（含全部 fail-closed）/ 2 用法错误。 */
 const EXIT = { ok: 0, fail: 1, usage: 2 };
 
@@ -57,6 +76,7 @@ const DIAG = {
   current: 'impact-current-graph-unavailable',
   schema: 'impact-schema-version-mismatch',
   malformed: 'impact-graph-malformed',
+  kernel: 'impact-shared-kernel-unavailable',
 };
 
 const USAGE = `check-impact v${VERSION} — 变更影响门禁（棘轮式：只拦本次改动新引入的悬空 / 未解析）
@@ -65,8 +85,9 @@ const USAGE = `check-impact v${VERSION} — 变更影响门禁（棘轮式：只
   node scripts/check-impact.cjs [选项]
 
 选项：
-  --json          只向 stdout 输出机器可读 JSON（含 basis、newly_dangling[]、newly_unresolved[]
-                  与两者计数；无时间戳等易变字段，同一输入连跑两次逐字节相同）
+  --json          只向 stdout 输出机器可读 JSON（含 basis、newly_dangling[]、newly_unresolved[]、
+                  counts 与 lib_global_exemption —— 「按设计排除了多少条」同样在机器输出里，
+                  不许静默豁免；无时间戳等易变字段，同一输入连跑两次逐字节相同）
   --staged        基准改为「HEAD .. git 索引」：基线 = git show HEAD:${REL}
                   当前 = git show :${REL}（未提交、只 git add 的改动）
   默认（无开关）  基准为「HEAD^ .. HEAD」：基线 = git show HEAD^:${REL}
@@ -106,11 +127,21 @@ check 链位置（npm 脚本 \`check\` 的实际顺序，环名照抄）：
     同键内多出 N 条时，点名只能给出该键内按行列序靠后的 N 条（条数一定正确）。
     两点都是「平移不误报」必须付的代价（未解析边不记录被引用的名字）。
   任一非空 ⇒ 退出码 1，逐条点名（边 id + from 的行:列 + kind + 目标）。
-  · 「未解析」的精确口径（用图自己的词表，不另造）：to.sym === null 的符号级边，**但排除
-    status === 'external' / to.state === 'outside'** —— 仓库外的裸模块说明符（node:fs、ajv…）
+  · 「未解析」的精确口径（用图自己的词表，不另造）：to.sym === null 的符号级边，**但排除**
+    status === 'external' / to.state === 'outside' —— 仓库外的裸模块说明符（node:fs、ajv…）
     与库类型（Program 刻意 noLib + types:[]）本来就是「仓库外、无仓库内符号」，属于**已按设计处置**，
-    不是破坏；算进来会让本门禁在健康仓库上恒红。保留 status === 'unresolved'
-    （symbol-not-found-in-program 引用目标不存在 / declaration-out-of-scope 声明不在作用域）——这才是该报的。
+    不是破坏；算进来会让本门禁在健康仓库上恒红。
+  · **第三条排除（本批新增）**：reason === 'lib-global-not-in-program' 的边 —— 被引用的名字是
+    **已安装 typescript 自带 lib 的顶层全局名**（Promise / Record / Map…），而图里的 Program 刻意
+    noLib ⇒ 本来就解析不到，不是断链；不排除的话「给函数加一句标准类型标注」这种纯合法改动会判红。
+    **排除是窄的**：必须同时 kind === 'type-reference'（本脚本显式判；该原因码若出现在别的 kind 上，
+    整份图按 ${DIAG.malformed} 处理）∧ 生成器侧的「from 在扫描面内 ∧ 名字命中**运行时**读出的名表」。
+    ⇒ declaration-out-of-scope（仓库内越界：类型参数 / 类成员）、imported-symbol-not-loaded、
+    external-module-symbol 与**拼错的名字**一律继续算未解析（照报）。
+    ⇒ 名表读不到时生成器一条也不会归入该原因码（= 旧行为），本门禁自然也不放行任何东西。
+    **被排除的条数在人类报告与 --json（lib_global_exemption / counts.lib_global_exempt_*）里回显**
+    —— 静默豁免与假绿同罪。
+  · 保留 status === 'unresolved'（symbol-not-found-in-program / declaration-out-of-scope）——这才是该报的。
   · 「悬空」同样只认文件级边的 status === 'dangling'（目标文件不在索引里）。
 
 棘轮本质：更早提交引入的悬空在 HEAD^ 与 HEAD 里都存在 ⇒ 不构成「新增」，不报（历史存量不追溯）。
@@ -142,7 +173,10 @@ fail-closed 诊断码（--json 顶层 diagnostic；人类可读输出为 [诊断
   ${DIAG.baseline}       基线不可得：HEAD^ 不存在（根提交）/ 基线无图产物 / 读不出 / JSON 非法
   ${DIAG.current}  当前图不可得：HEAD 版（默认）或索引版（--staged）缺失 / 读不出 / JSON 非法
   ${DIAG.schema}    两边 schema_version 不一致（图与门禁必须同一次提交一起改）
-  ${DIAG.malformed}           结构不合规：顶层非对象 / edges 或 symbol_edges 不是数组
+  ${DIAG.malformed}           结构不合规：顶层非对象 / edges 或 symbol_edges 不是数组 /
+                              lib-global-not-in-program 出现在非 type-reference 的边上
+  ${DIAG.kernel}    拿不到共享内核 scripts/reference-graph-core.cjs 的原因码词表
+                              （不知道词表就无法区分「已按设计处置」与「真破坏」⇒ 不判绿）
 
 --root 语义与本仓既有门禁一致：必须是 git 仓库根（realpath 相等），否则退出码 1 拒绝，
   绝不静默回退；不传 --root 时默认取当前工作目录（CWD），门禁的是 CWD 所在的 git 仓库；
@@ -230,13 +264,47 @@ const symOf = (edge, side) => (edge && edge[side] && typeof edge[side] === 'obje
  *          它们是**已按设计处置**的边，不是破坏；把它们算进来会让本门禁在健康仓库上恒红。
  *   保留 = status === 'unresolved'（symbol-not-found-in-program / declaration-out-of-scope 两种原因）
  *          —— 这才是「符号被删（文件还在）」该报的破坏。
+ *
+ * **本批新增的第三条排除（`lib-global-not-in-program`，见共享内核 `SYMBOL_REASONS`）**：
+ * 被引用的名字是**已安装 typescript 自带 lib 的顶层全局名**（`Promise` / `Record` / `Map`…），
+ * 而图里的 Program 刻意 `noLib` ⇒ 它本来就解析不到，**不是断链**；不排除的话，「给函数加一句
+ * 标准类型标注」这种纯合法改动会把门禁判红（这正是本批要修的痛点）。
+ *
+ * **排除是窄的（结构性，不是承诺）**：必须**同时**满足
+ *   ① `kind === 'type-reference'`（本函数显式判 —— 就算产物被写坏、把该原因码挂到 import 边上，
+ *      这里也不会放行；`collectReasonInvariant` 另把这种产物直接判为 malformed）；
+ *   ② 生成器侧的归属条件还要求 `from` 在符号级扫描面内、且名字命中**运行时**从已装 typescript
+ *      读出来的名表（生成器里那三条，见内核 SYMBOL_REASONS 的注释与 loadLibGlobals）。
+ * ⇒ `declaration-out-of-scope`（仓库内越界：类型参数 / 类成员）、`imported-symbol-not-loaded`、
+ * `external-module-symbol` 与**拼错的名字**一律继续算未解析（照报）。
+ * ⇒ 名表读不到时生成器一条也不会归入该原因码（= 旧行为），本门禁自然也不会放行任何东西。
+ * **被排除的条数必须回显**（人类报告与 --json 两处）：静默豁免与假绿在本仓同罪。
  */
 function isUnresolvedSymbolEdge(edge) {
   if (symOf(edge, 'to') !== null) return false;
   if (edge.status === 'external') return false;
   const to = edge.to && typeof edge.to === 'object' ? edge.to : {};
   if (to.state === 'outside') return false;
+  if (edge.kind === 'type-reference' && edge.reason === LIB_GLOBAL_REASON) return false;
   return true;
+}
+
+/** 命中「按设计排除」的边（= 被归入 lib-global-not-in-program 的符号级边）；回显与不变量检查共用。 */
+const isLibGlobalExemptEdge = (edge) => edge.reason === LIB_GLOBAL_REASON && edge.kind === 'type-reference';
+
+/**
+ * 结构不变量（fail-closed）：`lib-global-not-in-program` **只允许**出现在 `kind === 'type-reference'`
+ * 的符号级边上。生成器只在那一个分支写它，所以正常产物必然满足；不满足 ⇒ 产物被写坏 / 被手改 ⇒
+ * 按 `impact-graph-malformed` 处理（拿不到可信的判据就不判绿）。
+ * 为什么放在门禁而不是只靠生成器：门禁是**读产物**的那一侧，它的放行规则必须自己站得住。
+ */
+function collectReasonInvariant(graph, label) {
+  const bad = (graph.symbol_edges || []).filter((e) => e && e.reason === LIB_GLOBAL_REASON && e.kind !== 'type-reference');
+  if (bad.length === 0) return null;
+  return (
+    `${label}：${bad.length} 条边带着 ${LIB_GLOBAL_REASON}，但 kind 不是 type-reference（第一条：` +
+    `${bad[0].id ?? '(无 id)'} / kind=${JSON.stringify(bad[0].kind)}）——该原因码只允许出现在 type-reference 上。`
+  );
 }
 
 /** 边 id → 边对象。缺 id / id 非字符串的边单独收集，绝不静默丢弃。 */
@@ -272,6 +340,21 @@ function describeEdge(edge, side) {
   const kind = typeof edge.kind === 'string' ? edge.kind : '?';
   const extra = side === 'symbol' && typeof from.sym === 'string' && from.sym ? ` from.sym=${from.sym}` : '';
   return `- ${edge.id}\n    ${side === 'symbol' ? '符号级' : '文件级'} | ${kind} | from ${loc}${extra} | 目标：${describeTarget(edge)}`;
+}
+
+/**
+ * 人类报告里那一段「名表自证」的文字（回显用；`null` = 那份图里没有这个自证块，例如本批之前的产物）。
+ * `status ≠ loaded` 要**明说方向**：不是「放行了更多」，而是「一条也没放行」（那些边仍算未解析）。
+ */
+function formatLibGlobals(lg) {
+  if (!lg) return '（该产物里没有 meta.symbol_graph.lib_globals —— 本批之前的图，按「不排除」计）';
+  if (lg.status !== 'loaded') {
+    return `**unavailable**（原因码 ${lg.reason}）⇒ 本次没有任何边被归入 ${LIB_GLOBAL_REASON}，那些边仍按未解析计（不判绿）`;
+  }
+  return (
+    `loaded（typescript ${lg.typescript_version} · ${lg.lib_files_total} 个 lib.*.d.ts · 顶层全局名 ${lg.globals_total} 个 · ` +
+    `摘要 ${String(lg.names_digest).slice(0, 23)}…）`
+  );
 }
 
 /**
@@ -451,6 +534,15 @@ function main() {
   const current = readGraphAt(root, currentRev, opts.staged ? '当前（索引版）' : '当前');
   if (!current.ok) failClosed(DIAG.current, current.why);
 
+  // 共享内核拿不到 ⇒ 不知道原因码词表 ⇒ **不判绿**（拿不到判据就不判绿）。
+  if (LIB_GLOBAL_REASON === null) {
+    failClosed(
+      DIAG.kernel,
+      `拿不到共享内核 scripts/reference-graph-core.cjs 的 SYMBOL_REASONS（${(coreError && coreError.message) || '未知原因'}）：` +
+        '本门禁按原因码排除「已按设计处置」的边，词表拿不到就无法区分「按设计处置」与「真破坏」——不判绿。',
+    );
+  }
+
   const baselineShape = checkShape(baseline.graph, `基线（${baselineRev}:${REL}）`);
   if (baselineShape) failClosed(DIAG.malformed, baselineShape);
   const currentShape = checkShape(current.graph, `当前（${currentRev}:${REL}）`);
@@ -461,6 +553,12 @@ function main() {
   if (baseSchema !== currSchema) {
     failClosed(DIAG.schema, `基线 schema_version=${JSON.stringify(baseSchema)}，当前 schema_version=${JSON.stringify(currSchema)}`);
   }
+
+  // 结构不变量（本批新增）：lib-global-not-in-program 只允许挂在 type-reference 上（见 collectReasonInvariant）。
+  const baseReasonInvariant = collectReasonInvariant(baseline.graph, `基线（${baselineRev}:${REL}）`);
+  if (baseReasonInvariant) failClosed(DIAG.malformed, baseReasonInvariant);
+  const currReasonInvariant = collectReasonInvariant(current.graph, `当前（${currentRev}:${REL}）`);
+  if (currReasonInvariant) failClosed(DIAG.malformed, currReasonInvariant);
 
   const anomalies = [];
   const baseEdges = indexById(baseline.graph.edges, `基线（${baselineRev}）文件级边`, anomalies);
@@ -479,6 +577,34 @@ function main() {
   const newlyUnresolved = diffBySiteKey(unresolvedNow, unresolvedBase);
 
   const ok = newlyDangling.length === 0 && newlyUnresolved.length === 0;
+
+  /**
+   * **按设计排除的条数必须回显**（本批新增）：`lib-global-not-in-program` 让一部分符号级边不再算
+   * 「未解析」——判绿的那部分判定必须自己把规模说出来，否则就是静默豁免。
+   * 两边的名表自证也一并带出（版本 / 规模 / 名字表摘要 / status）：名表读不到时 status ≠ loaded，
+   * 那不意味着「放行了更多」，而是「一条也没放行」（那些边仍按未解析计）。
+   */
+  const libGlobalsOf = (graph) => {
+    const lg = graph.meta && graph.meta.symbol_graph ? graph.meta.symbol_graph.lib_globals : null;
+    return lg && typeof lg === 'object' ? lg : null;
+  };
+  const baseLibGlobals = libGlobalsOf(baseline.graph);
+  const currLibGlobals = libGlobalsOf(current.graph);
+  const exemptBase = [...baseSyms.values()].filter(isLibGlobalExemptEdge).length;
+  const exemptCurr = [...currSyms.values()].filter(isLibGlobalExemptEdge).length;
+  const libGlobalExemption = {
+    reason: LIB_GLOBAL_REASON,
+    rule: "只对 kind === 'type-reference' 的符号级边生效；其余原因码（declaration-out-of-scope / imported-symbol-not-loaded / external-module-symbol / symbol-not-found-in-program…）一律继续算未解析",
+    baseline_edges: exemptBase,
+    current_edges: exemptCurr,
+    baseline_table_status: baseLibGlobals ? baseLibGlobals.status : null,
+    current_table_status: currLibGlobals ? currLibGlobals.status : null,
+    baseline_typescript_version: baseLibGlobals ? baseLibGlobals.typescript_version : null,
+    current_typescript_version: currLibGlobals ? currLibGlobals.typescript_version : null,
+    baseline_names_digest: baseLibGlobals ? baseLibGlobals.names_digest : null,
+    current_names_digest: currLibGlobals ? currLibGlobals.names_digest : null,
+  };
+
   const payload = {
     ok,
     basis,
@@ -494,7 +620,10 @@ function main() {
       current_symbol_edges: current.graph.symbol_edges.length,
       newly_dangling: newlyDangling.length,
       newly_unresolved: newlyUnresolved.length,
+      lib_global_exempt_baseline: exemptBase,
+      lib_global_exempt_current: exemptCurr,
     },
+    lib_global_exemption: libGlobalExemption,
     newly_dangling: newlyDangling.map((e) => ({
       id: e.id,
       kind: e.kind ?? null,
@@ -520,6 +649,10 @@ function main() {
     `schema_version: ${JSON.stringify(currSchema)}（两边一致）`,
     `边数：基线 edges=${payload.counts.baseline_edges} symbol_edges=${payload.counts.baseline_symbol_edges}；` +
       `当前 edges=${payload.counts.current_edges} symbol_edges=${payload.counts.current_symbol_edges}`,
+    // **回显按设计排除的规模**（不许静默豁免）：这一行是判定的一部分，不是装饰。
+    `按设计排除：${LIB_GLOBAL_REASON} 基线 ${exemptBase} 条 / 当前 ${exemptCurr} 条` +
+      `（仅 kind=type-reference；其余原因码一律继续算「新增未解析」）`,
+    `lib 全局名表：当前 ${formatLibGlobals(currLibGlobals)}；基线 ${formatLibGlobals(baseLibGlobals)}`,
     '',
   ];
   if (newlyDangling.length) {

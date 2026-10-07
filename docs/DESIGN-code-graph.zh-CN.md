@@ -504,7 +504,7 @@
 
 **接线（三处同步，`check` 链第 11 环）**：`package.json` 的 `check:graph` / `graph:gen`（未变）+ `.github/workflows/ci.yml` 的独立 step 注释（已按本节改写：`v1.1.0` / `schema_version 2` / 符号级快照行）+ `CONTRIBUTING.md` 的门禁清单与快照行（同样已改写）。**回归用例** = `tests/reference-graph-e2e.mjs`（**断言条数是活值 —— 取数、不复述**：口径 = 该用例自己跑完自报的条数，`npm run test:refgraph` 的输出末行；**留痕（时点 = 增量 3 批 2026-10-05；只作留痕，不是现值 —— 旧值不删）**：**111 条断言**，其中第 13 组 31 条覆盖符号级：三层 `export *` 穿透、同名不合并、无静默 null、Program 自证、排序确定性、原因码与 `meta` 一致；第 14 组 3 条覆盖版本 fail-closed；**第 15 组 14 条覆盖根级仓库**——`.ts` 直接在仓库根的夹具必须同样全 resolved / 未解析 = 0 / `export *` 穿透到真实声明，同一套内容的 `src/` 版作对照。这条路径此前**无门禁覆盖**：根分支把仓库根判成仓库外，符号级层整体退化成「全部 unresolved + exit 0 + 零诊断」）。
 
-**本批不做的（`meta.omitted` 逐条自证）**：函数内局部变量与参数（增量 4）、文件内边按需展开（增量 4）、传递闭包与查询接口（增量 5）、变更影响门禁（增量 6）、`import-binding` 节点化（本批把 import 绑定表达成符号级边的源端，不单独节点化）、非 TS 后缀的符号级解析（按 §3.4 退化为文件级）、库类型与 `@types`（Program 刻意 `noLib: true` + `types: []`，这类名字记 `unresolved` + `symbol-not-found-in-program`）。
+**本批不做的（`meta.omitted` 逐条自证）**：函数内局部变量与参数（增量 4）、文件内边按需展开（增量 4）、传递闭包与查询接口（增量 5）、变更影响门禁（增量 6）、`import-binding` 节点化（本批把 import 绑定表达成符号级边的源端，不单独节点化）、非 TS 后缀的符号级解析（按 §3.4 退化为文件级）、库类型与 `@types`（Program 刻意 `noLib: true` + `types: []`）。**「库类型」那一项的落地口径已由后续批次细化（本节按实测改引，旧原文留痕）**：现在分两种原因码——名字命中**运行时**从已装 typescript 读出的 lib 全局名表 ⇒ `lib-global-not-in-program`（**不是断链，是范围边界**）；其余（`@types/*` 里的名字、拼错的名字）⇒ `symbol-not-found-in-program`。语义、假阴性面与「为什么 `check:impact` 排除前者、不排除后者」见 `docs/HANDOFF-code-graph.zh-CN.md` §7.14。**旧原文留痕（照它读会以为「库类型」与「拼错的名字」是同一类）**：`库类型与 @types（Program 刻意 noLib: true + types: []，这类名字记 unresolved + symbol-not-found-in-program）`。
 
 **确定性与幂等（做法，不是口号）**：
 

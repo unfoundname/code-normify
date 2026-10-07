@@ -265,6 +265,10 @@ function writeBrokenGateCopy() {
   if (!out.includes('Q11-MUTATION')) throw new Error('改坏副本失败：替换标记没写进去');
   const dest = path.join(ROOT, 'check-impact-broken.cjs');
   fs.writeFileSync(dest, out, 'utf8');
+  // **副本不是孤本**：check-impact.cjs 会 `require('./reference-graph-core.cjs')` 借原因码词表
+  // （单一事实来源，不手抄字面量）。副本与真脚本同目录这一步必须一起复制，否则副本会因为
+  // 「拿不到内核词表」而 fail-closed（`impact-shared-kernel-unavailable`），第 9 组就测不到那个漏报 bug 了。
+  fs.copyFileSync(path.join(REPO, 'scripts', 'reference-graph-core.cjs'), path.join(ROOT, 'reference-graph-core.cjs'));
   return dest;
 }
 
@@ -284,8 +288,15 @@ function prepareFixture() {
   git(['add', '-A']);
   git(['commit', '-q', '-m', 'fixture baseline: 物化本仓库索引（真 ledger/references.json 随之进入 HEAD）']);
   ROOT_SHA = git(['rev-parse', 'HEAD']).stdout.trim();
-  // 空提交：默认模式比 HEAD^..HEAD，必须让 HEAD 有父提交，否则每个用例都会撞上 impact-baseline-unavailable。
-  git(['commit', '-q', '--allow-empty', '-m', 'fixture: 空提交，为默认模式提供 HEAD^']);
+  // **夹具自证：默认模式的基线图必须是【当前这一份生成器】算出来的那一份**（真仓库里由链上的
+  // `check:graph` 保证同一条性质：索引里的图 = 重算结果，逐字节）。为什么非做不可：门禁的内容键差法是
+  // 「同键内 当前独有 − 基线独有」，若基线图是**另一套生成器**算的（例如本批改了符号级分类、而仓库里
+  // 提交的还是旧图），同键内会凭空多出一批「基线独有」的未解析边，把本次新增的**真破坏**净差掩盖成 0
+  // ——那是夹具与真仓库不一致造成的假阴性，用例 10d / 10e 正是钉这一条的护身符。
+  // 重算必须在**首次提交之后**：生成器要读 `git log --diff-filter=D` 拿历史删除清单，空仓库里那条命令会失败（fail-closed）。
+  regen();
+  git(['add', '-A']);
+  git(['commit', '-q', '-m', 'fixture: 基线图由当前生成器重算（等价于真仓库 check:graph 绿）']);
   BASE_SHA = git(['rev-parse', 'HEAD']).stdout.trim();
 }
 
@@ -589,7 +600,129 @@ function main() {
   expect('9 改坏副本新增悬空 = 0（那条边被「基线全量边」吞掉了）', badJson.newly_dangling.length, 0);
   expect('9 改坏副本 basis 未被动过', badJson.basis, 'HEAD^..HEAD');
   // 真仓库的实现文件必须原样（改坏只发生在夹具目录的副本里）
-  expectContains('9 真仓库的 check-impact.cjs 未被改动（无 Q11-MUTATION 标记）', fs.readFileSync(path.join(REPO, 'scripts', 'check-impact.cjs'), 'utf8'), 'const danglingBase = new Map([...baseEdges].filter');
+  expectContains('9 真仓库的 check-impact.cjs 未被改动（无 Q11-MUTATION）', fs.readFileSync(path.join(REPO, 'scripts', 'check-impact.cjs'), 'utf8'), 'const danglingBase = new Map([...baseEdges].filter');
+
+  // =========================================================================
+  // 用例 10：lib 全局名表（本批新增）——**四个实验**：两个必须绿、两个必须红
+  //   10a 给函数加标准类型标注 `Promise<void>`            ⇒ 必须 exit 0（本批要修的痛点）
+  //   10b 加 `as const`                                    ⇒ 必须 exit 0（假阳性已由生成器侧跳过）
+  //   10c import 一个不存在的相对路径                      ⇒ 必须 exit 1（真·新增未解析）
+  //   10d 真·仓库内越界引用（新类型参数 T / A）             ⇒ 必须 exit 1（declaration-out-of-scope）
+  //   另有 10e：拼错的名字（Promsie）不是 lib 全局名 ⇒ 也必须 exit 1（证明排除不是「整类放过」）
+  // 为什么放在这里：那两条绿正是本批的交付物，两条红是**护身符** —— 少了它们，「修好痛点」
+  // 与「把门禁放宽到什么都放行」在用例层面不可区分。
+  // =========================================================================
+  caseHeader(10, 'lib 全局名表：标准类型标注 / as const ⇒ exit 0；假说明符 / 仓库内越界 / 拼错名字 ⇒ exit 1');
+  resetFixture();
+  const libProbe = pickTsProbe(base);
+  console.log(`  探针：${libProbe}（每步都在末尾追加，不移动任何既有行列）`);
+
+  // ---- 10a：加 `Promise<void>` 返回标注 ⇒ exit 0，且图上确实多了一条被排除的边 ----
+  resetFixture();
+  appendFileInFix(libProbe, `\nexport function q11ProbePromise(): Promise<void> {\n  return Promise.resolve();\n}\n`);
+  stage();
+  regen();
+  commitAll(`fixture: 10a 给 ${libProbe} 加 Promise<void> 返回标注`);
+  const curr10a = readGraph();
+  const baseIds10 = indexEdges(base.symbol_edges);
+  const newLibEdges = curr10a.symbol_edges.filter(
+    (e) => e.from.file === libProbe && e.reason === 'lib-global-not-in-program' && !baseIds10.has(e.id),
+  );
+  expect('10a 前置：真生成器产出了新的 lib-global-not-in-program 边', newLibEdges.length > 0, true, `${newLibEdges.length} 条`);
+  expect(
+    '10a 前置：这些边 kind=type-reference 且 to.sym === null',
+    newLibEdges.length > 0 && newLibEdges.every((e) => e.kind === 'type-reference' && e.to.sym === null),
+    true,
+  );
+  expect(
+    '10a 前置：名表 loaded（自证块落进产物）',
+    curr10a.meta.symbol_graph.lib_globals.status === 'loaded' && curr10a.meta.symbol_graph.lib_globals.globals_total > 0,
+    true,
+  );
+  r = runGate(['--json']);
+  console.log(`  10a 门禁退出码 = ${r.status}；输出：${snippet(r.out)}`);
+  expect('10a exit 0（给函数加标准类型标注不是破坏 —— 本批要修的痛点）', r.status, 0, snippet(r.out));
+  if (r.json) {
+    expect('10a 新增未解析 = 0', r.json.newly_unresolved.length, 0);
+    expect('10a --json 回显了被排除的条数（不许静默）', r.json.counts.lib_global_exempt_current > 0, true, `${r.json.counts.lib_global_exempt_current} 条`);
+    expect('10a --json 带 lib_global_exemption.reason', r.json.lib_global_exemption.reason, 'lib-global-not-in-program');
+  }
+  expectContains('10a 人类可读输出回显被排除的条数', runGate().out, '按设计排除：lib-global-not-in-program');
+
+  // ---- 10b：加 `as const` ⇒ exit 0，且**不产**那条名为 `const` 的假阳性边 ----
+  resetFixture();
+  appendFileInFix(libProbe, `\nexport const q11ProbeModes = ['a', 'b'] as const;\n`);
+  stage();
+  regen();
+  commitAll(`fixture: 10b 给 ${libProbe} 加 as const`);
+  const curr10b = readGraph();
+  const constEdges = curr10b.symbol_edges.filter((e) => e.id.includes(':type-reference') && !baseIds10.has(e.id));
+  expect('10b 前置：as const 不产任何新的 type-reference 边（假阳性在生成器侧被跳过）', constEdges.length, 0);
+  expect('10b 前置：跳过数落进产物自证（不许静默）', curr10b.meta.symbol_graph.const_assertion_skips >= 1, true, `${curr10b.meta.symbol_graph.const_assertion_skips} 条`);
+  r = runGate(['--json']);
+  console.log(`  10b 门禁退出码 = ${r.status}；输出：${snippet(r.out)}`);
+  expect('10b exit 0（as const 不是引用）', r.status, 0, snippet(r.out));
+  if (r.json) expect('10b 新增未解析 = 0', r.json.newly_unresolved.length, 0);
+
+  // ---- 10c：import 一个不存在的相对路径 ⇒ exit 1（真·新增未解析，护身符一） ----
+  resetFixture();
+  appendFileInFix(libProbe, `\nimport { q11Ghost } from './q11-definitely-missing-module.js';\nvoid q11Ghost;\n`);
+  stage();
+  regen();
+  commitAll(`fixture: 10c 给 ${libProbe} 加一条指向不存在文件的 import`);
+  r = runGate(['--json']);
+  console.log(`  10c 门禁退出码 = ${r.status}；输出：${snippet(r.out)}`);
+  expect('10c exit 1（真·新增未解析：说明符指向不存在的文件）', r.status, 1, snippet(r.out));
+  if (r.json) {
+    expect('10c 新增悬空 ≥ 1（文件级那一半也报）', r.json.newly_dangling.length >= 1, true, `${r.json.newly_dangling.length} 条`);
+    expect('10c 新增未解析 ≥ 1', r.json.newly_unresolved.length >= 1, true, `${r.json.newly_unresolved.length} 条`);
+    expect(
+      '10c 点名的边指向那个不存在的说明符',
+      r.json.newly_dangling.some((e) => JSON.stringify(e).includes('q11-definitely-missing-module')),
+      true,
+    );
+  }
+
+  // ---- 10d：真·仓库内越界引用（新类型参数）⇒ exit 1（护身符二：declaration-out-of-scope 不许被放过） ----
+  resetFixture();
+  appendFileInFix(libProbe, `\nexport function q11ProbeScope<Q11T>(value: Q11T): Q11T {\n  return value;\n}\n`);
+  stage();
+  regen();
+  commitAll(`fixture: 10d 给 ${libProbe} 加一个新类型参数（仓库内越界引用）`);
+  const curr10d = readGraph();
+  const scopeEdges = curr10d.symbol_edges.filter(
+    (e) => e.from.file === libProbe && e.reason === 'declaration-out-of-scope' && !baseIds10.has(e.id),
+  );
+  expect('10d 前置：真生成器给出了 declaration-out-of-scope 的新边', scopeEdges.length > 0, true, `${scopeEdges.length} 条`);
+  r = runGate(['--json']);
+  console.log(`  10d 门禁退出码 = ${r.status}；输出：${snippet(r.out)}`);
+  expect('10d exit 1（仓库内越界引用仍然算红）', r.status, 1, snippet(r.out));
+  if (r.json) {
+    expect('10d 新增未解析 ≥ 1', r.json.newly_unresolved.length >= 1, true, `${r.json.newly_unresolved.length} 条`);
+    expect(
+      '10d 点名那条 declaration-out-of-scope 的边',
+      r.json.newly_unresolved.some((e) => e.reason === 'declaration-out-of-scope'),
+      true,
+      JSON.stringify(r.json.newly_unresolved.map((e) => e.reason)),
+    );
+  }
+
+  // ---- 10e：拼错的名字不是 lib 全局名 ⇒ exit 1（证明排除不是「type-reference 整类放过」） ----
+  resetFixture();
+  appendFileInFix(libProbe, `\nexport function q11ProbeTypo(): Promsie<void> {\n  return undefined as never;\n}\n`);
+  stage();
+  regen();
+  commitAll(`fixture: 10e 给 ${libProbe} 加一个拼错的类型名`);
+  const curr10e = readGraph();
+  expect(
+    '10e 前置：拼错的名字拿不到 lib-global-not-in-program（它不在名表里）',
+    curr10e.symbol_edges.filter((e) => e.from.file === libProbe && e.reason === 'lib-global-not-in-program' && !baseIds10.has(e.id)).length,
+    0,
+  );
+  r = runGate(['--json']);
+  console.log(`  10e 门禁退出码 = ${r.status}；输出：${snippet(r.out)}`);
+  expect('10e exit 1（拼错的类型名仍然算红）', r.status, 1, snippet(r.out));
+  if (r.json) expect('10e 新增未解析 ≥ 1', r.json.newly_unresolved.length >= 1, true, `${r.json.newly_unresolved.length} 条`);
 
   resetFixture();
   console.log(`\n${failed === 0 ? '✔' : '✖'} ${checked - failed}/${checked} 条断言通过`);

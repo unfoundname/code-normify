@@ -278,6 +278,16 @@ jobs:
         # to.state === 'outside'——仓库外的裸模块说明符（node:fs、ajv…）与库类型（Program 刻意 noLib + types:[]）
         # 本来就「仓库外、无仓库内符号」，属**已按设计处置**，算进来会让门禁在健康仓库上恒红；**保留**
         # status === 'unresolved'（symbol-not-found-in-program / declaration-out-of-scope）——这才是该报的。
+        # **第三条排除（本批新增）**：reason === 'lib-global-not-in-program'——被引用的名字是**已安装 typescript
+        # 自带 lib 的顶层全局名**（Promise / Record / Map…），而图里 Program 刻意 noLib ⇒ 本来就解析不到，不是断链
+        # （不排除的话，「给函数加一句标准类型标注」这种纯合法改动会判红）。**排除是窄的**：必须同时
+        # kind === 'type-reference'（门禁自己再判一次；该原因码若出现在别的 kind 上，整份图按 impact-graph-malformed
+        # fail-closed）∧ 生成器侧的「from 在扫描面内 ∧ 名字命中**运行时**读出的名表」。⇒ declaration-out-of-scope
+        # （仓库内越界）、imported-symbol-not-loaded、external-module-symbol、**拼错的名字**、@types/* 里的名字
+        # （Buffer…）一律**继续算未解析**。名表读不到时生成器一条也不会归入该原因码（= 旧行为，继续算红，不判绿），
+        # 并把降级（status / 原因码）写进产物与报告。**被排除的条数在人类报告与 --json 里回显**（不许静默豁免）。
+        # 完整语义、假阴性面（仓库符号遮蔽 lib 全局名）、`as const` 假阳性与四个实验见
+        # docs/HANDOFF-code-graph.zh-CN.md §7.14。
         # 「悬空」同样只认文件级边的 status === 'dangling'（目标文件不在索引里）。
         # **两种基准**（输出里的 basis 字段写明本次比的是哪一对）：
         #   默认（无开关）basis = "HEAD^..HEAD"  基线 = `git show HEAD^:ledger/references.json`，当前 = HEAD 版（CI / 提交后）
@@ -291,16 +301,20 @@ jobs:
         # （索引 blob 与重算结果是否一致、索引-工作区是否漂移、降级状态是否 unknown）。本步假定手上这份图是新鲜的，
         # 只做「新增破坏」的棘轮判定；图陈旧或降级导致的问题由 check:graph 报，**不在这里兜底**（图产物里没有
         # degradation 字段，本步不读它，也不去找它）。
-        # **fail-closed**（拿不到基线 / 图就**不判绿**；四条诊断码各 exit 1，人类可读输出为 `[诊断码]` 开头的行）：
+        # **fail-closed**（拿不到基线 / 图 / 词表就**不判绿**；五条诊断码各 exit 1，人类可读输出为 `[诊断码]` 开头的行）：
         #   impact-baseline-unavailable（HEAD^ 不存在 = 根提交 / 基线无图产物 / 读不出 / JSON 非法）、
         #   impact-current-graph-unavailable（HEAD 版或索引版缺失 / 读不出 / JSON 非法）、
         #   impact-schema-version-mismatch（两边 schema_version 不一致——图与门禁必须同一次提交一起改）、
-        #   impact-graph-malformed（顶层非对象 / edges 或 symbol_edges 不是数组）。
+        #   impact-graph-malformed（顶层非对象 / edges 或 symbol_edges 不是数组 /
+        #     lib-global-not-in-program 出现在非 type-reference 的边上）、
+        #   impact-shared-kernel-unavailable（本批新增：拿不到 scripts/reference-graph-core.cjs 的原因码词表
+        #     ——不知道词表就分不清「已按设计处置」与「真破坏」，故不判绿）。
         # 另有 exit 2 = 命令行用法错误（未知开关 / `--root` 缺参数）；`--root` 指向非 git 仓库根同样 exit 1 拒绝，不回退。
         # **回归用例**：`npm test` 里的 tests/impact-gate-e2e.mjs（**断言条数是活值 —— 取数、不复述**：
         # 跑它、读末行的 `✔ N/N 条断言通过`；**留痕（时点 = 本批开工版 `4e0170f`；只作留痕、不是现值）**：
-        # 该时点写作 9 组 75 条断言；临时夹具用 `git checkout-index`
-        # 物化真仓库、图用真生成器重算、跑完自删）——覆盖上面每条判据与四条 fail-closed 诊断码，包括：
+        # 该时点写作 9 组 75 条断言；**本批扩到第 10 组（lib 全局名表四个实验：Promise<void> 与 as const 必须绿，
+        # 假说明符 / 仓库内越界 / 拼错名字必须红）**；临时夹具用 `git checkout-index`
+        # 物化真仓库、图用真生成器重算、跑完自删）——覆盖上面每条判据与五条 fail-closed 诊断码，包括：
         # 删被引用文件（点名边 id）、删导出符号（新增未解析那一半）、删无人引用文件与只改内容两条反例、
         # **棘轮不追溯历史存量**（C1 引入悬空 → C2 无关改动 ⇒ 在 C2 上 exit 0）、`external`/`outside` 符号边不算未解析、
         # `--staged`（HEAD..index）与默认基准（HEAD^..HEAD）的差别、8a–8e 四条诊断码各一。

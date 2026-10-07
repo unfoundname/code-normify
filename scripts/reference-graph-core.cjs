@@ -40,6 +40,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 
 // ---------------------------------------------------------------------------
@@ -1286,9 +1287,13 @@ function createReaderContext(options) {
  * 于是 Program 里只有调用方给的 rootNames（由 `stats.program_source_files` 与
  * `stats.program_outside_repo_files` 自证「没把 node_modules 拉进来」）。代价是库类型
  * （`Promise` / `Map` / `Record` / `ReturnType`…）与 `@types/*` 里的名字解析不出符号：
- * 这类边如实记 `status: unresolved` + `reason: symbol-not-found-in-program`，
- * 那是**本批的范围边界**，不得读成「断链」。同理，非 `.ts` 后缀（`.mjs` / `.cjs` / `.js`）
- * 按设计稿 §3.4 退化为文件级，不在这里产符号边。
+ * 这类边如实记 `status: unresolved`，原因码分两种 ——
+ *   · 名字命中**已装 typescript 自带 lib 的全局名表** ⇒ `lib-global-not-in-program`
+ *     （本批新增；名表运行时读，见下节 `loadLibGlobals`。**这不是断链，是范围边界**）；
+ *   · 其余（`@types/*` 里的名字、拼错的名字、仓库内未导入的裸名字）⇒ `symbol-not-found-in-program`。
+ * 两者都**不得读成「断链」的等价物**，但处置不同：前者已经由生成器如实标注、门禁按设计排除；
+ * 后者仍是该报的。同理，非 `.ts` 后缀（`.mjs` / `.cjs` / `.js`）按设计稿 §3.4 退化为文件级，
+ * 不在这里产符号边。**这条边界与它的假阴性面见 docs/HANDOFF-code-graph.zh-CN.md §7.14。**
  */
 
 /**
@@ -1337,7 +1342,213 @@ const SYMBOL_REASONS = {
   DECLARATION_OUT_OF_SCOPE: 'declaration-out-of-scope',
   /** 符号存在但一个声明节点都没有（纯类型参数、合成符号等）。 */
   SYMBOL_WITHOUT_DECLARATION: 'symbol-without-declaration',
+  /**
+   * **本条是本批新增**：被引用的名字是**已安装 typescript 自带 `lib.*.d.ts` 里的顶层全局名**
+   * （`Promise` / `Record` / `Map` / `Array` / `Awaited` …），而本 Program **刻意 `noLib`**
+   * （理由见文件头「范围边界」）⇒ 它本来就解析不到符号，**不是断链**。
+   *
+   * 归属条件（生成器侧三条同时成立，缺一不可；`scripts/check-impact.cjs` 侧另有结构性复核）：
+   *   ① `kind === 'type-reference'`（import / export-from 的失败各有自己的原因码，不归这里）；
+   *   ② `from` 在本次符号级扫描面内（本仓 = `src/**\/*.ts`，即 `rootNames` 之一）；
+   *   ③ 名字命中**运行时**从已装 typescript 读出来的 lib 全局名表（`loadLibGlobals`，**不写死清单**）。
+   * **不归本条**（必须继续按各自原因码报红）：`declaration-out-of-scope`（仓库内越界：类型参数、
+   * 类成员等）、`imported-symbol-not-loaded` / `external-module-symbol`（名字来自 import）、
+   * 以及名字**没有**命中名表的 `symbol-not-found-in-program`（拼错、仓库内未导入的裸名字）。
+   *
+   * 名表读不到时（status ≠ loaded）**一条边也不会**归入本条 ⇒ 它们仍是 `symbol-not-found-in-program`
+   * （= 旧行为，**不判绿**）；`meta.symbol_graph.lib_globals.status/reason` 把这件事写进产物，
+   * 生成器与门禁都回显（**不许静默降级**，见 loadLibGlobals 的注释）。
+   */
+  LIB_GLOBAL_NOT_IN_PROGRAM: 'lib-global-not-in-program',
 };
+
+// ---------------------------------------------------------------------------
+// lib 全局名表（运行时读已安装 typescript 自带 lib，**绝不写死清单**）
+// ---------------------------------------------------------------------------
+/**
+ * 为什么要有这张表：Program 刻意 `noLib: true` + `types: []`（不把 `node_modules` 拉进来，见文件头），
+ * 于是给函数加一句**标准类型标注**（`function f(): Promise<void>`）就会新产一条 `type-reference`
+ * 未解析边，把 `check:impact` 判红——而那不是「新引入的断链」，是本 Program 的范围边界。
+ * 之前的处置是让门禁按 `status` 放行，方向错：那会把 `declaration-out-of-scope`（仓库内真越界）
+ * 一起放掉。本表把判据**前移到生成器**：只有「名字确实是已装 typescript 自带 lib 的全局名」的
+ * `type-reference` 边才拿 `lib-global-not-in-program`，门禁只排除这一个原因码。
+ *
+ * **必须是运行时读，不许写死清单**（本仓反复踩过的坑：写死的清单必然腐化）。读法与自证：
+ *   · 只 `ts.createSourceFile`（**不建 Program、不读 tsconfig**），从**已安装 typescript 包自身**的
+ *     `lib.*.d.ts` 取顶层声明名（interface / type / class / enum / namespace / function / var）；
+ *   · 与 `meta.analysis.typescript_version` **同一份安装**（路径由 `require.resolve('typescript')` 而来），
+ *     版本、文件数、名字总数与名字表的 `sha256` 摘要都落进产物（可追溯、可复核）；
+ *   · 进程内按「typescript 版本 + 解析到的入口路径」缓存一次（改动记录生成器会对每个提交重建图，
+ *     不缓存就会把这份 240ms 的解析乘以提交数）。
+ *
+ * **取全套 lib 而不是 tsconfig 的 `lib` 字段**（有意的取舍，如实记账）：图的 Program 口径刻意不由
+ * tsconfig 决定（见 `symbolCompilerOptions`），名表也跟着以「已装 typescript 同源」为准 ⇒ 本仓
+ * `tsconfig.json` 只写 `lib: ["ES2023"]`，而名表里**也**含 `lib.dom.d.ts` 的 DOM 全局名。
+ * 假阴性面（名字是 DOM 全局名 ⇒ 未被豁免不掉）写在 docs/HANDOFF-code-graph.zh-CN.md §7.14。
+ *
+ * 读不到时的处置：**保持旧行为（一条也不归入新原因码）+ 把降级写进产物与报告**，不抛错也不静默。
+ * 理由：这条降级的方向是**更红**（那些边继续按 `symbol-not-found-in-program` 报），不会制造假绿；
+ * 而抛错会让整个图生成在「typescript 装得不全」的环境里直接不可用（含只读的 --check）。
+ * 与「拿不到判据就不判绿」不冲突：这里拿不到判据 ⇒ 判**红**。
+ */
+const LIB_GLOBALS = {
+  status: 'unavailable',
+  reason: 'not-loaded',
+  version: null,
+  lib_dir: null,
+  lib_files: [],
+  names: new Set(),
+  digest: null,
+};
+
+/** lib 名表的原因码闭集（机器无关；绝对路径绝不落盘——幂等要求）。 */
+const LIB_GLOBALS_REASONS = {
+  NOT_LOADED: 'not-loaded',
+  TYPESCRIPT_UNAVAILABLE: 'typescript-unavailable',
+  LIB_DIRECTORY_MISSING: 'lib-directory-missing',
+  LIB_DIRECTORY_UNREADABLE: 'lib-directory-unreadable',
+  NO_LIB_FILES: 'no-lib-files',
+  LIB_FILE_UNREADABLE: 'lib-file-unreadable',
+  LIB_FILE_UNPARSABLE: 'lib-file-unparsable',
+  NO_GLOBAL_DECLARATIONS: 'no-global-declarations',
+};
+
+/** 进程内缓存键（`typescript 版本|入口绝对路径`）；`null` = 还没读过。 */
+let libGlobalsLoadedKey = null;
+
+/** 库里 `lib.*.d.ts` 的文件名判定（只认 typescript 自带命名，别的 .d.ts 不进名表）。 */
+const LIB_FILE_PATTERN = /^lib\..*\.d\.ts$/;
+
+/**
+ * 解析 typescript 包的 lib 目录（`<pkg>/lib`：typescript 的 `main` 就是 `lib/typescript.js`）。
+ * 返回绝对路径或 null；找不到不算错，由调用方记原因码。
+ */
+function resolveTypeScriptLibDir() {
+  let entry = SPECIFIER_ANALYSIS.source || null;
+  if (!entry) {
+    for (const base of TYPESCRIPT_CANDIDATE_ROOTS) {
+      try {
+        entry = require.resolve('typescript', { paths: [base] });
+        break;
+      } catch {
+        /* 继续试下一个候选根 */
+      }
+    }
+  }
+  if (!entry) return null;
+  const dir = path.dirname(entry);
+  try {
+    if (fs.readdirSync(dir).some((name) => LIB_FILE_PATTERN.test(name))) return dir;
+    const nested = path.join(dir, 'lib');
+    if (fs.readdirSync(nested).some((name) => LIB_FILE_PATTERN.test(name))) return nested;
+  } catch {
+    return dir; // 让调用方按「读不了」记原因码（不在这里吞成 null 之外的东西）
+  }
+  return dir;
+}
+
+/** 一个 lib 源文件里的**顶层**声明名（`createSourceFile` 只解析语法，不做类型检查、不建 Program）。 */
+function topLevelGlobalNamesOf(ts, fileName, text, out) {
+  const sourceFile = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, false, ts.ScriptKind.TS);
+  for (const statement of sourceFile.statements) {
+    const name = statement.name;
+    if (name && ts.isIdentifier(name)) {
+      out.add(name.text);
+      continue;
+    }
+    // `declare var x: T;` / `declare const x: T;` 这类变量语句的名字在 declarationList 里。
+    if (ts.isVariableStatement(statement)) {
+      for (const declaration of statement.declarationList.declarations) {
+        if (ts.isIdentifier(declaration.name)) out.add(declaration.name.text);
+      }
+    }
+  }
+  return out.size;
+}
+
+/**
+ * 读一次已安装 typescript 自带的 lib 全局名表（**运行时读，绝不写死清单**）。
+ * 幂等、进程内缓存；读不到时把原因码写进 `LIB_GLOBALS.reason`（闭集见 LIB_GLOBALS_REASONS），
+ * **绝不**返回一张「空表当作成功」的表——`status` 只有 `loaded` 才会被判定侧使用。
+ */
+function loadLibGlobals(ts) {
+  const key = `${(ts && ts.version) || 'none'}|${SPECIFIER_ANALYSIS.source || 'unresolved'}`;
+  if (libGlobalsLoadedKey === key) return LIB_GLOBALS;
+  libGlobalsLoadedKey = key;
+
+  const reset = (reason, version) => {
+    LIB_GLOBALS.status = 'unavailable';
+    LIB_GLOBALS.reason = reason;
+    LIB_GLOBALS.version = version || null;
+    LIB_GLOBALS.lib_files = [];
+    LIB_GLOBALS.names = new Set();
+    LIB_GLOBALS.digest = null;
+    return LIB_GLOBALS;
+  };
+
+  if (!ts || typeof ts.createSourceFile !== 'function') return reset(LIB_GLOBALS_REASONS.TYPESCRIPT_UNAVAILABLE, null);
+
+  const libDir = resolveTypeScriptLibDir();
+  if (!libDir) return reset(LIB_GLOBALS_REASONS.LIB_DIRECTORY_MISSING, ts.version);
+  let entries = null;
+  try {
+    entries = fs.readdirSync(libDir).filter((name) => LIB_FILE_PATTERN.test(name)).sort(byUtf8Bytes);
+  } catch {
+    return reset(LIB_GLOBALS_REASONS.LIB_DIRECTORY_UNREADABLE, ts.version);
+  }
+  if (entries.length === 0) return reset(LIB_GLOBALS_REASONS.NO_LIB_FILES, ts.version);
+
+  const names = new Set();
+  const readFiles = [];
+  for (const name of entries) {
+    let text = null;
+    try {
+      text = fs.readFileSync(path.join(libDir, name), 'utf8');
+    } catch {
+      return reset(LIB_GLOBALS_REASONS.LIB_FILE_UNREADABLE, ts.version);
+    }
+    try {
+      // `statements.length === 0` **不是**错误：`lib.es2015.d.ts` 这类文件只有 `/// <reference lib=… />`
+      // 指令、本来就是 0 条语句（实测 99 个文件里 22 个如此）。只有**抛异常**才算解析不了。
+      topLevelGlobalNamesOf(ts, name, text, names);
+    } catch {
+      return reset(LIB_GLOBALS_REASONS.LIB_FILE_UNPARSABLE, ts.version);
+    }
+    readFiles.push(name);
+  }
+  if (names.size === 0) return reset(LIB_GLOBALS_REASONS.NO_GLOBAL_DECLARATIONS, ts.version);
+
+  LIB_GLOBALS.status = 'loaded';
+  LIB_GLOBALS.reason = null;
+  LIB_GLOBALS.version = ts.version || null;
+  LIB_GLOBALS.lib_dir = libDir;
+  LIB_GLOBALS.lib_files = readFiles;
+  LIB_GLOBALS.names = names;
+  LIB_GLOBALS.digest = crypto.createHash('sha256').update(`${[...names].sort(byUtf8Bytes).join('\n')}\n`, 'utf8').digest('hex');
+  return LIB_GLOBALS;
+}
+
+/**
+ * 名表落进产物的自证块（**不含绝对路径、不含计时**——产物必须幂等，见生成器文件头）。
+ * `status ≠ loaded` 时 `reason` 非空，判定侧据此**一条也不归入**新原因码（= 旧行为，不判绿）。
+ */
+function libGlobalsSummary() {
+  return {
+    status: LIB_GLOBALS.status,
+    reason: LIB_GLOBALS.reason,
+    typescript_version: LIB_GLOBALS.version,
+    lib_files_total: LIB_GLOBALS.lib_files.length,
+    globals_total: LIB_GLOBALS.names.size,
+    names_digest: LIB_GLOBALS.digest === null ? null : `sha256:${LIB_GLOBALS.digest}`,
+    source: '已安装 typescript 包自带 lib/*.d.ts 的顶层声明名（ts.createSourceFile，不建 Program、不读 tsconfig）',
+    used_by:
+      `仅用于把 kind=type-reference 且名字命中本表的未解析边归入 ${SYMBOL_REASONS.LIB_GLOBAL_NOT_IN_PROGRAM}` +
+      `（Program 刻意 noLib）；status ≠ loaded ⇒ 一条也不归入（保持旧行为，不判绿）`,
+    shadowing_caveat:
+      '名字命中本表、但仓库内另有同名顶层声明时，本表判不出来（见 HANDOFF §7.14 的假阴性面）；' +
+      '这类边的条数由 lib_global_shadowed_edges 单独回显',
+  };
+}
 
 /** UTF-8 字节序比较（设计稿 §3.6 的 0 容忍项：不用 localeCompare）。 */
 const byUtf8Bytes = (a, b) => Buffer.compare(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'));
@@ -1506,6 +1717,12 @@ function buildSymbolGraph(options) {
     resolved_edges: 0,
     edges_without_symbol: 0,
     skipped_anonymous_declarations: 0,
+    /** `as const` 的假阳性节点数（跳过数，**回显出来**：跳过本身不许静默）。 */
+    skipped_const_assertions: 0,
+    /** 归入 `lib-global-not-in-program` 的边数（= 名表命中数）。 */
+    lib_global_edges: 0,
+    /** 上述边里，名字**同时**是本仓扫描面内某个顶层声明名的条数（假阴性面，见 HANDOFF §7.14）。 */
+    lib_global_shadowed_edges: 0,
   };
   const result = {
     mode: 'typescript',
@@ -1514,6 +1731,8 @@ function buildSymbolGraph(options) {
     edges: [],
     stats,
     compiler_options: symbolCompilerOptionsText(),
+    /** lib 全局名表（运行时读；读不到时 status ≠ loaded —— 判定侧据此一条也不归入新原因码）。 */
+    lib_globals: LIB_GLOBALS,
   };
   if (!ts || typeof ts.createProgram !== 'function') {
     result.mode = 'unavailable';
@@ -1525,6 +1744,11 @@ function buildSymbolGraph(options) {
     result.reasons.push('no-symbol-scope-files');
     return result;
   }
+
+  // lib 全局名表：**运行时**从已安装 typescript 自带的 `lib.*.d.ts` 读（不写死清单，见 loadLibGlobals）。
+  // 读不到 ⇒ `status ≠ loaded` ⇒ 下面一条边也不会归入新原因码（保持旧行为 = 那些边继续报红，不判绿）。
+  const libGlobals = loadLibGlobals(ts);
+  result.lib_globals = libGlobals;
 
   const relOfAbs = (fileName) => {
     const rel = path.relative(ctx.root, fileName).split(path.sep).join('/');
@@ -1638,6 +1862,14 @@ function buildSymbolGraph(options) {
   }
   for (const record of declById.values()) result.declarations.push(record);
   result.declarations.sort((a, b) => byUtf8Bytes(a.id, b.id));
+
+  /**
+   * 本次符号级扫描面内的**全部顶层声明名**。只用来**量化**假阴性面（「仓库符号遮蔽 lib 全局名」，
+   * 见 HANDOFF §7.14）：名字命中 lib 名表、但仓库里另有同名顶层声明时，本表判不出「这处引用本来
+   * 想指仓库里那个」——这类边的条数单独回显（`stats.lib_global_shadowed_edges`），**不参与判定**
+   * （判定保持「名字命中名表即归入」，即已拍板的三条归属条件，不额外加条件）。
+   */
+  const scanScopeDeclarationNames = new Set([...declById.values()].map((record) => record.name));
 
   // ---- ③ 符号级边 ----
   const edges = [];
@@ -1987,8 +2219,21 @@ function buildSymbolGraph(options) {
     }
 
     // ---- type-reference：整文件遍历（`TypeReferenceNode`），归属到所在顶层声明 ----
+    /**
+     * **`as const` 不产边（本批修的假阳性）**：TS 把 const 断言解析成一个名为 `const` 的
+     * `TypeReferenceNode`（实测：`const a = { x: 1 } as const` ⇒ `AsExpression.type` 的
+     * `kind === SyntaxKind.TypeReference`、`typeName.text === 'const'`、`isIdentifier === true`），
+     * 而 `const` 是保留字、**任何类型都不可能叫这个名字** ⇒ 这条边**永远**解析不到符号，
+     * 是本批开工时 16 条假阳性的唯一来源（16 处 `as const` ↔ 16 条 `symbol-not-found-in-program`
+     * 边，逐条对上；取证见 HANDOFF §7.14）。**修在生成器侧**（不是门禁侧放行）：它根本不该是一条引用边。
+     * 跳过数记进 `stats.skipped_const_assertions` 并落进产物 —— 跳过本身**不许静默**。
+     */
+    const isConstAssertion = (node) => ts.isIdentifier(node.typeName) && node.typeName.text === 'const';
+
     const visit = (node, fromDecl) => {
-      if (ts.isTypeReferenceNode(node)) {
+      if (ts.isTypeReferenceNode(node) && isConstAssertion(node)) {
+        stats.skipped_const_assertions += 1;
+      } else if (ts.isTypeReferenceNode(node)) {
         const pos = posOf(sourceFile, node.typeName);
         const from = { file: rel, ...pos, sym: fromDecl ? fromDecl.id : null };
         const rootName = ts.isIdentifier(node.typeName) ? node.typeName.text : null;
@@ -2031,6 +2276,29 @@ function buildSymbolGraph(options) {
             reason: external ? SYMBOL_REASONS.EXTERNAL_MODULE_SYMBOL : SYMBOL_REASONS.IMPORTED_SYMBOL_NOT_LOADED,
             type_only: true,
           });
+        } else if (rootName && libGlobals.status === 'loaded' && libGlobals.names.has(rootName)) {
+          /**
+           * **已装 typescript 自带 lib 的全局名**（`Promise` / `Record` / `Map` …）：本 Program 刻意
+           * `noLib`（范围边界，见文件头），它本来就解析不到符号 —— 如实记成**自己的原因码**，
+           * 而不是冒充「断链」。归属三条件（缺一不可，见 SYMBOL_REASONS.LIB_GLOBAL_NOT_IN_PROGRAM）：
+           * ① kind 就是本分支的 `type-reference`；② `from` 在 `rootNames` 内（本循环的 `rel` 即其中之一）；
+           * ③ 名字命中**运行时**读出来的名表（`libGlobals.names`，绝不写死清单）。
+           * 名表 `status ≠ loaded` 时**走不到这个分支** ⇒ 保持旧行为（`symbol-not-found-in-program`，不判绿）。
+           */
+          pushEdge({
+            kind: 'type-reference',
+            from,
+            to: { sym: null, file: null, line: null, column: null, state: null },
+            specifier: null,
+            resolved: null,
+            status: 'unresolved',
+            reason: SYMBOL_REASONS.LIB_GLOBAL_NOT_IN_PROGRAM,
+            type_only: true,
+          });
+          stats.lib_global_edges += 1;
+          // 假阴性面的**量化**（不改判定）：这个 lib 全局名在本仓扫描面里另有同名顶层声明 ⇒
+          // 若那处引用本来想指仓库里那个，本条就把它放过了。条数单独回显，见 HANDOFF §7.14。
+          if (scanScopeDeclarationNames.has(rootName)) stats.lib_global_shadowed_edges += 1;
         } else {
           pushEdge({
             kind: 'type-reference',
@@ -2129,6 +2397,14 @@ module.exports = {
   // ---- 符号级（增量 3）：ts.createProgram + getTypeChecker ----
   STATUS_OF_INDEX_STATE,
   SYMBOL_REASONS,
+  // ---- lib 全局名表（本批新增：运行时读已装 typescript 自带 lib，绝不写死清单）----
+  LIB_GLOBALS,
+  LIB_GLOBALS_REASONS,
+  LIB_FILE_PATTERN,
+  resolveTypeScriptLibDir,
+  topLevelGlobalNamesOf,
+  loadLibGlobals,
+  libGlobalsSummary,
   symbolCompilerOptions,
   symbolCompilerOptionsText,
   createIndexCompilerHost,
