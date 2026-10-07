@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "8bb91ea209fbe1788e23bad4ceaaff7dee64b029094498062e9d8bbc2686a7bb",
+    "universe_hash": "cc233ab13bcbfaf9015ba47c0a2126c2d12b939f69e18711b50a1f44d5f22551",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1504,
+    "tracked_total": 1505,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 168
+      "scanned_total": 169
     },
     "analysis": {
       "mode": "typescript",
@@ -92,7 +92,7 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "自指条目（本产物自身的 bytes / lines）固定写 null —— 这是【处置选择】，不是\"没有不动点\"：实测把这两个量迭代写回，第 3 次即收敛（不动点存在）。因此这里写 null 是为了让产物写入幂等、而不是因为\"自指在数学上不可能稳定\"。（本条 = 图数据文件自己（ledger/references.json）那一行；只豁免这两个派生量，其余字段照常登记。）",
     "node_states": {
-      "indexed": 1504
+      "indexed": 1505
     },
     "edge_kinds": {
       "anchor": 3,
@@ -160,7 +160,7 @@
       "id": "CONTRIBUTING.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 73093,
+      "bytes": 74365,
       "lines": 184,
       "edge_out": 1,
       "edge_in": 0
@@ -12325,6 +12325,15 @@
       "edge_in": 0
     },
     {
+      "id": "ledger/change-log/20261007T003652Z-3e072fd.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 2424,
+      "lines": 75,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
       "id": "ledger/change-log/README.md",
       "lang": "md",
       "state": "indexed",
@@ -13228,8 +13237,8 @@
       "id": "scripts/generate-reference-graph.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 66782,
-      "lines": 1244,
+      "bytes": 69777,
+      "lines": 1271,
       "edge_out": 6,
       "edge_in": 3
     },
@@ -16805,11 +16814,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:94:20:require:node:fs",
+      "id": "scripts/generate-reference-graph.cjs:100:20:require:node:fs",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 94,
+        "line": 100,
         "column": 20
       },
       "to": {
@@ -16827,11 +16836,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:95:22:require:node:path",
+      "id": "scripts/generate-reference-graph.cjs:101:22:require:node:path",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 95,
+        "line": 101,
         "column": 22
       },
       "to": {
@@ -16849,11 +16858,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:96:24:require:node:crypto",
+      "id": "scripts/generate-reference-graph.cjs:102:24:require:node:crypto",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 96,
+        "line": 102,
         "column": 24
       },
       "to": {
@@ -16871,11 +16880,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:97:31:require:node:child_process",
+      "id": "scripts/generate-reference-graph.cjs:103:31:require:node:child_process",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 97,
+        "line": 103,
         "column": 31
       },
       "to": {
@@ -16893,11 +16902,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:100:22:require:./reference-graph-core.cjs",
+      "id": "scripts/generate-reference-graph.cjs:106:22:require:./reference-graph-core.cjs",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 100,
+        "line": 106,
         "column": 22
       },
       "to": {
@@ -16915,11 +16924,11 @@
       "type_only": false
     },
     {
-      "id": "scripts/generate-reference-graph.cjs:103:24:require:./file-ledger-core.cjs",
+      "id": "scripts/generate-reference-graph.cjs:109:24:require:./file-ledger-core.cjs",
       "kind": "require",
       "from": {
         "file": "scripts/generate-reference-graph.cjs",
-        "line": 103,
+        "line": 109,
         "column": 24
       },
       "to": {

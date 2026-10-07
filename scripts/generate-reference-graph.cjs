@@ -74,9 +74,15 @@
  * 「当前索引」，没有历史维度）。**`unknown` 不判绿**——与 §4.6「`unknown` 与 `stale` 都不判绿（exit 1）」
  * 是同一条铁律，不是另立一套。
  *
+ * **历史删除清单拿不到 ⇒ 生成失败（本批订正，fail-closed）**：`git log --diff-filter=D --name-only`
+ * 失败时**抛错、退出 1**，不返回空集合——「拿不到」与「没有删除历史」是两件事，返回空集合会把每个
+ * `deleted` 目标静默改判成 `missing`，产物还照写「当前 0 条历史删除路径」且 `degraded` 仍为 `false`
+ * （实测假绿：`--check` 会拿这份伪造的图判 complete / exit 0）。口径与 `scripts/check-references.cjs`
+ * 对同一条命令失败的处理一致（error，退出码 1）。
+ *
  * 退出码：
  *   0  生成成功（内容一致时不动文件）/ `--check` 一致且降级状态 = complete
- *   1  生成失败（git 不可用 / 索引读不到 / 边 id 冲突）/ `--check` 不一致 / 索引-工作区漂移 / 降级状态 = unknown
+ *   1  生成失败（git 不可用 / 索引读不到 / 历史删除清单取不到 / 边 id 冲突）/ `--check` 不一致 / 索引-工作区漂移 / 降级状态 = unknown
  *   2  命令行用法错误
  *
  * 用法：node scripts/generate-reference-graph.cjs [--root <dir>] [--check] [--json] [--help]
@@ -228,6 +234,7 @@ function readBlobs(root, shas) {
  * git 历史里被删除过的路径集合（`git log --diff-filter=D --name-only [<rev>]`），用于 deleted 状态。
  * `rev` 非空时把历史基准钉到该提交（改动记录要重建「某个提交当时的图」，见文件头）；不传 = `git log`
  * 默认的 HEAD，与从前的 CLI 行为逐字节一致。
+ * **命令失败 ⇒ 抛错**（不返回空集合）：理由与留痕见函数体内的注释；正常路径（命令成功）的行为一字未变。
  */
 function readDeletedPaths(root, rev) {
   const args = ['log', '--diff-filter=D', '--name-only', '--pretty=format:'];
@@ -235,8 +242,23 @@ function readDeletedPaths(root, rev) {
   let raw = '';
   try {
     raw = execGit(root, args);
-  } catch {
-    return new Set(); // 浅克隆等：拿不到就不冒充「没有删除」，由 meta.history_basis 如实说明
+  } catch (err) {
+    // **拿不到 ⇒ 抛错（fail-closed），绝不返回空集合**：空集合的含义是「没有任何删除历史」，
+    // 而「拿不到」与「没有」是两件事——返回空集合会把每个本该 `deleted` 的目标静默改判成 `missing`，
+    // 产物里还会照写「当前 0 条历史删除路径」且 `meta.analysis.degraded` 仍为 `false`，没有任何一处
+    // 能看出「拿不到」（实测假绿：`--check` 拿这份伪造的图当基准时判 complete / exit 0）。
+    // 与 scripts/check-references.cjs 对**同一条 git 命令**失败的处理同口径：那条命令失败就报 error
+    // （guard-unavailable，退出码 1），不是「0 条」。本文件内的同类先例：解析不了的 package.json 抛错
+    // （collectPackageEdges）、读不到 blob 抛错（readBlobs / readBlobSizes）、符号级边的不变量抛错。
+    // 留痕（旧写法，已否掉）：这里原是 `catch { return new Set(); }`，注释写着「拿不到就不冒充
+    // 「没有删除」，由 meta.history_basis 如实说明」——注释说的是一回事，代码做的是相反的一回事：
+    // 没有任何降级标记，`history_basis` 照写「当前 0 条历史删除路径」。
+    throw new Error(
+      `无法获取历史删除清单（git ${args.join(' ')} 失败）：${err.message}\n` +
+        '  ⇒ fail-closed：删除历史拿不到时不再继续生成——否则本该 deleted 的目标会被静默判成 missing，' +
+        '并把它写成「当前 0 条历史删除路径」（拿不到 ≠ 没有）。\n' +
+        '  修法：确认这是完整克隆（浅克隆用 `git fetch --unshallow` 补全历史），或用 `git fsck` 修复缺失的对象后重跑。',
+    );
   }
   return new Set(raw.split('\n').map((s) => s.trim()).filter(Boolean));
 }
@@ -1181,6 +1203,11 @@ function printHelp() {
     '                `partial` / `stale` 用不到：图的观测点就是「当前索引」，没有历史维度。',
     '',
     '退出码：0 成功 / 1 生成失败（含 --check 不一致、索引-工作区漂移、版本不匹配、降级状态 = unknown）/ 2 用法错误',
+    '',
+    '历史基准（fail-closed）：`deleted` 状态来自 `git log --diff-filter=D --name-only`；该命令**失败即生成失败**',
+    '  （退出码 1，报告点名是哪一步失败）——「拿不到删除历史」不得写成「0 条历史删除路径」：那会把本该',
+    '  `deleted` 的目标静默判成 `missing`，而 `--check` 会拿这份伪造的图判 complete / exit 0。',
+    '  浅克隆（`git clone --depth 1`）里该命令**实测 exit 0**（只是历史被截断）⇒ 不走本条，行为与从前一致。',
     '',
     '读 / 写：',
     '  读：git 索引（`git ls-files`）里的文本文件、仓库自带 typescript（符号级 Program 用）、',
