@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "b2f3284c2890448a265c6ac37d695fb24ca94c0dd309a640f4e47d188561c8c9",
+    "universe_hash": "4d54d97028a6f6ec07934dfa741540364a56a9adeb2c31d891a6de69ceef53ee",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1511,
+    "tracked_total": 1513,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 175
+      "scanned_total": 177
     },
     "analysis": {
       "mode": "typescript",
@@ -106,7 +106,7 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "自指条目（本产物自身的 bytes / lines）固定写 null —— 这是【处置选择】，不是\"没有不动点\"：实测把这两个量迭代写回，第 3 次即收敛（不动点存在）。因此这里写 null 是为了让产物写入幂等、而不是因为\"自指在数学上不可能稳定\"。（本条 = 图数据文件自己（ledger/references.json）那一行；只豁免这两个派生量，其余字段照常登记。）",
     "node_states": {
-      "indexed": 1511
+      "indexed": 1513
     },
     "edge_kinds": {
       "anchor": 3,
@@ -228,7 +228,7 @@
       "id": "docs/DESIGN-code-graph.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 239268,
+      "bytes": 239361,
       "lines": 1363,
       "edge_out": 0,
       "edge_in": 0
@@ -12398,6 +12398,24 @@
       "state": "indexed",
       "bytes": 2477,
       "lines": 76,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261007T070918Z-9e6a077.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 4197,
+      "lines": 130,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
+      "id": "ledger/change-log/20261007T070924Z-2cf89cb.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 6425,
+      "lines": 206,
       "edge_out": 0,
       "edge_in": 0
     },

@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "kind": "commit",
+  "commit": "9e6a077c7baf0e5352a76ed3b3f416fbb5d7b36f",
+  "commit_parent": "24abd6a4e1141dd4a07aba7951d2b3f90ba756c7",
+  "cas_digest": null,
+  "change_id": null,
+  "created_at": "2026-10-07T07:09:18Z",
+  "generator": "scripts/generate-change-log.cjs",
+  "generator_version": "1.0.0",
+  "graph_schema_version": 2,
+  "from_snapshot": {
+    "basis": "commit",
+    "rev": "24abd6a4e1141dd4a07aba7951d2b3f90ba756c7",
+    "tree": "e813d2ad69a22be1c0ee7352fff186c60eb1e462",
+    "universe_hash": "59c0378d89b23cf79f561adb20fa240d2471c45c1182aef5b686c19e859f45f9",
+    "tracked_total": 1510,
+    "files": 1510,
+    "edges": 501,
+    "analysis_mode": "typescript"
+  },
+  "to_snapshot": {
+    "basis": "commit",
+    "rev": "9e6a077c7baf0e5352a76ed3b3f416fbb5d7b36f",
+    "tree": "bae1fb85bea4f5993b134fa8224b38e570e8861b",
+    "universe_hash": "b2f3284c2890448a265c6ac37d695fb24ca94c0dd309a640f4e47d188561c8c9",
+    "tracked_total": 1511,
+    "files": 1511,
+    "edges": 501,
+    "analysis_mode": "typescript"
+  },
+  "degradation": {
+    "status": "complete",
+    "reasons": [],
+    "note": "两侧快照都完整重建：本次差在**文件层**是完整的（节点 = 全量已跟踪文件，边 = 扫描面产出的全部边）。数组为空 = 真的没有差异。"
+  },
+  "files": {
+    "added": [
+      "ledger/change-log/20261007T050549Z-24abd6a.json"
+    ],
+    "removed": [],
+    "state_changed": []
+  },
+  "edges": {
+    "added": [
+      "scripts/generate-change-log.cjs:691:27:require:ajv/dist/2020",
+      "src/engine/validate.ts:3:92:import:./store.js"
+    ],
+    "removed": [
+      "scripts/generate-change-log.cjs:623:27:require:ajv/dist/2020",
+      "src/engine/validate.ts:3:67:import:./store.js"
+    ],
+    "status_changed": []
+  },
+  "affected_referrers": [
+    {
+      "edge": "scripts/generate-change-log.cjs:623:27:require:ajv/dist/2020",
+      "file": "scripts/generate-change-log.cjs",
+      "line": 623,
+      "column": 27,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-change-log.cjs:691:27:require:ajv/dist/2020",
+      "file": "scripts/generate-change-log.cjs",
+      "line": 691,
+      "column": 27,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    },
+    {
+      "edge": "src/engine/validate.ts:3:67:import:./store.js",
+      "file": "src/engine/validate.ts",
+      "line": 3,
+      "column": 67,
+      "kind": "import",
+      "target": "src/engine/store.ts",
+      "target_state": "indexed",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "src/engine/validate.ts:3:92:import:./store.js",
+      "file": "src/engine/validate.ts",
+      "line": 3,
+      "column": 92,
+      "kind": "import",
+      "target": "src/engine/store.ts",
+      "target_state": "indexed",
+      "edge_status": "resolved",
+      "classification": "edge-added",
+      "needs_change": false
+    }
+  ],
+  "counts": {
+    "files_added": 1,
+    "files_removed": 0,
+    "files_state_changed": 0,
+    "edges_added": 2,
+    "edges_removed": 2,
+    "edges_status_changed": 0,
+    "affected_referrers": 4,
+    "needs_change": 0
+  },
+  "handling": {
+    "status": "pending",
+    "by": null,
+    "at": null,
+    "note": null
+  },
+  "summary": "提交 9e6a077（第四轮总审 10 项逐条复现并收口：父提交/blob 判据 fail-closed、改动记录撞名、type_only 按字段判、宽松双语吞中文错、备份清理不一致、游离文件与空树目录）：文件 +1/−0/±0 · 边 +2/−2/±0 · 受影响引用方 4 条（需改 0 条）",
+  "omitted": [
+    "declarations（符号级节点差，增量 3）",
+    "type-reference 边（增量 3）",
+    "传递闭包（affected_referrers 只到直接引用方，depth 恒 1；增量 5）",
+    "查询接口（增量 5）",
+    "cas-write 观测点（设计稿 §4.1 的第二个观测点，本批不实现）"
+  ]
+}
