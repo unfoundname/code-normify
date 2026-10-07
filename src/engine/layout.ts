@@ -3,7 +3,7 @@ import type { Dirent } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { DEP_KINDS, LAYOUT_MODES } from './types.js';
 import type { Diagnostic, LayoutData, LayoutEdgeHint, LayoutGroup, LocalizedText, ModuleFile } from './types.js';
-import { diag } from './diag.js';
+import { diag, isIso8601 } from './diag.js';
 import { isValidId, splitId } from './ids.js';
 /**
  * 渲染数据集：与结构数据集并行的一份可读性数据，只存在于容器模块（有子级的模块）。
@@ -103,9 +103,6 @@ function isPlain(v: unknown): v is Record<string, unknown> {
 function isL10n(v: unknown): v is LocalizedText {
     return isPlain(v) && typeof v.zh === 'string' && typeof v.en === 'string';
 }
-function isIsoish(s: string): boolean {
-    return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s);
-}
 /**
  * L1：渲染数据文件自身校验（形状 + 与直接子级集合的一致性）。
  * 需要 children（直接子模块 id 列表）与 siblingEdges（'from\0to' 集合）。
@@ -132,7 +129,7 @@ export function l1ValidateLayout(data: unknown, id: string, children: string[], 
     if (data.id !== id) {
         errors.push(diag('error', 'layout/id-mismatch', '渲染数据的 id 必须等于对应模块 id', { module: id }, { value: data.id }, ['改为 ' + id]));
     }
-    if (typeof data.updated_at !== 'string' || !isIsoish(data.updated_at)) {
+    if (typeof data.updated_at !== 'string' || !isIso8601(data.updated_at)) {
         errors.push(diag('error', 'layout/updated-at', 'updated_at 必须为 ISO 8601 时间', { module: id }, { value: data.updated_at }, ['如 2026-09-11T12:00:00Z']));
     }
     const childSet = new Set(children);
@@ -242,10 +239,12 @@ export function l1ValidateLayout(data: unknown, id: string, children: string[], 
                 if (kids.length > 0)
                     groups.push({ id: gid, title: { zh: g.title.zh, en: g.title.en }, children: kids });
             }
-            if (mode === 'groups' && groups.length === 0) {
-                errors.push(diag('error', 'layout/groups-empty', 'mode=groups 时必须提供至少一个 group', { module: id }, {}, ['补 groups 或改用其它 mode']));
-            }
         }
+    }
+    // mode=groups 的「至少一组」必须在**字段缺席**时也成立：写在 data.groups!==undefined 分支里
+    // 会让「整个 groups 键不写」绕过检查，而 groups: [] 却被拒——同一语义两种结论。
+    if (mode === 'groups' && (groups === undefined || groups.length === 0)) {
+        errors.push(diag('error', 'layout/groups-empty', 'mode=groups 时必须提供至少一个 group', { module: id }, {}, ['补 groups 或改用其它 mode']));
     }
     let edgeHints: LayoutEdgeHint[] | undefined;
     if (data.edge_hints !== undefined) {

@@ -2,7 +2,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parse as yamlParse, stringify as yamlStringify, YAMLParseError } from 'yaml';
 import { DEP_KINDS, MODULE_STATES, POLICY_RULE_TYPES } from './types.js';
-import { diag } from './diag.js';
+import { diag, isIso8601 } from './diag.js';
 import { depthOf, treeOf } from './ids.js';
 import type { Diagnostic, ModuleFile, PolicyData, LocalizedText, Module, ModuleState, PolicyLayer, PolicyRule, PolicyRuleType } from './types.js';
 /**
@@ -133,7 +133,7 @@ export function l1ValidatePolicy(data: unknown, where: string): { policy: Policy
     }
     if (data.schema_version !== POLICY_SCHEMA_VERSION)
         errors.push(diag('error', 'policy/schema-version', 'schema_version 必须为 ' + POLICY_SCHEMA_VERSION, { path: where }, { value: data.schema_version }, []));
-    if (typeof data.updated_at !== 'string' || Number.isNaN(Date.parse(data.updated_at)))
+    if (!isIso8601(data.updated_at))
         errors.push(diag('error', 'policy/updated-at', 'updated_at 必须为 ISO 8601 时间', { path: where }, { value: data.updated_at }, []));
     if (!Array.isArray(data.rules)) {
         errors.push(diag('error', 'policy/rules-shape', 'rules 必须为数组', { path: where }, {}, []));

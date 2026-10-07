@@ -6,13 +6,17 @@ export declare function checkTypeRef(value: unknown, where: string, out: Diagnos
 export declare function checkDataTypeEntry(value: unknown, where: string, out: Diagnostic[]): boolean;
 export declare function checkDepEntry(v: unknown, where: string, out: Diagnostic[]): boolean;
 /** L1：单文件级字段校验（规范 §5.2 结构/API/边类的格式部分）。 */
-export declare function l1Validate(data: unknown, where: string): {
+export declare function l1Validate(data: unknown, where: string, options?: {
+    requireBilingual?: boolean;
+}): {
     module: Module | null;
     errors: Diagnostic[];
     warnings: Diagnostic[];
 };
 /** 解析模块文件文本：frontmatter（严格子集 YAML）+ 正文。 */
-export declare function parseModuleText(text: string, where: string): {
+export declare function parseModuleText(text: string, where: string, options?: {
+    requireBilingual?: boolean;
+}): {
     module: Module | null;
     body: string;
     errors: Diagnostic[];

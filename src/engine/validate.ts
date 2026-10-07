@@ -30,7 +30,7 @@ export interface ValidateOutput {
 }
 /** L2：全项目校验（规范 §5.2 规则全集）。零容忍：任何 error 阻断构建。 */
 export async function validateProject(projectDir: string, opts: ValidateOptions): Promise<ValidateOutput> {
-    const loaded = await loadAllModules(projectDir);
+    const loaded = await loadAllModules(projectDir, { requireBilingual: opts.requireBilingual });
     let errors: Diagnostic[] = loaded.errors;
     let warnings: Diagnostic[] = loaded.warnings;
     // 双语放宽开关：把双语类错误降级为 warning

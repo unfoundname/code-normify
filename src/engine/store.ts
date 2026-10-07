@@ -106,7 +106,7 @@ export function findModuleFile(projectDir: string, id: string): string | null {
         return leaf;
     return null;
 }
-export async function loadAllModules(projectDir: string): Promise<{ files: ModuleFile[]; errors: Diagnostic[]; warnings: Diagnostic[] }> {
+export async function loadAllModules(projectDir: string, options: { requireBilingual?: boolean } = {}): Promise<{ files: ModuleFile[]; errors: Diagnostic[]; warnings: Diagnostic[] }> {
     const errors: Diagnostic[] = [];
     const warnings: Diagnostic[] = [];
     const files: ModuleFile[] = [];
@@ -120,7 +120,7 @@ export async function loadAllModules(projectDir: string): Promise<{ files: Modul
             errors.push(diag('error', 'input/read', '无法读取模块文件', { path: rel }, { reason: String(error) }, []));
             continue;
         }
-        const parsed = parseModuleText(text, rel);
+        const parsed = parseModuleText(text, rel, options);
         errors.push(...parsed.errors);
         warnings.push(...parsed.warnings);
         if (parsed.module !== null) {

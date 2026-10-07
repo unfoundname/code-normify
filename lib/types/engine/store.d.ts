@@ -20,7 +20,9 @@ export declare function listProjects(rootDir: string): ProjectRef[];
 export declare function listModuleFiles(projectDir: string): Promise<string[]>;
 /** 找模块现有文件（容器 index.md 优先，其次叶子 x.md）。 */
 export declare function findModuleFile(projectDir: string, id: string): string | null;
-export declare function loadAllModules(projectDir: string): Promise<{
+export declare function loadAllModules(projectDir: string, options?: {
+    requireBilingual?: boolean;
+}): Promise<{
     files: ModuleFile[];
     errors: Diagnostic[];
     warnings: Diagnostic[];

@@ -2,7 +2,7 @@ import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { CHANGE_STATUSES } from './types.js';
 import type { ChangeData, ChangeModules, ChangeStatus, Diagnostic, LocalizedText, ModuleFile } from './types.js';
-import { diag } from './diag.js';
+import { diag, isIso8601 } from './diag.js';
 import { apiKey, isValidId } from './ids.js';
 /**
  * 开发变更日志（changes/<id>.json）：放在结构数据目录内，随工程一起回档。
@@ -25,8 +25,9 @@ function isL10n(v: unknown): v is LocalizedText {
     return isPlain(v) && typeof v.zh === 'string' && typeof v.en === 'string' && v.zh.trim() !== '' && v.en.trim() !== '';
 }
 function isIso(v: unknown): boolean {
-    return typeof v === 'string' && !Number.isNaN(Date.parse(v));
+    return isIso8601(v);
 }
+
 /** L1：单个变更文件的形状校验。 */
 export function l1ValidateChange(data: unknown, id: string, where: string): {
     change: ChangeData | null;

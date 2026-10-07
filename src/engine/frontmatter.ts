@@ -2,7 +2,7 @@ import { parse as yamlParse, YAMLParseError } from 'yaml';
 import { DEP_KINDS, MODULE_STATES, PROTOCOLS } from './types.js';
 import type { Api, DataType, Dep, Diagnostic, LocalizedText, Module, ModuleState, SourceRef } from './types.js';
 import { deriveParent, isValidId } from './ids.js';
-import { diag } from './diag.js';
+import { diag, isIso8601 } from './diag.js';
 import { checkDataTypeSchema, isValidTypeName } from './contracts.js';
 const TOP_KEYS = ['uid', 'id', 'parent', 'name', 'description', 'source', 'revision', 'updated_at', 'fingerprint', 'repository', 'state', 'replacement', 'tags', 'apis', 'types', 'deps'];
 const SOURCE_KEYS = ['path', 'line', 'end_line'];
@@ -23,20 +23,46 @@ function isL10n(v: unknown): v is LocalizedText {
 function isPlain(v: unknown): v is RawMap {
     return v !== null && typeof v === 'object' && !Array.isArray(v);
 }
-function checkL10n(value: unknown, field: string, maxLen: number, where: string, out: Diagnostic[]): void {
+/**
+ * 双语字段校验。relax 给出时按 SPEC §5.5 放宽「缺英文」：降级为 warning 并以空串补位，
+ * 中文仍走同一套形状/空值/长度校验（中文缺写或超长照旧是 error）。
+ * 关键点：宽松路径必须把 LocalizedText 交还调用方，模块不能因为缺英文被整个丢掉——
+ * 丢掉以后 validate 再降级诊断也无法恢复（SPEC §5.5 要求的是「降级为 warning」，不是「丢弃模块」）。
+ */
+function checkL10n(value: unknown, field: string, maxLen: number, where: string, out: Diagnostic[], relax?: { warnings: Diagnostic[] }): LocalizedText | null {
     if (!isL10n(value)) {
+        const zh = isPlain(value) ? value.zh : undefined;
+        const en = isPlain(value) ? value.en : undefined;
+        const zhOk = typeof zh === 'string' && zh.trim() !== '';
+        const enMissing = en === undefined || (typeof en === 'string' && en.trim() === '');
+        if (relax !== undefined && zhOk && enMissing) {
+            const zhText = zh as string;
+            if (zhText.trim().length > maxLen) {
+                out.push(diag('error', 'structure/' + field + '-too-long', field + '.zh 超过 ' + maxLen + ' 字符', { path: where + '/' + field + '/zh' }, { length: zhText.trim().length, max: maxLen }, ['精简文案到 ' + maxLen + ' 字符以内']));
+                return null;
+            }
+            relax.warnings.push(diag('warning', 'structure/' + field + '-empty', field + '.en 缺失（library 已配置 requireBilingual: false，按 SPEC §5.5 降级为 warning）', { path: where + '/' + field + '/en' }, {}, ['补写 en 文案']));
+            return { zh: zhText, en: '' };
+        }
         out.push(diag('error', 'structure/' + field + '-shape', field + ' 必须为 {zh, en} 字符串对象', { path: where + '/' + field }, { value }, ['补全 {zh, en} 双语字段']));
-        return;
+        return null;
     }
+    let emptyEn = false;
     for (const lang of ['zh', 'en'] as const) {
         const s = value[lang].trim();
         if (s.length === 0) {
+            if (lang === 'en' && relax !== undefined) {
+                emptyEn = true;
+                relax.warnings.push(diag('warning', 'structure/' + field + '-empty', field + '.en 为空（library 已配置 requireBilingual: false，按 SPEC §5.5 降级为 warning）', { path: where + '/' + field + '/en' }, {}, ['补写 en 文案']));
+                continue;
+            }
             out.push(diag('error', 'structure/' + field + '-empty', field + '.' + lang + ' 不能为空', { path: where + '/' + field + '/' + lang }, {}, ['补写' + lang + '文案']));
         }
         else if (s.length > maxLen) {
             out.push(diag('error', 'structure/' + field + '-too-long', field + '.' + lang + ' 超过 ' + maxLen + ' 字符', { path: where + '/' + field + '/' + lang }, { length: s.length, max: maxLen }, ['精简文案到 ' + maxLen + ' 字符以内']));
         }
     }
+    return emptyEn ? { zh: value.zh, en: '' } : { zh: value.zh, en: value.en };
 }
 export function checkSourceEntry(v: unknown, where: string, out: Diagnostic[]): boolean {
     if (!isPlain(v)) {
@@ -172,13 +198,15 @@ export function checkDepEntry(v: unknown, where: string, out: Diagnostic[]): boo
     return true;
 }
 /** L1：单文件级字段校验（规范 §5.2 结构/API/边类的格式部分）。 */
-export function l1Validate(data: unknown, where: string): {
+export function l1Validate(data: unknown, where: string, options: { requireBilingual?: boolean } = {}): {
     module: Module | null;
     errors: Diagnostic[];
     warnings: Diagnostic[];
 } {
     const errors: Diagnostic[] = [];
     const warnings: Diagnostic[] = [];
+    // SPEC §5.5：library 显式配置 requireBilingual: false 时「缺少英文」降级为 warning。
+    const relaxL10n = options.requireBilingual === false ? { warnings } : undefined;
     if (!isPlain(data)) {
         errors.push(diag('error', 'input/not-object', 'frontmatter 解析结果必须为映射', { path: where }, {}, []));
         return { module: null, errors, warnings };
@@ -224,8 +252,8 @@ export function l1Validate(data: unknown, where: string): {
             errors.push(diag('error', 'structure/repository-root-only', 'repository 只允许出现在根模块', { path: where + '/repository' }, {}, ['删除该字段']));
         }
     }
-    checkL10n(data.name, 'name', 60, where, errors);
-    checkL10n(data.description, 'description', 500, where, errors);
+    const name = checkL10n(data.name, 'name', 60, where, errors, relaxL10n);
+    const description = checkL10n(data.description, 'description', 500, where, errors, relaxL10n);
     const source = data.source;
     if (!Array.isArray(source)) {
         errors.push(diag('error', 'structure/source-type', 'source 必须为数组', { path: where + '/source' }, {}, []));
@@ -237,7 +265,7 @@ export function l1Validate(data: unknown, where: string): {
         errors.push(diag('error', 'structure/revision-invalid', 'revision 必须为 40 位 git SHA', { path: where + '/revision' }, { value: data.revision }, ['填写完整 40 位提交 SHA']));
     }
     const updated = data.updated_at;
-    if (typeof updated !== 'string' || !/^\d{4}-\d{2}-\d{2}T/.test(updated) || Number.isNaN(Date.parse(updated))) {
+    if (!isIso8601(updated)) {
         errors.push(diag('error', 'structure/updated-at-invalid', 'updated_at 必须为 ISO 8601 时间', { path: where + '/updated_at' }, { value: updated }, ['使用 ISO 8601，如 2026-08-30T12:00:00Z']));
     }
     const rawState = data.state;
@@ -295,8 +323,8 @@ export function l1Validate(data: unknown, where: string): {
         uid: uid as string,
         id: id as string,
         parent: parent as string | null,
-        name: data.name as LocalizedText,
-        description: data.description as LocalizedText,
+        name: name ?? (data.name as LocalizedText),
+        description: description ?? (data.description as LocalizedText),
         source: source as SourceRef[],
         revision: data.revision as string,
         updated_at: data.updated_at as string,
@@ -331,7 +359,7 @@ export function l1Validate(data: unknown, where: string): {
     return { module, errors, warnings };
 }
 /** 解析模块文件文本：frontmatter（严格子集 YAML）+ 正文。 */
-export function parseModuleText(text: string, where: string): {
+export function parseModuleText(text: string, where: string, options: { requireBilingual?: boolean } = {}): {
     module: Module | null;
     body: string;
     errors: Diagnostic[];
@@ -376,7 +404,7 @@ export function parseModuleText(text: string, where: string): {
             warnings: [],
         };
     }
-    const { module, errors, warnings } = l1Validate(data, where);
+    const { module, errors, warnings } = l1Validate(data, where, options);
     return { module, body, errors, warnings };
 }
 // ---------- 序列化（确定性输出，diff 友好） ----------

@@ -54,7 +54,7 @@ async function stageGraph(dataDir: string, graph: ArchitectureGraph, repoRoot: s
     const ids = new Set<string>();
     const parents = new Set(graph.modules.map(module => module.parent).filter(parent => parent !== null));
     for (const module of graph.modules) {
-        const checked = l1Validate(module, 'graph/' + module.id);
+        const checked = l1Validate(module, 'graph/' + module.id, { requireBilingual });
         errors.push(...checked.errors); warnings.push(...checked.warnings);
         if (!checked.module) continue;
         if (ids.has(module.id)) errors.push(diag('error', 'structure/id-duplicate', 'JSON 图包含重复模块', { module: module.id }, {}, []));

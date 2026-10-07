@@ -1,5 +1,6 @@
 import { join } from 'node:path';
-import { writeFile } from 'node:fs/promises';
+import { readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 import { apiKey, depthOf, treeOf } from './ids.js';
 import { sha256Text } from './store.js';
 import type { Api, DataType, Dep, Diagnostic, LayoutData, LocalizedText, ModuleState, SourceRef } from './types.js';
@@ -110,6 +111,58 @@ function outlineText(slug: string, v: ValidateOutput): string {
         lines.push('');
     }
     return lines.join('\n') + '\n';
+}
+/**
+ * 产物发布：先把四份产物各自写进同目录的临时文件，全部成功后再逐个 rename 就位。
+ * 任一 rename 失败（目标被目录顶住、权限、并发删除等）时，把已经就位的那些还原回调用前的字节，
+ * 并清掉剩余临时文件——保证「build 失败 ⇒ 磁盘上的产物集与调用前逐字节一致」（SPEC §4.3 fail-closed）。
+ * 临时文件与目标同目录，rename 才是同卷原子操作。
+ */
+async function publishArtifacts(projectDir: string, pending: { name: string; text: string }[]): Promise<void> {
+    const stamp = randomUUID();
+    const staged: { name: string; tmp: string; target: string; before: Buffer | null }[] = [];
+    try {
+        for (const item of pending) {
+            const target = join(projectDir, item.name);
+            const tmp = join(projectDir, '.' + item.name + '.' + stamp + '.tmp');
+            await writeFile(tmp, item.text, 'utf8');
+            staged.push({ name: item.name, tmp, target, before: await readArtifact(target) });
+        }
+    }
+    catch (error) {
+        for (const item of staged)
+            await rm(item.tmp, { force: true });
+        throw error;
+    }
+    const published: typeof staged = [];
+    try {
+        for (const item of staged) {
+            await rename(item.tmp, item.target);
+            published.push(item);
+        }
+    }
+    catch (error) {
+        for (const item of published) {
+            if (item.before === null)
+                await rm(item.target, { force: true });
+            else
+                await writeFile(item.target, item.before);
+        }
+        for (const item of staged.slice(published.length))
+            await rm(item.tmp, { force: true });
+        throw error;
+    }
+}
+/** 读现有产物字节；不存在返回 null（其余错误照旧抛出，避免把权限问题当成「之前没有」）。 */
+async function readArtifact(path: string): Promise<Buffer | null> {
+    try {
+        return await readFile(path);
+    }
+    catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT')
+            return null;
+        throw error;
+    }
 }
 /** L3：校验通过后编译 tree.json / outline.md / api-index.json / receipt.json（冻结）。 */
 export async function buildProject(projectDir: string, opts: BuildOptions): Promise<BuildOutput> {
@@ -275,9 +328,6 @@ export async function buildProject(projectDir: string, opts: BuildOptions): Prom
             apis: Object.fromEntries(Object.entries(apiContracts).sort(([a], [b]) => a.localeCompare(b))),
             types: Object.fromEntries(Object.entries(typeContracts).sort(([a], [b]) => a.localeCompare(b))),
         }, null, 2) + '\n';
-        await writeFile(join(projectDir, 'tree.json'), treeText, 'utf8');
-        await writeFile(join(projectDir, 'outline.md'), outline, 'utf8');
-        await writeFile(join(projectDir, 'api-index.json'), apiIndexText, 'utf8');
         const warningSummary: Record<string, number> = {};
         for (const w of v.warnings)
             warningSummary[w.code] = (warningSummary[w.code] ?? 0) + 1;
@@ -299,7 +349,17 @@ export async function buildProject(projectDir: string, opts: BuildOptions): Prom
             artifacts,
         };
         const receiptText = JSON.stringify(receipt, null, 2) + '\n';
-        await writeFile(join(projectDir, 'receipt.json'), receiptText, 'utf8');
+        // SPEC §4.3「存在 error 时 MUST NOT 产出任何产物（fail-closed），旧产物保持原样」：
+        // 逐个直写会让中途失败留下「新 tree.json + 旧 receipt.json」这种撕裂产物集，
+        // 而 build 已经返回 ok:false（= error）。所以先全部落临时文件，再逐个 rename 发布；
+        // 发布途中仍有失败就把已发布的还原回旧字节，最终失败时四份产物与调用前逐字节一致。
+        const pending: { name: string; text: string }[] = [
+            { name: 'tree.json', text: treeText },
+            { name: 'outline.md', text: outline },
+            { name: 'api-index.json', text: apiIndexText },
+            { name: 'receipt.json', text: receiptText },
+        ];
+        await publishArtifacts(projectDir, pending);
         return { ok: true, receipt, errors: [], warnings: v.warnings, validate: v };
     }
     catch (error) {

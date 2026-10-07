@@ -8,6 +8,8 @@ export interface RenderSummary {
 export function renderTemplate(dataJson: string, summary: RenderSummary): string {
     // script 标签内的 JSON 必须转义 < 防止提前闭合
     const safeJson = dataJson.replace(/</g, '\\u003c');
+    // 页脚摘要里的 tree 哈希前 12 位（SPEC §4.3）：由 renderProject 传入，模板里必须真的渲染出来。
+    const treeSha12Literal = JSON.stringify(summary.treeSha12).replace(/</g, '\\u003c');
     return `<!DOCTYPE html>
 <html lang="zh" data-theme="dark">
 <head>
@@ -197,6 +199,7 @@ footer { color: var(--muted); font-size: 12px; text-align: center; padding: 18px
   var apiIndex = DATA.api_index
   var edges = DATA.edges
   var stats = DATA.project.stats
+  var treeSha12 = ${treeSha12Literal}
   var trees = DATA.project.trees
   var lang = initLang()
   var current = parseHash()
@@ -285,7 +288,7 @@ footer { color: var(--muted); font-size: 12px; text-align: center; padding: 18px
     else if (current.view === 'outline') renderOutline(main)
     else renderApis(main)
     var footer = document.getElementById('footer')
-    footer.textContent = 'Normify · ' + DATA.project.name + ' · 模块 ' + stats.module_count + ' / API ' + stats.api_count + ' / 箭头 ' + stats.dep_count + ' · 构建于 ' + DATA.project.compiled_at
+    footer.textContent = 'Normify · ' + DATA.project.name + ' · 模块 ' + stats.module_count + ' / API ' + stats.api_count + ' / 箭头 ' + stats.dep_count + ' · 构建于 ' + DATA.project.compiled_at + ' · ' + treeSha12
     if (current.apiKey) highlightApi()
     if (current.typeName) highlightType()
   }
@@ -1563,6 +1566,10 @@ footer { color: var(--muted); font-size: 12px; text-align: center; padding: 18px
     main.appendChild(box)
   }
 
+  /**
+   * 继承 API 分组：**递归惰性**（SPEC §7.3）——每一层只在真正展开时才建自己的 API 行与下一层分组，
+   * 不在打开容器时把整棵子树一次性铺进 DOM。计数用编译期算好的 aggregate，不依赖子级是否已建。
+   */
   function apiGroup(id, depth) {
     var km = mods[id]
     var own = (km.apis || []).length
@@ -1575,12 +1582,20 @@ footer { color: var(--muted); font-size: 12px; text-align: center; padding: 18px
     sum.innerHTML = esc(L(km.name)) + ' <span class="cnt">' + esc(id) + ' · ' + total + '</span>'
     det.appendChild(sum)
     var inner = document.createElement('div')
-    var ul = document.createElement('ul')
-    ul.className = 'api-list'
-    ;(km.apis || []).forEach(function (a) { ul.appendChild(apiItem(a)) })
-    inner.appendChild(ul)
-    var kids = children[id] || []
-    kids.forEach(function (cid) { inner.appendChild(apiGroup(cid, depth + 1)) })
+    var built = false
+    function build() {
+      if (built) return
+      built = true
+      var ul = document.createElement('ul')
+      ul.className = 'api-list'
+      ;(km.apis || []).forEach(function (a) { ul.appendChild(apiItem(a)) })
+      inner.appendChild(ul)
+      var kids = children[id] || []
+      kids.forEach(function (cid) { inner.appendChild(apiGroup(cid, depth + 1)) })
+    }
+    // 顶层默认展开，立即建；其余层等到 toggle 展开时再建。
+    if (depth === 0) build()
+    else det.addEventListener('toggle', function () { if (det.open) build() })
     det.appendChild(inner)
     return det
   }
@@ -1727,57 +1742,88 @@ footer { color: var(--muted); font-size: 12px; text-align: center; padding: 18px
 
   function renderApis(main) {
     var box = el('div', 'section')
-    box.appendChild(el('h2', null, 'API 浏览器（' + Object.keys(apiIndex).length + '）'))
+    var heading = el('h2', null, 'API 浏览器（' + Object.keys(apiIndex).length + '）')
+    box.appendChild(heading)
     var input = document.createElement('input')
     input.id = 'apiFilter'
     input.placeholder = '过滤（method / path / protocol）'
     input.style.cssText = 'width:100%;padding:6px 8px;background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:6px;margin-bottom:8px;'
     box.appendChild(input)
-    var table = document.createElement('table')
+    // 虚拟化滚动列表（SPEC §7.3）：全量键集只存在于内存，DOM 里只保留可视区那一段。
+    // 早期实现固定只画前 400 条、剩下的只能靠过滤找——那不是「只渲染可视区」，是丢数据。
     var keys = Object.keys(apiIndex).sort()
-    var MAX = 400
-    function draw(filter) {
-      table.innerHTML = '<tr><th>API</th><th>归属模块</th><th>' + (lang === 'zh' ? '输入类型' : 'Input type') + '</th><th>' + (lang === 'zh' ? '输出类型' : 'Output type') + '</th></tr>'
-      var shown = 0
-      for (var i = 0; i < keys.length && shown < MAX; i++) {
-        var k = keys[i]
-        if (filter && k.toLowerCase().indexOf(filter) === -1 && mods[apiIndex[k]].id.toLowerCase().indexOf(filter) === -1) continue
-        var tr = document.createElement('tr')
-        var td1 = document.createElement('td')
-        var a1 = document.createElement('a')
-        a1.href = '#api=' + encodeURIComponent(k)
-        a1.textContent = k
-        td1.appendChild(a1)
-        var td2 = document.createElement('td')
-        var a2 = document.createElement('a')
-        a2.href = '#module=' + encodeURIComponent(apiIndex[k])
-        a2.textContent = apiIndex[k]
-        td2.appendChild(a2)
-        var api = apiDefinitions[k]
-        var td3 = document.createElement('td')
-        td3.innerHTML = api.input ? typeLink(api.input) : '—'
-        var td4 = document.createElement('td')
-        td4.innerHTML = api.output ? typeLink(api.output) : '—'
-        tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4)
-        table.appendChild(tr)
-        shown++
-      }
-      if (shown >= MAX) {
-        var tr = document.createElement('tr')
-        var td = document.createElement('td')
-        td.colSpan = 4
-        td.className = 'hint'
-        td.textContent = '已显示前 ' + MAX + ' 条，请用过滤缩小范围'
-        tr.appendChild(td)
-        table.appendChild(tr)
-      }
+    var rows = keys
+    var ROW_H = 26
+    var OVERSCAN = 6
+    var DEFAULT_VIEWPORT = 420
+    var table = document.createElement('table')
+    table.style.position = 'absolute'
+    table.style.left = '0'
+    table.style.top = '0'
+    table.style.width = '100%'
+    var sizer = document.createElement('div')
+    sizer.style.position = 'relative'
+    sizer.appendChild(table)
+    var viewport = el('div', 'schema-scroll')
+    viewport.style.maxHeight = '60vh'
+    viewport.style.overflowY = 'auto'
+    viewport.appendChild(sizer)
+
+    function apiRow(k) {
+      var tr = document.createElement('tr')
+      var td1 = document.createElement('td')
+      var a1 = document.createElement('a')
+      a1.href = '#api=' + encodeURIComponent(k)
+      a1.textContent = k
+      td1.appendChild(a1)
+      var td2 = document.createElement('td')
+      var a2 = document.createElement('a')
+      a2.href = '#module=' + encodeURIComponent(apiIndex[k])
+      a2.textContent = apiIndex[k]
+      td2.appendChild(a2)
+      var api = apiDefinitions[k]
+      var td3 = document.createElement('td')
+      td3.innerHTML = api.input ? typeLink(api.input) : '—'
+      var td4 = document.createElement('td')
+      td4.innerHTML = api.output ? typeLink(api.output) : '—'
+      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4)
+      return tr
     }
-    draw('')
-    input.oninput = function () { draw(input.value.trim().toLowerCase()) }
-    var tableScroll = el('div', 'schema-scroll')
-    tableScroll.appendChild(table)
-    box.appendChild(tableScroll)
+    function hintRow(text) {
+      var tr = document.createElement('tr')
+      var td = document.createElement('td')
+      td.colSpan = 4
+      td.className = 'hint'
+      td.textContent = text
+      tr.appendChild(td)
+      return tr
+    }
+    function draw() {
+      var total = rows.length
+      var height = viewport.clientHeight || DEFAULT_VIEWPORT
+      sizer.style.height = ((total + 1) * ROW_H) + 'px'
+      var start = Math.max(0, Math.floor(viewport.scrollTop / ROW_H) - OVERSCAN)
+      if (start > total) start = total
+      var end = Math.min(total, start + Math.ceil(height / ROW_H) + OVERSCAN * 2)
+      table.style.top = (start * ROW_H) + 'px'
+      table.innerHTML = '<tr><th>API</th><th>归属模块</th><th>' + (lang === 'zh' ? '输入类型' : 'Input type') + '</th><th>' + (lang === 'zh' ? '输出类型' : 'Output type') + '</th></tr>'
+      if (total === 0) { table.appendChild(hintRow('没有匹配的 API')); return }
+      for (var i = start; i < end; i++) table.appendChild(apiRow(rows[i]))
+    }
+    input.oninput = function () {
+      var filter = input.value.trim().toLowerCase()
+      rows = filter === '' ? keys : keys.filter(function (k) {
+        return k.toLowerCase().indexOf(filter) !== -1 || mods[apiIndex[k]].id.toLowerCase().indexOf(filter) !== -1
+      })
+      heading.textContent = 'API 浏览器（' + rows.length + (rows.length === keys.length ? '' : ' / ' + keys.length) + '）'
+      viewport.scrollTop = 0
+      draw()
+    }
+    box.appendChild(viewport)
     main.appendChild(box)
+    // 必须在挂进文档之后再画第一屏：clientHeight 只有已布局的元素才有值。
+    draw()
+    viewport.addEventListener('scroll', draw)
   }
 
   function highlightApi() {

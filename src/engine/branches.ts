@@ -1,7 +1,7 @@
 import { checkExecution, readExecutionGit, standaloneExecution, type NormifyToolExecution } from '../execution.js';
 export type { BranchGitReader } from '../execution.js';
 import { createHash, randomUUID } from 'node:crypto';
-import { link, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { link, lstat, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { boundPath, canonicalPath, WorkspaceError } from '../workspace.js';
@@ -242,6 +242,27 @@ function hasBaselineFile(files: Map<string, { mode: string; size: number }> | nu
     const file = files?.get(path);
     return file !== undefined && (file.mode === '100644' || file.mode === '100755') && (!nonempty || file.size > 0);
 }
+/**
+ * `verification.commands[].cwd` 的落地形态检查。SPEC §2「cwd 是绑定仓库内相对目录，可为 `.`」：
+ * `boundPath` 只管「在不在绑定仓库内」，对普通文件同样放行（package.json / README.md 都通过），
+ * 于是「目录」这半句从没被检查过。这里补上：**已存在**的路径必须是目录。
+ * 路径尚不存在时不在此处判死——计划态模块的源码目录本来就可能还没落地，工具也不执行命令；
+ * 存在性不在这条契约里，形态才是。
+ */
+async function assertCommandCwd(repoRoot: string, cwd: string): Promise<void> {
+    const abs = await boundPath(repoRoot, cwd);
+    let info;
+    try {
+        info = await lstat(abs);
+    }
+    catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT')
+            return;
+        throw error;
+    }
+    if (!info.isDirectory())
+        throw new WorkspaceError('branch/cwd-not-directory', 'verification.commands[].cwd 必须是绑定仓库内的相对目录（实际不是目录）：' + cwd);
+}
 function uniqueIds(items: { id: string }[], errors: Diagnostic[], field: string, unit: string): void {
     const ids = new Set<string>();
     for (const item of items) {
@@ -357,7 +378,7 @@ async function validateWithContext(plan: BranchPlan, ctx: Context, repoRoot: str
         if (verification.commands.length === 0 || verification.cases.length === 0) errors.push(diag('error', 'branch/verification-empty', '独立交付必须声明非空验证命令和验收场景', { unit: unit.id }, {}, []));
         const commands = new Set(verification.commands.map(command => command.id));
         for (const command of verification.commands) if (command.cwd !== '.') {
-            try { await boundPath(repoRoot, command.cwd); }
+            try { await assertCommandCwd(repoRoot, command.cwd); }
             catch (error) { errors.push(diag('error', error instanceof WorkspaceError ? error.code : 'branch/path-unavailable', String(error), { unit: unit.id, command: command.id }, { cwd: command.cwd }, [])); }
         }
         const unitRequirements = new Set(unit.requirement_ids);
