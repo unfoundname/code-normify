@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "kind": "commit",
+  "commit": "901551c14ace18713e85b890616277a1591c32fd",
+  "commit_parent": "131d0481b5fdf7ce703c2886ae4bda988899cd2f",
+  "cas_digest": null,
+  "change_id": null,
+  "created_at": "2026-10-07T07:52:22Z",
+  "generator": "scripts/generate-change-log.cjs",
+  "generator_version": "1.0.0",
+  "graph_schema_version": 2,
+  "graph_encoding": "d2d5de848c0b0e97",
+  "from_snapshot": {
+    "basis": "commit",
+    "rev": "131d0481b5fdf7ce703c2886ae4bda988899cd2f",
+    "tree": "32c3cd16bc8e6a4502722abc2cf1bbc4f0296018",
+    "universe_hash": "4d54d97028a6f6ec07934dfa741540364a56a9adeb2c31d891a6de69ceef53ee",
+    "tracked_total": 1513,
+    "files": 1513,
+    "edges": 501,
+    "analysis_mode": "typescript"
+  },
+  "to_snapshot": {
+    "basis": "commit",
+    "rev": "901551c14ace18713e85b890616277a1591c32fd",
+    "tree": "9d3de85f8aab5591c6c076aefa9e51eba4c3fb1d",
+    "universe_hash": "4d54d97028a6f6ec07934dfa741540364a56a9adeb2c31d891a6de69ceef53ee",
+    "tracked_total": 1513,
+    "files": 1513,
+    "edges": 501,
+    "analysis_mode": "typescript"
+  },
+  "degradation": {
+    "status": "complete",
+    "reasons": [],
+    "note": "两侧快照都完整重建：本次差在**文件层**是完整的（节点 = 全量已跟踪文件，边 = 扫描面产出的全部边）。数组为空 = 真的没有差异。"
+  },
+  "files": {
+    "added": [],
+    "removed": [],
+    "state_changed": []
+  },
+  "edges": {
+    "added": [
+      "scripts/generate-change-log.cjs:705:27:require:ajv/dist/2020"
+    ],
+    "removed": [
+      "scripts/generate-change-log.cjs:695:27:require:ajv/dist/2020"
+    ],
+    "status_changed": []
+  },
+  "affected_referrers": [
+    {
+      "edge": "scripts/generate-change-log.cjs:695:27:require:ajv/dist/2020",
+      "file": "scripts/generate-change-log.cjs",
+      "line": 695,
+      "column": 27,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": null,
+      "classification": "edge-removed",
+      "needs_change": false
+    },
+    {
+      "edge": "scripts/generate-change-log.cjs:705:27:require:ajv/dist/2020",
+      "file": "scripts/generate-change-log.cjs",
+      "line": 705,
+      "column": 27,
+      "kind": "require",
+      "target": null,
+      "target_state": "outside",
+      "edge_status": "external",
+      "classification": "edge-added",
+      "needs_change": false
+    }
+  ],
+  "counts": {
+    "files_added": 0,
+    "files_removed": 0,
+    "files_state_changed": 0,
+    "edges_added": 1,
+    "edges_removed": 1,
+    "edges_status_changed": 0,
+    "affected_referrers": 2,
+    "needs_change": 0
+  },
+  "handling": {
+    "status": "pending",
+    "by": null,
+    "at": null,
+    "note": null
+  },
+  "summary": "提交 901551c（改动记录引入图编码 epoch：跨编码不可复核单列一档（计数 + 双回显 + 逐条点名），同 epoch 的不一致照旧判红）：文件 +0/−0/±0 · 边 +1/−1/±0 · 受影响引用方 2 条（需改 0 条）",
+  "omitted": [
+    "declarations（符号级节点差，增量 3）",
+    "type-reference 边（增量 3）",
+    "传递闭包（affected_referrers 只到直接引用方，depth 恒 1；增量 5）",
+    "查询接口（增量 5）",
+    "cas-write 观测点（设计稿 §4.1 的第二个观测点，本批不实现）"
+  ]
+}
