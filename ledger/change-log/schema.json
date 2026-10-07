@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/wishbreeze/code-normify/schemas/change-log/v1.json",
+  "$id": "https://github.com/unfoundname/code-normify/schemas/change-log/v1.json",
   "title": "Normify 改动记录 v1（增量 2 骨架：文件级引用图两份快照之差）",
   "description": "一条记录 = 引用图两份快照之差 + 受影响的引用方 + 处理状态。观测点 = 每次提交（设计稿 §4.1）。本 Schema 是 --check 的机器判据（scripts/generate-change-log.cjs 用 ajv 校验每一条记录），不是文档里的建议。本批只到**文件层**：declarations（符号级）与 type-reference 边属增量 3，传递闭包与查询接口属增量 5，cas-write 观测点本批不实现——这几条都写在记录自己的 omitted 字段里自证。",
   "type": "object",

@@ -2,7 +2,7 @@
 
 ## 报告漏洞
 
-如发现安全相关问题，请通过 [Issues](https://github.com/wishbreeze/code-normify/issues) 报告（如有敏感信息请先邮件联系维护者），不要先公开细节。
+如发现安全相关问题，请通过 [Issues](https://github.com/unfoundname/code-normify/issues) 报告（如有敏感信息请先邮件联系维护者），不要先公开细节。
 
 ## 安全姿态
 

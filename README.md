@@ -167,7 +167,7 @@ await call('normify_branch_plan_put', {
 
 宿主接线时须按包内 `base_commit` 创建工作树，并为 `after` 策略解析、固定和物化前置单元的交付提交。PromptManager 当前已增加 SQL 设计快照、结构化单元引用、固定 Git 输入/候选证明物化和 argv 验收接线；普通人工分工仍使用其原有契约。数据库、服务与命名端口声明的专属绑定和新版原生整链验收仍未完成，不能据静态导出宣称交付通过。
 
-可运行例子位于[源码仓库](https://github.com/wishbreeze/code-normify)的 `examples/branch-development/example.mjs`。请在源码仓库中运行，需 Git 与 Node.js 20+；npm 发布包不包含 `examples/` 目录：
+可运行例子位于[源码仓库](https://github.com/unfoundname/code-normify)的 `examples/branch-development/example.mjs`。请在源码仓库中运行，需 Git 与 Node.js 20+；npm 发布包不包含 `examples/` 目录：
 
 ```sh
 npm run build

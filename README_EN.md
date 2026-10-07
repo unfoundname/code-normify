@@ -153,7 +153,7 @@ await call('normify_branch_plan_put', {
 
 Host wiring must create worktrees from the packet's `base_commit` and resolve, freeze and materialize prerequisite delivery commits for the `after` strategy. PromptManager now also provides SQL design snapshots, structured unit references, materialized fixed Git inputs and candidate artifacts, and argv verification wiring; ordinary manual work allocation still uses the pre-existing contract. Unit-specific bindings for declared databases, services and named ports, along with the new native end-to-end verification, are not finished, so a static export cannot establish that delivery passed.
 
-The runnable example is at `examples/branch-development/example.mjs` in the [source repository](https://github.com/wishbreeze/code-normify). Run it in that source checkout with Git and Node.js 20+. The npm package does not include `examples/`:
+The runnable example is at `examples/branch-development/example.mjs` in the [source repository](https://github.com/unfoundname/code-normify). Run it in that source checkout with Git and Node.js 20+. The npm package does not include `examples/`:
 
 ```sh
 npm run build

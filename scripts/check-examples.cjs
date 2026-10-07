@@ -199,10 +199,10 @@ const EXCLUDE = [
     kind: 'script',
     args: [],
     reason:
-      '硬编码 Windows 专属绝对路径 <pi-executable>（:26），ubuntu-latest 上必崩；' +
-      '需要外部 pi 二进制 + 模型凭据 + 网络；运行时把 pi-events-*.jsonl、pi-stderr-*.log、pi-run.json 写进示例目录（被忽略但仍是仓库内写入）。',
+      '需要外部 pi 二进制：run-pi.mjs:26 用占位 <pi-executable> spawn，运行前须替换为该平台的实际路径，ubuntu-latest 上必然不存在、必崩；' +
+      '还需要模型凭据 + 网络；运行时把 pi-events-*.jsonl、pi-stderr-*.log、pi-run.json 写进示例目录（被忽略但仍是仓库内写入）。',
     evidence:
-      '读代码 examples/bilibili-pi-full/run-pi.mjs:22-31（写文件）、:26（绝对路径 spawn）。' +
+      '读代码 examples/bilibili-pi-full/run-pi.mjs:22-31（写文件）、:26（spawn 外部 pi 可执行文件）。' +
       '对应 .gitignore：examples/bilibili-pi-full/.gitignore 的 pi-events-*.jsonl / pi-stderr-*.log / pi-run.json。',
   },
   {

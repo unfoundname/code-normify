@@ -129,7 +129,7 @@
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/wishbreeze/code-normify/schemas/code-graph/v1.json",
+  "$id": "https://github.com/unfoundname/code-normify/schemas/code-graph/v1.json",
   "title": "Normify 符号级引用图 v1",
   "type": "object",
   "required": ["schema_version", "meta", "files", "declarations", "edges"],
@@ -355,7 +355,7 @@
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/wishbreeze/code-normify/schemas/reference-graph/v1.json",
+  "$id": "https://github.com/unfoundname/code-normify/schemas/reference-graph/v1.json",
   "title": "Normify 文件级引用图 v1（增量 2）",
   "type": "object",
   "required": ["schema_version", "meta", "files", "edges"],

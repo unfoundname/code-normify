@@ -132,7 +132,7 @@ unit 包含验收、needs 和 external_dependencies；模块正文、接口和�
 
 宿主 MUST 按包内 `base_commit` 创建工作树，并为 `after` 解析、固定和物化前置单元的交付提交。当前 PromptManager 普通 lead 工作树从 `main` 取得基线，`needs` 只等待任务完成；宿主须接通上述语义后才能声称冻结契约在执行层生效。
 
-实际可运行示例位于[源码仓库](https://github.com/wishbreeze/code-normify)的 `examples/branch-development/example.mjs`，须在源码 checkout 中运行，并具备 Git 与 Node.js 20+；npm 发布包不包含 `examples/` 目录。它用临时 Git 仓库固定基线、通过受管工具保存计划态图与完整计划，再读取交接包和导出静态组计划；业务验收命令保持声明状态。
+实际可运行示例位于[源码仓库](https://github.com/unfoundname/code-normify)的 `examples/branch-development/example.mjs`，须在源码 checkout 中运行，并具备 Git 与 Node.js 20+；npm 发布包不包含 `examples/` 目录。它用临时 Git 仓库固定基线、通过受管工具保存计划态图与完整计划，再读取交接包和导出静态组计划；业务验收命令保持声明状态。
 
 ### 宿主与 MCP
 

@@ -2,7 +2,7 @@ import { createMcpAdapter } from '<home>/.pi/agent/npm/node_modules/pi-mcp-adapt
 
 const trial = '<repo-root>/examples/bilibili-pi-full'
 const server = (view: string) => ({
-  command: '<node>/node.exe',
+  command: '<node>',
   args: ['<repo-root>/lib/mcp.js', '--repo-root', `${trial}/project`, '--data-dir', `${trial}/normify-${view}`, '--access', 'write'],
   lifecycle: 'lazy' as const,
 })

@@ -12,13 +12,13 @@ export default createMcpAdapter({
     },
     mcpServers: {
       architecture: {
-        command: '<node>/node.exe',
+        command: '<node>',
         args: ['<repo-root>/lib/mcp.js', '--repo-root', '<repo-root>/examples/bilibili-trial/project', '--data-dir', '<repo-root>/examples/bilibili-trial/normify-architecture', '--access', 'write'],
         lifecycle: 'lazy',
         includeTools: ['normify_help', 'normify_schema_get', 'normify_graph_get', 'normify_graph_validate', 'normify_graph_put', 'normify_module_get', 'normify_module_list', 'normify_search', 'normify_module_batch', 'normify_module_patch', 'normify_module_upsert', 'normify_validate', 'normify_build', 'normify_render', 'normify_work_packet', 'normify_layout_upsert'],
       },
       data: {
-        command: '<node>/node.exe',
+        command: '<node>',
         args: ['<repo-root>/lib/mcp.js', '--repo-root', '<repo-root>/examples/bilibili-trial/project', '--data-dir', '<repo-root>/examples/bilibili-trial/normify-data', '--access', 'write'],
         lifecycle: 'lazy',
         includeTools: ['normify_help', 'normify_schema_get', 'normify_graph_get', 'normify_graph_validate', 'normify_graph_put', 'normify_module_get', 'normify_module_list', 'normify_search', 'normify_module_batch', 'normify_module_patch', 'normify_module_upsert', 'normify_validate', 'normify_build', 'normify_render', 'normify_layout_upsert'],

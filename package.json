@@ -44,12 +44,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wishbreeze/code-normify.git"
+    "url": "git+https://github.com/unfoundname/code-normify.git"
   },
   "bugs": {
-    "url": "https://github.com/wishbreeze/code-normify/issues"
+    "url": "https://github.com/unfoundname/code-normify/issues"
   },
-  "homepage": "https://github.com/wishbreeze/code-normify#readme",
+  "homepage": "https://github.com/unfoundname/code-normify#readme",
   "engines": {
     "node": ">=20"
   },
