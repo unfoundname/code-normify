@@ -4,9 +4,9 @@
     "generator": "scripts/generate-reference-graph.cjs",
     "generator_version": "1.1.0",
     "universe": "git 索引（git ls-files）——节点 = 已跟踪文件（含被引用到的索引外目标），边 = 引用关系。",
-    "universe_hash": "cc8a29f7785fd35da5b0f82a25b1d5bb83275db08b503f57305c42ed0f9f9e14",
+    "universe_hash": "5d50342ea3f4c29397ad5740c0e2854c614591408c70a9a46493a7344822a03a",
     "universe_hash_algorithm": "sha256( sort(git ls-files, 码点升序, posix 相对路径).join('\\n') + '\\n' )",
-    "tracked_total": 1507,
+    "tracked_total": 1508,
     "positions_basis": "git 索引 blob 的 LF 归一化文本上的 1 基行列（不用字节偏移：CRLF 检出会让偏移漂移）",
     "byte_basis": "git 索引 blob 的字节数（git cat-file --batch-check；非索引节点为 null）",
     "read_basis": "文件内容一律取自索引 blob（git cat-file --batch），不读工作区",
@@ -27,7 +27,7 @@
         "examples/",
         "lib/"
       ],
-      "scanned_total": 171
+      "scanned_total": 172
     },
     "analysis": {
       "mode": "typescript",
@@ -92,7 +92,7 @@
     "edge_id_rule": "<from.file>:<line>:<column>:<kind>，同一位置多条边时追加 `:<field|specifier>` 消歧（仍冲突即生成失败）",
     "self_reference": "自指条目（本产物自身的 bytes / lines）固定写 null —— 这是【处置选择】，不是\"没有不动点\"：实测把这两个量迭代写回，第 3 次即收敛（不动点存在）。因此这里写 null 是为了让产物写入幂等、而不是因为\"自指在数学上不可能稳定\"。（本条 = 图数据文件自己（ledger/references.json）那一行；只豁免这两个派生量，其余字段照常登记。）",
     "node_states": {
-      "indexed": 1507
+      "indexed": 1508
     },
     "edge_kinds": {
       "anchor": 3,
@@ -160,7 +160,7 @@
       "id": "CONTRIBUTING.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 74365,
+      "bytes": 74858,
       "lines": 184,
       "edge_out": 1,
       "edge_in": 0
@@ -223,8 +223,8 @@
       "id": "docs/HANDOFF-code-graph.zh-CN.md",
       "lang": "md",
       "state": "indexed",
-      "bytes": 133626,
-      "lines": 1125,
+      "bytes": 138130,
+      "lines": 1126,
       "edge_out": 0,
       "edge_in": 0
     },
@@ -12352,6 +12352,15 @@
       "edge_in": 0
     },
     {
+      "id": "ledger/change-log/20261007T021556Z-4d126ad.json",
+      "lang": "json",
+      "state": "indexed",
+      "bytes": 3192,
+      "lines": 104,
+      "edge_out": 0,
+      "edge_in": 0
+    },
+    {
       "id": "ledger/change-log/README.md",
       "lang": "md",
       "state": "indexed",
@@ -13219,8 +13228,8 @@
       "id": "scripts/check-references.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 120468,
-      "lines": 2585,
+      "bytes": 121029,
+      "lines": 2589,
       "edge_out": 4,
       "edge_in": 1
     },
@@ -13273,8 +13282,8 @@
       "id": "scripts/refs-query.cjs",
       "lang": "js",
       "state": "indexed",
-      "bytes": 97638,
-      "lines": 1794,
+      "bytes": 98119,
+      "lines": 1797,
       "edge_out": 3,
       "edge_in": 1
     },

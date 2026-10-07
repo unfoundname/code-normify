@@ -271,8 +271,9 @@ function exitUnreadableArtifact(opts, message, payload) {
  * ★ 为什么必须比内容、不能只比字节长度：**长度相同不代表内容相同**。工作区里把版本号从 `1.1.0` 改成
  *   `1.1.1`、改掉任意一个字符，字节数一模一样，只比长度的判据会答「未漂移」——于是以索引版为准的结果
  *   被当成了工作区现状，空引用方列表被读成「没人引用」。这是**漏检**：把该报的 stale 说成了 partial。
- * ★ 为什么分两级、先比长度：长度不同是绝大多数漂移，一次整数比较即可定案，不必对着 1.5MB 的产物做
- *   逐字节比较；而长度相同**必须继续比内容**——这一步正是本判据存在的理由，不要为了「省」删掉它。
+ * ★ 为什么分两级、先比长度：长度不同是绝大多数漂移，一次整数比较即可定案，不必对着**MB 量级**的产物做
+ *   逐字节比较（**体积不在此写死**——现值取数 `git cat-file -s :ledger/references.json`，随仓库增长单调上升）；
+ *   而长度相同**必须继续比内容**——这一步正是本判据存在的理由，不要为了「省」删掉它。
  *   内容比较用 Buffer.equals（C++ 层 memcmp），产物已在内存里，实测增量在噪声量级（见提交说明）。
  */
 function artifactDrifted(loaded) {
@@ -1239,7 +1240,9 @@ function lcOf(sf, node) {
 // ───────────────────── locals <文件>：按需展开单文件清单 ─────────────────────
 // 只建语法树（ts.createSourceFile），不建 Program、不做类型检查、不读图产物；
 // 结果只打印，绝不写回 ledger/references.json —— 图里没有的东西不塞进图。
-// typescript 惰性加载：who-references / impact 不付这份启动成本（约 200ms）。
+// typescript 惰性加载：who-references / impact 不付这份启动成本（**代价不在此写死**——它就是
+// `require('typescript')` 的耗时，量级百毫秒；现值取数 `node -e "const t=process.hrtime.bigint();require('typescript');console.log(Number(process.hrtime.bigint()-t)/1e6+'ms')"`，
+// 随 Node / typescript 版本与磁盘缓存变化。历史坑：此处曾写死「约 200ms」，那个数无人复测。）
 
 /**
  * locals 的三条局限：**同一个字面量数组**同时喂 --help 与 --json 的 limitations[]（两处必须字字一致）。

@@ -160,7 +160,7 @@ git cat-file -s ":ledger/references.json"
 
 - **节点表叫 `files`，不叫 `nodes`**。不存在 `nodes` 键。
 - `schema_version` = `2`。
-- `declarations`（声明节点表，402 条）与 `symbol_edges`（符号级边，1,347 条）是 v2 新增的两个顶层数组。
+- `declarations`（声明节点表）与 `symbol_edges`（符号级边）是 v2 新增的两个顶层数组。**两者的条数都是活值、不在此复述**——现值取数 `node -e "const j=require('./ledger/references.json');console.log(j.declarations.length,j.symbol_edges.length)"`（等价写法见 §0.2 那条）。**留痕（只作留痕，不是现值）**：本行原写「声明节点表，402 条」「符号级边，1,347 条」，那是本文档初次落地那个时点的数，**两个都已过期**（现值见上面的取数命令）。
 
 | 数组 | 条数（**本批留痕，不是现值**） | 取数命令 |
 | --- | --- | --- |
@@ -171,17 +171,19 @@ git cat-file -s ":ledger/references.json"
 
 ### 2.2 `files[]` 字段契约
 
-键名集合实测（`node -e "..."`，取自产物本身；括号里原本写着「1629 行脚本无关」——**本批改引实测**：本仓没有任何文件是 1,629 行，写出该产物的 `scripts/generate-reference-graph.cjs` 是 **1,238 行**（**旧值 1,229 已过期**；取数命令 `node -e "console.log(require('./ledger/references.json').files.find(f=>f.id==='scripts/generate-reference-graph.cjs').lines)"`），这句话的意思应是「与脚本行数无关」，故照实改正）：
+键名集合实测（`node -e "..."`，取自产物本身；括号里原本写着「1629 行脚本无关」——**本批改引实测**：本仓没有任何文件是 1,629 行，写出该产物的 `scripts/generate-reference-graph.cjs` 的**行数是活值、不在此复述**（现值取数命令 `node -e "console.log(require('./ledger/references.json').files.find(f=>f.id==='scripts/generate-reference-graph.cjs').lines)"`；**注意这条命令每次改这个脚本都会给出新值**），这句话的意思应是「与脚本行数无关」，故照实改正。**留痕（只作留痕，不是现值）**：本行先后写过「**1,238 行**」（当时写的是「旧值 1,229 已过期」）——**1,238 本身今天也已过期**，两个数都只作留痕）：
 
 ```text
 id, lang, state, bytes, lines, edge_out, edge_in
 ```
 
-样本（**本批改引实测**，`files[]` 中 `id === ".github/workflows/ci.yml"` 那一条；**旧值 `bytes` 31810 已过期**，现值用 `node -e "console.log(require('./ledger/references.json').files.find(f=>f.id==='.github/workflows/ci.yml').bytes)"` 复测）：
+样本（**留痕样本：只作留痕，不是现值**——它取自某个时点的 `files[]`，**样本自身会过期**：`bytes` / `lines` 随该文件每次改动变化，`edge_*` 随引用它/被它引用的文件增减变化。**不要把这个样本里的任何数当现值**；要现值就跑就地给出的取数命令：`bytes` = `node -e "console.log(require('./ledger/references.json').files.find(f=>f.id==='.github/workflows/ci.yml').bytes)"`、`lines` = 同一条把 `.bytes` 换成 `.lines`、`edge_out` / `edge_in` 同理。样本的**字段形状**才是本节要立的东西，字段口径见下表）：
 
 ```json
 {"id":".github/workflows/ci.yml","lang":"yaml","state":"indexed","bytes":31699,"lines":293,"edge_out":17,"edge_in":0}
 ```
+
+**留痕（只作留痕，不是现值）**：上面这个样本里的 `bytes` / `lines` 先后写过「**31810**」与「**31699 / 293**」两代值；**两代今天都已过期**——本行早先只给更旧的 31810 标了「已过期」，却没标**样本自身会过期**，读起来像 31699 / 293 是现值（**旧写法留痕**：原句为「**旧值 `bytes` 31810 已过期**」，只覆盖了第一代）。
 
 | 字段 | 口径 |
 | --- | --- |
@@ -194,7 +196,7 @@ id, lang, state, bytes, lines, edge_out, edge_in
 
 ### 2.3 `lines` 的三条口径（**最容易读错的一栏**）
 
-1. **算式**：`lines = text.split('\n').length`，源码位置 = `scripts/generate-reference-graph.cjs` 里的 `lines: self || text === undefined ? null : text.split('\n').length,` 一行（**本批改引实测**：该引文仍是原文，未漂移）。⇒ **末尾带换行的文件会比可见行数多 1**。实测：字符串 `"a\nb\n"` 的 `split('\n').length` = 3（可见 2 行）；`"a\nb"` = 2（可见 2 行）。本文档自身也适用，但**这三个数都是活值、不在此复述**（本文档每改一次、DESIGN 每改一次，它们就变）。现值取数：`lines`（split 口径）= `node -e "console.log(require('./ledger/references.json').files.find(f=>f.id==='docs/DESIGN-code-graph.zh-CN.md').lines)"`；可见行数 = `(Get-Content docs/DESIGN-code-graph.zh-CN.md).Count`；非空行数 = `Get-Content docs/DESIGN-code-graph.zh-CN.md | Measure-Object -Line`。**算式自洽性（有边界条件，不是「永远成立」）**：**当且仅当文本以换行结尾时** `lines`（split 口径）= **可见行数 + 1**；**文本不以换行结尾时 `lines` = 可见行数**（本批实测：`"a\nb\n"` 可见 2 行、以换行结尾 ⇒ `split('\n').length` = 3 = 2 + 1；`"a\nb"` 可见 2 行、不以换行结尾 ⇒ = 2，**不是** 3；空文本是退化情形——`''.split('\n').length` = 1，而 `(Get-Content 空文件).Count` = 0，形式上也是 +1，但空文本没有「可见行」可数）。**留痕（旧说法，已作废）**：原文把这条等式写成「与具体数值无关，永远成立」——**不以换行结尾的文本就是它的反例**（照它读会以为 2 行的文件必然得 3）。在同一条件下，而 **`Measure-Object -Line` 数的是非空行**、不是可见行数 ⇒ 恒有 `非空行 = 可见行数 − 空行数 = lines − 1 − 空行数`。**留痕（只作留痕，不是现值）**：本行原写 DESIGN「`lines` = **1332**、可见 **1331**、`Measure-Object -Line` 报 **1046**、空行 **285**」（与上面的算式自洽：1331 − 285 = 1046）；**独立复核者第四轮实测 1338 / 1337 / 1051 / 286**（同样自洽：1337 − 286 = 1051），本批复核实测与之逐字相同。旧版此处还写过「报 1331」，那是**把 `Measure-Object -Line` 当成了行数计数器**，本版照实改正；要数可见行用 `(Get-Content <文件>).Count`）。
+1. **算式**：`lines = text.split('\n').length`，源码位置 = `scripts/generate-reference-graph.cjs` 里的 `lines: self || text === undefined ? null : text.split('\n').length,` 一行（**本批改引实测**：该引文仍是原文，未漂移）。⇒ **末尾带换行的文件会比可见行数多 1**。实测：字符串 `"a\nb\n"` 的 `split('\n').length` = 3（可见 2 行）；`"a\nb"` = 2（可见 2 行）。本文档自身也适用，但**这三个数都是活值、不在此复述**（本文档每改一次、DESIGN 每改一次，它们就变）。现值取数：`lines`（split 口径）= `node -e "console.log(require('./ledger/references.json').files.find(f=>f.id==='docs/DESIGN-code-graph.zh-CN.md').lines)"`；可见行数 = `(Get-Content docs/DESIGN-code-graph.zh-CN.md).Count`；非空行数 = `Get-Content docs/DESIGN-code-graph.zh-CN.md | Measure-Object -Line`。**算式自洽性（有边界条件，不是「永远成立」）**：**当且仅当文本以换行结尾时** `lines`（split 口径）= **可见行数 + 1**；**文本不以换行结尾时 `lines` = 可见行数**（本批实测：`"a\nb\n"` 可见 2 行、以换行结尾 ⇒ `split('\n').length` = 3 = 2 + 1；`"a\nb"` 可见 2 行、不以换行结尾 ⇒ = 2，**不是** 3；空文本是退化情形——`''.split('\n').length` = 1，而 `(Get-Content 空文件).Count` = 0，形式上也是 +1，但空文本没有「可见行」可数）。**留痕（旧说法，已作废）**：原文把这条等式写成「与具体数值无关，永远成立」——**不以换行结尾的文本就是它的反例**（照它读会以为 2 行的文件必然得 3）。在同一条件下，而 **`Measure-Object -Line` 数的是非空行**、不是可见行数 ⇒ 恒有 `非空行 = 可见行数 − 空行数 = lines − 1 − 空行数`。**留痕（只作留痕，不是现值）**：本行原写 DESIGN「`lines` = **1332**、可见 **1331**、`Measure-Object -Line` 报 **1046**、空行 **285**」（与上面的算式自洽：1331 − 285 = 1046）；**独立复核者第四轮实测 1338 / 1337 / 1051 / 286**（同样自洽：1337 − 286 = 1051），本批复核时实测与之逐字相同——**这四个数同样是活值、不是不变量**（DESIGN 每改一次这组数就变，本文档每改一次本文档那组数就变），现值一律按本段开头那三条取数命令现取，**不要抄这里的任何一组数**。旧版此处还写过「报 1331」，那是**把 `Measure-Object -Line` 当成了行数计数器**，本版照实改正；要数可见行用 `(Get-Content <文件>).Count`）。
 
 2. **`lines` 只对「扫描面内」的文件有值**。⇒ `lines !== null` 的条数 = 扫描面文件数减 1（自指的 `ledger/references.json`），其余为 `null`；`bytes` 为 `null` 的节点 = **非索引节点**（`untracked` / `ignored` / `deleted`）**加上自指的 `ledger/references.json` 这一条**（§2.3 第 3 条的豁免）。**今天恰为 1 条**只是因为「非索引节点」当前一个都没有——全仓节点都是 `indexed`（`meta.node_states` 可自证），**不是不变量** —— 本行历史上写作"恒为 1 条"，与本文档"非索引节点为 null"的契约冲突（`ignored` / `untracked` / `deleted` 节点同样写 `null`）。**（本批按实测补精确，不改上面这句的结论）** 上面这条等式**只管 `bytes`**：`lines` 还有一个 null 成因——**不在扫描面内的索引节点也不解析**（本节第 2 条前半句），今天 `lines === null` 是 **1,337 条** = 自指产物 1 条 + 扫描面外的索引节点 1,336 条，**远不止 1 条**；这也是「今天恰为 1 条」只能挂在 `bytes` 上的原因。两栏取数：`node -e "const f=require('./ledger/references.json').files;console.log('bytes',f.filter(x=>x.bytes===null).length,'lines',f.filter(x=>x.lines===null).length)"`。**留痕（只作留痕，不是现值）**：本批改引实测 `lines !== null` 计 **79**（= 扫描面 80 个文件 − 自指 1），其余 **1337** 条为 `null`；现值取数 `node -e "console.log(require('./ledger/references.json').files.filter(f=>f.lines===null).length)"`（附录命令索引里也有这条）。
    ⇒ **`lines: null` 的含义是「这个文件没被解析过」，不是「0 行」，也不是「未知内容」。** 想知道扫描面外文件的行数，`git cat-file blob :<path>` 自己数，或把它加进扫描面（§8.2）。
@@ -218,7 +220,7 @@ id, lang, state, bytes, lines, edge_out, edge_in
 
 **四态在别处**：完整四态出现在 `ledger/change-log/*.json` 的 `degradation.status`（§5.4）。跨产物引用降级词时不要张冠李戴。
 
-### 2.5 `edges[]`（文件级，498 条）
+### 2.5 `edges[]`（文件级；**条数是活值、不在此复述**——现值取数 `node -e "console.log(require('./ledger/references.json').edges.length)"`；**留痕：原标题写「498 条」，只作留痕，不是现值**）
 
 键名集合实测：
 
@@ -232,9 +234,9 @@ id, kind, from, to, cross_file, specifier, resolved, fragment, field, status, ty
 {"id":"<from.file>:<line>:<column>:<kind>[:<field|specifier>]","kind":"ci-target","from":{"file":".github/workflows/ci.yml","line":25,"column":9},"to":{"file":"package.json","line":null,"column":null,"state":"indexed"},"cross_file":true,"specifier":"build","resolved":"package.json","fragment":null,"field":"scripts[\"build\"]","status":"resolved","type_only":false}
 ```
 
-**8 种边 kind**（实测，`meta.edge_kinds`）：
+**8 种边 kind**（`meta.edge_kinds`；**下表条数只作留痕，不是现值**——现值取数 `node -e "console.log(require('./ledger/references.json').meta.edge_kinds)"`）：
 
-| kind | 条数 | 从哪来 |
+| kind | 条数（**留痕，不是现值**） | 从哪来 |
 | --- | --- | --- |
 | `import` | 320 | 静态 `import … from` |
 | `require` | 52 | `require(...)` |
@@ -245,15 +247,15 @@ id, kind, from, to, cross_file, specifier, resolved, fragment, field, status, ty
 | `anchor` | 3 | 指向仓库内文件某个锚点 |
 | `dynamic-import` | 1 | 动态 `import(...)` |
 
-合计 320+52+51+35+19+17+3+1 = **498** ✓（与 `edges` 条数一致）。
+合计 320+52+51+35+19+17+3+1 = **498** ✓（**留痕：这行自洽算式算的是上表那组留痕值，不是现值**；本行的 `import` 那一栏今天已变，所以「合计 = `edges` 条数」这个**关系**仍成立、但**这个算式今天反证不了任何现值**——要比现值就把上表整表按取数命令重取再相加，或以 `edges.length` 为准）。
 
 **边 id 规则**（`meta.edge_id_rule`）：`<from.file>:<line>:<column>:<kind>`，同一位置多条边时追加 `:<field|specifier>` 消歧，仍冲突即**生成失败**。**id 里不含解析结果**——目标被删 / 改名时 id 不变，`check-impact` 的棘轮正是靠「同一个引用还是同一个引用」把历史存量放过的（§4.7）。**注（本批）**：门禁的判定**不再用 `id`**（`id` 里含行号 ⇒ 纯平移会整片误报），改用不含位置的内容键，见 §4.7；`id` 仍是边在产物里的唯一标识与点名用的那个串。
 
-`status` 实测分布：`{"resolved":311,"external":187}`。**当前产物里没有 `dangling`**（`node scripts/generate-reference-graph.cjs --check` 未报任何悬空；`node scripts/check-impact.cjs` 报「新增悬空 0」）。
+`status` 分布是活值、不在此复述——现值取数 `node -e "console.log(require('./ledger/references.json').meta.edge_status)"`。**留痕（只作留痕，不是现值）**：本行原写 `{"resolved":311,"external":187}`，其中 `external` 一栏今天已变。**当前产物里没有 `dangling`**（`node scripts/generate-reference-graph.cjs --check` 未报任何悬空；`node scripts/check-impact.cjs` 报「新增悬空 0」）。
 
 **坐标口径**（`meta.positions_basis`）：1 基行列，算在 **git 索引 blob 的 LF 归一化文本**上——**不用字节偏移**，因为 CRLF 检出会让偏移漂移。
 
-### 2.6 `declarations[]`（402 条）
+### 2.6 `declarations[]`（**条数是活值、不在此复述**——现值取数 `node -e "console.log(require('./ledger/references.json').declarations.length)"`；**留痕：原标题写「402 条」，只作留痕，不是现值**）
 
 键名集合实测：
 
@@ -264,11 +266,11 @@ id, file, name, decl_kind, exported, scope, line, column, origin
 样本（实测，第一条）：`{"id":"src/adapters/mcp.ts#NormifyMcpAdapter@6:11","file":"src/adapters/mcp.ts","name":"NormifyMcpAdapter","decl_kind":"interface","exported":false,"scope":null,"line":6,"column":11,"origin":"source"}`
 
 - `id` 形如 `<file>#<name>@<line>:<col>`。
-- `decl_kind` 实测分布（`meta.symbol_graph.declaration_kinds`）：`{"class":2,"function":206,"interface":114,"type":18,"variable":62}` = 402 ✓。
+- `decl_kind` 分布（`meta.symbol_graph.declaration_kinds`）是活值、不在此复述——现值取数 `node -e "console.log(require('./ledger/references.json').meta.symbol_graph.declaration_kinds)"`。**留痕（只作留痕，不是现值）**：本行原写 `{"class":2,"function":206,"interface":114,"type":18,"variable":62}` = 402 ✓ —— **这个自洽算式今天反证它自己**：`function` 与 `variable` 两栏都已变，把它当现值会得到一个与 `declarations.length` 不符的和。
 - **`scope` 恒为 `null`**：函数内声明（带作用域）属设计稿增量 4，**本产物不产**（`meta.omitted[0]`）。因此 `decl_kind` 里**没有 `parameter`**。
 - `origin` 当前恒为 `source`。
 
-### 2.7 `symbol_edges[]`（1347 条）
+### 2.7 `symbol_edges[]`（**条数是活值、不在此复述**——现值取数 `node -e "console.log(require('./ledger/references.json').symbol_edges.length)"`；**留痕：原标题写「1347 条」，只作留痕，不是现值**）
 
 键名集合实测：
 
@@ -282,25 +284,24 @@ id, kind, from, to, cross_file, specifier, resolved, status, reason, type_only
 {"id":"<from.file>:<line>:<column>:<kind>","kind":"import","from":{"file":"src/adapters/mcp.ts","line":1,"column":10,"sym":null},"to":{"sym":null,"file":null,"line":null,"column":null,"state":"outside"},"cross_file":false,"specifier":"@modelcontextprotocol/sdk/server/index.js","resolved":null,"status":"external","reason":"bare-module-specifier","type_only":false}
 ```
 
-**符号层比文件层多一种 kind**：`type-reference`。实测 3 种（`meta.symbol_graph.edge_kinds`）：
+**符号层比文件层多一种 kind**：`type-reference`。3 种（`meta.symbol_graph.edge_kinds`）；**下表条数只作留痕，不是现值**——现值取数 `node -e "console.log(require('./ledger/references.json').meta.symbol_graph.edge_kinds)"`：
 
-| kind | 条数 |
+| kind | 条数（**留痕，不是现值**） |
 | --- | --- |
 | `type-reference` | 805 |
 | `import` | 472 |
 | `export-from` | 70 |
 
-合计 805+472+70 = **1347** ✓。
+合计 805+472+70 = **1347** ✓（**留痕：算的是上表那组留痕值**；`type-reference` 与 `import` 两栏今天都已变，这个算式今天反证不了现值——要比现值就整表重取再相加，或以 `symbol_edges.length` 为准）。
 
-`status` 实测：`{"external":134,"resolved":989,"unresolved":224}`。
-`reason` 实测（`meta.symbol_graph.unresolved_reasons`）：`{"bare-module-specifier":126,"declaration-out-of-scope":9,"external-module-symbol":8,"symbol-not-found-in-program":215}`。
+`status` 与 `reason` 分布都是活值、不在此复述——现值取数 `node -e "const g=require('./ledger/references.json').meta.symbol_graph;console.log(g.edge_status,g.unresolved_reasons)"`。**留痕（只作留痕，不是现值）**：本行原写 `status` = `{"external":134,"resolved":989,"unresolved":224}`、`reason` = `{"bare-module-specifier":126,"declaration-out-of-scope":9,"external-module-symbol":8,"symbol-not-found-in-program":215}` —— 两组里都有栏位今天已变。
 
 **抛错级不变量**（违反 ⇒ 生成失败、不写盘；`.github/workflows/ci.yml` 里写着 `① 每条 `to.sym` 要么命中声明表、要么带非空 `reason`` 的那一段与本仓同款）：
 1. 每条 `to.sym` 要么命中 `declarations` 里的真实节点 id、要么带**非空** `reason`——**无静默 null**（实测 `meta.symbol_graph.silent_null_edges` = 0）；
 2. `declarations` / `symbol_edges` 按 **UTF-8 字节序**排序，不用 `localeCompare`；
-3. Program 里只有扫描面内的 `.ts`（本仓 = `src/**/*.ts`）；`node_modules` / `examples/` / `lib/` 一律不进（实测 `program_source_files` = 28、`program_outside_repo_files` = 0）。
+3. Program 里只有扫描面内的 `.ts`（本仓 = `src/**/*.ts`）；`node_modules` / `examples/` / `lib/` 一律不进。**两个自证数都是活值、不在此复述**——现值取数 `node -e "const s=require('./ledger/references.json').meta.symbol_graph;console.log(s.program_source_files,s.program_outside_repo_files)"`；**留痕：本行原写 `program_source_files` = 28、`program_outside_repo_files` = 0**（**后者是结构性保证，恒为 0**；前者随 `src/**/*.ts` 的增删变化，**不是不变量**）。
 
-其余实测：`cross_file` = 756 条；Program 刻意 `noLib: true` + `types: []`，编译器选项见 `meta.symbol_graph.compiler_options`。
+其余实测：`cross_file` 是活值、不在此复述（现值取数 `node -e "console.log(require('./ledger/references.json').meta.symbol_graph.cross_file_edges)"`；**留痕：本行原写 756 条，已过期**）；Program 刻意 `noLib: true` + `types: []`，编译器选项见 `meta.symbol_graph.compiler_options`。
 
 ### 2.8 `type_only` 的判定口径（**两套，别混用**）
 

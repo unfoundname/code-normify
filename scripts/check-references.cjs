@@ -365,8 +365,12 @@ const VERSION_SYNC_LITERALS = [
  * 每一条 = 「某处文字里引用的脚本版本号」必须等于「该脚本内的 TOOL_VERSION」。
  *
  * 为什么单列一份、不复用 VERSION_SYNC_LITERALS：
- *   VERSION_SYNC_LITERALS 的比较基准是 **package.json > version**（0.8.2），而脚本版本号是
- *   脚本自己的 TOOL_VERSION（1.3.0 / 1.0.0）——不是同一个数，塞进那份清单只会互相打架。
+ *   VERSION_SYNC_LITERALS 的比较基准是 **package.json > version**（**具体号不在此写死**——现值取数
+ *   `node -e "console.log(require('./package.json').version)"`；清单里的每个字面量都必须等于它），
+ *   而脚本版本号是脚本自己的 TOOL_VERSION（1.3.0 / 1.0.0）——不是同一个数，塞进那份清单只会互相打架。
+ *   （历史坑：此处曾把基准号写死成 `0.8.2`，而 package.json 当时已是别的号——**写死的基准号必然过期**，
+ *   所以只指向字段、不写号。注意本行所在文件的注释**不受 version-drift 保护**：判定函数逐行
+ *   `if (isCommentLine(rawLine)) continue;` 把注释行整体排除，见下方「为什么不能复用 checkOneVersionLiteral」。）
  *
  * 为什么不能复用 checkOneVersionLiteral（历史坑，务必保留这段说明）：
  *   那个函数逐行 `if (isCommentLine(rawLine)) continue;` **刻意排除注释行**——因为历史上
